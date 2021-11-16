@@ -3,6 +3,8 @@ import unittest
 import pandas as pd
 import numpy as np
 
+from anndata import AnnData
+
 
 class TestPre(unittest.TestCase):
     net = pd.DataFrame(
