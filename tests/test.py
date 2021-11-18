@@ -106,3 +106,4 @@ class TestPre(unittest.TestCase):
         
         self.assertEqual(list(sources), list(net['source'].unique()))
         self.assertEqual(list(targets), list(net['target'].unique()))
+        

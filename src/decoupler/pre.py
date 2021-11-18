@@ -63,18 +63,20 @@ def match(mat, c, r, net):
     
     Returns
     -------
-    c_msk : Array of indexes to reorder `mat`'s columns.
-    r_msk : Array of indexes to reorder `net`'s rows.
+    regX : Matching regulatory adjacency matrix.
     """
     
-    # Intersect
-    inter = np.sort(list(set(r) & set(c)))
+    # Init empty regX
+    regX = np.zeros((c.shape[0], net.shape[1]))
     
-    # Match
-    c_msk = np.searchsorted(c, inter)
-    r_msk = np.searchsorted(r, inter)
+    # Match genes from mat, else are 0s
+    for i in range(c.shape[0]):
+        for j in range(r.shape[0]):
+            if c[i] == r[j]:
+                regX[i] = net[j]
+                break
     
-    return c_msk, r_msk
+    return regX
 
 
 def rename_net(net, source='source', target='target', weight='weight'):
@@ -126,11 +128,9 @@ def get_net_mat(net):
     X = net.pivot(columns='source', index='target', values='weight')
     X[np.isnan(X)] = 0
 
-    # Store node names
+    # Store node names and weights
     sources = X.columns.values
     targets = X.index.values
-
-    # Make sparse
-    X = csr_matrix(X.values.astype(np.float32))
+    X = X.values
     
     return sources, targets, X
