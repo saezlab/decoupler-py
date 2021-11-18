@@ -32,7 +32,7 @@ def wsum(mat, net):
 
 def run_wsum(mat, net, source='source', target='target', weight='weight', times=100, min_n=5, seed=42):
     """
-    Wrapper to run WMEAN.
+    Wrapper to run WSUM.
     
     Parameters
     ----------
@@ -63,7 +63,7 @@ def run_wsum(mat, net, source='source', target='target', weight='weight', times=
     regX = match(m, c, targets, regX)
     
     # Run estimate
-    estimate = wmean(m, regX)
+    estimate = wsum(m, regX)
     
     # Permute
     norm, corr, pvals = None, None, None
@@ -76,7 +76,7 @@ def run_wsum(mat, net, source='source', target='target', weight='weight', times=
         
         # Permute
         for i in tqdm(range(times)):
-            null_dst[:,:,i] = wmean(m, rng.permutation(regX))
+            null_dst[:,:,i] = wsum(m, rng.permutation(regX))
             pvals += np.abs(null_dst[:,:,i]) > np.abs(estimate)
         
         # Compute empirical p-value
