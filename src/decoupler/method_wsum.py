@@ -2,18 +2,15 @@ import numpy as np
 import pandas as pd
 
 from scipy.sparse import csr_matrix, lil_matrix
-from numpy.random import default_rng
 
 from decoupler import extract, match, rename_net, get_net_mat
-from decoupler.methods import wsum
 
-from tqdm import tqdm
 
-def wmean(mat, net):
+def wsum(mat, net):
     """
-    Weighted mean (WMEAN).
+    Weighted sum (WSUM).
     
-    Computes WMEAN to infer TF activities.
+    Computes WSUM to infer TF activities.
     
     Parameters
     ----------
@@ -27,17 +24,13 @@ def wmean(mat, net):
     x : Array of activities.
     """
     
-    # Compute WSUM
-    x = wsum(mat, net)
+    # Mat mult
+    x = mat.dot(net)
     
-    # Divide by abs sum of weights
-    div = np.sum(np.abs(net), axis=0)
-    x = x / div
-        
     return x
 
 
-def run_wmean(mat, net, source='source', target='target', weight='weight', times=100, min_n=5, seed=42):
+def run_wsum(mat, net, source='source', target='target', weight='weight', times=100, min_n=5, seed=42):
     """
     Wrapper to run WMEAN.
     
@@ -53,9 +46,9 @@ def run_wmean(mat, net, source='source', target='target', weight='weight', times
     
     Returns
     -------
-    estimate : wmean activity estimates.
-    norm : norm_wmean activity estimates.
-    corr : corr_wmean activity estimates.
+    estimate : wsum activity estimates.
+    norm : norm_wsum activity estimates.
+    corr : corr_wsum activity estimates.
     pvals : empirical p-values of the obtained activities.
     """
     
