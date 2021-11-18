@@ -13,7 +13,7 @@ def wmean(mat, net):
     """
     Weighted mean (WMEAN).
     
-    Computes WMEAN to infer TF activities.
+    Computes WMEAN to infer regulator activities.
     
     Parameters
     ----------

@@ -12,7 +12,7 @@ def wsum(mat, net):
     """
     Weighted sum (WSUM).
     
-    Computes WSUM to infer TF activities.
+    Computes WSUM to infer regulator activities.
     
     Parameters
     ----------
