@@ -75,3 +75,32 @@ def match(mat, c, r, net):
     r_msk = np.searchsorted(r, inter)
     
     return c_msk, r_msk
+
+
+def rename_net(net, source='source', target='target', weight='weight'):
+    """
+    Renames input network to match decoupleR's format (source, target, weight).
+    
+    Parameters
+    ----------
+    net : pd.DataFrame
+        Network in long format.
+    source : str
+        Column name where to extract source features.
+    target : str
+        Column name where to extract target features.
+    weight : str
+        Column name where to extract features' weights. 
+    
+    Returns
+    -------
+    net : Renamed pd.DataFrame network.
+    """
+    
+    # Rename
+    net.rename(columns={source: 'source', target: 'target', weight: 'weight'}, 
+               inplace=True)
+    # Sort
+    net = net.reindex(columns=['source', 'target', 'weight'])
+    
+    return net

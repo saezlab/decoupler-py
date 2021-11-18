@@ -1,4 +1,5 @@
 import unittest
+from pandas._testing import assert_frame_equal
 
 import pandas as pd
 import numpy as np
@@ -7,16 +8,28 @@ from anndata import AnnData
 
 
 class TestPre(unittest.TestCase):
+    exp_net = pd.DataFrame(
+        [
+        ['T1', 'G1', 1.0],
+        ['T1', 'G2', 0.5],
+        ['T1', 'G3',-1.0],
+        ['T2', 'G3', 0.2],
+        ['T2', 'G4', 0.1],
+        ['T2', 'G5',-0.5]
+        ],
+        columns = ['source', 'target', 'weight']
+    )
+    
     net = pd.DataFrame(
         [
-        ['T1', 'G1', 1],
-        ['T1', 'G2', 1],
-        ['T1', 'G3',-1],
-        ['T2', 'G3', 1],
-        ['T2', 'G4', 1],
-        ['T2', 'G5',-1]
+        ['G1', 'T1', 1.0],
+        ['G2', 'T1', 0.5],
+        ['G3', 'T1',-1.0],
+        ['G3', 'T2', 0.2],
+        ['G4', 'T2', 0.1],
+        ['G5', 'T2',-0.5]
         ],
-        columns = ['tf', 'target', 'weight']
+        columns = ['gene', 'tf', 'mor']
     )
     
     mat = np.array([
@@ -63,3 +76,16 @@ class TestPre(unittest.TestCase):
         
         self.assertEqual(pred_mat, expt_mat)
         self.assertEqual(list(pred_g), list(expt_g))
+    
+    def test_extract(self):
+        """
+        Test mat extraction with different inputs.
+        """
+        
+        from decoupler.pre import rename_net
+        
+        net = self.net.copy()
+        exp_net = self.exp_net
+        
+        net = rename_net(net, source='tf', target='gene', weight='mor')
+        assert_frame_equal(net, exp_net)
