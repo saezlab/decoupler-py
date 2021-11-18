@@ -77,9 +77,9 @@ class TestPre(unittest.TestCase):
         self.assertEqual(pred_mat, expt_mat)
         self.assertEqual(list(pred_g), list(expt_g))
     
-    def test_extract(self):
+    def test_rename_net(self):
         """
-        Test mat extraction with different inputs.
+        Test net rename to default names.
         """
         
         from decoupler.pre import rename_net
@@ -87,5 +87,22 @@ class TestPre(unittest.TestCase):
         net = self.net.copy()
         exp_net = self.exp_net
         
+        # Rename
         net = rename_net(net, source='tf', target='gene', weight='mor')
+        
         assert_frame_equal(net, exp_net)
+        
+    def test_get_net_mat(self):
+        """
+        Test expand net to adjacency matrix between sources and targets.
+        """
+        
+        from decoupler.pre import get_net_mat
+        
+        net = self.exp_net
+        
+        # Extract
+        sources, targets, X = get_net_mat(net)
+        
+        self.assertEqual(list(sources), list(net['source'].unique()))
+        self.assertEqual(list(targets), list(net['target'].unique()))

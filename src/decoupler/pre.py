@@ -104,3 +104,33 @@ def rename_net(net, source='source', target='target', weight='weight'):
     net = net.reindex(columns=['source', 'target', 'weight'])
     
     return net
+
+
+def get_net_mat(net):
+    """
+    Transforms a given network to an adjacency matrix (target x source).
+    
+    Parameters
+    ----------
+    net : pd.DataFrame
+        Network in long format.
+    
+    Returns
+    -------
+    sources : Array of source names.
+    targets : Array of target names.
+    X : Matrix of interactions bewteen sources and targets (target x source).
+    """
+
+    # Pivot df to a wider format
+    X = net.pivot(columns='source', index='target', values='weight')
+    X[np.isnan(X)] = 0
+
+    # Store node names
+    sources = X.columns.values
+    targets = X.index.values
+
+    # Make sparse
+    X = csr_matrix(X.values.astype(np.float32))
+    
+    return sources, targets, X
