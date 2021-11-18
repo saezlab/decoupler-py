@@ -3,10 +3,11 @@ import pandas as pd
 
 from numpy.random import default_rng
 
-from decoupler import extract, match, rename_net, get_net_mat
-from decoupler.methods import wsum
+from .pre import extract, match, rename_net, get_net_mat
+from .method_wsum import wsum
 
 from tqdm import tqdm
+
 
 def wmean(mat, net):
     """

@@ -3,7 +3,7 @@ import pandas as pd
 
 from numpy.random import default_rng
 
-from decoupler import extract, match, rename_net, get_net_mat
+from .pre import extract, match, rename_net, get_net_mat
 
 from tqdm import tqdm
 
