@@ -4,7 +4,7 @@ Functions to preprocess the data before running any method.
 """
 
 import numpy as np
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_matrix, lil_matrix
 import pandas as pd
 
 from anndata import AnnData
@@ -67,7 +67,7 @@ def match(mat, c, r, net):
     """
     
     # Init empty regX
-    regX = np.zeros((c.shape[0], net.shape[1]))
+    regX = lil_matrix((c.shape[0], net.shape[1]))
     
     # Match genes from mat, else are 0s
     for i in range(c.shape[0]):
@@ -76,7 +76,7 @@ def match(mat, c, r, net):
                 regX[i] = net[j]
                 break
     
-    return regX
+    return csr_matrix(regX)
 
 
 def rename_net(net, source='source', target='target', weight='weight'):

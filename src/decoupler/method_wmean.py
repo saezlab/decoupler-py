@@ -31,10 +31,9 @@ def wmean(mat, net):
     x = wsum(mat, net)
     
     # Divide by abs sum of weights
-    div = np.sum(np.abs(net), axis=0)
-    x = x / div
+    x = x / np.sum(np.abs(net), axis=0)
         
-    return x
+    return x.A
 
 
 def run_wmean(mat, net, source='source', target='target', weight='weight', times=100, min_n=5, seed=42):
@@ -64,31 +63,31 @@ def run_wmean(mat, net, source='source', target='target', weight='weight', times
     
     # Transform net
     net = rename_net(net, source=source, target=target, weight=weight)
-    sources, targets, regX = get_net_mat(net)
+    sources, targets, net = get_net_mat(net)
     
     # Match arrays
-    regX = match(m, c, targets, regX)
+    net = match(m, c, targets, net)
     
     # Run estimate
-    estimate = wmean(m, regX)
+    estimate = wmean(m, net)
     
     # Permute
     norm, corr, pvals = None, None, None
     if times > 1:
         # Init null distirbution
-        n_src, n_tgt = estimate.shape
-        null_dst = np.zeros((n_src, n_tgt, times))
-        pvals = np.zeros(estimate.shape)
+        n_smp, n_src = estimate.shape
+        null_dst = np.zeros((n_smp, n_src, times))
+        pvals = np.ones(estimate.shape)
         rng = default_rng(seed=seed)
+        idxs = np.arange(net.shape[0])
         
         # Permute
         for i in tqdm(range(times)):
-            null_dst[:,:,i] = wmean(m, rng.permutation(regX))
+            null_dst[:,:,i] = wmean(m, net[rng.permutation(idxs)])
             pvals += np.abs(null_dst[:,:,i]) > np.abs(estimate)
         
         # Compute empirical p-value
         pvals = pvals / times
-        pvals[pvals == 0] = 1 / times
         
         # Compute z-score
         null_dst = np.array(null_dst)

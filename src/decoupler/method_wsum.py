@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 
 from numpy.random import default_rng
+from scipy.sparse import csr_matrix
 
 from .pre import extract, match, rename_net, get_net_mat
 
@@ -29,7 +30,7 @@ def wsum(mat, net):
     # Mat mult
     x = mat.dot(net)
     
-    return x
+    return x.A
 
 
 def run_wsum(mat, net, source='source', target='target', weight='weight', times=100, min_n=5, seed=42):
@@ -59,31 +60,31 @@ def run_wsum(mat, net, source='source', target='target', weight='weight', times=
     
     # Transform net
     net = rename_net(net, source=source, target=target, weight=weight)
-    sources, targets, regX = get_net_mat(net)
+    sources, targets, net = get_net_mat(net)
     
     # Match arrays
-    regX = match(m, c, targets, regX)
+    net = match(m, c, targets, net)
     
     # Run estimate
-    estimate = wsum(m, regX)
+    estimate = wsum(m, net)
     
     # Permute
     norm, corr, pvals = None, None, None
     if times > 1:
         # Init null distirbution
-        n_src, n_tgt = estimate.shape
-        null_dst = np.zeros((n_src, n_tgt, times))
-        pvals = np.zeros(estimate.shape)
+        n_smp, n_src = estimate.shape
+        null_dst = np.zeros((n_smp, n_src, times))
+        pvals = np.ones(estimate.shape)
         rng = default_rng(seed=seed)
+        idxs = np.arange(net.shape[0])
         
         # Permute
         for i in tqdm(range(times)):
-            null_dst[:,:,i] = wsum(m, rng.permutation(regX))
+            null_dst[:,:,i] = wsum(m, net[rng.permutation(idxs)])
             pvals += np.abs(null_dst[:,:,i]) > np.abs(estimate)
         
         # Compute empirical p-value
         pvals = pvals / times
-        pvals[pvals == 0] = 1 / times
         
         # Compute z-score
         null_dst = np.array(null_dst)

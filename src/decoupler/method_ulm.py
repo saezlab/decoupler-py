@@ -84,7 +84,7 @@ def run_ulm(mat, net, source='source', target='target', weight='weight', times=1
     net = match(m, c, targets, net)
     
     # Run estimate
-    estimate = ulm(m, net)
+    estimate = ulm(m, net.A)
     
     # Get pvalues
     df = net.shape[0] - 2
