@@ -53,7 +53,7 @@ def ulm(mat, net, TINY = 1.0e-20):
     return x
 
 
-def run_ulm(mat, net, source='source', target='target', weight='weight', times=100, min_n=5):
+def run_ulm(mat, net, source='source', target='target', weight='weight', min_n=5):
     """
     Wrapper to run ULM.
     
