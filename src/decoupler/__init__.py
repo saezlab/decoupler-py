@@ -3,3 +3,4 @@ from .method_wmean import *
 from .method_wsum import *
 from .method_ulm import *
 from .method_mlm import *
+from .method_ora import *
