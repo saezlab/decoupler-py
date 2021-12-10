@@ -27,6 +27,7 @@ def mlm(mat, net):
     -------
     x : Array of activities.
     """
+    
     X = np.hstack([np.ones((net.shape[0],)).reshape(-1,1), net])
     y = mat.T.A
 

@@ -44,13 +44,14 @@ def melt(df):
                 
                 # Melt estimates
                 if methd in k and 'pvals' not in k:
-                    m = df[k]
-                    name = m.name
+                    m = df[k].reset_index().melt(id_vars='index')
                     
-                    m = m.reset_index().melt(id_vars='index')
-                    
-                    m = m_rename(m, name)
-                    m['method'] = methd
+                    m = m_rename(m, k)
+                    if 'estimate' not in k:
+                        name = methd +'_'+k.split('_')[1]
+                    else:
+                        name = methd
+                    m['method'] = name
                     m['pval'] = pvals
                     
                     res.append(m)
