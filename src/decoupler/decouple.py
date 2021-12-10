@@ -1,8 +1,11 @@
 from decoupler import run_ulm, ulm, run_wmean, run_wsum, run_mlm, run_ora
 
+from .consensus import run_consensus
+
 
 def decouple(mat, net, source='source', target='target', weight='weight',
-             methods = ['wmean', 'wsum', 'ulm', 'mlm', 'ora'], args = {}):
+             methods = ['wmean', 'wsum', 'ulm', 'mlm', 'ora'], args = {},
+             consensus_score=True):
     """
     Decouple function.
     
@@ -24,7 +27,10 @@ def decouple(mat, net, source='source', target='target', weight='weight',
     methods : list, tuple
         List of methods to run.
     args : dict
-        A dict of argument-dicts. 
+        A dict of argument-dicts.
+    consensus_score : bool
+        Boolean whether to run a consensus score between methods. 
+        Obtained scores are -log10(p-values).
     
     Returns
     -------
@@ -62,5 +68,13 @@ def decouple(mat, net, source='source', target='target', weight='weight',
                 results[r.name] = r
         else:
             raise ValueError('Method {0} not available, please run show_methods() to see the list of available methods.'.format(methd))
-    
+            
+    # Run consensus score
+    if consensus_score:
+        res = run_consensus(results)
+        
+        # Store obtained dfs
+        for r in res:
+            results[r.name] = r
+        
     return results
