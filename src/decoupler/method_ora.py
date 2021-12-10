@@ -74,6 +74,12 @@ def run_ora(mat, net, source='source', target='target', weight='weight',
         instance.
     net : pd.DataFrame
         Network in long format.
+    source : str
+        Column name with source nodes.
+    target : str
+        Column name with target nodes.
+    weight : str
+        Column name with weights.
     n_up : int
         Number of top ranked features to select as observed features.
     n_bottom : int
@@ -105,7 +111,9 @@ def run_ora(mat, net, source='source', target='target', weight='weight',
     # Transform to df
     pvals = pd.DataFrame(pvals, columns=net.index)
     pvals.name = 'ora_pvals'
+    pvals.columns.name = None
     estimate = pd.DataFrame(-np.log10(pvals), columns=net.index)
     estimate.name = 'ora_estimate'
+    estimate.columns.name = None
     
     return estimate, pvals

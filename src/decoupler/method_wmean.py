@@ -47,6 +47,12 @@ def run_wmean(mat, net, source='source', target='target', weight='weight', times
         instance.
     net : pd.DataFrame
         Network in long format.
+    source : str
+        Column name with source nodes.
+    target : str
+        Column name with target nodes.
+    weight : str
+        Column name with weights.
     min_n : int
         Minimum of targets per TF. If less, returns 0s.
     
