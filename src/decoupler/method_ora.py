@@ -104,6 +104,8 @@ def run_ora(mat, net, source='source', target='target', weight='weight',
         
     # Transform to df
     pvals = pd.DataFrame(pvals, columns=net.index)
+    pvals.name = 'ora_pvals'
     estimate = pd.DataFrame(-np.log10(pvals), columns=net.index)
+    estimate.name = 'ora_estimate'
     
     return estimate, pvals

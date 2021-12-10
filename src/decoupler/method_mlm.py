@@ -56,7 +56,7 @@ def run_mlm(mat, net, source='source', target='target', weight='weight', min_n=5
     
     Returns
     -------
-    estimate : ulm activity estimates.
+    estimate : activity estimates.
     pvals : p-values of the obtained activities.
     """
     
@@ -78,7 +78,9 @@ def run_mlm(mat, net, source='source', target='target', weight='weight', min_n=5
     
     # Transform to df
     estimate = pd.DataFrame(estimate, columns=sources)
+    estimate.name = 'mlm_estimate'
     pvals = pd.DataFrame(pvals, columns=sources)
+    pvals.name = 'mlm_pvals'
     
     return estimate, pvals
 

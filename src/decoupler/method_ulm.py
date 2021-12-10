@@ -92,7 +92,9 @@ def run_ulm(mat, net, source='source', target='target', weight='weight', min_n=5
     
     # Transform to df
     estimate = pd.DataFrame(estimate, columns=sources)
+    estimate.name = 'ulm_estimate'
     pvals = pd.DataFrame(pvals, columns=sources)
+    pvals.name = 'ulm_pvals'
     
     return estimate, pvals
 

@@ -98,8 +98,12 @@ def run_wmean(mat, net, source='source', target='target', weight='weight', times
     
     # Transform to df
     estimate = pd.DataFrame(estimate, columns=sources)
+    estimate.name = 'wmean_estimate'
     norm = pd.DataFrame(norm, columns=sources)
+    norm.name = 'wmean_norm'
     corr = pd.DataFrame(corr, columns=sources)
+    corr.name = 'wmean_corr'
     pvals = pd.DataFrame(pvals, columns=sources)
+    pvals.name = 'wmean_pvals'
     
     return estimate, norm, corr, pvals

@@ -95,8 +95,12 @@ def run_wsum(mat, net, source='source', target='target', weight='weight', times=
     
     # Transform to df
     estimate = pd.DataFrame(estimate, columns=sources)
+    estimate.name = 'wsum_estimate'
     norm = pd.DataFrame(norm, columns=sources)
+    norm.name = 'wsum_norm'
     corr = pd.DataFrame(corr, columns=sources)
+    corr.name = 'wsum_corr'
     pvals = pd.DataFrame(pvals, columns=sources)
+    pvals.name = 'wsum_pvals'
     
     return estimate, norm, corr, pvals
