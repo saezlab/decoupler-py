@@ -1,3 +1,6 @@
+import numpy as np
+import pandas as pd
+
 def m_rename(m, name):
     # Rename
     m = m.rename({'index':'sample', 'variable':'source'}, axis=1)
