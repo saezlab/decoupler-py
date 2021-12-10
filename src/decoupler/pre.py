@@ -1,5 +1,5 @@
 """
-Preprocessing utility functions.
+Preprocessing functions.
 Functions to preprocess the data before running any method. 
 """
 

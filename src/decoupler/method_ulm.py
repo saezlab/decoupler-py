@@ -1,3 +1,8 @@
+"""
+Method ULM.
+Code to run the Univariate Linear Model (ULM) method. 
+"""
+
 import numpy as np
 import pandas as pd
 
@@ -105,4 +110,3 @@ def run_ulm(mat, net, source='source', target='target', weight='weight', min_n=5
     pvals.name = 'ulm_pvals'
     
     return estimate, pvals
-

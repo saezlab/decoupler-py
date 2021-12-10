@@ -1,5 +1,11 @@
+"""
+Utility functions.
+Functions of general utility used in multiple places. 
+"""
+
 import numpy as np
 import pandas as pd
+
 
 def m_rename(m, name):
     # Rename

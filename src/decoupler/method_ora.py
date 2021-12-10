@@ -1,3 +1,8 @@
+"""
+Method ORA.
+Code to run the Over Representation Analysis (ORA) method. 
+"""
+
 import numpy as np
 import pandas as pd
 

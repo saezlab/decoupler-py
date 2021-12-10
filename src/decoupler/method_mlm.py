@@ -1,3 +1,8 @@
+"""
+Method MLM.
+Code to run the Multivariate Linear Model (MLM) method. 
+"""
+
 import numpy as np
 import pandas as pd
 
@@ -92,4 +97,3 @@ def run_mlm(mat, net, source='source', target='target', weight='weight', min_n=5
     pvals.name = 'mlm_pvals'
     
     return estimate, pvals
-

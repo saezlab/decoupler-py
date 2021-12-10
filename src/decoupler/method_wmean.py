@@ -1,3 +1,8 @@
+"""
+Method WMEAN.
+Code to run the Weighted mean (WMEAN) method. 
+"""
+
 import numpy as np
 import pandas as pd
 

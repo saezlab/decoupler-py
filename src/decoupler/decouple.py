@@ -1,3 +1,8 @@
+"""
+decouple main function.
+Code to run methods simultaneously. 
+"""
+
 from decoupler import run_ulm, ulm, run_wmean, run_wsum, run_mlm, run_ora
 
 from .consensus import run_consensus

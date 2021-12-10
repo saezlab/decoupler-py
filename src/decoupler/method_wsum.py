@@ -1,3 +1,8 @@
+"""
+Method WSUM.
+Code to run the Weighted sum (WSUM) method. 
+"""
+
 import numpy as np
 import pandas as pd
 
