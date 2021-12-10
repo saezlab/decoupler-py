@@ -35,6 +35,8 @@ def wsum(mat, net):
 
 def run_wsum(mat, net, source='source', target='target', weight='weight', times=100, min_n=5, seed=42):
     """
+    Weighted sum (WSUM).
+    
     Wrapper to run WSUM.
     
     Parameters

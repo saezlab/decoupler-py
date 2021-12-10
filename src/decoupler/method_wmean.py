@@ -38,6 +38,8 @@ def wmean(mat, net):
 
 def run_wmean(mat, net, source='source', target='target', weight='weight', times=100, min_n=5, seed=42):
     """
+    Weighted mean (WMEAN).
+    
     Wrapper to run WMEAN.
     
     Parameters

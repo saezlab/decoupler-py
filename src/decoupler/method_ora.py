@@ -65,6 +65,8 @@ def ora(obs, lexp, n_background=20000):
 def run_ora(mat, net, source='source', target='target', weight='weight', 
             n_up = 50, n_bottom = 0, n_background = 20000):
     """
+    Over Representation Analysis (ORA).
+    
     Wrapper to run ORA.
     
     Parameters

@@ -43,6 +43,8 @@ def mlm(mat, net):
 
 def run_mlm(mat, net, source='source', target='target', weight='weight', min_n=5):
     """
+    Multivariate Linear Model (MLM).
+    
     Wrapper to run MLM.
     
     Parameters

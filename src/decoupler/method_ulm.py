@@ -55,6 +55,8 @@ def ulm(mat, net, TINY = 1.0e-20):
 
 def run_ulm(mat, net, source='source', target='target', weight='weight', min_n=5):
     """
+    Univariate Linear Model (ULM).
+    
     Wrapper to run ULM.
     
     Parameters
