@@ -72,3 +72,27 @@ def melt(df):
         raise ValueError('Input type {0} not supported.'.format(type(df)))
 
     return m
+
+
+def show_methods():
+    """
+    Shows the methods currently available in this implementation of decoupleR. 
+    The first column correspond to the function name in decoupleR and the 
+    second to the method's full name.
+    
+    Returns
+    -------
+    df : dataframe with the available methods.
+    """
+    
+    import decoupler
+    
+    df = []
+    lst = dir(decoupler)
+    for m in lst:
+        if m.startswith('run_'):
+            name = getattr(decoupler, m).__doc__.split('\n')[1].lstrip()
+            df.append([m, name])
+    df = pd.DataFrame(df, columns=['Function', 'Name'])
+    
+    return df
