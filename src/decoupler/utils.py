@@ -102,3 +102,43 @@ def show_methods():
     df = pd.DataFrame(df, columns=['Function', 'Name'])
     
     return df
+
+
+def check_corr(net, source='source', target='target', weight='weight'):
+    """
+    Check correlation (colinearity).
+    
+    Checks the correlation across the regulators in a network.
+    
+    Parameters
+    ----------
+    net : pd.DataFrame
+        Network in long format.
+    source : str
+        Column name with source nodes.
+    target : str
+        Column name with target nodes.
+    weight : str
+        Column name with weights.
+    
+    Returns
+    -------
+    corr : Correlation pairs dataframe.
+    """
+    
+    # Transform net
+    net = rename_net(net, source=source, target=target, weight=weight)
+    sources, targets, net = get_net_mat(net)
+    
+    # Compute corr
+    corr = np.corrcoef(net, rowvar=False)
+    
+    # Filter upper diagonal
+    corr = pd.DataFrame(np.triu(corr, k=1), index=sources, columns=sources).reset_index()
+    corr = corr.melt(id_vars='index').rename({'index':'source1', 'variable':'source2', 'value':'corr'}, axis=1)
+    corr = corr[corr['corr'] != 0]
+    
+    # Sort by abs value
+    corr = corr.iloc[np.argsort(np.abs(corr['corr'].values))[::-1]].reset_index(drop=True)
+    
+    return corr
