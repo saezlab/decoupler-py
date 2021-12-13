@@ -6,6 +6,8 @@ Functions of general utility used in multiple places.
 import numpy as np
 import pandas as pd
 
+from .pre import rename_net, get_net_mat
+
 
 def m_rename(m, name):
     # Rename
