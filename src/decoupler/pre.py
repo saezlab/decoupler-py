@@ -27,23 +27,26 @@ def extract(mat, dtype=np.float32):
     """
     
     if type(mat) is list:
-        m, c = mat
+        m, r, c = mat
         m = csr_matrix(m)
+        r = np.array(r)
         c = np.array(c)
     elif type(mat) is pd.DataFrame:
         m = csr_matrix(mat.values)
+        r = mat.index.values
         c = mat.columns.values
     elif type(mat) is AnnData:
         m = csr_matrix(mat.X)
+        r = mat.obs.index.values
         c = mat.var.index.values
     else:
-        raise ValueError("""mat must be a list of [genes, matrix], 
+        raise ValueError("""mat must be a list of [matrix, samples, genes], 
         dataframe (samples x genes) or an AnnData instance.""")
     
     # Sort genes
     msk = np.argsort(c)
     
-    return m[:,msk].astype(dtype), c[msk]
+    return m[:,msk].astype(dtype), r, c[msk]
 
 
 def match(mat, c, r, net):

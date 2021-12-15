@@ -6,6 +6,59 @@ import numpy as np
 
 from anndata import AnnData
 
+# Define toy data
+from numpy.random import default_rng
+
+net = pd.DataFrame(
+    [
+    ['M1', 'G2', 1],
+    ['M1', 'G3', 1],
+    ['M1', 'G4', 1],
+        
+    ['M2', 'G5', 1],
+    ['M2', 'G6', 1],
+    ['M2', 'G7', 1],
+        
+    ['T1', 'G1', 1], 
+    ['T1', 'G2', 1], 
+    ['T1', 'G3', 1],
+        
+    ['T2', 'G2', 1], 
+    ['T2', 'G3', 1], 
+    ['T2', 'G4', 1], 
+    ['T2', 'G5', -1],
+    ['T2', 'G6', -1], 
+        
+    ['T3', 'G3', -1], 
+    ['T3', 'G4', -1], 
+    ['T3', 'G5', 1], 
+    ['T3', 'G6', 1],
+    ['T3', 'G7', 1], 
+        
+    ['T4', 'G6', 1], 
+    ['T4', 'G7', 1], 
+    ['T4', 'G8', 1],
+    ],
+    columns = ['source', 'target', 'weight']
+)
+
+rng = default_rng(seed=42)
+mat = np.array([
+    np.array([1,1,1,1,0,0,0,0]) * np.abs(rng.normal(size=8)),
+    np.array([1,1,1,1,0,0,0,0]) * np.abs(rng.normal(size=8)),
+    np.array([1,1,1,1,0,0,0,0]) * np.abs(rng.normal(size=8)),
+    np.array([1,1,1,1,0,0,0,0]) * np.abs(rng.normal(size=8)),
+    np.array([1,1,1,1,0,0,0,0]) * np.abs(rng.normal(size=8)),
+    np.array([1,1,1,1,0,0,0,0]) * np.abs(rng.normal(size=8)),
+    np.array([1,1,1,1,0,0,0,0]) * np.abs(rng.normal(size=8)),
+    np.array([0,0,0,0,1,1,1,1]) * np.abs(rng.normal(size=8)),
+    np.array([0,0,0,0,1,1,1,1]) * np.abs(rng.normal(size=8)),
+    np.array([0,0,0,0,1,1,1,1]) * np.abs(rng.normal(size=8)),
+    np.array([0,0,0,0,1,1,1,1]) * np.abs(rng.normal(size=8)),
+    np.array([0,0,0,0,1,1,1,1]) * np.abs(rng.normal(size=8))
+])
+mat = pd.DataFrame(mat, columns=['G1','G2','G3','G4','G5','G6','G7','G8'])
+
 
 class TestPre(unittest.TestCase):
     exp_net = pd.DataFrame(
@@ -32,11 +85,23 @@ class TestPre(unittest.TestCase):
         columns = ['gene', 'tf', 'mor']
     )
     
+    rng = default_rng(seed=42)
     mat = np.array([
-        [0,1,2,3,4],
-        [5,6,7,8,9]
-    ])
-    g = ['G1','G2','G3','G4','G5']
+        np.array([1,1,1,1,0,0,0,0]) * np.abs(rng.normal(size=8)),
+        np.array([1,1,1,1,0,0,0,0]) * np.abs(rng.normal(size=8)),
+        np.array([1,1,1,1,0,0,0,0]) * np.abs(rng.normal(size=8)),
+        np.array([1,1,1,1,0,0,0,0]) * np.abs(rng.normal(size=8)),
+        np.array([1,1,1,1,0,0,0,0]) * np.abs(rng.normal(size=8)),
+        np.array([1,1,1,1,0,0,0,0]) * np.abs(rng.normal(size=8)),
+        np.array([1,1,1,1,0,0,0,0]) * np.abs(rng.normal(size=8)),
+        np.array([0,0,0,0,1,1,1,1]) * np.abs(rng.normal(size=8)),
+        np.array([0,0,0,0,1,1,1,1]) * np.abs(rng.normal(size=8)),
+        np.array([0,0,0,0,1,1,1,1]) * np.abs(rng.normal(size=8)),
+        np.array([0,0,0,0,1,1,1,1]) * np.abs(rng.normal(size=8)),
+        np.array([0,0,0,0,1,1,1,1]) * np.abs(rng.normal(size=8))
+    ], dtype=np.float32)
+    r = ['S{0}'.format(i+1) for i in range(mat.shape[0])]
+    c = ['G1','G2','G3','G4','G5','G6','G7','G8']
     
     def test_extract(self):
         """
@@ -46,36 +111,39 @@ class TestPre(unittest.TestCase):
         from decoupler import extract
         
         mat = self.mat
-        g = self.g
+        r = self.r
+        c = self.c
         
         # List
-        pred_mat, pred_g = extract([mat, g])
-        expt_mat, expt_g = [mat, g]
+        pred_mat, pred_r, pred_c = extract([mat, r, c])
+        expt_mat, expt_r, expt_c = [mat, r, c]
         pred_mat = list(pred_mat.A.flatten())
         expt_mat = list(expt_mat.flatten())
         self.assertEqual(pred_mat, expt_mat)
-        self.assertEqual(list(pred_g), list(expt_g))
+        self.assertEqual(list(pred_r), list(expt_r))
+        self.assertEqual(list(pred_c), list(expt_c))
         
         # Data Frame
-        df = pd.DataFrame(mat, columns=g)
+        df = pd.DataFrame(mat, index=r, columns=c)
         
-        pred_mat, pred_g = extract(df)
-        expt_mat, expt_g = [mat, g]
+        pred_mat, pred_r, pred_c = extract(df)
+        expt_mat, expt_r, expt_c = [mat, r, c]
         pred_mat = list(pred_mat.A.flatten())
         expt_mat = list(expt_mat.flatten())
         self.assertEqual(pred_mat, expt_mat)
-        self.assertEqual(list(pred_g), list(expt_g))
+        self.assertEqual(list(pred_r), list(expt_r))
+        self.assertEqual(list(pred_c), list(expt_c))
         
         # AnnData
-        adata = AnnData(mat, var=pd.DataFrame(index=g))
+        adata = AnnData(mat, obs=pd.DataFrame(index=r), var=pd.DataFrame(index=c))
         
-        pred_mat, pred_g = extract(adata)
-        expt_mat, expt_g = [mat, g]
+        pred_mat, pred_r, pred_c = extract(adata)
+        expt_mat, expt_r, expt_c = [mat, r, c]
         pred_mat = list(pred_mat.A.flatten())
         expt_mat = list(expt_mat.flatten())
-        
         self.assertEqual(pred_mat, expt_mat)
-        self.assertEqual(list(pred_g), list(expt_g))
+        self.assertEqual(list(pred_r), list(expt_r))
+        self.assertEqual(list(pred_c), list(expt_c))
     
     def test_rename_net(self):
         """
