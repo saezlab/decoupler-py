@@ -101,7 +101,7 @@ def run_ora(mat, net, source='source', target='target', weight='weight',
     """
     
     # Extract sparse matrix and array of genes
-    m, c = extract(mat)
+    m, r, c = extract(mat)
     n_up_msk = len(c) - n_up
     
     # Transform net

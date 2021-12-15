@@ -69,7 +69,7 @@ def run_wsum(mat, net, source='source', target='target', weight='weight', times=
     """
     
     # Extract sparse matrix and array of genes
-    m, c = extract(mat)
+    m, r, c = extract(mat)
     
     # Transform net
     net = rename_net(net, source=source, target=target, weight=weight)

@@ -75,7 +75,7 @@ def run_mlm(mat, net, source='source', target='target', weight='weight', min_n=5
     """
     
     # Extract sparse matrix and array of genes
-    m, c = extract(mat)
+    m, r, c = extract(mat)
     
     # Transform net
     net = rename_net(net, source=source, target=target, weight=weight)
