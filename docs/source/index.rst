@@ -21,5 +21,7 @@ Check out the :doc:`usage` section for further information.
    :maxdepth: 1
    :hidden:
    
+   installation
    usage
    api
+   reference
