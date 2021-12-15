@@ -98,6 +98,11 @@ def rename_net(net, source='source', target='target', weight='weight'):
     -------
     net : Renamed pd.DataFrame network.
     """
+    # Check if names are in columns
+    msg = 'Column name "{0}" not found in net'
+    assert source in net.columns, msg.format(source)
+    assert target in net.columns, msg.format(target)
+    assert weight in net.columns, msg.format(weight)
     
     # Rename
     net.rename(columns={source: 'source', target: 'target', weight: 'weight'}, 
