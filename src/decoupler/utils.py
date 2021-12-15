@@ -133,7 +133,7 @@ def check_corr(net, source='source', target='target', weight='weight'):
     sources, targets, net = get_net_mat(net)
     
     # Compute corr
-    corr = np.corrcoef(net, rowvar=False)
+    corr = np.round(np.corrcoef(net, rowvar=False), 4)
     
     # Filter upper diagonal
     corr = pd.DataFrame(np.triu(corr, k=1), index=sources, columns=sources).reset_index()
