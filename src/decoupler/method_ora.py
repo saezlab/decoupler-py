@@ -69,7 +69,7 @@ def ora(obs, lexp, n_background=20000):
 
 
 def run_ora(mat, net, source='source', target='target', weight='weight', 
-            n_up = 50, n_bottom = 0, n_background = 20000, min_n=5, verbose=False):
+            n_up = None, n_bottom = 0, n_background = 20000, min_n=5, verbose=False):
     """
     Over Representation Analysis (ORA).
     
@@ -107,6 +107,8 @@ def run_ora(mat, net, source='source', target='target', weight='weight',
     
     # Extract sparse matrix and array of genes
     m, r, c = extract(mat)
+    if n_up is None:
+        n_up = np.ceil(0.05*len(c))
     n_up_msk = len(c) - n_up
     
     # Transform net
