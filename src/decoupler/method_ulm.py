@@ -13,7 +13,7 @@ from .pre import extract, match, rename_net, get_net_mat, filt_min_n
 from tqdm import tqdm
 
 
-def ulm(mat, net, TINY = 1.0e-20):
+def ulm(mat, net, TINY = 1.0e-20, verbose=False):
     """
     Univariate Linear Model (ULM).
     
@@ -25,6 +25,8 @@ def ulm(mat, net, TINY = 1.0e-20):
         Gene expression matrix.
     net : csr_matrix
         Regulatory adjacency matrix.
+    verbose : bool
+        Whether to show progress.
     
     Returns
     -------
@@ -37,7 +39,7 @@ def ulm(mat, net, TINY = 1.0e-20):
     df, n_repeat = net.shape
     df = df - 2
     
-    for i in tqdm(range(mat.shape[0])):
+    for i in tqdm(range(mat.shape[0]), disable=not verbose):
         # Get row
         mat_row = mat[i].A
         
@@ -58,7 +60,7 @@ def ulm(mat, net, TINY = 1.0e-20):
     return x
 
 
-def run_ulm(mat, net, source='source', target='target', weight='weight', min_n=5):
+def run_ulm(mat, net, source='source', target='target', weight='weight', min_n=5, verbose=False):
     """
     Univariate Linear Model (ULM).
     
@@ -79,6 +81,8 @@ def run_ulm(mat, net, source='source', target='target', weight='weight', min_n=5
         Column name with weights.
     min_n : int
         Minimum of targets per source. If less, sources are removed.
+    verbose : bool
+        Whether to show progress.
     
     Returns
     -------
@@ -97,8 +101,11 @@ def run_ulm(mat, net, source='source', target='target', weight='weight', min_n=5
     # Match arrays
     net = match(m, c, targets, net)
     
+    if verbose:
+        print('Running ulm on {0} samples and {1} sources.'.format(m.shape[0], net.shape[1]))
+    
     # Run estimate
-    estimate = ulm(m, net.A)
+    estimate = ulm(m, net.A, verbose=verbose)
     
     # Get pvalues
     df = net.shape[0] - 2

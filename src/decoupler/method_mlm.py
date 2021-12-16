@@ -46,7 +46,7 @@ def mlm(mat, net):
     return t[:,1:]
 
 
-def run_mlm(mat, net, source='source', target='target', weight='weight', min_n=5):
+def run_mlm(mat, net, source='source', target='target', weight='weight', min_n=5, verbose=False):
     """
     Multivariate Linear Model (MLM).
     
@@ -67,6 +67,8 @@ def run_mlm(mat, net, source='source', target='target', weight='weight', min_n=5
         Column name with weights.
     min_n : int
         Minimum of targets per source. If less, sources are removed.
+    verbose : bool
+        Whether to show progress. 
     
     Returns
     -------
@@ -84,6 +86,9 @@ def run_mlm(mat, net, source='source', target='target', weight='weight', min_n=5
     
     # Match arrays
     net = match(m, c, targets, net)
+    
+    if verbose:
+        print('Running mlm on {0} samples and {1} sources.'.format(m.shape[0], net.shape[1]))
     
     # Run estimate
     estimate = mlm(m, net.A)

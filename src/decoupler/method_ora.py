@@ -68,7 +68,7 @@ def ora(obs, lexp, n_background=20000):
 
 
 def run_ora(mat, net, source='source', target='target', weight='weight', 
-            n_up = 50, n_bottom = 0, n_background = 20000, min_n=5):
+            n_up = 50, n_bottom = 0, n_background = 20000, min_n=5, verbose=False):
     """
     Over Representation Analysis (ORA).
     
@@ -95,6 +95,8 @@ def run_ora(mat, net, source='source', target='target', weight='weight',
         Integer indicating the background size.
     min_n : int
         Minimum of targets per source. If less, sources are removed.
+    verbose : bool
+        Whether to show progress. 
     
     Returns
     -------
@@ -111,9 +113,12 @@ def run_ora(mat, net, source='source', target='target', weight='weight',
     net = filt_min_n(c, net, min_n=min_n)
     net = net.groupby('source')['target'].apply(set)
     
+    if verbose:
+        print('Running ora on {0} samples and {1} sources.'.format(m.shape[0], len(net)))
+    
     # Run ORA
     pvals = []
-    for i in tqdm(range(m.shape[0])):
+    for i in tqdm(range(m.shape[0]), disable=not verbose):
         obs = np.argsort(m[i].A)[0]
         obs = c[(obs >= n_up_msk) | (obs < n_bottom)]
         pvals.append(ora(obs, net, n_background=n_background))

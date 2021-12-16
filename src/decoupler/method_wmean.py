@@ -41,7 +41,7 @@ def wmean(mat, net):
     return x.A
 
 
-def run_wmean(mat, net, source='source', target='target', weight='weight', times=100, min_n=5, seed=42):
+def run_wmean(mat, net, source='source', target='target', weight='weight', times=100, min_n=5, seed=42, verbose=False):
     """
     Weighted mean (WMEAN).
     
@@ -62,6 +62,8 @@ def run_wmean(mat, net, source='source', target='target', weight='weight', times
         Column name with weights.
     min_n : int
         Minimum of targets per source. If less, sources are removed.
+    verbose : bool
+        Whether to show progress.
     
     Returns
     -------
@@ -82,6 +84,9 @@ def run_wmean(mat, net, source='source', target='target', weight='weight', times
     # Match arrays
     net = match(m, c, targets, net)
     
+    if verbose:
+        print('Running wmean on {0} samples and {1} sources.'.format(m.shape[0], net.shape[1]))
+    
     # Run estimate
     estimate = wmean(m, net)
     
@@ -96,7 +101,7 @@ def run_wmean(mat, net, source='source', target='target', weight='weight', times
         idxs = np.arange(net.shape[0])
         
         # Permute
-        for i in tqdm(range(times)):
+        for i in tqdm(range(times), disable=not verbose):
             null_dst[:,:,i] = wmean(m, net[rng.permutation(idxs)])
             pvals += np.abs(null_dst[:,:,i]) > np.abs(estimate)
         
