@@ -10,6 +10,7 @@ from .pre import extract, match, rename_net, filt_min_n
 
 from fisher import pvalue
 
+from anndata import AnnData
 from tqdm import tqdm
 
 
@@ -124,10 +125,16 @@ def run_ora(mat, net, source='source', target='target', weight='weight',
         pvals.append(ora(obs, net, n_background=n_background))
         
     # Transform to df
-    pvals = pd.DataFrame(pvals, columns=net.index)
+    pvals = pd.DataFrame(pvals, index=r, columns=net.index)
     pvals.name = 'ora_pvals'
     pvals.columns.name = None
-    estimate = pd.DataFrame(-np.log10(pvals), columns=pvals.columns)
+    estimate = pd.DataFrame(-np.log10(pvals), index=r, columns=pvals.columns)
     estimate.name = 'ora_estimate'
     
-    return estimate, pvals
+    # AnnData support
+    if isinstance(mat, AnnData):
+        # Update obsm AnnData object
+        mat.obsm[estimate.name] = estimate
+        mat.obsm[pvals.name] = pvals
+    else:
+        return estimate, pvals

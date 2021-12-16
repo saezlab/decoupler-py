@@ -4,6 +4,9 @@ Code to run methods simultaneously.
 """
 
 from decoupler import run_ulm, ulm, run_wmean, run_wsum, run_mlm, run_ora
+from anndata import AnnData
+
+import pandas as pd
 
 from .consensus import run_consensus
 
@@ -55,6 +58,10 @@ def decouple(mat, net, source='source', target='target', weight='weight',
         'ora' : run_ora
     }
     
+    tmp = mat
+    if isinstance(mat, AnnData):
+        tmp = pd.DataFrame(mat.X, index=mat.obs.index, columns=mat.var.index)
+    
     # Store results
     results = {}
     
@@ -72,9 +79,11 @@ def decouple(mat, net, source='source', target='target', weight='weight',
             a['min_n'] = min_n
             a['verbose'] = verbose
             
-            # Get and run method
+            # Get method
             f = methods_dict[methd]
-            res = f(mat=mat, net=net, source=source, target=target, weight=weight, **a)
+            
+            # Run method
+            res = f(mat=tmp, net=net, source=source, target=target, weight=weight, **a)
             
             # Store obtained dfs
             for r in res:
@@ -89,5 +98,11 @@ def decouple(mat, net, source='source', target='target', weight='weight',
         # Store obtained dfs
         for r in res:
             results[r.name] = r
-        
-    return results
+                
+    
+    if isinstance(mat, AnnData):
+        # Store obtained dfs
+        for r in results:
+            mat.obsm[r] = results[r]
+    else:
+        return results

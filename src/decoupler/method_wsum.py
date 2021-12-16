@@ -11,6 +11,7 @@ from scipy.sparse import csr_matrix
 
 from .pre import extract, match, rename_net, get_net_mat, filt_min_n
 
+from anndata import AnnData
 from tqdm import tqdm
 
 
@@ -113,13 +114,21 @@ def run_wsum(mat, net, source='source', target='target', weight='weight', times=
         corr = estimate * -np.log10(pvals)
     
     # Transform to df
-    estimate = pd.DataFrame(estimate, columns=sources)
+    estimate = pd.DataFrame(estimate, index=r, columns=sources)
     estimate.name = 'wsum_estimate'
-    norm = pd.DataFrame(norm, columns=sources)
+    norm = pd.DataFrame(norm, index=r, columns=sources)
     norm.name = 'wsum_norm'
-    corr = pd.DataFrame(corr, columns=sources)
+    corr = pd.DataFrame(corr, index=r, columns=sources)
     corr.name = 'wsum_corr'
-    pvals = pd.DataFrame(pvals, columns=sources)
+    pvals = pd.DataFrame(pvals, index=r, columns=sources)
     pvals.name = 'wsum_pvals'
     
-    return estimate, norm, corr, pvals
+    # AnnData support
+    if isinstance(mat, AnnData):
+        # Update obsm AnnData object
+        mat.obsm[estimate.name] = estimate
+        mat.obsm[norm.name] = norm
+        mat.obsm[corr.name] = corr
+        mat.obsm[pvals.name] = pvals
+    else:
+        return estimate, norm, corr, pvals

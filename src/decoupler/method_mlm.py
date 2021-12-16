@@ -6,12 +6,10 @@ Code to run the Multivariate Linear Model (MLM) method.
 import numpy as np
 import pandas as pd
 
-import scipy.stats.stats
-
 from .pre import extract, match, rename_net, get_net_mat, filt_min_n
 
+from anndata import AnnData
 from scipy import linalg, stats
-
 from tqdm import tqdm
 
 
@@ -97,9 +95,15 @@ def run_mlm(mat, net, source='source', target='target', weight='weight', min_n=5
     pvals = 2 * (1 - stats.t.cdf(np.abs(estimate), m.shape[1] - net.shape[1]))
     
     # Transform to df
-    estimate = pd.DataFrame(estimate, columns=sources)
+    estimate = pd.DataFrame(estimate, index=r, columns=sources)
     estimate.name = 'mlm_estimate'
-    pvals = pd.DataFrame(pvals, columns=sources)
+    pvals = pd.DataFrame(pvals, index=r, columns=sources)
     pvals.name = 'mlm_pvals'
     
-    return estimate, pvals
+    # AnnData support
+    if isinstance(mat, AnnData):
+        # Update obsm AnnData object
+        mat.obsm[estimate.name] = estimate
+        mat.obsm[pvals.name] = pvals
+    else:
+        return estimate, pvals

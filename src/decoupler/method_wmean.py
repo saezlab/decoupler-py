@@ -11,6 +11,7 @@ from numpy.random import default_rng
 from .pre import extract, match, rename_net, get_net_mat, filt_min_n
 from .method_wsum import wsum
 
+from anndata import AnnData
 from tqdm import tqdm
 
 
@@ -116,13 +117,21 @@ def run_wmean(mat, net, source='source', target='target', weight='weight', times
         corr = estimate * -np.log10(pvals)
     
     # Transform to df
-    estimate = pd.DataFrame(estimate, columns=sources)
+    estimate = pd.DataFrame(estimate, index=r, columns=sources)
     estimate.name = 'wmean_estimate'
-    norm = pd.DataFrame(norm, columns=sources)
+    norm = pd.DataFrame(norm, index=r, columns=sources)
     norm.name = 'wmean_norm'
-    corr = pd.DataFrame(corr, columns=sources)
+    corr = pd.DataFrame(corr, index=r, columns=sources)
     corr.name = 'wmean_corr'
-    pvals = pd.DataFrame(pvals, columns=sources)
+    pvals = pd.DataFrame(pvals, index=r, columns=sources)
     pvals.name = 'wmean_pvals'
     
-    return estimate, norm, corr, pvals
+    # AnnData support
+    if isinstance(mat, AnnData):
+        # Update obsm AnnData object
+        mat.obsm[estimate.name] = estimate
+        mat.obsm[norm.name] = norm
+        mat.obsm[corr.name] = corr
+        mat.obsm[pvals.name] = pvals
+    else:
+        return estimate, norm, corr, pvals

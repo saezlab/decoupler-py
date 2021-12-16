@@ -10,6 +10,7 @@ import scipy.stats.stats
 
 from .pre import extract, match, rename_net, get_net_mat, filt_min_n
 
+from anndata import AnnData
 from tqdm import tqdm
 
 
@@ -112,9 +113,15 @@ def run_ulm(mat, net, source='source', target='target', weight='weight', min_n=5
     _, pvals = scipy.stats.stats._ttest_finish(df, estimate, 'two-sided')
     
     # Transform to df
-    estimate = pd.DataFrame(estimate, columns=sources)
+    estimate = pd.DataFrame(estimate, index=r, columns=sources)
     estimate.name = 'ulm_estimate'
-    pvals = pd.DataFrame(pvals, columns=sources)
+    pvals = pd.DataFrame(pvals, index=r, columns=sources)
     pvals.name = 'ulm_pvals'
     
-    return estimate, pvals
+    # AnnData support
+    if isinstance(mat, AnnData):
+        # Update obsm AnnData object
+        mat.obsm[estimate.name] = estimate
+        mat.obsm[pvals.name] = pvals
+    else:
+        return estimate, pvals
