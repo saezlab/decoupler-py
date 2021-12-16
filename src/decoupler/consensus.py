@@ -3,43 +3,27 @@ import pandas as pd
 
 from scipy.stats import beta
 
-from .utils import melt
 
-
-def rankMatrix(glist):
-    u = np.unique(sum(glist, []))
-    N = len(u)
-
-    rmat = pd.DataFrame(np.ones((N, len(glist))), index=u)
-    N = np.repeat(N, rmat.shape[1])
-
-    for i in range(len(glist)):
-        rmat.loc[glist[i], i] = np.arange(1, len(glist[i])+1)/N[i]
-    
-    return rmat
-
-def correctBetaPvalues(p, k):
-    p = np.min([p * k, 1])
+def beta_scores(rmat):
+    rmat = np.sort(rmat, axis=0)
+    n = rmat.shape[0]
+    dist_a = np.repeat([np.repeat([np.arange(n)], rmat.shape[1], axis=0)], rmat.shape[2], axis=0).T + 1
+    dist_b = n - dist_a + 1
+    p = beta.cdf(np.sort(rmat, axis=0), dist_a, dist_b)
     return p
 
-def betaScores(r):
-    n = len(r)
-    r = np.sort(r)
-    p = beta.cdf(r, np.arange(n)+1, n - (np.arange(n)+1) + 1)
+
+def corr_beta_pvals(p, k):
+    p = np.clip(p * k, a_min=0, a_max=1)
     return p
 
-def rhoScores(r):
-    x = betaScores(r)
-    rho = correctBetaPvalues(np.min(x), k = len(r))
+
+def aggregate_ranks(acts):
+    rmat = (acts.shape[-1] - (np.argsort(acts))) / (acts.shape[-1])
+    x = beta_scores(rmat)
+    rho = corr_beta_pvals(np.min(x, axis=0), k = rmat.shape[2])
     return rho
 
-def aggregateRanks(rmat):
-    df = []
-    for name, r in zip(rmat.index, rmat.values):
-        pval = rhoScores(r)
-        df.append([name, pval])
-    df = pd.DataFrame(df, columns=['source', 'pval'])
-    return df
 
 def run_consensus(res):
     """
@@ -50,7 +34,7 @@ def run_consensus(res):
     
     Parameters
     ----------
-    res : list, tuple or pd.DataFrame
+    res : dict
         Results from `decouple`.
     
     Returns
@@ -59,34 +43,12 @@ def run_consensus(res):
     pvals : p-values of the obtained activities.
     """
     
-    # Melt res if is dict
-    if type(res) is dict:
-        res = melt(res)
+    acts = np.abs([res[k].values for k in res if 'pvals'not in k])
+    pvals = aggregate_ranks(acts)
     
-    # Get unique samples and methods
-    samples = res['sample'].unique()
-    methods = res['method'].unique()
-
-    # Get pval for each sample
-    pvals = []
-    for sample in samples:
-        # Subset by sample and abs scores
-        sdf = res[res['sample'] == sample].assign(score=lambda x: abs(x.score))
-        
-        # Generate list of lists of sorted sources
-        lst = []
-        for methd in methods:
-            sources = sdf[sdf['method'] == methd].sort_values('score', ascending=False)['source']
-            lst.append(list(sources))
-        
-        # Run AggregateRanks
-        rmat = rankMatrix(lst)
-        rnks = aggregateRanks(rmat)
-        rnks['sample'] = sample
-        pvals.append(rnks)
-
     # Transform to df
-    pvals = pd.concat(pvals).pivot(index='sample', columns='source', values='pval')
+    k = list(res.keys())[0]
+    pvals = pd.DataFrame(pvals, index=res[k].index, columns=res[k].columns)
     pvals.name = 'consensus_pvals'
     pvals.columns.name = None
     pvals.index.name = None

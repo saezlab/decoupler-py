@@ -10,7 +10,7 @@ from .consensus import run_consensus
 
 def decouple(mat, net, source='source', target='target', weight='weight',
              methods = ['wmean', 'wsum', 'ulm', 'mlm', 'ora'], args = {},
-             consensus_score=True, min_n=5):
+             consensus=True, min_n=5):
     """
     Decouple function.
     
@@ -80,7 +80,7 @@ def decouple(mat, net, source='source', target='target', weight='weight',
             raise ValueError('Method {0} not available, please run show_methods() to see the list of available methods.'.format(methd))
             
     # Run consensus score
-    if consensus_score:
+    if consensus:
         res = run_consensus(results)
         
         # Store obtained dfs
