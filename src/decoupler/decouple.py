@@ -10,7 +10,7 @@ from .consensus import run_consensus
 
 def decouple(mat, net, source='source', target='target', weight='weight',
              methods = ['wmean', 'wsum', 'ulm', 'mlm', 'ora'], args = {},
-             consensus_score=True):
+             consensus_score=True, min_n=5):
     """
     Decouple function.
     
@@ -36,6 +36,8 @@ def decouple(mat, net, source='source', target='target', weight='weight',
     consensus_score : bool
         Boolean whether to run a consensus score between methods. 
         Obtained scores are -log10(p-values).
+    min_n : int
+        Minimum of targets per source. If less, sources are removed.
     
     Returns
     -------
@@ -63,6 +65,9 @@ def decouple(mat, net, source='source', target='target', weight='weight',
                 a = {}
             else:
                 a = args[methd]
+                
+            # Overwrite min_n
+            a['min_n'] = min_n
             
             # Get and run method
             f = methods_dict[methd]
