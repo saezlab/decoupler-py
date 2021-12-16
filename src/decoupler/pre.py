@@ -49,6 +49,36 @@ def extract(mat, dtype=np.float32):
     return m[:,msk].astype(dtype), r, c[msk]
 
 
+def filt_min_n(c, net, min_n=5):
+    """
+    Filter sources of a net with less than min_n targets.
+    
+    Parameters
+    ----------
+    c : narray
+        Column names of `mat`.
+    net : pd.DataFrame
+        Network in long format.
+    min_n : int
+        Minimum of targets per source. If less, sources are removed.
+    
+    Returns
+    -------
+    net : Filtered net.
+    """
+    
+    # Find shared targets between mat and net
+    msk = np.isin(net['target'], c)
+    
+    # Count unique sources
+    sources, counts = np.unique(net[msk]['source'].values, return_counts=True)
+    
+    # Find sources with more than min_n targets
+    msk = np.isin(net['source'], sources[counts >= min_n])
+    
+    return net[msk]
+
+
 def match(mat, c, r, net):
     """
     Match expression matrix with a regulatory adjacency matrix.
