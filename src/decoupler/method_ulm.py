@@ -8,7 +8,7 @@ import pandas as pd
 
 import scipy.stats.stats
 
-from .pre import extract, match, rename_net, get_net_mat
+from .pre import extract, match, rename_net, get_net_mat, filt_min_n
 
 from tqdm import tqdm
 
@@ -78,7 +78,7 @@ def run_ulm(mat, net, source='source', target='target', weight='weight', min_n=5
     weight : str
         Column name with weights.
     min_n : int
-        Minimum of targets per TF. If less, returns 0s.
+        Minimum of targets per source. If less, sources are removed.
     
     Returns
     -------
@@ -91,6 +91,7 @@ def run_ulm(mat, net, source='source', target='target', weight='weight', min_n=5
     
     # Transform net
     net = rename_net(net, source=source, target=target, weight=weight)
+    net = filt_min_n(c, net, min_n=min_n)
     sources, targets, net = get_net_mat(net)
     
     # Match arrays

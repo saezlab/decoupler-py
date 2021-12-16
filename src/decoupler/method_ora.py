@@ -6,7 +6,7 @@ Code to run the Over Representation Analysis (ORA) method.
 import numpy as np
 import pandas as pd
 
-from .pre import extract, match, rename_net
+from .pre import extract, match, rename_net, filt_min_n
 
 from fisher import pvalue
 
@@ -68,7 +68,7 @@ def ora(obs, lexp, n_background=20000):
 
 
 def run_ora(mat, net, source='source', target='target', weight='weight', 
-            n_up = 50, n_bottom = 0, n_background = 20000):
+            n_up = 50, n_bottom = 0, n_background = 20000, min_n=5):
     """
     Over Representation Analysis (ORA).
     
@@ -93,6 +93,8 @@ def run_ora(mat, net, source='source', target='target', weight='weight',
         Number of bottom ranked features to select as observed features.
     n_background : int
         Integer indicating the background size.
+    min_n : int
+        Minimum of targets per source. If less, sources are removed.
     
     Returns
     -------
@@ -106,6 +108,7 @@ def run_ora(mat, net, source='source', target='target', weight='weight',
     
     # Transform net
     net = rename_net(net, source=source, target=target, weight=weight)
+    net = filt_min_n(c, net, min_n=min_n)
     net = net.groupby('source')['target'].apply(set)
     
     # Run ORA

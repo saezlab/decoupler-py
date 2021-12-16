@@ -8,7 +8,7 @@ import pandas as pd
 
 from numpy.random import default_rng
 
-from .pre import extract, match, rename_net, get_net_mat
+from .pre import extract, match, rename_net, get_net_mat, filt_min_n
 from .method_wsum import wsum
 
 from tqdm import tqdm
@@ -61,7 +61,7 @@ def run_wmean(mat, net, source='source', target='target', weight='weight', times
     weight : str
         Column name with weights.
     min_n : int
-        Minimum of targets per TF. If less, returns 0s.
+        Minimum of targets per source. If less, sources are removed.
     
     Returns
     -------
@@ -76,6 +76,7 @@ def run_wmean(mat, net, source='source', target='target', weight='weight', times
     
     # Transform net
     net = rename_net(net, source=source, target=target, weight=weight)
+    net = filt_min_n(c, net, min_n=min_n)
     sources, targets, net = get_net_mat(net)
     
     # Match arrays
