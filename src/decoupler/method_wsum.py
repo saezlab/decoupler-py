@@ -39,7 +39,8 @@ def wsum(mat, net):
     return x.A
 
 
-def run_wsum(mat, net, source='source', target='target', weight='weight', times=100, min_n=5, seed=42, verbose=False):
+def run_wsum(mat, net, source='source', target='target', weight='weight', times=100, 
+             min_n=5, seed=42, verbose=False):
     """
     Weighted sum (WSUM).
     
@@ -60,6 +61,8 @@ def run_wsum(mat, net, source='source', target='target', weight='weight', times=
         Column name with weights.
     min_n : int
         Minimum of targets per source. If less, sources are removed.
+    seed : int
+        Random seed to use.
     verbose : bool
         Whether to show progress.
     

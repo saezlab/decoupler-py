@@ -116,12 +116,12 @@ def run_ora(mat, net, source='source', target='target', weight='weight',
     m, r, c = extract(mat)
     
     # Set up/bottom masks
+    if n_up is None:
+        n_up = np.ceil(0.05*len(c))
     assert 0 <= n_up, 'n_up needs to be a value higher than 0.'
     assert 0 <= n_bottom, 'n_bottom needs to be a value higher than 0.'
     assert 0 <= n_background, 'n_background needs to be a value higher than 0.'
     assert (len(c) - n_up) >= n_bottom, 'n_up and n_bottom overlap, please decrase the value of any of them.'
-    if n_up is None:
-        n_up = np.ceil(0.05*len(c))
     n_up_msk = len(c) - n_up
     n_bt_msk = n_bottom + 1
     
