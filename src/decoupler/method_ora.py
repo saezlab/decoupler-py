@@ -6,6 +6,9 @@ Code to run the Over Representation Analysis (ORA) method.
 import numpy as np
 import pandas as pd
 
+from numpy.random import default_rng
+from scipy.stats import rankdata
+
 from .pre import extract, match, rename_net, filt_min_n
 
 from fisher import pvalue
@@ -42,7 +45,7 @@ def get_cont_table(obs, exp, n_background=20000):
     FN = len(exp.difference(obs))
     TN = n_background - TP - FP - FN
     
-    return TP, FP, FN, TN
+    return TP, FP, FN, TN 
 
 
 def ora(obs, lexp, n_background=20000):
@@ -69,7 +72,8 @@ def ora(obs, lexp, n_background=20000):
 
 
 def run_ora(mat, net, source='source', target='target', weight='weight', 
-            n_up = None, n_bottom = 0, n_background = 20000, min_n=5, verbose=False):
+            n_up = None, n_bottom = 0, n_background = 20000, min_n=5, 
+            seed=42, verbose=False):
     """
     Over Representation Analysis (ORA).
     
@@ -96,6 +100,8 @@ def run_ora(mat, net, source='source', target='target', weight='weight',
         Integer indicating the background size.
     min_n : int
         Minimum of targets per source. If less, sources are removed.
+    seed : int
+        Random seed to use.
     verbose : bool
         Whether to show progress. 
     
@@ -105,11 +111,20 @@ def run_ora(mat, net, source='source', target='target', weight='weight',
     pvals : p-values of the enrichements.
     """
     
+    
     # Extract sparse matrix and array of genes
     m, r, c = extract(mat)
+    
+    # Set up/bottom masks
+    assert 0 <= n_up, 'n_up needs to be a value higher than 0.'
+    assert 0 <= n_bottom, 'n_bottom needs to be a value higher than 0.'
+    assert 0 <= n_background, 'n_background needs to be a value higher than 0.'
+    assert (len(c) - n_up) >= n_bottom, 'n_up and n_bottom overlap, please decrase the value of any of them.'
     if n_up is None:
         n_up = np.ceil(0.05*len(c))
     n_up_msk = len(c) - n_up
+    n_bt_msk = n_bottom + 1
+    
     
     # Transform net
     net = rename_net(net, source=source, target=target, weight=weight)
@@ -121,9 +136,12 @@ def run_ora(mat, net, source='source', target='target', weight='weight',
     
     # Run ORA
     pvals = []
+    rng = default_rng(seed=seed)
+    msk = np.arange(m.shape[1])
     for i in tqdm(range(m.shape[0]), disable=not verbose):
-        obs = np.argsort(m[i].A)[0]
-        obs = c[(obs >= n_up_msk) | (obs < n_bottom)]
+        rng.shuffle(msk)
+        obs = rankdata(m[i].A[0][msk], method='ordinal')
+        obs = c[msk][(obs > n_up_msk) | (obs < n_bt_msk)]
         pvals.append(ora(obs, net, n_background=n_background))
         
     # Transform to df
