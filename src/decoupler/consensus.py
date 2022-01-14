@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 
+from numpy.random import default_rng
+
 from scipy.stats import beta
 
 
@@ -19,14 +21,13 @@ def corr_beta_pvals(p, k):
 
 
 def aggregate_ranks(acts):
-    # TODO: add shuffling to ranking when ties
     rmat = (acts.shape[-1] - np.argsort(np.argsort(acts))) / (acts.shape[-1])
     x = beta_scores(rmat)
     rho = corr_beta_pvals(np.min(x, axis=0), k = rmat.shape[0])
     return rho
 
 
-def run_consensus(res):
+def run_consensus(res, seed=42):
     """
     Consensus.
     
@@ -37,6 +38,8 @@ def run_consensus(res):
     ----------
     res : dict
         Results from `decouple`.
+    seed : int
+        Random seed to use.
     
     Returns
     -------
@@ -45,11 +48,19 @@ def run_consensus(res):
     """
     
     acts = np.abs([res[k].values for k in res if 'pvals' not in k])
+    
+    # Randomize sources order to break ties randomly
+    rng = default_rng(seed=seed)
+    idx = np.arange(acts.shape[2])
+    rng.shuffle(idx)
+    acts = acts[:,:,idx]
+    
+    # Compute p-vals
     pvals = aggregate_ranks(acts)
     
     # Transform to df
     k = list(res.keys())[0]
-    pvals = pd.DataFrame(pvals, index=res[k].index, columns=res[k].columns)
+    pvals = pd.DataFrame(pvals, index=res[k].index, columns=res[k].columns[idx])
     pvals.name = 'consensus_pvals'
     pvals.columns.name = None
     pvals.index.name = None
