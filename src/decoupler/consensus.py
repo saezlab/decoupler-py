@@ -19,9 +19,10 @@ def corr_beta_pvals(p, k):
 
 
 def aggregate_ranks(acts):
-    rmat = (acts.shape[-1] - (np.argsort(acts))) / (acts.shape[-1])
+    # TODO: add shuffling to ranking when ties
+    rmat = (acts.shape[-1] - np.argsort(np.argsort(acts))) / (acts.shape[-1])
     x = beta_scores(rmat)
-    rho = corr_beta_pvals(np.min(x, axis=0), k = rmat.shape[2])
+    rho = corr_beta_pvals(np.min(x, axis=0), k = rmat.shape[0])
     return rho
 
 
@@ -43,7 +44,7 @@ def run_consensus(res):
     pvals : p-values of the obtained activities.
     """
     
-    acts = np.abs([res[k].values for k in res if 'pvals'not in k])
+    acts = np.abs([res[k].values for k in res if 'pvals' not in k])
     pvals = aggregate_ranks(acts)
     
     # Transform to df
