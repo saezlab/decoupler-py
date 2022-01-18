@@ -128,9 +128,16 @@ def run_gsva(mat, net, source='source', target='target', weight='weight',
     weight : str
         Column name with weights.
     mx_diff : bool
-        TODO
+        Changes how the enrichment statistic (ES) is calculated. If True (default),
+        ES is calculated as the difference between the maximum positive and negative
+        random walk deviations. If False, ES is calculated as the maximum positive
+        to 0. 
     abs_rnk : bool
-        TODO
+        Used when mx_diff = True. If False (default), the enrichment statistic (ES) 
+        is calculated taking the magnitude difference between the largest positive 
+        and negative random walk deviations. If True, feature sets with features 
+        enriched on either extreme (high or low) will be regarded as 'highly' 
+        activated.
     min_n : int
         Minimum of targets per source. If less, sources are removed.
     verbose : bool
