@@ -8,3 +8,4 @@ from .method_ora import *
 from .method_gsva import *
 from .decouple import decouple
 from .consensus import run_consensus
+from .omnip import *
