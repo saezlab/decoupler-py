@@ -5,5 +5,6 @@ from .method_wsum import *
 from .method_ulm import *
 from .method_mlm import *
 from .method_ora import *
+from .method_gsva import *
 from .decouple import decouple
 from .consensus import run_consensus
