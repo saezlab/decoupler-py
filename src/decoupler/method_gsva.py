@@ -14,6 +14,18 @@ from anndata import AnnData
 from tqdm import tqdm
 
 
+def ecdf(x):
+    x = np.sort(x)
+    n = len(x)
+    def _ecdf(v):
+        # side='right' because we want Pr(x <= v)
+        return (np.searchsorted(x, v, side='right') + 1) / n
+    return _ecdf
+
+def apply_ecdf(x):
+    return ecdf(x)(x)
+
+
 def init_cdfs():
     pre_cdf = norm.cdf(np.arange(pre_res+1) * max_pre / pre_res, loc=0, scale=1)
     
@@ -32,14 +44,15 @@ def col_d(x, sigma_factor=4.0):
     return left_tail
 
 
-def density(mat):
-    global pre_res, max_pre, pre_cdf, precomp_cdf
-    pre_res, max_pre = 10000, 10
-    pre_cdf = init_cdfs()
-    
-    D = np.zeros(mat.shape)
-    for i in tqdm(range(mat.shape[1])):
-        D[:,i] = col_d(mat[:,i])
+def density(mat, kcdf=False):
+    if kcdf:
+        global pre_res, max_pre, pre_cdf, precomp_cdf
+        pre_res, max_pre = 10000, 10
+        pre_cdf = init_cdfs()
+        D = np.apply_along_axis(col_d, 0, mat)
+    else:
+        D = np.apply_along_axis(apply_ecdf, 0, mat)
+
     return D
 
 
@@ -47,8 +60,8 @@ def rank_score(idxs, rev_idx):
     return rev_idx[idxs]
        
     
-def get_D_I(mat):
-    D = density(mat)
+def get_D_I(mat, kcdf=False):
+    D = density(mat, kcdf=kcdf)
     n = D.shape[1]
     rev_idx = np.abs(np.arange(start=n, stop=0, step=-1) - n / 2)
     I = np.argsort(np.argsort(-D, axis=1))
@@ -91,7 +104,8 @@ def ks_set(D, I, c, fset, tau = 1, mx_diff = True, abs_rnk = False):
     
     
 def run_gsva(mat, net, source='source', target='target', weight='weight', 
-             mx_diff = True, abs_rnk = False, min_n=5, verbose=False):
+             kcdf=False, mx_diff = True, abs_rnk = False, min_n=5, 
+             verbose=False):
     """
     Gene Set Variation Analysis (GSVA).
     
@@ -110,6 +124,10 @@ def run_gsva(mat, net, source='source', target='target', weight='weight',
         Column name with target nodes.
     weight : str
         Column name with weights.
+    kcdf : bool
+        Wether to use a Gaussian kernel or not during the non-parametric estimation 
+        of the cumulative distribution function. By default no kernel is used (faster),
+        to reproduce GSVA original behaviour in R set to True.
     mx_diff : bool
         Changes how the enrichment statistic (ES) is calculated. If True (default),
         ES is calculated as the difference between the maximum positive and negative
@@ -143,7 +161,7 @@ def run_gsva(mat, net, source='source', target='target', weight='weight',
         print('Running gsva on {0} samples and {1} sources.'.format(m.shape[0], len(net)))
     
     # Get feature Density
-    D, I = get_D_I(m.A)
+    D, I = get_D_I(m.A, kcdf=kcdf)
     
     # Run GSVA
     estimate = np.zeros((len(r), len(net)))
