@@ -146,7 +146,7 @@ def run_gsva(mat, net, source='source', target='target', weight='weight',
     
     Returns
     -------
-    estimate : -log10 of the obtained p-values.
+    estimate : gsva activity estimates.
     """
     
     # Extract sparse matrix and array of genes
