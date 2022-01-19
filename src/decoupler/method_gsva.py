@@ -15,47 +15,30 @@ from tqdm import tqdm
 
 
 def init_cdfs():
-    pre_cdf = np.zeros((pre_res+1,))
-    for i in range(pre_res+1):
-        pre_cdf[i] = norm.cdf(max_pre * (i) / pre_res, loc=0, scale=1)
+    pre_cdf = norm.cdf(np.arange(pre_res+1) * max_pre / pre_res, loc=0, scale=1)
     
     return pre_cdf
 
 
-def precomp_cdf(x, sigma):
-    v = x / sigma
-    if v < (-1 * max_pre):
-        return 0
-    elif v > max_pre:
-        return 1
-    else:
-        cdf = pre_cdf[int(np.abs(v)/max_pre * pre_res)]
-        if v < 0:
-            return 1.0 - cdf
-        else:
-            return cdf
-    
-
 def col_d(x, sigma_factor=4.0):
     size = x.shape[0]
-    r = np.zeros(size)
     bw = (np.std(x, ddof=1) / sigma_factor)
-    for j in range(size):
-        left_tail = 0
-        for i in range(size):
-            left_tail += precomp_cdf(x[j]-x[i], bw)
-        left_tail /= size
-        r[j] = -1.0 * np.log((1.0-left_tail)/left_tail)
-    return r
+    left_tail = (x[:,np.newaxis] - x[np.newaxis,:]) / bw
+    cdf = (np.abs(left_tail)/max_pre * pre_res).astype(int)
+    cdf = pre_cdf[np.where(cdf > pre_res, -1, cdf)]
+    left_tail = np.where(left_tail < 0, 1.0 - cdf, cdf)
+    left_tail = np.sum(left_tail,axis=1)/size 
+    left_tail = -1.0 * np.log((1.0-left_tail)/left_tail)
+    return left_tail
 
 
 def density(mat):
-    global pre_res, max_pre, pre_cdf
+    global pre_res, max_pre, pre_cdf, precomp_cdf
     pre_res, max_pre = 10000, 10
     pre_cdf = init_cdfs()
     
     D = np.zeros(mat.shape)
-    for i in range(mat.shape[1]):
+    for i in tqdm(range(mat.shape[1])):
         D[:,i] = col_d(mat[:,i])
     return D
 
