@@ -18,7 +18,8 @@ def get_progeny(top=100):
     
     Returns
     -------
-    estimate : -log10 of the obtained p-values.
+    DataFrame in long format containing target genes for each pathway with
+    their associated weights and p-values.
     """
     
     import omnipath as op
@@ -35,5 +36,3 @@ def get_progeny(top=100):
     p.columns = ['source','target','weight','p_value']
     
     return p
-
-
