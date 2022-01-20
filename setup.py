@@ -20,8 +20,7 @@ setup(
                       "anndata",
                       "fisher"
                      ],
-    package_dir={"": "decoupler"},
-    packages=find_packages(where="decoupler"),
+    packages=["decoupler"],
     python_requires=">=3.8",
     classifiers=[
         "Programming Language :: Python :: 3",
