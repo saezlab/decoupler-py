@@ -72,7 +72,7 @@ def ora(obs, lexp, n_background=20000):
 
 
 def run_ora(mat, net, source='source', target='target', weight='weight', 
-            n_up = None, n_bottom = 0, n_background = 20000, min_n=5, 
+            n_up=None, n_bottom=0, n_background=20000, min_n=5, 
             seed=42, verbose=False):
     """
     Over Representation Analysis (ORA).
@@ -82,16 +82,16 @@ def run_ora(mat, net, source='source', target='target', weight='weight',
     Parameters
     ----------
     mat : list, pd.DataFrame or AnnData
-        List of [genes, matrix], dataframe (samples x genes) or an AnnData
+        List of [features, matrix], dataframe (samples x features) or an AnnData
         instance.
     net : pd.DataFrame
         Network in long format.
     source : str
-        Column name with source nodes.
+        Column name in net with source nodes.
     target : str
-        Column name with target nodes.
+        Column name in net with target nodes.
     weight : str
-        Column name with weights.
+        Column name in net with weights.
     n_up : int
         Number of top ranked features to select as observed features.
     n_bottom : int
@@ -107,10 +107,10 @@ def run_ora(mat, net, source='source', target='target', weight='weight',
     
     Returns
     -------
-    estimate : -log10 of the obtained p-values.
-    pvals : p-values of the enrichements.
+    Returns ora activity estimates (-log10(p-values)) and p-values 
+    or stores them in `mat.obsm['ora_estimate']` and 
+    `mat.obsm['ora_pvals']`.
     """
-    
     
     # Extract sparse matrix and array of genes
     m, r, c = extract(mat)

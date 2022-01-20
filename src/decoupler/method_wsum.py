@@ -24,7 +24,7 @@ def wsum(mat, net):
     Parameters
     ----------
     mat : csr_matrix
-        Gene expression matrix.
+        Input matrix with molecular readouts.
     net : csr_matrix
         Regulatory adjacency matrix.
     
@@ -49,16 +49,16 @@ def run_wsum(mat, net, source='source', target='target', weight='weight', times=
     Parameters
     ----------
     mat : list, pd.DataFrame or AnnData
-        List of [genes, matrix], dataframe (samples x genes) or an AnnData
+        List of [features, matrix], dataframe (samples x features) or an AnnData
         instance.
     net : pd.DataFrame
         Network in long format.
     source : str
-        Column name with source nodes.
+        Column name in net with source nodes.
     target : str
-        Column name with target nodes.
+        Column name in net with target nodes.
     weight : str
-        Column name with weights.
+        Column name in net with weights.
     min_n : int
         Minimum of targets per source. If less, sources are removed.
     seed : int
@@ -68,10 +68,9 @@ def run_wsum(mat, net, source='source', target='target', weight='weight', times=
     
     Returns
     -------
-    estimate : wsum activity estimates.
-    norm : norm_wsum activity estimates.
-    corr : corr_wsum activity estimates.
-    pvals : empirical p-values of the obtained activities.
+    Returns wsum, norm_wsum, corr_wsum activity estimates and p-values 
+    or stores them in `mat.obsm['wsum_estimate']`, `mat.obsm['wsum_norm']`,
+    `mat.obsm['wsum_corr']` and `mat.obsm['wsum_pvals']`.
     """
     
     # Extract sparse matrix and array of genes

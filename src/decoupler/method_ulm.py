@@ -22,9 +22,9 @@ def ulm(mat, net, TINY = 1.0e-20, verbose=False):
     
     Parameters
     ----------
-    mat : csr_matrix
-        Gene expression matrix.
-    net : csr_matrix
+    mat : np.array
+        Input matrix with molecular readouts.
+    net : np.array
         Regulatory adjacency matrix.
     verbose : bool
         Whether to show progress.
@@ -42,7 +42,7 @@ def ulm(mat, net, TINY = 1.0e-20, verbose=False):
     
     for i in tqdm(range(mat.shape[0]), disable=not verbose):
         # Get row
-        mat_row = mat[i].A
+        mat_row = mat[i]
         
         # Repeat mat_row for each regulator
         smp_mat = np.repeat(mat_row, n_repeat, axis=0)
@@ -70,16 +70,16 @@ def run_ulm(mat, net, source='source', target='target', weight='weight', min_n=5
     Parameters
     ----------
     mat : list, pd.DataFrame or AnnData
-        List of [genes, matrix], dataframe (samples x genes) or an AnnData
+        List of [features, matrix], dataframe (samples x features) or an AnnData
         instance.
     net : pd.DataFrame
         Network in long format.
     source : str
-        Column name with source nodes.
+        Column name in net with source nodes.
     target : str
-        Column name with target nodes.
+        Column name in net with target nodes.
     weight : str
-        Column name with weights.
+        Column name in net with weights.
     min_n : int
         Minimum of targets per source. If less, sources are removed.
     verbose : bool
@@ -87,8 +87,8 @@ def run_ulm(mat, net, source='source', target='target', weight='weight', min_n=5
     
     Returns
     -------
-    estimate : ulm activity estimates.
-    pvals : p-values of the obtained activities.
+    Returns ulm activity estimates and p-values or stores them in 
+    `mat.obsm['ulm_estimate']` and `mat.obsm['ulm_pvals']`.
     """
     
     # Extract sparse matrix and array of genes
@@ -106,7 +106,7 @@ def run_ulm(mat, net, source='source', target='target', weight='weight', min_n=5
         print('Running ulm on {0} samples and {1} sources.'.format(m.shape[0], net.shape[1]))
     
     # Run estimate
-    estimate = ulm(m, net.A, verbose=verbose)
+    estimate = ulm(m.A, net.A, verbose=verbose)
     
     # Get pvalues
     df = net.shape[0] - 2

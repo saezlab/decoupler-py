@@ -1,13 +1,13 @@
 from .pre import extract, match, rename_net, get_net_mat, filt_min_n
 from .utils import melt, show_methods, check_corr, get_acts
-from .method_wmean import *
-from .method_wsum import *
-from .method_ulm import *
-from .method_mlm import *
-from .method_ora import *
-from .method_gsva import *
-from .method_viper import *
-from .method_aucell import *
+from .method_wmean import run_wmean, wmean
+from .method_wsum import run_wsum, wsum
+from .method_ulm import run_ulm, ulm
+from .method_mlm import run_mlm, mlm
+from .method_ora import run_ora, ora
+from .method_gsva import run_gsva, gsva
+from .method_viper import run_viper, viper
+from .method_aucell import run_aucell, aucell
 from .decouple import decouple
 from .consensus import run_consensus
 from .omnip import *

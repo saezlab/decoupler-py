@@ -21,9 +21,9 @@ def mlm(mat, net):
     
     Parameters
     ----------
-    mat : csr_matrix
-        Gene expression matrix.
-    net : csr_matrix
+    mat : np.array
+        Input matrix with molecular readouts.
+    net : np.array
         Regulatory adjacency matrix.
     
     Returns
@@ -32,7 +32,7 @@ def mlm(mat, net):
     """
     
     X = np.hstack([np.ones((net.shape[0],)).reshape(-1,1), net])
-    y = mat.T.A
+    y = mat.T
 
     coef, residues, rank, singular = linalg.lstsq(X, y, check_finite=False)
     df = X.shape[0] - X.shape[1]
@@ -44,7 +44,8 @@ def mlm(mat, net):
     return t[:,1:]
 
 
-def run_mlm(mat, net, source='source', target='target', weight='weight', min_n=5, verbose=False):
+def run_mlm(mat, net, source='source', target='target', weight='weight', min_n=5, 
+            verbose=False):
     """
     Multivariate Linear Model (MLM).
     
@@ -53,16 +54,16 @@ def run_mlm(mat, net, source='source', target='target', weight='weight', min_n=5
     Parameters
     ----------
     mat : list, pd.DataFrame or AnnData
-        List of [genes, matrix], dataframe (samples x genes) or an AnnData
+        List of [features, matrix], dataframe (samples x features) or an AnnData
         instance.
     net : pd.DataFrame
         Network in long format.
     source : str
-        Column name with source nodes.
+        Column name in net with source nodes.
     target : str
-        Column name with target nodes.
+        Column name in net with target nodes.
     weight : str
-        Column name with weights.
+        Column name in net with weights.
     min_n : int
         Minimum of targets per source. If less, sources are removed.
     verbose : bool
@@ -70,8 +71,8 @@ def run_mlm(mat, net, source='source', target='target', weight='weight', min_n=5
     
     Returns
     -------
-    estimate : activity estimates.
-    pvals : p-values of the obtained activities.
+    Returns mlm activity estimates and p-values or stores them in 
+    `mat.obsm['mlm_estimate']` and `mat.obsm['mlm_pvals']`.
     """
     
     # Extract sparse matrix and array of genes
@@ -89,7 +90,7 @@ def run_mlm(mat, net, source='source', target='target', weight='weight', min_n=5
         print('Running mlm on {0} samples and {1} sources.'.format(m.shape[0], net.shape[1]))
     
     # Run estimate
-    estimate = mlm(m, net.A)
+    estimate = mlm(m.A, net.A)
     
     # Get pvalues
     pvals = 2 * (1 - stats.t.cdf(np.abs(estimate), m.shape[1] - net.shape[1]))

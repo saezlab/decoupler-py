@@ -110,7 +110,8 @@ def run_aucell(mat, net, source='source', target='target', weight='weight',
     
     Returns
     -------
-    Returns aucell activity estimates or stores them in mat.obsm['aucell_estimate']
+    Returns aucell activity estimates or stores them in 
+    `mat.obsm['aucell_estimate']`.
     """
     
     # Extract sparse matrix and array of genes

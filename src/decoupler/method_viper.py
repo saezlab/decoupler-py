@@ -11,6 +11,23 @@ from anndata import AnnData
 
 
 def viper(mat, net):
+    """
+    Virtual Inference of Protein-activity by Enriched Regulon (VIPER).
+    
+    Computes VIPER to infer regulator activities.
+    
+    Parameters
+    ----------
+    mat : np.array
+        Input matrix with molecular readouts.
+    net : np.array
+        Regulatory adjacency matrix.
+    
+    Returns
+    -------
+    nes : Array of biological activities.
+    """
+    
     nes = np.sqrt(np.sum(net**2,axis=0))
     msk = np.sum(net != 0, axis=1) == 1
     wts = (net / np.sum(net, axis=0))[msk]
@@ -28,7 +45,9 @@ def viper(mat, net):
     
     return nes
 
-def run_viper(mat, net, source='source', target='target', weight='weight', min_n=5, verbose=False):
+
+def run_viper(mat, net, source='source', target='target', weight='weight', min_n=5, 
+              verbose=False):
     """
     Virtual Inference of Protein-activity by Enriched Regulon (VIPER).
     
@@ -37,16 +56,16 @@ def run_viper(mat, net, source='source', target='target', weight='weight', min_n
     Parameters
     ----------
     mat : list, pd.DataFrame or AnnData
-        List of [genes, matrix], dataframe (samples x genes) or an AnnData
+        List of [features, matrix], dataframe (samples x features) or an AnnData
         instance.
     net : pd.DataFrame
         Network in long format.
     source : str
-        Column name with source nodes.
+        Column name in net with source nodes.
     target : str
-        Column name with target nodes.
+        Column name in net with target nodes.
     weight : str
-        Column name with weights.
+        Column name in net with weights.
     min_n : int
         Minimum of targets per source. If less, sources are removed.
     verbose : bool
@@ -54,8 +73,8 @@ def run_viper(mat, net, source='source', target='target', weight='weight', min_n
     
     Returns
     -------
-    estimate : viper activity estimates.
-    pvals : p-values of the obtained activities.
+    Returns viper activity estimates and p-values or stores them in 
+    `mat.obsm['viper_estimate']` and `mat.obsm['viper_pvals']`.
     """
     
     # Extract sparse matrix and array of genes

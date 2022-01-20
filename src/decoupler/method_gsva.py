@@ -22,6 +22,7 @@ def ecdf(x):
         return (np.searchsorted(x, v, side='right') + 1) / n
     return _ecdf
 
+
 def apply_ecdf(x):
     return ecdf(x)(x)
 
@@ -101,6 +102,44 @@ def ks_set(D, I, c, fset, tau = 1, mx_diff = True, abs_rnk = False):
         mx_value = np.where(mx_pos > np.abs(mx_neg), mx_pos, mx_neg)
     
     return mx_value
+
+
+def gsva(mat, c, net, kcdf=False, verbose=False):
+    """
+    Gene Set Variation Analysis (GSVA).
+    
+    Computes GSVA to infer biological activities.
+    
+    Parameters
+    ----------
+    mat : np.array
+        Input matrix with molecular readouts.
+    c : np.array
+        Feature (column) names of mat.
+    net : pd.Series
+        Series of feature sets as lists.
+    kcdf : bool
+        Wether to use a Gaussian kernel or not during the non-parametric estimation 
+        of the cumulative distribution function. By default no kernel is used (faster),
+        to reproduce GSVA original behaviour in R set to True.
+    verbose : bool
+        Whether to show progress.
+    
+    Returns
+    -------
+    acts : Array of activities.
+    """
+    
+    # Get feature Density
+    D, I = get_D_I(mat, kcdf=kcdf)
+    
+    # Run GSVA for each feature set
+    acts = np.zeros((mat.shape[0], len(net)))
+    for j in tqdm(range(len(net)), disable=not verbose):
+        fset = net.iloc[j]
+        acts[:,j] = ks_set(D, I, c, fset)
+        
+    return acts
     
     
 def run_gsva(mat, net, source='source', target='target', weight='weight', 
@@ -114,16 +153,16 @@ def run_gsva(mat, net, source='source', target='target', weight='weight',
     Parameters
     ----------
     mat : list, pd.DataFrame or AnnData
-        List of [genes, matrix], dataframe (samples x genes) or an AnnData
+        List of [features, matrix], dataframe (samples x features) or an AnnData
         instance.
     net : pd.DataFrame
         Network in long format.
     source : str
-        Column name with source nodes.
+        Column name in net with source nodes.
     target : str
-        Column name with target nodes.
+        Column name in net with target nodes.
     weight : str
-        Column name with weights.
+        Column name in net with weights.
     kcdf : bool
         Wether to use a Gaussian kernel or not during the non-parametric estimation 
         of the cumulative distribution function. By default no kernel is used (faster),
@@ -146,7 +185,8 @@ def run_gsva(mat, net, source='source', target='target', weight='weight',
     
     Returns
     -------
-    estimate : gsva activity estimates.
+    Returns gsva activity estimates or stores them in 
+    `mat.obsm['gsva_estimate']`.
     """
     
     # Extract sparse matrix and array of genes
@@ -160,15 +200,8 @@ def run_gsva(mat, net, source='source', target='target', weight='weight',
     if verbose:
         print('Running gsva on {0} samples and {1} sources.'.format(m.shape[0], len(net)))
     
-    # Get feature Density
-    D, I = get_D_I(m.A, kcdf=kcdf)
-    
     # Run GSVA
-    estimate = np.zeros((len(r), len(net)))
-    for j in tqdm(range(len(net)), disable=not verbose):
-        fset = net.iloc[j]
-        es = ks_set(D, I, c, fset)
-        estimate[:,j] = es
+    estimate = gsva(m.A, c, net, kcdf=kcdf, verbose=verbose)
     estimate = pd.DataFrame(estimate, index=r, columns=net.index)
     estimate.name = 'gsva_estimate'
     
