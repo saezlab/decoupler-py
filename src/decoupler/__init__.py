@@ -7,6 +7,7 @@ from .method_mlm import *
 from .method_ora import *
 from .method_gsva import *
 from .method_viper import *
+from .method_aucell import *
 from .decouple import decouple
 from .consensus import run_consensus
 from .omnip import *
