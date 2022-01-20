@@ -136,7 +136,14 @@ def rename_net(net, source='source', target='target', weight='weight'):
     msg = 'Column name "{0}" not found in net. Please specify a valid column.'
     assert source in net.columns, msg.format(source)
     assert target in net.columns, msg.format(target)
-    assert weight in net.columns, msg.format(weight)
+    if weight is not None:
+        assert weight in net.columns, msg.format(weight)
+    else:
+        import sys
+        print("weight column not provided, will be set to 1s.", file=sys.stderr) 
+        net = net.copy()
+        net['weight'] = 1.0
+        weight = 'weight'
     
     # Rename
     net = net.rename(columns={source: 'source', target: 'target', weight: 'weight'})
