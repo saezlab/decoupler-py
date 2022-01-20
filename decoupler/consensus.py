@@ -43,8 +43,7 @@ def run_consensus(res, seed=42):
     
     Returns
     -------
-    estimate : activity estimates.
-    pvals : p-values of the obtained activities.
+    Returns activity estimates (-log10(p-values)) and p-values.
     """
     
     acts = np.abs([res[k].values for k in res if 'pvals' not in k])

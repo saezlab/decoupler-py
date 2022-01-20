@@ -3,7 +3,7 @@ decouple main function.
 Code to run methods simultaneously. 
 """
 
-from decoupler import run_ulm, ulm, run_wmean, run_wsum, run_mlm, run_ora
+import decoupler as dc
 from anndata import AnnData
 
 import pandas as pd
@@ -11,9 +11,18 @@ import pandas as pd
 from .consensus import run_consensus
 
 
+def get_wrappers(methods):
+    tmp = []
+    for method in methods:
+        try:
+            tmp.append(getattr(dc, 'run_'+method))
+        except:
+            raise ValueError('Method {0} not available, please run show_methods() to see the list of available methods.'.format(method))
+    return tmp
+
 def decouple(mat, net, source='source', target='target', weight='weight',
-             methods = ['wmean', 'wsum', 'ulm', 'mlm', 'ora'], args = {},
-             consensus=True, min_n=5, verbose=True):
+             methods = None, args = {}, consensus=True, min_n=5, 
+             verbose=True):
     """
     Decouple function.
     
@@ -22,16 +31,16 @@ def decouple(mat, net, source='source', target='target', weight='weight',
     Parameters
     ----------
     mat : list, pd.DataFrame or AnnData
-        List of [genes, matrix], dataframe (samples x genes) or an AnnData
+        List of [features, matrix], dataframe (samples x features) or an AnnData
         instance.
     net : pd.DataFrame
         Network in long format.
     source : str
-        Column name with source nodes.
+        Column name in net with source nodes.
     target : str
-        Column name with target nodes.
+        Column name in net with target nodes.
     weight : str
-        Column name with weights.
+        Column name in net with weights.
     methods : list, tuple
         List of methods to run.
     args : dict
@@ -47,16 +56,19 @@ def decouple(mat, net, source='source', target='target', weight='weight',
     Returns
     -------
     results : dict of scores and p-values.
+    Returns dictionary of activity estimates and p-values or stores them in 
+    `mat.obsm['method_estimate']` and `mat.obsm['method_pvals']` for each 
+    method.
     """
     
-    # List of available methods
-    methods_dict = {
-        'wmean' : run_wmean,
-        'wsum' : run_wsum,
-        'ulm' : run_ulm,
-        'mlm' : run_mlm,
-        'ora' : run_ora
-    }
+    # If no methods are provided use all
+    if methods is None:
+        methods = [method.split('run_')[1] for 
+                   method in dc.show_methods()['Function']
+                   if method != 'run_consensus']
+    
+    # Retrieve wrapper functions
+    wrappers = get_wrappers(methods)
     
     tmp = mat
     if isinstance(mat, AnnData):
@@ -66,30 +78,27 @@ def decouple(mat, net, source='source', target='target', weight='weight',
     results = {}
     
     # Run every method
-    for methd in methods:
-        if methd in methods_dict:
-            
-            # Init empty args
-            if methd not in args:
-                a = {}
-            else:
-                a = args[methd]
-                
-            # Overwrite min_n and verbose
-            a['min_n'] = min_n
-            a['verbose'] = verbose
-            
-            # Get method
-            f = methods_dict[methd]
-            
-            # Run method
-            res = f(mat=tmp, net=net, source=source, target=target, weight=weight, **a)
-            
-            # Store obtained dfs
-            for r in res:
-                results[r.name] = r
+    for methd,f in zip(methods,wrappers):
+        
+        # Init empty args
+        if methd not in args:
+            a = {}
         else:
-            raise ValueError('Method {0} not available, please run show_methods() to see the list of available methods.'.format(methd))
+            a = args[methd]
+
+        # Overwrite min_n and verbose
+        a['min_n'] = min_n
+        a['verbose'] = verbose
+
+        # Run method
+        res = f(mat=tmp, net=net, source=source, target=target, weight=weight, **a)
+        
+        if type(res) is not tuple:
+            res = [res]
+
+        # Store obtained dfs
+        for r in res:
+            results[r.name] = r
             
     # Run consensus score
     if consensus:

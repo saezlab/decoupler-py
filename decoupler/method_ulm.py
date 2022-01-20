@@ -45,7 +45,7 @@ def ulm(mat, net, TINY = 1.0e-20, verbose=False):
         mat_row = mat[i]
         
         # Repeat mat_row for each regulator
-        smp_mat = np.repeat(mat_row, n_repeat, axis=0)
+        smp_mat = np.repeat([mat_row], n_repeat, axis=0)
     
         # Compute lm
         cov = np.cov(net.T, smp_mat, bias=1)
