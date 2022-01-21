@@ -36,3 +36,48 @@ def get_progeny(top=100):
     p.columns = ['source','target','weight','p_value']
     
     return p
+
+
+def get_resource(name):
+    """
+    Wrapper to access resources inside Omnipath.
+    
+    This wrapper allows to easly query different prior knowledge resources. To check
+    available resources run [decoupler.show_resources]. For more information visit
+    the official website for [Omnipath](https://omnipathdb.org/).
+    
+    Parameters
+    ----------
+    name : str
+        Name of the resource to query.
+    
+    Returns
+    -------
+    DataFrame in long format relating genes to biological entities.
+    """
+    
+    import omnipath as op
+    
+    resources = show_resources()
+    msg = '{0} is not a valid resource. Please, run decoupler.show_resources to see the list of available resources.'
+    assert name in resources, msg.format(name)
+    
+    df = op.requests.Annotations.get(resources=name)
+    df = df.set_index(['record_id', 'uniprot', 'genesymbol', 'entity_type', 'source', 'label'])
+    df = df.unstack('label').droplevel(axis = 1, level = 0)
+    df = df.drop(columns=[name for name in df.index.names if name in df.columns]).reset_index()
+    df = df.drop(columns=['record_id','uniprot','entity_type','source'])
+    return df
+
+
+def show_resources():
+    """
+    Shows the available resources in Omnipath. For more information visit
+    the official website for [Omnipath](https://omnipathdb.org/).
+    
+    Returns
+    -------
+    List of available resources to query with [decoupler.get_resource].
+    """
+    import omnipath as op
+    return list(op.requests.Annotations.resources())
