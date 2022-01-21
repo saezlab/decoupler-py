@@ -6,6 +6,7 @@ from .method_ulm import run_ulm, ulm
 from .method_mlm import run_mlm, mlm
 from .method_ora import run_ora, ora
 from .method_gsva import run_gsva, gsva
+from .method_gsea import run_gsea, gsea
 from .method_viper import run_viper, viper
 from .method_aucell import run_aucell, aucell
 from .decouple import decouple
