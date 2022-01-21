@@ -61,6 +61,8 @@ def run_wsum(mat, net, source='source', target='target', weight='weight', times=
         Column name in net with weights.
     min_n : int
         Minimum of targets per source. If less, sources are removed.
+    times : int
+        How many random permutations to do.
     seed : int
         Random seed to use.
     verbose : bool

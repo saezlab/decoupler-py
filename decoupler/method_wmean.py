@@ -62,6 +62,8 @@ def run_wmean(mat, net, source='source', target='target', weight='weight', times
         Column name in net with target nodes.
     weight : str
         Column name in net with weights.
+    times : int
+        How many random permutations to do.
     min_n : int
         Minimum of targets per source. If less, sources are removed.
     seed : int
