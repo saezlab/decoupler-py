@@ -60,7 +60,9 @@ def run_consensus(res, seed=42):
     
     # Transform to df
     k = list(res.keys())[0]
-    pvals = pd.DataFrame(pvals, index=res[k].index, columns=res[k].columns[idx])
+    columns = res[k].columns[idx]
+    idx = np.argsort(columns)
+    pvals = pd.DataFrame(pvals[:,idx], index=res[k].index, columns=columns[idx])
     pvals.name = 'consensus_pvals'
     pvals.columns.name = None
     pvals.index.name = None

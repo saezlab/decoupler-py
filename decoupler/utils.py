@@ -181,7 +181,7 @@ def get_acts(adata, obsm_key):
                       )
 
 
-def get_toy_data(n_samples=12):
+def get_toy_data(n_samples=24, seed=42):
     """
     Generate a toy `mat` and `net` for testig.
     
@@ -189,6 +189,8 @@ def get_toy_data(n_samples=12):
     ----------
     n_samples : int
         Number of samples to generate.
+    seed : int
+        Random seed to use.
     
     Returns
     -------
@@ -201,32 +203,36 @@ def get_toy_data(n_samples=12):
     net = pd.DataFrame(
         [
 
-        ['T1', 'G1', 1], 
-        ['T1', 'G2', 1], 
-        ['T1', 'G3', 1],
+        ['T1', 'G01', 1], 
+        ['T1', 'G02', 1], 
+        ['T1', 'G03', 1],
 
-        ['T2', 'G6', 1], 
-        ['T2', 'G7', 1], 
-        ['T2', 'G8', 1],
+        ['T2', 'G06', 1], 
+        ['T2', 'G07', 1], 
+        ['T2', 'G08', 1],
 
-        ['T3', 'G4', -1], 
-        ['T3', 'G7', -1],
-        ['T3', 'G8', -1],
+        ['T3', 'G01', 1],
+        ['T3', 'G04',-1], 
+        ['T3', 'G07',-1],
+        ['T3', 'G08',-1],
 
         ],
         columns = ['source', 'target', 'weight']
     )
 
     # Simulate two population of samples with different molecular values
-    rng = default_rng(seed=42)
+    rng = default_rng(seed=seed)
+    n_features = 12
     n = int(n_samples/2)
     res = n_samples % 2
-    mat = np.vstack([
-        np.repeat([np.array([8,8,8,8,0,0,0,0]) + np.abs(rng.normal(size=8))], n, axis=0),
-        np.repeat([np.array([0,0,0,0,8,8,8,8]) + np.abs(rng.normal(size=8))], n+res, axis=0)
-    ])
-    features = ['G{0}'.format(i+1) for i in range(8)]
-    samples = ['S{0}'.format(i+1) for i in range(n_samples)]
+    row_a = np.array([8,8,8,8,0,0,0,0,0,0,0,0])
+    row_b = np.array([0,0,0,0,8,8,8,8,0,0,0,0])
+    row_a = [row_a + np.abs(rng.normal(size=n_features)) for _ in range(n)]
+    row_b = [row_b + np.abs(rng.normal(size=n_features)) for _ in range(n+res)]
+    
+    mat = np.vstack([row_a, row_b])
+    features = ['G{:02d}'.format(i+1) for i in range(n_features)]
+    samples = ['S{:02d}'.format(i+1) for i in range(n_samples)]
     mat = pd.DataFrame(mat, index=samples, columns=features)
     
     return mat, net
