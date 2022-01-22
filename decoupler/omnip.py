@@ -2,6 +2,13 @@ import pandas as pd
 import numpy as np
 
 
+def check_if_omnipath():
+    try:
+        import omnipath as op
+    except:
+        raise('omnipath is not installed. Please install it with: pip install omnipath')
+    return op
+
 def get_progeny(top=100):
     """
     Pathway RespOnsive GENes for activity inference (PROGENy).
@@ -22,7 +29,7 @@ def get_progeny(top=100):
     their associated weights and p-values.
     """
     
-    import omnipath as op
+    op = check_if_omnipath()
     
     p = op.requests.Annotations.get(resources='PROGENy')
     p = p.set_index(['record_id', 'uniprot', 'genesymbol', 'entity_type', 'source', 'label'])
@@ -56,7 +63,7 @@ def get_resource(name):
     DataFrame in long format relating genes to biological entities.
     """
     
-    import omnipath as op
+    op = check_if_omnipath()
     
     resources = show_resources()
     msg = '{0} is not a valid resource. Please, run decoupler.show_resources to see the list of available resources.'
@@ -79,5 +86,7 @@ def show_resources():
     -------
     List of available resources to query with [decoupler.get_resource].
     """
-    import omnipath as op
+    
+    op = check_if_omnipath()
+    
     return list(op.requests.Annotations.resources())
