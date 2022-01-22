@@ -73,7 +73,7 @@ def ora(obs, lexp, n_background=20000):
 
 def run_ora(mat, net, source='source', target='target', weight='weight', 
             n_up=None, n_bottom=0, n_background=20000, min_n=5, 
-            seed=42, verbose=False):
+            seed=42, verbose=False, use_raw=True):
     """
     Over Representation Analysis (ORA).
     
@@ -103,7 +103,9 @@ def run_ora(mat, net, source='source', target='target', weight='weight',
     seed : int
         Random seed to use.
     verbose : bool
-        Whether to show progress. 
+        Whether to show progress.
+    use_raw : bool
+        Use raw attribute of mat if present.
     
     Returns
     -------
@@ -113,7 +115,7 @@ def run_ora(mat, net, source='source', target='target', weight='weight',
     """
     
     # Extract sparse matrix and array of genes
-    m, r, c = extract(mat)
+    m, r, c = extract(mat, use_raw=use_raw)
     
     # Set up/bottom masks
     if n_up is None:

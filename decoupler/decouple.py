@@ -20,9 +20,10 @@ def get_wrappers(methods):
             raise ValueError('Method {0} not available, please run show_methods() to see the list of available methods.'.format(method))
     return tmp
 
+
 def decouple(mat, net, source='source', target='target', weight='weight',
              methods = None, args = {}, consensus=True, min_n=5, 
-             verbose=True):
+             verbose=True, use_raw=True):
     """
     Decouple function.
     
@@ -51,7 +52,9 @@ def decouple(mat, net, source='source', target='target', weight='weight',
     min_n : int
         Minimum of targets per source. If less, sources are removed.
     verbose : bool
-        Whether to show progress. 
+        Whether to show progress.
+    use_raw : bool
+        Use raw attribute of mat if present.
     
     Returns
     -------
@@ -86,9 +89,10 @@ def decouple(mat, net, source='source', target='target', weight='weight',
         else:
             a = args[methd]
 
-        # Overwrite min_n and verbose
+        # Overwrite min_n, verbose and use_raw
         a['min_n'] = min_n
         a['verbose'] = verbose
+        a['use_raw'] = use_raw
 
         # Run method
         res = f(mat=tmp, net=net, source=source, target=target, weight=weight, **a)

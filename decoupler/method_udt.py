@@ -57,7 +57,7 @@ def udt(mat, net, min_leaf=5, seed=42, verbose=False):
 
 
 def run_udt(mat, net, source='source', target='target', weight='weight', 
-            min_leaf=5, min_n=5, seed=42, verbose=False):
+            min_leaf=5, min_n=5, seed=42, verbose=False, use_raw=True):
     """
     Univariate Decision Tree (UDT).
     
@@ -83,7 +83,9 @@ def run_udt(mat, net, source='source', target='target', weight='weight',
     seed : int
         Random seed to use.
     verbose : bool
-        Whether to show progress. 
+        Whether to show progress.
+    use_raw : bool
+        Use raw attribute of mat if present.
     
     Returns
     -------
@@ -92,7 +94,7 @@ def run_udt(mat, net, source='source', target='target', weight='weight',
     """
     
     # Extract sparse matrix and array of genes
-    m, r, c = extract(mat)
+    m, r, c = extract(mat, use_raw=use_raw)
     
     # Transform net
     net = rename_net(net, source=source, target=target, weight=weight)
@@ -105,7 +107,7 @@ def run_udt(mat, net, source='source', target='target', weight='weight',
     if verbose:
         print('Running udt on {0} samples and {1} sources.'.format(m.shape[0], net.shape[1]))
     
-    # Run estimate
+    # Run UDT
     estimate = udt(m.A, net.A, min_leaf=min_leaf, seed=seed, verbose=verbose)
     
     # Transform to df

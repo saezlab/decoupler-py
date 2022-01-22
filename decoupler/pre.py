@@ -10,20 +10,25 @@ import pandas as pd
 from anndata import AnnData
 
 
-def extract(mat, dtype=np.float32):
+def extract(mat, use_raw=True, dtype=np.float32):
     """
     Processes different input types so that they can be used downstream. 
     
     Parameters
     ----------
     mat : list, pd.DataFrame or AnnData
-        List of [genes, matrix], dataframe (samples x genes) or an AnnData
+        List of [matrix, samples, features], dataframe (samples x features) or an AnnData
         instance.
+    use_raw : bool
+        Use `raw` attribute of `adata` if present.
+    dtype : type
+        Type of float used.
     
     Returns
     -------
     m : sparse matrix
-    c : array of genes
+    r : array of samples
+    c : array of features
     """
     
     if type(mat) is list:
@@ -36,12 +41,19 @@ def extract(mat, dtype=np.float32):
         r = mat.index.values
         c = mat.columns.values
     elif type(mat) is AnnData:
-        m = csr_matrix(mat.X)
+        if use_raw:
+            if mat.raw is None:
+                raise ValueError("Received `use_raw=True`, but `mat.raw` is empty.")
+            m = mat.raw.X
+            c = mat.raw.var.index.values
+        else:
+            m = csr_matrix(mat.X)
+            c = mat.var.index.values
         r = mat.obs.index.values
-        c = mat.var.index.values
+            
     else:
-        raise ValueError("""mat must be a list of [matrix, samples, genes], 
-        dataframe (samples x genes) or an AnnData instance.""")
+        raise ValueError("""mat must be a list of [matrix, samples, features], 
+        dataframe (samples x features) or an AnnData instance.""")
     
     # Sort genes
     msk = np.argsort(c)

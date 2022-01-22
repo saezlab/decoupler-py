@@ -80,7 +80,7 @@ def aucell(mat, c, net, n_up, verbose=False):
 
 
 def run_aucell(mat, net, source='source', target='target', weight='weight', 
-               n_up=None, min_n=5, seed=42, verbose=False):
+               n_up=None, min_n=5, seed=42, verbose=False, use_raw=True):
     """
     AUCell.
     
@@ -107,6 +107,8 @@ def run_aucell(mat, net, source='source', target='target', weight='weight',
         Random seed to use.
     verbose : bool
         Whether to show progress. 
+    use_raw : bool
+        Use raw attribute of mat if present.
     
     Returns
     -------
@@ -115,12 +117,13 @@ def run_aucell(mat, net, source='source', target='target', weight='weight',
     """
     
     # Extract sparse matrix and array of genes
-    m, r, c = extract(mat)
+    m, r, c = extract(mat, use_raw=use_raw)
     
     # Set n_up
     if n_up is None:
         n_up = np.round(0.05*len(c))
-    assert 0 < n_up, 'n_up needs to be a value higher than 0.'
+    if not 0 < n_up:
+        raise ValueError('n_up needs to be a value higher than 0.')
     
     # Transform net
     net = rename_net(net, source=source, target=target, weight=weight)

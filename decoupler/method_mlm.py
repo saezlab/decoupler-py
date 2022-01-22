@@ -45,7 +45,7 @@ def mlm(mat, net):
 
 
 def run_mlm(mat, net, source='source', target='target', weight='weight', min_n=5, 
-            verbose=False):
+            verbose=False, use_raw=True):
     """
     Multivariate Linear Model (MLM).
     
@@ -67,7 +67,9 @@ def run_mlm(mat, net, source='source', target='target', weight='weight', min_n=5
     min_n : int
         Minimum of targets per source. If less, sources are removed.
     verbose : bool
-        Whether to show progress. 
+        Whether to show progress.
+    use_raw : bool
+        Use raw attribute of mat if present.
     
     Returns
     -------
@@ -76,7 +78,7 @@ def run_mlm(mat, net, source='source', target='target', weight='weight', min_n=5
     """
     
     # Extract sparse matrix and array of genes
-    m, r, c = extract(mat)
+    m, r, c = extract(mat, use_raw=use_raw)
     
     # Transform net
     net = rename_net(net, source=source, target=target, weight=weight)
@@ -89,7 +91,7 @@ def run_mlm(mat, net, source='source', target='target', weight='weight', min_n=5
     if verbose:
         print('Running mlm on {0} samples and {1} sources.'.format(m.shape[0], net.shape[1]))
     
-    # Run estimate
+    # Run MLM
     estimate = mlm(m.A, net.A)
     
     # Get pvalues

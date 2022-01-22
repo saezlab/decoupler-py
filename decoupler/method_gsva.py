@@ -144,7 +144,7 @@ def gsva(mat, c, net, kcdf=False, verbose=False):
     
 def run_gsva(mat, net, source='source', target='target', weight='weight', 
              kcdf=False, mx_diff = True, abs_rnk = False, min_n=5, 
-             verbose=False):
+             verbose=False, use_raw=True):
     """
     Gene Set Variation Analysis (GSVA).
     
@@ -181,7 +181,9 @@ def run_gsva(mat, net, source='source', target='target', weight='weight',
     min_n : int
         Minimum of targets per source. If less, sources are removed.
     verbose : bool
-        Whether to show progress. 
+        Whether to show progress.
+    use_raw : bool
+        Use raw attribute of mat if present.
     
     Returns
     -------
@@ -190,7 +192,7 @@ def run_gsva(mat, net, source='source', target='target', weight='weight',
     """
     
     # Extract sparse matrix and array of genes
-    m, r, c = extract(mat)
+    m, r, c = extract(mat, use_raw=use_raw)
     
     # Transform net
     net = rename_net(net, source=source, target=target, weight=weight)
@@ -202,6 +204,8 @@ def run_gsva(mat, net, source='source', target='target', weight='weight',
     
     # Run GSVA
     estimate = gsva(m.A, c, net, kcdf=kcdf, verbose=verbose)
+    
+    # Transform to df
     estimate = pd.DataFrame(estimate, index=r, columns=net.index)
     estimate.name = 'gsva_estimate'
     

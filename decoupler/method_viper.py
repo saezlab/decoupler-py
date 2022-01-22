@@ -47,7 +47,7 @@ def viper(mat, net):
 
 
 def run_viper(mat, net, source='source', target='target', weight='weight', min_n=5, 
-              verbose=False):
+              verbose=False, use_raw=True):
     """
     Virtual Inference of Protein-activity by Enriched Regulon (VIPER).
     
@@ -70,6 +70,8 @@ def run_viper(mat, net, source='source', target='target', weight='weight', min_n
         Minimum of targets per source. If less, sources are removed.
     verbose : bool
         Whether to show progress.
+    use_raw : bool
+        Use raw attribute of mat if present.
     
     Returns
     -------
@@ -78,7 +80,7 @@ def run_viper(mat, net, source='source', target='target', weight='weight', min_n
     """
     
     # Extract sparse matrix and array of genes
-    m, r, c = extract(mat)
+    m, r, c = extract(mat, use_raw=use_raw)
     
     # Transform net
     net = rename_net(net, source=source, target=target, weight=weight)
@@ -91,7 +93,7 @@ def run_viper(mat, net, source='source', target='target', weight='weight', min_n
     if verbose:
         print('Running viper on {0} samples and {1} sources.'.format(m.shape[0], net.shape[1]))
     
-    # Run estimate
+    # Run VIPER
     estimate = viper(m.A, net.A)
     
     # Get pvalues
