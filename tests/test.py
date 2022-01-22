@@ -3,6 +3,7 @@ from pandas._testing import assert_frame_equal
 
 import pandas as pd
 import numpy as np
+from scipy.sparse import csr_matrix
 
 from anndata import AnnData
 
@@ -135,7 +136,8 @@ class TestPre(unittest.TestCase):
         self.assertEqual(list(pred_c), list(expt_c))
         
         # AnnData
-        adata = AnnData(mat, obs=pd.DataFrame(index=r), var=pd.DataFrame(index=c))
+        adata = AnnData(csr_matrix(mat), obs=pd.DataFrame(index=r), var=pd.DataFrame(index=c))
+        adata.raw = adata
         
         pred_mat, pred_r, pred_c = extract(adata)
         expt_mat, expt_r, expt_c = [mat, r, c]
