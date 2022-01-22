@@ -179,3 +179,54 @@ def get_acts(adata, obsm_key):
                        uns=uns,
                        obsm=obsm,
                       )
+
+
+def get_toy_data(n_samples=12):
+    """
+    Generate a toy `mat` and `net` for testig.
+    
+    Parameters
+    ----------
+    n_samples : int
+        Number of samples to generate.
+    
+    Returns
+    -------
+    `mat` and `net` examples.
+    """
+    
+    from numpy.random import default_rng
+
+    # Network model
+    net = pd.DataFrame(
+        [
+
+        ['T1', 'G1', 1], 
+        ['T1', 'G2', 1], 
+        ['T1', 'G3', 1],
+
+        ['T2', 'G6', 1], 
+        ['T2', 'G7', 1], 
+        ['T2', 'G8', 1],
+
+        ['T3', 'G4', -1], 
+        ['T3', 'G7', -1],
+        ['T3', 'G8', -1],
+
+        ],
+        columns = ['source', 'target', 'weight']
+    )
+
+    # Simulate two population of samples with different molecular values
+    rng = default_rng(seed=42)
+    n = int(n_samples/2)
+    res = n_samples % 2
+    mat = np.vstack([
+        np.repeat([np.array([8,8,8,8,0,0,0,0]) + np.abs(rng.normal(size=8))], n, axis=0),
+        np.repeat([np.array([0,0,0,0,8,8,8,8]) + np.abs(rng.normal(size=8))], n+res, axis=0)
+    ])
+    features = ['G{0}'.format(i+1) for i in range(8)]
+    samples = ['S{0}'.format(i+1) for i in range(n_samples)]
+    mat = pd.DataFrame(mat, index=samples, columns=features)
+    
+    return mat, net
