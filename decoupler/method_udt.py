@@ -1,6 +1,6 @@
 """
-Method MDT.
-Code to run the Multivariate Decision Tree (MDT) method. 
+Method UDT.
+Code to run the Univariate Decision Tree (UDT) method. 
 """
 
 import numpy as np
@@ -9,22 +9,26 @@ import pandas as pd
 from .pre import extract, match, rename_net, get_net_mat, filt_min_n
 
 from anndata import AnnData
-from sklearn.ensemble import RandomForestRegressor
+from sklearn import tree
 from tqdm import tqdm
 
 
-def fit_rf(net, sample, trees=100, min_leaf=5, n_jobs=4, seed=42):
-    regr = RandomForestRegressor(n_estimators=trees, min_samples_leaf=min_leaf, 
-                                 n_jobs=n_jobs, random_state=seed)
-    regr.fit(net, sample)
-    return regr.feature_importances_
+def fit_dt(regulator, sample, min_leaf=5, seed=42):
+    # Fit DT
+    x, y = regulator.reshape(-1,1), sample.reshape(-1,1)
+    regr = tree.DecisionTreeRegressor(min_samples_leaf=min_leaf,
+                                      random_state=seed)
+    regr.fit(x, y)
+    
+    # Get importance
+    return regr.tree_.compute_feature_importances(normalize=False)[0]
         
 
-def mdt(mat, net, trees=100, min_leaf=5, n_jobs=4, seed=42, verbose=False):
+def udt(mat, net, min_leaf=5, seed=42, verbose=False):
     """
-    Multivariate Decision Tree (MDT).
+    Univariate Decision Tree (UDT).
     
-    Computes MDT to infer regulator activities.
+    Computes UDT to infer regulator activities.
     
     Parameters
     ----------
@@ -32,16 +36,12 @@ def mdt(mat, net, trees=100, min_leaf=5, n_jobs=4, seed=42, verbose=False):
         Input matrix with molecular readouts.
     net : np.array
         Regulatory adjacency matrix.
-    trees : int
-        Number of trees in the forest.
     min_leaf : int
         The minimum number of samples required to be at a leaf node.
-    n_jobs : int
-        Number of jobs to run in parallel
     seed : int
         Random seed to use.
     verbose : bool
-        Whether to show progress.
+        Whether to show progress. 
     
     Returns
     -------
@@ -50,17 +50,18 @@ def mdt(mat, net, trees=100, min_leaf=5, n_jobs=4, seed=42, verbose=False):
     
     acts = np.zeros((mat.shape[0], net.shape[1]))
     for i in tqdm(range(mat.shape[0]), disable=not verbose):
-        acts[i] = fit_rf(net, mat[i], trees=trees, min_leaf=min_leaf, n_jobs=n_jobs, seed=seed)
+        for j in range(net.shape[1]): 
+            acts[i,j] = fit_dt(net[:,j], mat[i], min_leaf=min_leaf, seed=seed)
     
     return acts
 
 
-def run_mdt(mat, net, source='source', target='target', weight='weight', trees=100, 
-            min_leaf=5, n_jobs=4, min_n=5, seed=42, verbose=False):
+def run_udt(mat, net, source='source', target='target', weight='weight', 
+            min_leaf=5, min_n=5, seed=42, verbose=False):
     """
-    Multivariate Decision Tree (MDT).
+    Univariate Decision Tree (UDT).
     
-    Wrapper to run MDT.
+    Wrapper to run UDT.
     
     Parameters
     ----------
@@ -75,12 +76,8 @@ def run_mdt(mat, net, source='source', target='target', weight='weight', trees=1
         Column name in net with target nodes.
     weight : str
         Column name in net with weights.
-    trees : int
-        Number of trees in the forest.
     min_leaf : int
         The minimum number of samples required to be at a leaf node.
-    n_jobs : int
-        Number of jobs to run in parallel
     min_n : int
         Minimum of targets per source. If less, sources are removed.
     seed : int
@@ -90,8 +87,8 @@ def run_mdt(mat, net, source='source', target='target', weight='weight', trees=1
     
     Returns
     -------
-    Returns mdt activity estimates or stores them in 
-    `mat.obsm['mdt_estimate']`.
+    Returns udt activity estimates or stores them in 
+    `mat.obsm['udt_estimate']`.
     """
     
     # Extract sparse matrix and array of genes
@@ -106,15 +103,14 @@ def run_mdt(mat, net, source='source', target='target', weight='weight', trees=1
     net = match(m, c, targets, net)
     
     if verbose:
-        print('Running mdt on {0} samples and {1} sources.'.format(m.shape[0], net.shape[1]))
+        print('Running udt on {0} samples and {1} sources.'.format(m.shape[0], net.shape[1]))
     
     # Run estimate
-    estimate = mdt(m.A, net.A, trees=trees, min_leaf=min_leaf, 
-                   n_jobs=n_jobs, seed=seed, verbose=verbose)
+    estimate = udt(m.A, net.A, min_leaf=min_leaf, seed=seed, verbose=verbose)
     
     # Transform to df
     estimate = pd.DataFrame(estimate, index=r, columns=sources)
-    estimate.name = 'mdt_estimate'
+    estimate.name = 'udt_estimate'
     
     # AnnData support
     if isinstance(mat, AnnData):
