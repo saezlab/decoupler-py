@@ -46,7 +46,8 @@ def run_consensus(res, seed=42):
     Returns activity estimates (-log10(p-values)) and p-values.
     """
     
-    acts = np.abs([res[k].values for k in res if 'pvals' not in k])
+    acts = np.abs([res[k].values for k in res if 'pvals' not in k and 
+                   not np.all(np.isnan(res[k].values.astype(np.float32)))])
     
     # Randomize sources order to break ties randomly
     rng = default_rng(seed=seed)
