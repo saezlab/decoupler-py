@@ -11,9 +11,6 @@ class TestPre(unittest.TestCase):
     mat, net = dc.get_toy_data()
     
     def test_extract(self):
-        """
-        Test mat extraction with different inputs.
-        """
         
         mat, r, c = self.mat.values, self.mat.index, self.mat.columns
         
@@ -59,22 +56,29 @@ class TestPre(unittest.TestCase):
         mat, net = self.mat, self.net
         mat, r, c = dc.extract(mat)
         
-        dc.filt_min_n(c, net, min_n=4)
+        f_net = dc.filt_min_n(c, net, min_n=4)
+        
+        self.assertTrue(net.shape[0] > f_net.shape[1])
+        
+    def test_get_net_mat(self):
+        
+        net = self.net
+        sources, targets, regX = dc.get_net_mat(net)
+        
+        self.assertTrue(regX.shape[0] == len(targets))
+        self.assertTrue(regX.shape[1] == len(sources))
         
     def test_match(self):
         
         mat, net = self.mat, self.net
         mat, r, c = dc.extract(mat)
+        sources, targets, net = dc.get_net_mat(net)
         
-        dc.match(mat, c, r, net)
+        mnet = dc.match(mat, c, targets, net)
         
     def test_rename_net(self):
         
         net = self.net
         dc.rename_net(net, source='source', target='target', weight='weight')
         
-    def test_get_net_mat(self):
-        
-        net = self.net
-        dc.get_net_mat(net)
         

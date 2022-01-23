@@ -2,7 +2,7 @@ import unittest
 import decoupler as dc
 
 
-class TestPre(unittest.TestCase):
+class TestMethods(unittest.TestCase):
     
     mat, net = dc.get_toy_data()
     
