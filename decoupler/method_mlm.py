@@ -86,13 +86,13 @@ def run_mlm(mat, net, source='source', target='target', weight='weight', min_n=5
     sources, targets, net = get_net_mat(net)
     
     # Match arrays
-    net = match(m, c, targets, net)
+    net = match(c, targets, net)
     
     if verbose:
         print('Running mlm on {0} samples and {1} sources.'.format(m.shape[0], net.shape[1]))
     
     # Run MLM
-    estimate = mlm(m.A, net.A)
+    estimate = mlm(m.A, net)
     
     # Get pvalues
     pvals = 2 * (1 - stats.t.cdf(np.abs(estimate), m.shape[1] - net.shape[1]))

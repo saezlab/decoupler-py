@@ -9,18 +9,18 @@ import pandas as pd
 from .pre import extract, match, rename_net, get_net_mat, filt_min_n
 
 from anndata import AnnData
-from sklearn.ensemble import RandomForestRegressor
+from skranger.ensemble import RangerForestRegressor
 from tqdm import tqdm
 
 
 def fit_rf(net, sample, trees=100, min_leaf=5, n_jobs=4, seed=42):
-    regr = RandomForestRegressor(n_estimators=trees, min_samples_leaf=min_leaf, 
-                                 n_jobs=n_jobs, random_state=seed)
+    regr = RangerForestRegressor(n_estimators=trees, min_node_size=min_leaf, 
+                                 n_jobs=n_jobs, seed=seed, importance='impurity')
     regr.fit(net, sample)
     return regr.feature_importances_
         
 
-def mdt(mat, net, trees=100, min_leaf=5, n_jobs=4, seed=42, verbose=False):
+def mdt(mat, net, trees=10, min_leaf=5, n_jobs=4, seed=42, verbose=False):
     """
     Multivariate Decision Tree (MDT).
     
@@ -105,13 +105,13 @@ def run_mdt(mat, net, source='source', target='target', weight='weight', trees=1
     sources, targets, net = get_net_mat(net)
     
     # Match arrays
-    net = match(m, c, targets, net)
+    net = match(c, targets, net)
     
     if verbose:
         print('Running mdt on {0} samples and {1} sources.'.format(m.shape[0], net.shape[1]))
     
     # Run MDT
-    estimate = mdt(m.A, net.A, trees=trees, min_leaf=min_leaf, 
+    estimate = mdt(m.A, net, trees=trees, min_leaf=min_leaf, 
                    n_jobs=n_jobs, seed=seed, verbose=verbose)
     
     # Transform to df

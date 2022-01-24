@@ -74,7 +74,7 @@ class TestPre(unittest.TestCase):
         mat, r, c = dc.extract(mat)
         sources, targets, net = dc.get_net_mat(net)
         
-        mnet = dc.match(mat, c, targets, net)
+        mnet = dc.match(c, targets, net)
         
     def test_rename_net(self):
         

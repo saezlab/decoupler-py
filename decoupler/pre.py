@@ -63,7 +63,10 @@ def extract(mat, use_raw=True, dtype=np.float32):
 
 def filt_min_n(c, net, min_n=5):
     """
-    Filter sources of a net with less than min_n targets.
+    Removes sources of a `net` with less than min_n targets.
+    
+    First it filters target genes in `net` that are not in `mat` and
+    then removes sources with less than `min_n` targets. 
     
     Parameters
     ----------
@@ -81,9 +84,10 @@ def filt_min_n(c, net, min_n=5):
     
     # Find shared targets between mat and net
     msk = np.isin(net['target'], c)
+    net = net.loc[msk]
     
     # Count unique sources
-    sources, counts = np.unique(net[msk]['source'].values, return_counts=True)
+    sources, counts = np.unique(net['source'].values, return_counts=True)
     
     # Find sources with more than min_n targets
     msk = np.isin(net['source'], sources[counts >= min_n])
@@ -91,14 +95,12 @@ def filt_min_n(c, net, min_n=5):
     return net[msk]
 
 
-def match(mat, c, r, net):
+def match(c, r, net):
     """
     Match expression matrix with a regulatory adjacency matrix.
     
     Parameters
     ----------
-    mat : csr_matrix
-        Gene expression matrix.
     c : narray
         Column names of `mat`.
     r : narray
@@ -112,16 +114,13 @@ def match(mat, c, r, net):
     """
     
     # Init empty regX
-    regX = lil_matrix((c.shape[0], net.shape[1]))
+    regX = np.zeros((c.shape[0], net.shape[1]))
     
     # Match genes from mat, else are 0s
-    for i in range(c.shape[0]):
-        for j in range(r.shape[0]):
-            if c[i] == r[j]:
-                regX[i] = net[j]
-                break
+    idxs = np.searchsorted(c,r)
+    regX[idxs] = net
     
-    return csr_matrix(regX)
+    return regX
 
 
 def rename_net(net, source='source', target='target', weight='weight'):

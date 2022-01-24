@@ -18,7 +18,8 @@ setup(
     install_requires=["sklearn",
                       "tqdm",
                       "anndata",
-                      "fisher"
+                      "fisher",
+                      "skranger"
                      ],
     packages=["decoupler"],
     python_requires=">=3.8",

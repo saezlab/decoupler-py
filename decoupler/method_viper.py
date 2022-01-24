@@ -88,13 +88,13 @@ def run_viper(mat, net, source='source', target='target', weight='weight', min_n
     sources, targets, net = get_net_mat(net)
     
     # Match arrays
-    net = match(m, c, targets, net)
+    net = match(c, targets, net)
     
     if verbose:
         print('Running viper on {0} samples and {1} sources.'.format(m.shape[0], net.shape[1]))
     
     # Run VIPER
-    estimate = viper(m.A, net.A)
+    estimate = viper(m.A, net)
     
     # Get pvalues
     pvals = norm.cdf(-np.abs(estimate)) * 2

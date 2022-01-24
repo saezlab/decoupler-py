@@ -102,13 +102,13 @@ def run_udt(mat, net, source='source', target='target', weight='weight',
     sources, targets, net = get_net_mat(net)
     
     # Match arrays
-    net = match(m, c, targets, net)
+    net = match(c, targets, net)
     
     if verbose:
         print('Running udt on {0} samples and {1} sources.'.format(m.shape[0], net.shape[1]))
     
     # Run UDT
-    estimate = udt(m.A, net.A, min_leaf=min_leaf, seed=seed, verbose=verbose)
+    estimate = udt(m.A, net, min_leaf=min_leaf, seed=seed, verbose=verbose)
     
     # Transform to df
     estimate = pd.DataFrame(estimate, index=r, columns=sources)
