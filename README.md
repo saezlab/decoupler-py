@@ -1,4 +1,4 @@
-# decoupleR - Ensemble of methods to infer biological activities
+# decoupleR - Ensemble of methods to infer biological activities <img src="https://github.com/saezlab/decoupleR/blob/master/inst/figures/logo.svg?raw=1" align="right" width="120" />
 <!-- badges: start -->
 ![main_build](https://github.com/saezlab/decoupler-py/actions/workflows/python-package.yml/badge.svg)
 ![development_build](https://github.com/saezlab/decoupler-py/actions/workflows/python-package.yml/badge.svg?branch=development)
