@@ -26,7 +26,7 @@ def m_rename(m, name):
 
 def melt(df):
     """
-    Function to generate a long format dataframe similar to the one obtianed in
+    Function to generate a long format dataframe similar to the one obtained in
     the R implementation of decoupleR.
     
     Parameters
@@ -86,7 +86,7 @@ def melt(df):
 
 def show_methods():
     """
-    Shows the methods currently available in this implementation of decoupleR. 
+    Shows the available methods.
     The first column correspond to the function name in decoupleR and the 
     second to the method's full name.
     
@@ -203,18 +203,18 @@ def get_toy_data(n_samples=24, seed=42):
     net = pd.DataFrame(
         [
 
-        ['T1', 'G01', 1], 
-        ['T1', 'G02', 1], 
-        ['T1', 'G03', 1],
+        ['T1', 'G01',  1], 
+        ['T1', 'G02',  1], 
+        ['T1', 'G03',0.7],
 
-        ['T2', 'G06', 1], 
-        ['T2', 'G07', 1], 
-        ['T2', 'G08', 1],
+        ['T2', 'G06',  1], 
+        ['T2', 'G07',0.5], 
+        ['T2', 'G08',  1],
 
-        ['T3', 'G01', 1],
-        ['T3', 'G04',-1], 
-        ['T3', 'G07',-1],
-        ['T3', 'G08',-1],
+        ['T3', 'G01',  2],
+        ['T3', 'G03',1.2], 
+        ['T3', 'G10', -1],
+        ['T3', 'G11', -2],
 
         ],
         columns = ['source', 'target', 'weight']
