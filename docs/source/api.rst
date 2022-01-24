@@ -14,20 +14,28 @@ Preprocessing:
    :toctree: generated
 
    extract
+   filt_min_n
    match
    rename_net
    get_net_mat
+   
 
 Methods:
 --------
 .. autosummary::
    :toctree: generated
 
+   run_aucell
+   run_gsea
+   run_gsva
+   run_mdt
    run_mlm
-   run_ulm
-   run_wsum
-   run_wmean
    run_ora
+   run_udt
+   run_ulm
+   run_viper
+   run_wmean
+   run_wsum
    run_consensus
 
 Running multiple methods:
@@ -45,3 +53,5 @@ Utils:
    show_methods
    check_corr
    melt
+   get_acts
+   get_toy_data
