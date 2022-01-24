@@ -63,6 +63,9 @@ def aucell(mat, c, net, n_up, verbose=False):
     acts : Array of activities.
     """
     
+    # Make sure it's absolute value
+    mat = np.abs(mat)
+    
     # Rank data
     mat = rankdata(-mat, axis=1, method='ordinal')
     
