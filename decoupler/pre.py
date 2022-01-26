@@ -9,6 +9,8 @@ import pandas as pd
 
 from anndata import AnnData
 
+import numba as nb
+
 
 def extract(mat, use_raw=True, dtype=np.float32):
     """
@@ -58,7 +60,22 @@ def extract(mat, use_raw=True, dtype=np.float32):
     # Sort genes
     msk = np.argsort(c)
     
-    return m[:,msk].astype(dtype), r, c[msk]
+    return m[:,msk].astype(dtype), r.astype('U'), c[msk].astype('U')
+
+
+@nb.njit(parallel=True)
+def isin(matrix, index_to_remove):
+    # Faster implementation of np.isin
+    # Taken from https://stackoverflow.com/questions/53046473/numpy-isin-performance-improvement
+
+    out=np.empty(matrix.shape[0],dtype=nb.boolean)
+    for i in nb.prange(matrix.shape[0]):
+        if (matrix[i] == index_to_remove):
+            out[i]=False
+        else:
+            out[i]=True
+
+    return out
 
 
 def filt_min_n(c, net, min_n=5):
@@ -83,14 +100,14 @@ def filt_min_n(c, net, min_n=5):
     """
     
     # Find shared targets between mat and net
-    msk = np.isin(net['target'], c)
+    msk = isin(net['target'].values.astype('U'), c)
     net = net.loc[msk]
     
     # Count unique sources
-    sources, counts = np.unique(net['source'].values, return_counts=True)
+    sources, counts = np.unique(net['source'].values.astype('U'), return_counts=True)
     
     # Find sources with more than min_n targets
-    msk = np.isin(net['source'], sources[counts >= min_n])
+    msk = isin(net['source'].values.astype('U'), sources[counts >= min_n])
     
     return net[msk]
 
@@ -189,4 +206,4 @@ def get_net_mat(net):
     targets = X.index.values
     X = X.values
     
-    return sources, targets, X
+    return sources.astype('U'), targets.astype('U'), X
