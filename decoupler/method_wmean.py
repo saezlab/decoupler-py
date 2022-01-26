@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 from numpy.random import default_rng
+from scipy.sparse import csr_matrix
 
 from .pre import extract, match, rename_net, get_net_mat, filt_min_n
 from .method_wsum import wsum
@@ -39,7 +40,7 @@ def wmean(mat, net):
     # Divide by abs sum of weights
     x = x / np.sum(np.abs(net), axis=0)
         
-    return x
+    return x.A
 
 
 def run_wmean(mat, net, source='source', target='target', weight='weight', times=100, 
@@ -89,7 +90,7 @@ def run_wmean(mat, net, source='source', target='target', weight='weight', times
     sources, targets, net = get_net_mat(net)
     
     # Match arrays
-    net = match(c, targets, net)
+    net = csr_matrix(match(c, targets, net))
     
     if verbose:
         print('Running wmean on {0} samples and {1} sources.'.format(m.shape[0], net.shape[1]))
