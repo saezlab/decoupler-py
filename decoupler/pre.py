@@ -4,7 +4,7 @@ Functions to preprocess the data before running any method.
 """
 
 import numpy as np
-from scipy.sparse import csr_matrix, lil_matrix
+from scipy.sparse import csr_matrix
 import pandas as pd
 
 from anndata import AnnData
