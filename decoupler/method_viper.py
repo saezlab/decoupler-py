@@ -10,7 +10,7 @@ from .pre import extract, match, rename_net, get_net_mat, filt_min_n
 from anndata import AnnData
 
 
-def viper(mat, net):
+def viper(mat, net, wts=None):
     """
     Virtual Inference of Protein-activity by Enriched Regulon (VIPER).
     
@@ -28,14 +28,24 @@ def viper(mat, net):
     nes : Array of biological activities.
     """
     
-    msk = np.sum(net != 0, axis=1) >= 1
-    wts = np.abs(net) / np.max(np.abs(net), axis=0)
+    if wts is None:
+        wts = np.zeros(net.shape)
+        wts[net != 0] = 1
+    
+    wts = wts / np.max(wts, axis=0)
     nes = np.sqrt(np.sum(wts**2,axis=0))
     wts = (wts / np.sum(wts, axis=0))
-    net = np.sign(net)
+    
     t2 = rankdata(mat, method='average', axis=1) / (mat.shape[1] + 1)
-    t2 = norm.ppf(t2[:,msk])
-    sum1 = t2.dot((wts*net)[msk])
+    t1 = np.abs(t2 - 0.5) * 2
+    t1 = t1 + (1 - np.max(t1))/2
+    msk = np.sum(net != 0, axis=1) >= 1
+    t1, t2 = t1[:,msk], t2[:,msk]
+    net, wts = net[msk], wts[msk]
+    t1 = norm.ppf(t1)
+    t2 = norm.ppf(t2)
+    sum1 = t2.dot(wts*net)
+    sum2 = (1-np.abs(net))
     nes = sum1 * nes
     
     return nes
