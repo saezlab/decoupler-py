@@ -144,8 +144,9 @@ def aREA(mat, net, wts=None):
     t1 = norm.ppf(t1)
     t2 = norm.ppf(t2)
     sum1 = t2.dot(wts*net)
-    sum2 = (1-np.abs(net))
-    nes = sum1 * nes
+    sum2 = t1.dot((1-np.abs(net)) * wts)
+    tmp = (np.abs(sum1) + sum2 * (sum2 > 0)) * np.sign(sum1)
+    nes = tmp * nes
     
     return nes
 
