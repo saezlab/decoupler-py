@@ -128,6 +128,9 @@ def aREA(mat, net, wts=None):
         wts = np.zeros(net.shape)
         wts[net != 0] = 1
     
+    # Normalize net between -1 and 1
+    net = net / np.max(np.abs(net), axis=0)
+    
     wts = wts / np.max(wts, axis=0)
     nes = np.sqrt(np.sum(wts**2,axis=0))
     wts = (wts / np.sum(wts, axis=0))
