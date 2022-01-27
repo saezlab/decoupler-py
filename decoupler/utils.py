@@ -183,7 +183,7 @@ def get_acts(adata, obsm_key):
 
 def get_toy_data(n_samples=24, seed=42):
     """
-    Generate a toy `mat` and `net` for testig.
+    Generate a toy `mat` and `net` for testing.
     
     Parameters
     ----------
@@ -211,10 +211,10 @@ def get_toy_data(n_samples=24, seed=42):
         ['T2', 'G07',0.5], 
         ['T2', 'G08',  1],
 
-        ['T3', 'G01',  2],
-        ['T3', 'G03',1.2], 
-        ['T3', 'G10', -1],
-        ['T3', 'G11', -2],
+        ['T3', 'G06',-0.5],
+        ['T3', 'G07', -3], 
+        ['T3', 'G08', -1],
+        ['T3', 'G11', 1],
 
         ],
         columns = ['source', 'target', 'weight']
