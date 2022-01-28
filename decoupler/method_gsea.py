@@ -23,6 +23,15 @@ def get_M_I(mat):
     return mat, I
 
 
+@nb.njit(nb.f8(nb.f8[:], nb.i8))
+def std(arr, ddof):
+    N = arr.shape[0]
+    m = np.mean(arr)
+    var = np.sum((arr - m)**2)/(N-ddof)
+    sd = np.sqrt(var)
+    return sd
+
+
 @nb.njit(nb.f8(nb.f8[:], nb.i8[:], nb.i8, nb.i8[:], nb.i8[:], nb.i8, nb.f8))
 def ks_sample(D, I, n_genes, geneset_mask, fset, n_geneset, dec):
     
@@ -81,7 +90,7 @@ def ks_perms(D, I, fset, es, times):
     null_std = np.zeros(D.shape[0])
     for j in nb.prange(D.shape[0]):
         null_mean[j] = res[:,j].mean()
-        null_std[j] = res[:,j].std()
+        null_std[j] = std(res[:,j], 1)
         
     nes = (es - null_mean) / null_std
     
@@ -111,7 +120,7 @@ def ks_sets(D, I, net, offsets, times, seed):
     return m_es, m_nes
 
     
-def gsea(mat, net, times=1000, seed=42, verbose=False):
+def gsea(mat, net, times=100, seed=42, verbose=False):
     """
     Gene Set Enrichment Analysis (GSEA).
     
@@ -154,7 +163,7 @@ def gsea(mat, net, times=1000, seed=42, verbose=False):
     
     
 def run_gsea(mat, net, source='source', target='target', weight='weight', 
-             times=10, min_n=5, seed=42, verbose=False, use_raw=True):
+             times=100, min_n=5, seed=42, verbose=False, use_raw=True):
     """
     Gene Set Enrichment Analysis (GSEA).
     
