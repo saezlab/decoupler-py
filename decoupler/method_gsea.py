@@ -29,9 +29,6 @@ def ks_sample(D, I, n_genes, geneset_mask, fset, n_geneset, dec):
     sum_gset = 0.0
     for i in nb.prange(n_geneset):
         sum_gset += D[fset[i]]
-        
-    #if sum_gset == 0.0:
-    #    return 0.0
     
     mx_value_sign = 0.0
     cum_sum = 0.0
@@ -84,7 +81,7 @@ def ks_perms(D, I, fset, es, times):
     null_std = np.zeros(D.shape[0])
     for j in nb.prange(D.shape[0]):
         null_mean[j] = res[:,j].mean()
-        null_mean[j] = res[:,j].std()
+        null_std[j] = res[:,j].std()
         
     nes = (es - null_mean) / null_std
     
@@ -101,7 +98,8 @@ def ks_sets(D, I, net, offsets, times, seed):
     
     np.random.seed(seed)
     
-    starts = np.cumsum(offsets)
+    starts = np.zeros(n_gsets, dtype=nb.i8)
+    starts[1:] = np.cumsum(offsets)[:-1]
     for j in nb.prange(n_gsets):
         srt = starts[j]
         off = offsets[j] + srt
