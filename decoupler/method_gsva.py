@@ -13,6 +13,8 @@ from .pre import extract, match, rename_net, filt_min_n
 from anndata import AnnData
 from tqdm import tqdm
 
+import numba as nb
+
 
 def ecdf(x):
     x = np.sort(x)
@@ -57,54 +59,66 @@ def density(mat, kcdf=False):
     return D
 
 
-def rank_score(idxs, rev_idx):
-    return rev_idx[idxs]
-       
-    
+def rank_scores(I_idxs, rev_idx, n):
+    tmp = np.zeros(n)
+    tmp[I_idxs] = rev_idx
+    return tmp
+
+
 def get_D_I(mat, kcdf=False):
     D = density(mat, kcdf=kcdf)
     n = D.shape[1]
     rev_idx = np.abs(np.arange(start=n, stop=0, step=-1) - n / 2)
-    I = np.argsort(np.argsort(-D, axis=1))
-    for j in range(D.shape[0]):
-        D[j] = rank_score(I[j], rev_idx)
-    # NEED TO ARGSORT BACK AGAIN
-    I = np.argsort(I)
+    I = np.argsort(-D, axis=1)
+    D = np.apply_along_axis(rank_scores, 1, I, rev_idx, n)
     return D, I
+
+
+@nb.njit(nb.f8(nb.f8[:], nb.i8[:], nb.i8, nb.i8[:], nb.i8[:], nb.i8, nb.f8))
+def ks_sample(D, I, n_genes, geneset_mask, fset, n_geneset, dec):
     
+    sum_gset = 0.0
+    for i in nb.prange(n_geneset):
+        sum_gset += D[fset[i]]
     
-def ks_set(D, I, c, fset, tau = 1, mx_diff = True, abs_rnk = False):
-    msk = np.isin(c, fset)
-    f_idxs = np.where(np.isin(c, fset))[0]
-    s_idxs = np.arange(D.shape[0])
-    n_ftrs = len(c)
-    n_set = len(fset)
-    dec = 1.0 / (n_ftrs - n_set)
-    sum_gset = np.sum(np.power(D[:,f_idxs], tau), axis=1)
-    mx_value = 0.0
+    mx_value_sign = 0.0
     cum_sum = 0.0
     mx_pos = 0.0
     mx_neg = 0.0
-
-    for j in range(n_ftrs):
-        idx = I[:,j]
-        cum_sum += np.where(msk[idx], np.power(D[s_idxs,idx], tau) / sum_gset, -dec)
-        csum_bgr = cum_sum > mx_pos
-        mx_pos = np.where(csum_bgr, cum_sum, mx_pos)
-        csum_lwr = cum_sum < mx_neg
-        mx_neg = np.where(csum_lwr, cum_sum, mx_neg)
-
-    if mx_diff != 0:
-        mx_value = mx_pos + mx_neg
-        if abs_rnk != 0:
-            mx_value = mx_pos - mx_neg
-    else:
-        mx_value = np.where(mx_pos > np.abs(mx_neg), mx_pos, mx_neg)
     
-    return mx_value
+    for i in nb.prange(n_genes):
+        idx = I[i]
+        if geneset_mask[idx] == 1:
+            cum_sum += D[idx] / sum_gset
+        else:
+            cum_sum -= dec
+            
+        if cum_sum > mx_pos: mx_pos = cum_sum
+        if cum_sum < mx_neg: mx_neg = cum_sum 
+        
+    mx_value_sign = mx_pos + mx_neg
+    
+    return mx_value_sign
 
 
-def gsva(mat, c, net, kcdf=False, verbose=False):
+@nb.njit(nb.f8[:](nb.f8[:,:], nb.i8[:,:], nb.i8[:]), parallel=True)
+def ks_matrix(D, I, fset):
+    n_samples, n_genes = D.shape
+    n_geneset = fset.shape[0]
+    
+    geneset_mask = np.zeros(n_genes, dtype=nb.i8)
+    geneset_mask[fset] = 1
+    
+    dec = 1.0 / (n_genes - n_geneset)
+    
+    res = np.zeros(n_samples)
+    for i in nb.prange(n_samples):
+        res[i] = ks_sample(D[i], I[i], n_genes, geneset_mask, fset, n_geneset, dec)
+    
+    return res
+
+
+def gsva(mat, net, kcdf=False, verbose=False):
     """
     Gene Set Variation Analysis (GSVA).
     
@@ -114,8 +128,6 @@ def gsva(mat, c, net, kcdf=False, verbose=False):
     ----------
     mat : np.array
         Input matrix with molecular readouts.
-    c : np.array
-        Feature (column) names of mat.
     net : pd.Series
         Series of feature sets as lists.
     kcdf : bool
@@ -137,7 +149,7 @@ def gsva(mat, c, net, kcdf=False, verbose=False):
     acts = np.zeros((mat.shape[0], len(net)))
     for j in tqdm(range(len(net)), disable=not verbose):
         fset = net.iloc[j]
-        acts[:,j] = ks_set(D, I, c, fset)
+        acts[:,j] = ks_matrix(D, I, fset)
         
     return acts
     
@@ -197,13 +209,18 @@ def run_gsva(mat, net, source='source', target='target', weight='weight',
     # Transform net
     net = rename_net(net, source=source, target=target, weight=weight)
     net = filt_min_n(c, net, min_n=min_n)
-    net = net.groupby('source')['target'].apply(list)
+    
+    # Transform targets to indxs
+    table = dict()
+    table = {name:i for i,name in enumerate(c)}
+    net['target'] = [table[target] for target in net['target']]
+    net = net.groupby('source')['target'].apply(np.array)
     
     if verbose:
         print('Running gsva on {0} samples and {1} sources.'.format(m.shape[0], len(net)))
     
     # Run GSVA
-    estimate = gsva(m.A, c, net, kcdf=kcdf, verbose=verbose)
+    estimate = gsva(m.A, net, kcdf=kcdf, verbose=verbose)
     
     # Transform to df
     estimate = pd.DataFrame(estimate, index=r, columns=net.index)

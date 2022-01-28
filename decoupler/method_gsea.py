@@ -10,19 +10,83 @@ from numpy.random import default_rng
 from scipy.stats import norm
 
 from .pre import extract, match, rename_net, filt_min_n
-from .method_gsva import ks_set
 
 from anndata import AnnData
 from tqdm import tqdm
 
+import numba as nb
+
 
 def get_M_I(mat):
     I = np.argsort(-mat, axis=1)
-    mat = np.abs(mat)
+    mat = np.abs(mat).astype(np.float64)
     return mat, I
 
 
-def gsea(mat, c, net, times=1000, seed=42, verbose=False):
+@nb.njit(nb.f8(nb.f8[:], nb.i8[:], nb.i8, nb.i8[:], nb.i8[:], nb.i8, nb.f8))
+def ks_sample(D, I, n_genes, geneset_mask, fset, n_geneset, dec):
+    
+    sum_gset = 0.0
+    for i in nb.prange(n_geneset):
+        sum_gset += D[fset[i]]
+        
+    #if sum_gset == 0.0:
+    #    return 0.0
+    
+    mx_value_sign = 0.0
+    cum_sum = 0.0
+    mx_pos = 0.0
+    mx_neg = 0.0
+    
+    for i in nb.prange(n_genes):
+        idx = I[i]
+        if geneset_mask[idx] == 1:
+            cum_sum += D[idx] / sum_gset
+        else:
+            cum_sum -= dec
+            
+        if cum_sum > mx_pos: mx_pos = cum_sum
+        if cum_sum < mx_neg: mx_neg = cum_sum 
+        
+    mx_value_sign = mx_pos + mx_neg
+    
+    return mx_value_sign
+
+
+@nb.njit(nb.f8[:](nb.f8[:,:], nb.i8[:,:], nb.i8[:]))
+def ks_matrix(D, I, fset):
+    n_samples, n_genes = D.shape
+    n_geneset = fset.shape[0]
+    
+    geneset_mask = np.zeros(n_genes, dtype=nb.i8)
+    geneset_mask[fset] = 1
+    
+    dec = 1.0 / (n_genes - n_geneset)
+    
+    res = np.zeros(n_samples)
+    for i in nb.prange(n_samples):
+        res[i] = ks_sample(D[i], I[i], n_genes, geneset_mask, fset, n_geneset, dec)
+    
+    return res
+
+
+@nb.njit(nb.f8[:,:](nb.f8[:,:], nb.i8[:,:], nb.i8[:], nb.i8, nb.i8), parallel=True)
+def ks_perms(D, I, fset, times, seed):
+    if times == 0:
+        es = np.zeros((1, D.shape[0]))
+        es[0] = ks_matrix(D, I, fset)
+        return es
+    else:
+        np.random.seed(seed)
+        res = np.zeros((times, D.shape[0]))
+        msk = np.arange(D.shape[1])
+        for i in nb.prange(times):
+            np.random.shuffle(msk)
+            res[i] = ks_matrix(D, I[:,msk], fset)
+        return res
+
+    
+def gsea(mat, net, times=1000, seed=42, verbose=False):
     """
     Gene Set Enrichment Analysis (GSEA).
     
@@ -32,8 +96,6 @@ def gsea(mat, c, net, times=1000, seed=42, verbose=False):
     ----------
     mat : np.array
         Input matrix with molecular readouts.
-    c : np.array
-        Feature (column) names of mat.
     net : pd.Series
         Series of feature sets as lists.
     times : int
@@ -55,22 +117,20 @@ def gsea(mat, c, net, times=1000, seed=42, verbose=False):
     rng = default_rng(seed=seed)
     msk = np.arange(mat.shape[1])
     
+    # Init empty results
     m_es = np.zeros((mat.shape[0], len(net)))
     m_nes, pvals = None, None
     
     # Run GSEA for each feature set
     for j in tqdm(range(len(net)), disable=not verbose):
         fset = net.iloc[j]
-        es = ks_set(mat, I, c, fset)
+        es = ks_perms(mat, I, fset, 0, seed)[0]
+        
         # Run times random iterations
         if times > 0:
-            res = []
-            for i in np.arange(times):
-                rng.shuffle(msk)
-                res.append(ks_set(mat[:,msk], I[:,msk], c[msk], fset))
-                
+            res = ks_perms(mat, I, fset, times, seed)
+
             # Compute z-score
-            res = np.array(res)
             null_mean = np.mean(res, axis=0)
             null_std = np.std(res, ddof=1, axis=0)
             nes = (es - null_mean) / null_std
@@ -130,13 +190,18 @@ def run_gsea(mat, net, source='source', target='target', weight='weight',
     # Transform net
     net = rename_net(net, source=source, target=target, weight=weight)
     net = filt_min_n(c, net, min_n=min_n)
-    net = net.groupby('source')['target'].apply(list)
+    
+    # Transform targets to indxs
+    table = dict()
+    table = {name:i for i,name in enumerate(c)}
+    net['target'] = [table[target] for target in net['target']]
+    net = net.groupby('source')['target'].apply(np.array)
     
     if verbose:
         print('Running gsea on {0} samples and {1} sources.'.format(m.shape[0], len(net)))
     
     # Run GSEA
-    estimate, norm_e, pvals = gsea(m.A, c, net, times=times, seed=seed, verbose=verbose)
+    estimate, norm_e, pvals = gsea(m.A, net, times=times, seed=seed, verbose=verbose)
     
     # Transform to df
     estimate = pd.DataFrame(estimate, index=r, columns=net.index)
