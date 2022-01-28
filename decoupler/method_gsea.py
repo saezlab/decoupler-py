@@ -70,20 +70,47 @@ def ks_matrix(D, I, fset):
     return res
 
 
-@nb.njit(nb.f8[:,:](nb.f8[:,:], nb.i8[:,:], nb.i8[:], nb.i8, nb.i8), parallel=True)
-def ks_perms(D, I, fset, times, seed):
+@nb.njit(nb.f8[:](nb.f8[:,:], nb.i8[:,:], nb.i8[:], nb.f8[:], nb.i8))
+def ks_perms(D, I, fset, es, times):
+    res = np.zeros((times, D.shape[0]))
+    msk = np.arange(D.shape[1])
     if times == 0:
-        es = np.zeros((1, D.shape[0]))
-        es[0] = ks_matrix(D, I, fset)
         return es
-    else:
-        np.random.seed(seed)
-        res = np.zeros((times, D.shape[0]))
-        msk = np.arange(D.shape[1])
-        for i in nb.prange(times):
-            np.random.shuffle(msk)
-            res[i] = ks_matrix(D, I[:,msk], fset)
-        return res
+    for i in nb.prange(times):
+        np.random.shuffle(msk)
+        res[i] = ks_matrix(D, I[:,msk], fset)
+    
+    null_mean = np.zeros(D.shape[0])
+    null_std = np.zeros(D.shape[0])
+    for j in nb.prange(D.shape[0]):
+        null_mean[j] = res[:,j].mean()
+        null_mean[j] = res[:,j].std()
+        
+    nes = (es - null_mean) / null_std
+    
+    return nes
+    
+    
+@nb.njit(nb.types.UniTuple(nb.f8[:,:],2)(nb.f8[:,:], nb.i8[:,:], nb.i8[:], nb.i8[:], nb.i8, nb.i8), parallel=True)
+def ks_sets(D, I, net, offsets, times, seed):
+    
+    n_samples = D.shape[0]
+    n_gsets = offsets.shape[0]
+    m_es = np.zeros((n_samples, n_gsets))
+    m_nes = np.zeros(m_es.shape)
+    
+    np.random.seed(seed)
+    
+    starts = np.cumsum(offsets)
+    for j in nb.prange(n_gsets):
+        srt = starts[j]
+        off = offsets[j] + srt
+        fset = net[srt:off]
+        es = ks_matrix(D, I, fset)
+        m_es[:,j] = es
+        m_nes[:,j] = ks_perms(D, I, fset, es, times)
+    
+    return m_es, m_nes
 
     
 def gsea(mat, net, times=1000, seed=42, verbose=False):
@@ -110,6 +137,10 @@ def gsea(mat, net, times=1000, seed=42, verbose=False):
     TODO.
     """
     
+    # Flatten net and get offsets
+    offsets = net.apply(lambda x: len(x)).values
+    net = np.concatenate(net.values)
+    
     # Get modified m and I matrix
     mat, I = get_M_I(mat)
     
@@ -117,31 +148,9 @@ def gsea(mat, net, times=1000, seed=42, verbose=False):
     rng = default_rng(seed=seed)
     msk = np.arange(mat.shape[1])
     
-    # Init empty results
-    m_es = np.zeros((mat.shape[0], len(net)))
-    m_nes, pvals = None, None
-    
-    # Run GSEA for each feature set
-    for j in tqdm(range(len(net)), disable=not verbose):
-        fset = net.iloc[j]
-        es = ks_perms(mat, I, fset, 0, seed)[0]
+    m_es, m_nes = ks_sets(mat, I, net, offsets, times, seed)
         
-        # Run times random iterations
-        if times > 0:
-            res = ks_perms(mat, I, fset, times, seed)
-
-            # Compute z-score
-            null_mean = np.mean(res, axis=0)
-            null_std = np.std(res, ddof=1, axis=0)
-            nes = (es - null_mean) / null_std
-            if m_nes is None:
-                m_nes = np.zeros((mat.shape[0], len(net)))
-            m_nes[:,j] = nes
-        m_es[:,j] = es
-        
-    if m_nes is not None:
-        # Get pvalues
-        pvals = norm.cdf(-np.abs(m_nes)) * 2
+    pvals = norm.cdf(-np.abs(m_nes)) * 2
         
     return m_es, m_nes, pvals
     
