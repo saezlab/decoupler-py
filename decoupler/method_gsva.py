@@ -29,34 +29,60 @@ def apply_ecdf(x):
     return ecdf(x)(x)
 
 
-def init_cdfs():
-    pre_cdf = norm.cdf(np.arange(pre_res+1) * max_pre / pre_res, loc=0, scale=1)
+def init_cdfs(pre_res=10000, max_pre=10):
+    pre_cdf = norm.cdf(np.arange(pre_res+1) * max_pre / pre_res, loc=0, scale=1).astype(np.float32)
     
     return pre_cdf
 
 
-def col_d(x, sigma_factor=4.0):
+@nb.njit(nb.f4(nb.f4[:], nb.i4))
+def std(arr, ddof):
+    N = arr.shape[0]
+    m = np.mean(arr)
+    var = np.sum((arr - m)**2)/(N-ddof)
+    sd = np.sqrt(var)
+    return sd
+
+
+@nb.njit(nb.f4[:](nb.f4[:], nb.f4[:]))
+def col_d(x, pre_cdf):
     size = x.shape[0]
-    bw = (np.std(x, ddof=1) / sigma_factor)
-    left_tail = (x[:,np.newaxis] - x[np.newaxis,:]) / bw
-    cdf = (np.abs(left_tail)/max_pre * pre_res).astype(int)
-    cdf = pre_cdf[np.where(cdf > pre_res, -1, cdf)]
-    left_tail = np.where(left_tail < 0, 1.0 - cdf, cdf)
-    left_tail = np.sum(left_tail,axis=1)/size 
-    left_tail = -1.0 * np.log((1.0-left_tail)/left_tail)
-    return left_tail
+    bw = (std(x, 1) / 4.0)
+    col = np.zeros(size, dtype=nb.f4)
+    for j in nb.prange(size):
+        left_tail = 0.0
+        for i in nb.prange(size):
+            diff = (x[j] - x[i]) / bw
+            if diff < -10:
+                left_tail += 0.0
+            elif diff > 10:
+                left_tail += 1.0
+            else:
+                cdf_val = pre_cdf[int(np.abs(diff) / 10 * 10000)]
+                if diff < 0:
+                    left_tail += 1.0 - cdf_val
+                else:
+                    left_tail += cdf_val
+        left_tail = left_tail/size
+        col[j] = -1.0 * np.log((1.0-left_tail)/left_tail)
+    return col
+
+
+@nb.njit(nb.f4[:,:](nb.f4[:,:], nb.f4[:]), parallel=True, debug=True)
+def mat_d(mat, pre_cdf):
+    D = np.zeros(mat.shape, dtype=nb.f4)
+    for j in nb.prange(mat.shape[1]):
+        D[:,j] = col_d(mat[:,j], pre_cdf)
+    return D
 
 
 def density(mat, kcdf=False):
     if kcdf:
-        global pre_res, max_pre, pre_cdf, precomp_cdf
-        pre_res, max_pre = 10000, 10
         pre_cdf = init_cdfs()
-        D = np.apply_along_axis(col_d, 0, mat)
+        mat = mat_d(mat, pre_cdf)
     else:
-        D = np.apply_along_axis(apply_ecdf, 0, mat)
-
-    return D
+        mat = np.apply_along_axis(apply_ecdf, 0, mat)
+    return mat
 
 
 def rank_scores(I_idxs, rev_idx, n):
