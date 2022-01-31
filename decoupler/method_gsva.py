@@ -68,7 +68,7 @@ def col_d(x, pre_cdf):
     return col
 
 
-@nb.njit(nb.f4[:,:](nb.f4[:,:], nb.f4[:]), parallel=True, debug=True)
+@nb.njit(nb.f4[:,:](nb.f4[:,:], nb.f4[:]), parallel=True)
 def mat_d(mat, pre_cdf):
     D = np.zeros(mat.shape, dtype=nb.f4)
     for j in nb.prange(mat.shape[1]):
