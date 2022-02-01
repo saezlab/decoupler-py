@@ -9,8 +9,10 @@ import pandas as pd
 
 from anndata import AnnData
 
+import sys
 
-def extract(mat, use_raw=True, dtype=np.float32):
+
+def extract(mat, use_raw=True, verbose=False, dtype=np.float32):
     """
     Processes different input types so that they can be used downstream. 
     
@@ -55,6 +57,14 @@ def extract(mat, use_raw=True, dtype=np.float32):
         raise ValueError("""mat must be a list of [matrix, samples, features], 
         dataframe (samples x features) or an AnnData instance.""")
     
+    # Filter empty features
+    msk = np.sum(m, axis=0).A[0] != 0
+    n_empty_features = np.sum(~msk)
+    if n_empty_features:
+        if verbose:
+            print("{0} empty features found in mat, they will be ignored.".format(n_empty_features))
+        m, c = m[:,msk], c[msk]
+    
     # Sort genes
     msk = np.argsort(c)
     
@@ -92,7 +102,15 @@ def filt_min_n(c, net, min_n=5):
     # Find sources with more than min_n targets
     msk = np.isin(net['source'].values.astype('U'), sources[counts >= min_n])
     
-    return net[msk]
+    # Filter 
+    net = net[msk]
+    
+    if net.shape[0] == 0:
+        raise ValueError("""No sources with more than min_n={0} targets. 
+        Make sure mat and net have shared target features or reduce 
+        the number assigned to min_n""".format(min_n))
+    
+    return net
 
 
 def match(c, r, net):
