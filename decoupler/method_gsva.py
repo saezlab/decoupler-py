@@ -16,26 +16,27 @@ from tqdm import tqdm
 import numba as nb
 
 
-def ecdf(x):
-    x = np.sort(x)
-    n = len(x)
-    def _ecdf(v):
-        # side='right' because we want Pr(x <= v)
-        return (np.searchsorted(x, v, side='right') + 1) / n
-    return _ecdf
-
-
-def apply_ecdf(x):
-    return ecdf(x)(x)
-
-
 def init_cdfs(pre_res=10000, max_pre=10):
     pre_cdf = norm.cdf(np.arange(pre_res+1) * max_pre / pre_res, loc=0, scale=1).astype(np.float32)
     
     return pre_cdf
 
 
-@nb.njit(nb.f4(nb.f4[:], nb.i4))
+@nb.njit(nb.f4[:](nb.f4[:]))
+def apply_ecdf(x):
+    v = np.sort(x)
+    n = len(x)
+    return (np.searchsorted(v, x, side='right').astype(nb.f4)) / n
+
+
+@nb.njit(nb.f4[:,:](nb.f4[:,:]), parallel=True)
+def mat_ecdf(mat):
+    for j in nb.prange(mat.shape[1]):
+        mat[:,j] = apply_ecdf(mat[:,j])
+    return mat
+
+        
+@nb.njit(nb.f4(nb.f4[:], nb.i2))
 def std(arr, ddof):
     N = arr.shape[0]
     m = np.mean(arr)
@@ -81,26 +82,29 @@ def density(mat, kcdf=False):
         pre_cdf = init_cdfs()
         mat = mat_d(mat, pre_cdf)
     else:
-        mat = np.apply_along_axis(apply_ecdf, 0, mat)
+        mat = mat_ecdf(mat)
     return mat
 
 
-def rank_scores(I_idxs, rev_idx, n):
-    tmp = np.zeros(n)
-    tmp[I_idxs] = rev_idx
-    return tmp
-
+@nb.njit(nb.types.Tuple((nb.f4[:,:], nb.i2[:,:]))(nb.f4[:,:]), parallel=True)
+def nb_get_D_I(mat):
+    n = mat.shape[1]
+    rev_idx = np.abs(np.arange(start=n, stop=0, step=-1, dtype=nb.f4) - n / 2)
+    I = np.zeros(mat.shape, dtype=nb.i2)
+    for i in nb.prange(mat.shape[0]):
+        I[i] = np.argsort(-mat[i])
+        tmp = np.zeros(n, dtype=nb.f4)
+        tmp[I[i]] = rev_idx
+        mat[i] = tmp
+    return mat, I
 
 def get_D_I(mat, kcdf=False):
-    D = density(mat, kcdf=kcdf)
-    n = D.shape[1]
-    rev_idx = np.abs(np.arange(start=n, stop=0, step=-1) - n / 2)
-    I = np.argsort(-D, axis=1)
-    D = np.apply_along_axis(rank_scores, 1, I, rev_idx, n)
-    return D, I
+    mat = density(mat, kcdf=kcdf)
+    mat, I = nb_get_D_I(mat)
+    return mat, I
 
 
-@nb.njit(nb.f8(nb.f8[:], nb.i8[:], nb.i8, nb.i8[:], nb.i8[:], nb.i8, nb.f8))
+@nb.njit(nb.f4(nb.f4[:], nb.i2[:], nb.i2, nb.i2[:], nb.i2[:], nb.i2, nb.f4))
 def ks_sample(D, I, n_genes, geneset_mask, fset, n_geneset, dec):
     
     sum_gset = 0.0
@@ -127,17 +131,17 @@ def ks_sample(D, I, n_genes, geneset_mask, fset, n_geneset, dec):
     return mx_value_sign
 
 
-@nb.njit(nb.f8[:](nb.f8[:,:], nb.i8[:,:], nb.i8[:]), parallel=True)
+@nb.njit(nb.f4[:](nb.f4[:,:], nb.i2[:,:], nb.i2[:]), parallel=True)
 def ks_matrix(D, I, fset):
     n_samples, n_genes = D.shape
     n_geneset = fset.shape[0]
     
-    geneset_mask = np.zeros(n_genes, dtype=nb.i8)
+    geneset_mask = np.zeros(n_genes, dtype=nb.i2)
     geneset_mask[fset] = 1
     
     dec = 1.0 / (n_genes - n_geneset)
     
-    res = np.zeros(n_samples)
+    res = np.zeros(n_samples, dtype=nb.f4)
     for i in nb.prange(n_samples):
         res[i] = ks_sample(D[i], I[i], n_genes, geneset_mask, fset, n_geneset, dec)
     
@@ -169,19 +173,19 @@ def gsva(mat, net, kcdf=False, verbose=False):
     """
     
     # Get feature Density
-    D, I = get_D_I(mat, kcdf=kcdf)
+    mat, I = get_D_I(mat, kcdf=kcdf)
     
     # Run GSVA for each feature set
     acts = np.zeros((mat.shape[0], len(net)))
     for j in tqdm(range(len(net)), disable=not verbose):
         fset = net.iloc[j]
-        acts[:,j] = ks_matrix(D, I, fset)
+        acts[:,j] = ks_matrix(mat, I, fset)
         
     return acts
     
     
 def run_gsva(mat, net, source='source', target='target', weight='weight', 
-             kcdf=False, mx_diff = True, abs_rnk = False, min_n=5, 
+             kcdf=False, mx_diff = True, abs_rnk = False, min_n=5,
              verbose=False, use_raw=True):
     """
     Gene Set Variation Analysis (GSVA).
@@ -237,13 +241,12 @@ def run_gsva(mat, net, source='source', target='target', weight='weight',
     net = filt_min_n(c, net, min_n=min_n)
     
     # Transform targets to indxs
-    table = dict()
     table = {name:i for i,name in enumerate(c)}
     net['target'] = [table[target] for target in net['target']]
-    net = net.groupby('source')['target'].apply(np.array)
+    net = net.groupby('source')['target'].apply(lambda x: np.array(x, dtype=np.int16))
     
     if verbose:
-        print('Running gsva on {0} samples and {1} sources.'.format(m.shape[0], len(net)))
+        print('Running gsva on mat with {0} samples and {1} features for {2} sources.'.format(m.shape[0], len(c), len(net)))
     
     # Run GSVA
     estimate = gsva(m.A, net, kcdf=kcdf, verbose=verbose)
