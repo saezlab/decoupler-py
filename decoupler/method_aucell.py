@@ -12,34 +12,38 @@ from scipy.stats import rankdata
 from .pre import extract, match, rename_net, filt_min_n
 
 from anndata import AnnData
-from tqdm import tqdm
+import numba as nb
 
 
-def auc(x, n_up, max_auc):
-    """
-    Computes Area Under the Curve (AUC) for given ranks.
-    
-    Parameters
-    ----------
-    x : np.array, list
-        Sample specific rankings.
-    n_up : int
-        Number of top ranked features to select.
-    max_auc : float
-        Maximum AUC possible for this ranking.
-    
-    Returns
-    -------
-    The value of the AUC.
-    """
-    
-    x = np.sort(x[x<n_up])
-    y = np.arange(x.shape[0]) + 1
-    x = np.append(x,n_up)
-    return np.sum(np.diff(x) * y)/max_auc
+@nb.njit(nb.f4[:,:](nb.f4[:,:]), parallel=True)
+def rankdata(mat):
+    for i in nb.prange(mat.shape[0]):
+        mat[i] = np.argsort(np.argsort(-mat[i])) + 1
+    return mat
 
 
-def aucell(mat, c, net, n_up, verbose=False):
+@nb.njit(nb.f4[:,:](nb.f4[:,:], nb.i4[:], nb.i4[:], nb.i4), parallel=True)
+def auc(mat, net, offsets, n_up):
+    starts = np.zeros(offsets.shape[0], dtype=nb.i4)
+    starts[1:] = np.cumsum(offsets)[:-1]
+    acts = np.zeros((mat.shape[0], offsets.shape[0]), dtype=nb.f4)
+    for j in nb.prange(offsets.shape[0]):
+        srt = starts[j]
+        off = offsets[j] + srt
+        fset = net[srt:off]
+        x_th = np.arange(start=1, stop=fset.shape[0]+1, dtype=nb.i4)
+        x_th = x_th[x_th < n_up]
+        max_auc = np.sum(np.diff(np.append(x_th, n_up)) * x_th)
+        for i in nb.prange(mat.shape[0]):
+            x = mat[i][fset]
+            x = np.sort(x[x < n_up])
+            y = np.arange(x.shape[0]) + 1
+            x = np.append(x,n_up)
+            acts[i,j] = np.sum(np.diff(x) * y)/max_auc
+    return acts
+
+
+def aucell(mat, net, n_up):
     """
     AUCell.
     
@@ -49,35 +53,25 @@ def aucell(mat, c, net, n_up, verbose=False):
     ----------
     mat : np.array
         Input matrix with molecular readouts.
-    c : np.array
-        Feature (column) names of mat.
     net : pd.Series
         Series of feature sets as lists.
     n_up : int
         Number of top ranked features to select.
-    verbose : bool
-        Whether to show progress.
     
     Returns
     -------
     acts : Array of activities.
     """
     
-    # Make sure it's absolute value
-    mat = np.abs(mat)
-    
     # Rank data
-    mat = rankdata(-mat, axis=1, method='ordinal')
+    mat = rankdata(mat)
+    
+    # Flatten net and get offsets
+    offsets = net.apply(lambda x: len(x)).values.astype(np.int32)
+    net = np.concatenate(net.values)
     
     # Compute AUC per fset
-    acts = np.zeros((mat.shape[0], net.shape[0]))
-    for j in tqdm(range(len(net)), disable=not verbose):
-        fset = net.iloc[j]
-        rnks = mat[:,np.isin(c, fset)]
-        x_th = np.arange(start=1, stop=rnks.shape[1]+1)
-        x_th = np.sort(x_th[x_th < n_up])
-        max_auc = np.sum(np.diff(np.append(x_th,n_up)) * x_th)
-        acts[:,j] = np.apply_along_axis(auc, 1, rnks, n_up=n_up, max_auc=max_auc)
+    acts = auc(mat, net, offsets, n_up)
     
     return acts
 
@@ -120,7 +114,7 @@ def run_aucell(mat, net, source='source', target='target', weight='weight',
     """
     
     # Extract sparse matrix and array of genes
-    m, r, c = extract(mat, use_raw=use_raw)
+    m, r, c = extract(mat, use_raw=use_raw, verbose=verbose)
     
     # Set n_up
     if n_up is None:
@@ -131,16 +125,24 @@ def run_aucell(mat, net, source='source', target='target', weight='weight',
     # Transform net
     net = rename_net(net, source=source, target=target, weight=weight)
     net = filt_min_n(c, net, min_n=min_n)
-    net = net.groupby('source')['target'].apply(list)
+    
+    # Randomize feature order to break ties randomly
+    rng = default_rng(seed=seed)
+    idx = np.arange(m.shape[1])
+    rng.shuffle(idx)
+    m, c = m[:,idx], c[idx]
+    
+    # Transform targets to indxs
+    table = {name:i for i,name in enumerate(c)}
+    net['target'] = [table[target] for target in net['target']]
+    net = net.groupby('source')['target'].apply(lambda x: np.array(x, dtype=np.int32))
     
     if verbose:
-        print('Running aucell on {0} samples and {1} sources.'.format(m.shape[0], len(net)))
+        print('Running aucell on mat with {0} samples and {1} targets for {2} sources.'.format(m.shape[0], len(c), len(net)))
     
     # Run AUCell
-    rng = default_rng(seed=seed)
-    msk = np.arange(m.shape[1])
-    rng.shuffle(msk)
-    estimate = aucell(m.A[:,msk], c[msk], net, n_up, verbose=verbose)
+    
+    estimate = aucell(m.A, net, n_up)
     estimate = pd.DataFrame(estimate, index=r, columns=net.index)
     estimate.name = 'aucell_estimate'
     
