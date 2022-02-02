@@ -247,7 +247,7 @@ def run_gsva(mat, net, source='source', target='target', weight='weight',
     net = net.groupby('source')['target'].apply(lambda x: np.array(x, dtype=np.int32))
     
     if verbose:
-        print('Running gsva on mat with {0} samples and {1} features for {2} sources.'.format(m.shape[0], len(c), len(net)))
+        print('Running gsva on mat with {0} samples and {1} targets for {2} sources.'.format(m.shape[0], len(c), len(net)))
     
     # Run GSVA
     estimate = gsva(m.A, net, kcdf=kcdf, verbose=verbose)
