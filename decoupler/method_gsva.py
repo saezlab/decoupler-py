@@ -36,7 +36,7 @@ def mat_ecdf(mat):
     return mat
 
         
-@nb.njit(nb.f4(nb.f4[:], nb.i2))
+@nb.njit(nb.f4(nb.f4[:], nb.i4))
 def std(arr, ddof):
     N = arr.shape[0]
     m = np.mean(arr)
@@ -86,11 +86,11 @@ def density(mat, kcdf=False):
     return mat
 
 
-@nb.njit(nb.types.Tuple((nb.f4[:,:], nb.i2[:,:]))(nb.f4[:,:]), parallel=True)
+@nb.njit(nb.types.Tuple((nb.f4[:,:], nb.i4[:,:]))(nb.f4[:,:]), parallel=True)
 def nb_get_D_I(mat):
     n = mat.shape[1]
     rev_idx = np.abs(np.arange(start=n, stop=0, step=-1, dtype=nb.f4) - n / 2)
-    I = np.zeros(mat.shape, dtype=nb.i2)
+    I = np.zeros(mat.shape, dtype=nb.i4)
     for i in nb.prange(mat.shape[0]):
         I[i] = np.argsort(-mat[i])
         tmp = np.zeros(n, dtype=nb.f4)
@@ -104,7 +104,7 @@ def get_D_I(mat, kcdf=False):
     return mat, I
 
 
-@nb.njit(nb.f4(nb.f4[:], nb.i2[:], nb.i2, nb.i2[:], nb.i2[:], nb.i2, nb.f4))
+@nb.njit(nb.f4(nb.f4[:], nb.i4[:], nb.i4, nb.i4[:], nb.i4[:], nb.i4, nb.f4))
 def ks_sample(D, I, n_genes, geneset_mask, fset, n_geneset, dec):
     
     sum_gset = 0.0
@@ -131,12 +131,12 @@ def ks_sample(D, I, n_genes, geneset_mask, fset, n_geneset, dec):
     return mx_value_sign
 
 
-@nb.njit(nb.f4[:](nb.f4[:,:], nb.i2[:,:], nb.i2[:]), parallel=True)
+@nb.njit(nb.f4[:](nb.f4[:,:], nb.i4[:,:], nb.i4[:]), parallel=True)
 def ks_matrix(D, I, fset):
     n_samples, n_genes = D.shape
     n_geneset = fset.shape[0]
     
-    geneset_mask = np.zeros(n_genes, dtype=nb.i2)
+    geneset_mask = np.zeros(n_genes, dtype=nb.i4)
     geneset_mask[fset] = 1
     
     dec = 1.0 / (n_genes - n_geneset)
@@ -243,7 +243,7 @@ def run_gsva(mat, net, source='source', target='target', weight='weight',
     # Transform targets to indxs
     table = {name:i for i,name in enumerate(c)}
     net['target'] = [table[target] for target in net['target']]
-    net = net.groupby('source')['target'].apply(lambda x: np.array(x, dtype=np.int16))
+    net = net.groupby('source')['target'].apply(lambda x: np.array(x, dtype=np.int32))
     
     if verbose:
         print('Running gsva on mat with {0} samples and {1} features for {2} sources.'.format(m.shape[0], len(c), len(net)))
