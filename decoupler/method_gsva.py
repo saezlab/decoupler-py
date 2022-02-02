@@ -98,6 +98,7 @@ def nb_get_D_I(mat):
         mat[i] = tmp
     return mat, I
 
+
 def get_D_I(mat, kcdf=False):
     mat = density(mat, kcdf=kcdf)
     mat, I = nb_get_D_I(mat)
