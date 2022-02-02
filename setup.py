@@ -15,7 +15,8 @@ setup(
     project_urls={
         "Bug Tracker": "https://github.com/saezlab/decoupler-py/issues",
     },
-    install_requires=["sklearn",
+    install_requires=["numpy==1.20.0",
+                      "sklearn",
                       "tqdm",
                       "anndata",
                       "fisher",
