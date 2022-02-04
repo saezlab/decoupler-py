@@ -125,11 +125,11 @@ def match(c, r, net):
     
     Parameters
     ----------
-    c : narray
+    c : array
         Column names of `mat`.
-    r : narray
+    r : array
         Row  names of `net`.
-    net : csr_matrix
+    net : array
         Regulatory adjacency matrix.
     
     Returns

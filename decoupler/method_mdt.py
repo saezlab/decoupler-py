@@ -28,7 +28,7 @@ def mdt(mat, net, trees=10, min_leaf=5, n_jobs=4, seed=42, verbose=False):
     
     Parameters
     ----------
-    mat : np.array
+    mat : sparse array
         Input matrix with molecular readouts.
     net : np.array
         Regulatory adjacency matrix.
@@ -48,9 +48,10 @@ def mdt(mat, net, trees=10, min_leaf=5, n_jobs=4, seed=42, verbose=False):
     acts : Array of activities.
     """
     
-    acts = np.zeros((mat.shape[0], net.shape[1]))
+    acts = np.zeros((mat.shape[0], net.shape[1]), dtype=np.float32)
     for i in tqdm(range(mat.shape[0]), disable=not verbose):
-        acts[i] = fit_rf(net, mat[i], trees=trees, min_leaf=min_leaf, n_jobs=n_jobs, seed=seed)
+        sample = mat[i].A[0]
+        acts[i] = fit_rf(net, sample, trees=trees, min_leaf=min_leaf, n_jobs=n_jobs, seed=seed)
     
     return acts
 
@@ -97,7 +98,7 @@ def run_mdt(mat, net, source='source', target='target', weight='weight', trees=1
     """
     
     # Extract sparse matrix and array of genes
-    m, r, c = extract(mat, use_raw=use_raw)
+    m, r, c = extract(mat, use_raw=use_raw, verbose=verbose)
     
     # Transform net
     net = rename_net(net, source=source, target=target, weight=weight)
@@ -108,10 +109,10 @@ def run_mdt(mat, net, source='source', target='target', weight='weight', trees=1
     net = match(c, targets, net)
     
     if verbose:
-        print('Running mdt on {0} samples and {1} sources.'.format(m.shape[0], net.shape[1]))
+        print('Running mdt on mat with {0} samples and {1} targets for {2} sources.'.format(m.shape[0], len(c), net.shape[1]))
     
     # Run MDT
-    estimate = mdt(m.A, net, trees=trees, min_leaf=min_leaf, 
+    estimate = mdt(m, net, trees=trees, min_leaf=min_leaf, 
                    n_jobs=n_jobs, seed=seed, verbose=verbose)
     
     # Transform to df
