@@ -99,12 +99,6 @@ def nb_get_D_I(mat):
     return mat, I
 
 
-def get_D_I(mat, kcdf=False):
-    mat = density(mat, kcdf=kcdf)
-    mat, I = nb_get_D_I(mat)
-    return mat, I
-
-
 @nb.njit(nb.f4(nb.f4[:], nb.i4[:], nb.i4, nb.i4[:], nb.i4[:], nb.i4, nb.f4))
 def ks_sample(D, I, n_genes, geneset_mask, fset, n_geneset, dec):
     
@@ -174,7 +168,8 @@ def gsva(mat, net, kcdf=False, verbose=False):
     """
     
     # Get feature Density
-    mat, I = get_D_I(mat, kcdf=kcdf)
+    mat = density(mat, kcdf=kcdf)
+    mat, I = nb_get_D_I(mat)
     
     # Run GSVA for each feature set
     acts = np.zeros((mat.shape[0], len(net)))
