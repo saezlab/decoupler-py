@@ -138,7 +138,7 @@ def match(c, r, net):
     """
     
     # Init empty regX
-    regX = np.zeros((c.shape[0], net.shape[1]))
+    regX = np.zeros((c.shape[0], net.shape[1]), dtype=np.float32)
     
     # Match genes from mat, else are 0s
     idxs = np.searchsorted(c,r)
@@ -213,4 +213,4 @@ def get_net_mat(net):
     targets = X.index.values
     X = X.values
     
-    return sources.astype('U'), targets.astype('U'), X
+    return sources.astype('U'), targets.astype('U'), X.astype(np.float32)
