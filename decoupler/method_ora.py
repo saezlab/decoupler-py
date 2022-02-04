@@ -11,44 +11,37 @@ from scipy.stats import rankdata
 
 from .pre import extract, match, rename_net, filt_min_n
 
-from fisher import pvalue
+from fisher import pvalue_npy
 
 from anndata import AnnData
 from tqdm import tqdm
 
-
-def get_cont_table(obs, exp, n_background=20000):
-    """
-    Get contingency table for ORA.
-    
-    Generates a contingency table (TP, FP, FN and TN) for a list of observed
-    features against a list of expected features.
-    
-    Parameters
-    ----------
-    obs : list, set
-        List or set of observed features.
-    exp : list, set
-        List or set of expected features.
-    
-    Returns
-    -------
-    Values for TP, FP, FN and TN.
-    """
-    
-    # Transform to set
-    obs, exp = set(obs), set(exp)
-    
-    # Build table
-    TP = len(obs.intersection(exp))
-    FP = len(obs.difference(exp))
-    FN = len(exp.difference(obs))
-    TN = n_background - TP - FP - FN
-    
-    return TP, FP, FN, TN 
+import numba as nb
 
 
-def ora(obs, lexp, n_background=20000):
+@nb.njit(nb.uint[:,:](nb.i4[:], nb.i4[:], nb.i4[:], nb.i4[:], nb.i4), parallel=True)
+def get_cont_table(sample, net, starts, offsets, n_background):
+    
+    sample = set(sample)
+    n_fsets = offsets.shape[0]
+    table = np.zeros((n_fsets,4), dtype=nb.uint)
+    
+    for i in nb.prange(n_fsets):
+        # Extract feature set
+        srt = starts[i]
+        off = offsets[i] + srt
+        fset = set(net[srt:off])
+        
+        # Build table
+        table[i,0] = len(sample.intersection(fset))
+        table[i,1] = len(fset.difference(sample))
+        table[i,2] = len(sample.difference(fset))
+        table[i,3] = n_background - table[i,0] - table[i,1] - table[i,2]
+        
+    return table
+
+
+def ora(mat, net, n_up_msk, n_bt_msk, n_background=20000, verbose=False):
     """
     Over Representation Analysis (ORA).
     
@@ -56,19 +49,36 @@ def ora(obs, lexp, n_background=20000):
     
     Parameters
     ----------
-    obs : list, set
-        List of observed features.
-    lexp : list, pd.Series
-        Iterable of collections of expected features.
+
     
     Returns
     -------
     Array of uncorrected pvalues.
     """
     
-    pvals = [pvalue(*get_cont_table(obs, fset, n_background)).right_tail for fset in lexp]
+    # Flatten net and get offsets
+    offsets = net.apply(lambda x: len(x)).values.astype(np.int32)
+    net = np.concatenate(net.values)
+
+    # Define starts to subset offsets
+    starts = np.zeros(offsets.shape[0], dtype=np.int32)
+    starts[1:] = np.cumsum(offsets)[:-1]
+
+    pvls = np.zeros((mat.shape[0], offsets.shape[0]), dtype=np.float32)
+    ranks = np.arange(mat.shape[1], dtype=np.int32)
+
+    for i in tqdm(range(mat.shape[0]), disable=not verbose):
+        sample = rankdata(mat[i].A, method='ordinal').astype(np.int32)
+        sample = ranks[(sample > n_up_msk) | (sample < n_bt_msk)]
+
+        # Generate Table
+        table = get_cont_table(sample, net, starts, offsets, n_background)
+
+        # Estimate pvals
+        _, pvls[i], _ = pvalue_npy(table[:,0],table[:,1],table[:,2],table[:,3])
     
-    return pvals
+    
+    return pvls
 
 
 def run_ora(mat, net, source='source', target='target', weight='weight', 
@@ -115,7 +125,7 @@ def run_ora(mat, net, source='source', target='target', weight='weight',
     """
     
     # Extract sparse matrix and array of genes
-    m, r, c = extract(mat, use_raw=use_raw)
+    m, r, c = extract(mat, use_raw=use_raw, verbose=verbose)
     
     # Set up/bottom masks
     if n_up is None:
@@ -131,20 +141,17 @@ def run_ora(mat, net, source='source', target='target', weight='weight',
     # Transform net
     net = rename_net(net, source=source, target=target, weight=weight)
     net = filt_min_n(c, net, min_n=min_n)
-    net = net.groupby('source')['target'].apply(set)
+    
+    # Transform targets to indxs
+    table = {name:i for i,name in enumerate(c)}
+    net['target'] = [table[target] for target in net['target']]
+    net = net.groupby('source')['target'].apply(lambda x: np.array(x, dtype=np.int32))
     
     if verbose:
-        print('Running ora on {0} samples and {1} sources.'.format(m.shape[0], len(net)))
+        print('Running ora on mat with {0} samples and {1} targets for {2} sources.'.format(m.shape[0], len(c), len(net)))
     
     # Run ORA
-    pvals = []
-    rng = default_rng(seed=seed)
-    msk = np.arange(m.shape[1])
-    for i in tqdm(range(m.shape[0]), disable=not verbose):
-        rng.shuffle(msk)
-        obs = rankdata(m[i].A[0][msk], method='ordinal')
-        obs = c[msk][(obs > n_up_msk) | (obs < n_bt_msk)]
-        pvals.append(ora(obs, net, n_background=n_background))
+    pvals = ora(m, net, n_up_msk, n_bt_msk, n_background, verbose)
         
     # Transform to df
     pvals = pd.DataFrame(pvals, index=r, columns=net.index)
