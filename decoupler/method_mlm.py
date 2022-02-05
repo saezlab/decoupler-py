@@ -66,7 +66,7 @@ def mlm(mat, net, batch_size = 10000, verbose=False):
     es = np.zeros((n_samples, n_fsets), dtype=np.float32)
     for i in tqdm(range(n_batches), disable=not verbose):
         
-        # SUbset batch
+        # Subset batch
         srt, end = i*batch_size, i*batch_size+batch_size
         y = mat[srt:end].A.T
         

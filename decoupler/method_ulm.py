@@ -13,8 +13,42 @@ from .pre import extract, match, rename_net, get_net_mat, filt_min_n
 from anndata import AnnData
 from tqdm import tqdm
 
+import numba as nb
 
-def ulm(mat, net, TINY = 1.0e-20, verbose=False):
+
+@nb.njit(nb.f4[:,:](nb.i4, nb.i4, nb.f4[:], nb.i4[:], nb.i4[:], nb.f4[:,:]), parallel=True)
+def nb_ulm(n_samples, n_features, data, indptr, indices, net):
+    
+    df, n_fsets = net.shape
+    df = df - 2
+    
+    es = np.zeros((n_samples, n_fsets), dtype=nb.f4)
+    
+    for i in nb.prange(n_samples):
+        
+        # Extract sample from sparse matrix
+        row = np.zeros(n_features, dtype=nb.f4)
+        s, e = indptr[i], indptr[i+1]
+        row[indices[s:e]] = data[s:e]
+        
+        for j in range(n_fsets):
+            
+            # Get fset column
+            x = net[:,j]
+            
+            # Compute lm
+            ssxm, ssxym, _, ssym = np.cov(x, row, bias=1).flat
+            
+            # Compute R value
+            r = ssxym / np.sqrt(ssxm * ssym)
+            
+            # Compute t-value
+            es[i,j] = r * np.sqrt(df / ((1.0 - r + 1.0e-20)*(1.0 + r + 1.0e-20)))
+    
+    return es
+
+
+def ulm(mat, net):
     """
     Univariate Linear Model (ULM).
     
@@ -26,39 +60,24 @@ def ulm(mat, net, TINY = 1.0e-20, verbose=False):
         Input matrix with molecular readouts.
     net : np.array
         Regulatory adjacency matrix.
-    verbose : bool
-        Whether to show progress.
     
     Returns
     -------
-    x : Array of activities.
+    x : Array of activities and p-values.
     """
     
-    # Init empty matrix of activities
-    x = np.zeros((mat.shape[0], net.shape[1]))
     
-    df, n_repeat = net.shape
+    df = net.shape[0]
     df = df - 2
     
-    for i in tqdm(range(mat.shape[0]), disable=not verbose):
-        # Get row
-        mat_row = mat[i]
-        
-        # Repeat mat_row for each regulator
-        smp_mat = np.repeat([mat_row], n_repeat, axis=0)
+    # Compute ulm
+    n_samples, n_features = mat.shape
+    es = nb_ulm(n_samples, n_features, mat.data, mat.indptr, mat.indices, net)
     
-        # Compute lm
-        cov = np.cov(net.T, smp_mat, bias=1)
-        ssxm, ssym = np.split(np.diag(cov), 2)
-        ssxym = np.diag(cov, k=len(net.T))
+    # Get p-values
+    _, pvals = scipy.stats.stats._ttest_finish(df, es, 'two-sided')
         
-        # Compute R value
-        r = ssxym / np.sqrt(ssxm * ssym)
-        
-        # Compute t-value
-        x[i] = r * np.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
-        
-    return x
+    return es, pvals
 
 
 def run_ulm(mat, net, source='source', target='target', weight='weight', min_n=5, 
@@ -95,7 +114,7 @@ def run_ulm(mat, net, source='source', target='target', weight='weight', min_n=5
     """
     
     # Extract sparse matrix and array of genes
-    m, r, c = extract(mat, use_raw=use_raw)
+    m, r, c = extract(mat, use_raw=use_raw, verbose=verbose)
     
     # Transform net
     net = rename_net(net, source=source, target=target, weight=weight)
@@ -106,14 +125,10 @@ def run_ulm(mat, net, source='source', target='target', weight='weight', min_n=5
     net = match(c, targets, net)
     
     if verbose:
-        print('Running ulm on {0} samples and {1} sources.'.format(m.shape[0], net.shape[1]))
+        print('Running ulm on mat with {0} samples and {1} targets for {2} sources.'.format(m.shape[0], len(c), net.shape[1]))
     
     # Run ULM
-    estimate = ulm(m.A, net, verbose=verbose)
-    
-    # Get pvalues
-    df = net.shape[0] - 2
-    _, pvals = scipy.stats.stats._ttest_finish(df, estimate, 'two-sided')
+    estimate, pvals = ulm(m, net)
     
     # Transform to df
     estimate = pd.DataFrame(estimate, index=r, columns=sources)
