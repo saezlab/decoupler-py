@@ -94,7 +94,7 @@ def run_udt(mat, net, source='source', target='target', weight='weight',
     """
     
     # Extract sparse matrix and array of genes
-    m, r, c = extract(mat, use_raw=use_raw)
+    m, r, c = extract(mat, use_raw=use_raw, verbose=verbose)
     
     # Transform net
     net = rename_net(net, source=source, target=target, weight=weight)
@@ -105,7 +105,7 @@ def run_udt(mat, net, source='source', target='target', weight='weight',
     net = match(c, targets, net)
     
     if verbose:
-        print('Running udt on {0} samples and {1} sources.'.format(m.shape[0], net.shape[1]))
+        print('Running udt on mat with {0} samples and {1} targets for {2} sources.'.format(m.shape[0], len(c), net.shape[1]))
     
     # Run UDT
     estimate = udt(m.A, net, min_leaf=min_leaf, seed=seed, verbose=verbose)
