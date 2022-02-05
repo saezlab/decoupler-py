@@ -135,15 +135,15 @@ def aREA(mat, net, wts=None):
     nes = np.sqrt(np.sum(wts**2,axis=0))
     wts = (wts / np.sum(wts, axis=0))
     
-    t2 = rankdata(mat, method='average', axis=1) / (mat.shape[1] + 1)
-    t1 = np.abs(t2 - 0.5) * 2
+    mat = rankdata(mat, method='average', axis=1) / (mat.shape[1] + 1)
+    t1 = np.abs(mat - 0.5) * 2
     t1 = t1 + (1 - np.max(t1))/2
     msk = np.sum(net != 0, axis=1) >= 1
-    t1, t2 = t1[:,msk], t2[:,msk]
+    t1, mat = t1[:,msk], mat[:,msk]
     net, wts = net[msk], wts[msk]
     t1 = norm.ppf(t1)
-    t2 = norm.ppf(t2)
-    sum1 = t2.dot(wts*net)
+    mat = norm.ppf(mat)
+    sum1 = mat.dot(wts*net)
     sum2 = t1.dot((1-np.abs(net)) * wts)
     tmp = (np.abs(sum1) + sum2 * (sum2 > 0)) * np.sign(sum1)
     nes = tmp * nes
@@ -152,7 +152,7 @@ def aREA(mat, net, wts=None):
 
 
 def viper(mat, net, pleiotropy = True, reg_sign = 0.05, n_targets = 10, 
-          penalty = 20, verbose=False):
+          penalty = 20, batch_size = 10000, verbose=False):
     """
     Virtual Inference of Protein-activity by Enriched Regulon (VIPER).
     
@@ -166,6 +166,7 @@ def viper(mat, net, pleiotropy = True, reg_sign = 0.05, n_targets = 10,
         Regulatory adjacency matrix.
     pleiotropy : bool
         Logical, whether correction for pleiotropic regulation should be performed.
+        To have faster predictions, disable it.
     reg_sign : float
         Pleiotropy argument. p-value threshold for considering significant regulators.
     n_targets : int
@@ -174,6 +175,8 @@ def viper(mat, net, pleiotropy = True, reg_sign = 0.05, n_targets = 10,
     penalty : int
         Number higher than 1 indicating the penalty for the pleiotropic 
         interactions. 1 = no penalty.
+    batch_size : int
+        Size of the batches to use. Increasing this will consume more memmory but it will run faster.
     verbose : bool
         Whether to show progress.
     
@@ -182,14 +185,32 @@ def viper(mat, net, pleiotropy = True, reg_sign = 0.05, n_targets = 10,
     nes : Array of biological activities.
     """
     
-    # Acivity estimate
-    nes = aREA(mat, net)
+    # Get number of batches
+    n_samples = mat.shape[0]
+    n_features, n_fsets = net.shape
+    n_batches = int(np.ceil(n_samples / batch_size))
+    
+    if verbose:
+        print('Infering activities on {0} batches.'.format(n_batches))
+
+    # Init empty acts
+    nes = np.zeros((n_samples, n_fsets), dtype=np.float32)
+    for i in tqdm(range(n_batches), disable=not verbose):
+
+        # Subset batch
+        srt, end = i*batch_size, i*batch_size+batch_size
+        tmp = mat[srt:end].A
+
+        # Compute VIPER for batch
+        nes[srt:end] = aREA(tmp, net)
     
     if pleiotropy:
+        if verbose:
+            print('Computing pleiotropy correction.')
         for i in tqdm(range(nes.shape[0]), disable=not verbose):  
 
             # Extract per sample
-            ss_i = mat[i]
+            ss_i = mat[i].A[0]
             nes_i = nes[i]
 
             # Shadow regulons
@@ -203,13 +224,16 @@ def viper(mat, net, pleiotropy = True, reg_sign = 0.05, n_targets = 10,
             # Recompute activity with shadow regulons and update nes
             tmp = aREA(ss_i.reshape(1,-1), sub_net, wts=wts)[0]
             nes[i,idxs] = tmp
+            
+    # Get pvalues
+    pvals = norm.cdf(-np.abs(nes)) * 2
     
-    return nes
+    return nes, pvals
 
 
 def run_viper(mat, net, source='source', target='target', weight='weight', 
               pleiotropy = True, reg_sign = 0.05, n_targets = 10, penalty = 20, 
-              min_n=5, verbose=False, use_raw=True):
+              batch_size = 10000, min_n=5, verbose=False, use_raw=True):
     """
     Virtual Inference of Protein-activity by Enriched Regulon (VIPER).
     
@@ -238,6 +262,8 @@ def run_viper(mat, net, source='source', target='target', weight='weight',
     penalty : int
         Number higher than 1 indicating the penalty for the pleiotropic 
         interactions. 1 = no penalty.
+    batch_size : int
+        Size of the batches to use. Increasing this will consume more memmory but it will run faster.
     min_n : int
         Minimum of targets per source. If less, sources are removed.
     verbose : bool
@@ -252,7 +278,7 @@ def run_viper(mat, net, source='source', target='target', weight='weight',
     """
     
     # Extract sparse matrix and array of genes
-    m, r, c = extract(mat, use_raw=use_raw)
+    m, r, c = extract(mat, use_raw=use_raw, verbose=verbose)
     
     # Transform net
     net = rename_net(net, source=source, target=target, weight=weight)
@@ -263,14 +289,12 @@ def run_viper(mat, net, source='source', target='target', weight='weight',
     net = match(c, targets, net)
     
     if verbose:
-        print('Running viper on {0} samples and {1} sources.'.format(m.shape[0], net.shape[1]))
+        print('Running viper on mat with {0} samples and {1} targets for {2} sources.'.format(m.shape[0], len(c), net.shape[1]))
     
     # Run VIPER
-    estimate = viper(m.A, net, pleiotropy=pleiotropy, reg_sign=reg_sign, 
-                     n_targets=n_targets, penalty=penalty, verbose=verbose)
-    
-    # Get pvalues
-    pvals = norm.cdf(-np.abs(estimate)) * 2
+    estimate, pvals = viper(m, net, pleiotropy=pleiotropy, reg_sign=reg_sign, 
+                     n_targets=n_targets, penalty=penalty, 
+                     batch_size=batch_size, verbose=verbose)
     
     # Transform to df
     estimate = pd.DataFrame(estimate, index=r, columns=sources)
