@@ -16,12 +16,11 @@ setup(
         "Bug Tracker": "https://github.com/saezlab/decoupler-py/issues",
     },
     install_requires=["numba",
-                      "fisher",
                       "sklearn",
                       "tqdm",
                       "anndata",
                       "skranger",
-                      "threadpoolctl==3.0.0"
+                      "fisher"
                      ],
     packages=["decoupler"],
     python_requires=">=3.8",
