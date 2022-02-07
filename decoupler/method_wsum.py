@@ -17,7 +17,7 @@ from tqdm import tqdm
 import numba as nb
     
 
-@nb.njit(nb.types.UniTuple(nb.f4[:,:],3)(nb.f4[:,:],nb.f4[:,:],nb.f4[:,:],nb.i4[:],nb.i4,nb.i4), parallel=True)
+@nb.njit(nb.types.UniTuple(nb.f4[:,:],3)(nb.f4[:,:],nb.f4[:,:],nb.f4[:,:],nb.i4[:],nb.i4,nb.i4))
 def run_perm(estimate, mat, net, idxs, times, seed):
     
     mat = np.ascontiguousarray(mat)
@@ -31,7 +31,7 @@ def run_perm(estimate, mat, net, idxs, times, seed):
     # Permute
     for i in nb.prange(times):
         np.random.shuffle(idxs)
-        null_dst[:,:,i] = mat.dot(net[:,idxs])
+        null_dst[:,:,i] = mat.dot(net[idxs])
         pvals += np.abs(null_dst[:,:,i]) > np.abs(estimate)
 
     # Compute empirical p-value
@@ -65,7 +65,6 @@ def wsum(mat, net, times, batch_size, seed, verbose):
         norm = np.zeros((n_samples, n_fsets), dtype=np.float32)
         corr = np.zeros((n_samples, n_fsets), dtype=np.float32)
         pvals = np.zeros((n_samples, n_fsets), dtype=np.float32)
-        idxs = np.arange(n_fsets, dtype=np.int32)
     else:
         norm, corr, pvals = None, None, None
     
@@ -79,12 +78,13 @@ def wsum(mat, net, times, batch_size, seed, verbose):
         estimate[srt:end] = tmp.dot(net)
 
         if times > 1:
-            norm[srt:end], corr[srt:end], pvals[srt:end] = run_perm(estimate[srt:end], tmp, net, idxs, times, seed+i)
+            idxs = np.arange(n_features, dtype=np.int32)
+            norm[srt:end], corr[srt:end], pvals[srt:end] = run_perm(estimate[srt:end], tmp, net, idxs, times, seed)
     
     return estimate, norm, corr, pvals
 
 
-def run_wsum(mat, net, source='source', target='target', weight='weight', times=100, 
+def run_wsum(mat, net, source='source', target='target', weight='weight', times=1000, 
              batch_size=10000, min_n=5, seed=42, verbose=False, use_raw=True):
     """
     Weighted sum (WSUM).
