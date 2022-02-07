@@ -1,4 +1,6 @@
 name: base
+channels:
+  - conda-forge
 dependencies:
   - numba
   - sklearn
