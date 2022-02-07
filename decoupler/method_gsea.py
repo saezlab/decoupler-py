@@ -243,4 +243,7 @@ def run_gsea(mat, net, source='source', target='target', weight='weight',
             mat.obsm[norm_e.name] = norm_e
             mat.obsm[pvals.name] = pvals
     else:
-        return estimate, norm_e, pvals
+        if pvals is not None:
+            return estimate, norm_e, pvals
+        else:
+            return estimate
