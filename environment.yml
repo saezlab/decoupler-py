@@ -3,8 +3,7 @@ channels:
   - conda-forge
 dependencies:
   - numba
-  - sklearn
+  - scikit-learn
   - tqdm
   - anndata
-  - skranger
   - fisher
