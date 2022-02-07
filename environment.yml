@@ -1,9 +1,0 @@
-name: base
-channels:
-  - conda-forge
-dependencies:
-  - numba
-  - scikit-learn
-  - tqdm
-  - anndata
-  - fisher

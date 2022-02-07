@@ -15,7 +15,7 @@ setup(
     project_urls={
         "Bug Tracker": "https://github.com/saezlab/decoupler-py/issues",
     },
-    install_requires=["numba",
+    install_requires=["numba==0.54.1",
                       "sklearn",
                       "tqdm",
                       "anndata",
