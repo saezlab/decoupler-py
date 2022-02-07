@@ -1,0 +1,8 @@
+name: base
+dependencies:
+  - numba
+  - sklearn
+  - tqdm
+  - anndata
+  - skranger
+  - fisher
