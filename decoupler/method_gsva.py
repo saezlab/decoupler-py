@@ -9,6 +9,7 @@ import pandas as pd
 from scipy.stats import norm
 
 from .pre import extract, match, rename_net, filt_min_n
+from .method_gsea import std
 
 from anndata import AnnData
 from tqdm import tqdm
@@ -34,15 +35,6 @@ def mat_ecdf(mat):
     for j in nb.prange(mat.shape[1]):
         mat[:,j] = apply_ecdf(mat[:,j])
     return mat
-
-        
-@nb.njit(nb.f4(nb.f4[:], nb.i4))
-def std(arr, ddof):
-    N = arr.shape[0]
-    m = np.mean(arr)
-    var = np.sum((arr - m)**2)/(N-ddof)
-    sd = np.sqrt(var)
-    return sd
 
 
 @nb.njit(nb.f4[:](nb.f4[:], nb.f4[:]))
