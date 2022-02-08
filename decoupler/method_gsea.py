@@ -17,7 +17,7 @@ from tqdm import tqdm
 import numba as nb
 
 
-@nb.njit(nb.types.Tuple((nb.f4[:,:], nb.i4[:,:]))(nb.f4[:,:]))
+@nb.njit(nb.types.Tuple((nb.f4[:,:], nb.i4[:,:]))(nb.f4[:,:]), cache=True)
 def get_M_I(mat):
     I = np.zeros(mat.shape, dtype=nb.i4)
     for i in range(mat.shape[0]):
@@ -26,7 +26,7 @@ def get_M_I(mat):
     return mat, I
 
 
-@nb.njit(nb.f4(nb.f4[:], nb.i4))
+@nb.njit(nb.f4(nb.f4[:], nb.i4), cache=True)
 def std(arr, ddof):
     N = arr.shape[0]
     m = np.mean(arr)
@@ -35,7 +35,7 @@ def std(arr, ddof):
     return sd
 
 
-@nb.njit(nb.f4(nb.f4[:], nb.i4[:], nb.i4, nb.i4[:], nb.i4[:], nb.i4, nb.f4))
+@nb.njit(nb.f4(nb.f4[:], nb.i4[:], nb.i4, nb.i4[:], nb.i4[:], nb.i4, nb.f4), cache=True)
 def ks_sample(D, I, n_genes, geneset_mask, fset, n_geneset, dec):
     
     sum_gset = 0.0
@@ -70,7 +70,7 @@ def ks_sample(D, I, n_genes, geneset_mask, fset, n_geneset, dec):
     return mx_value
 
 
-@nb.njit(nb.f4[:](nb.f4[:,:], nb.i4[:,:], nb.i4[:]))
+@nb.njit(nb.f4[:](nb.f4[:,:], nb.i4[:,:], nb.i4[:]), cache=True)
 def ks_matrix(D, I, fset):
     n_samples, n_genes = D.shape
     n_geneset = fset.shape[0]
@@ -87,15 +87,14 @@ def ks_matrix(D, I, fset):
     return res
 
 
-@nb.njit(nb.f4[:](nb.f4[:,:], nb.i4[:,:], nb.i4[:], nb.f4[:], nb.i4))
-def ks_perms(D, I, fset, es, times):
-    res = np.zeros((times, D.shape[0]), dtype=nb.f4)
-    msk = np.arange(D.shape[1], dtype=nb.i4)
+@nb.njit(nb.f4[:](nb.f4[:,:], nb.i4[:,:], nb.i4[:], nb.f4[:], nb.i4[:,:]), cache=True)
+def ks_perms(D, I, fset, es, m_msk):
+    times = m_msk.shape[0]
     if times == 0:
         return es
+    res = np.zeros((times, D.shape[0]), dtype=nb.f4)
     for i in nb.prange(times):
-        np.random.shuffle(msk)
-        res[i] = ks_matrix(D, I[:,msk], fset)
+        res[i] = ks_matrix(D, I[:,m_msk[i]], fset)
     
     null_mean = np.zeros(D.shape[0], dtype=nb.f4)
     null_std = np.zeros(D.shape[0], dtype=nb.f4)
@@ -108,60 +107,63 @@ def ks_perms(D, I, fset, es, times):
     return nes
     
     
-@nb.njit(nb.types.UniTuple(nb.f4[:,:],2)(nb.f4[:,:], nb.i4[:,:], nb.i4[:], nb.i4[:], nb.i4, nb.i4), parallel=True)
+@nb.njit(nb.types.UniTuple(nb.f4[:,:],2)(nb.f4[:,:], nb.i4[:,:], nb.i4[:], nb.i4[:], nb.i4, nb.i4), parallel=True, cache=True)
 def nb_gsea(D, I, net, offsets, times, seed):
+    
+    np.random.seed(seed)
     
     n_samples = D.shape[0]
     n_gsets = offsets.shape[0]
     m_es = np.zeros((n_samples, n_gsets), dtype=nb.f4)
     m_nes = np.zeros(m_es.shape, dtype=nb.f4)
     
-    np.random.seed(seed)
+    # Generate random shuffling matrix
+    m_msk = np.zeros((times, D.shape[1]), dtype=nb.i4)
+    idxs = np.arange(D.shape[1])
+    for i in range(times):
+        np.random.shuffle(idxs)
+        m_msk[i] = idxs
     
     starts = np.zeros(n_gsets, dtype=nb.i4)
     starts[1:] = np.cumsum(offsets)[:-1]
     for j in nb.prange(n_gsets):
+        
         srt = starts[j]
         off = offsets[j] + srt
         fset = net[srt:off]
         es = ks_matrix(D, I, fset)
         m_es[:,j] = es
-        m_nes[:,j] = ks_perms(D, I, fset, es, times)
+        m_nes[:,j] = ks_perms(D, I, fset, es, m_msk)
     
     return m_es, m_nes
 
     
-def gsea(mat, net, times=100, seed=42):
-    """
-    Gene Set Enrichment Analysis (GSEA).
-    
-    Computes GSEA to infer biological activities.
-    
-    Parameters
-    ----------
-    mat : np.array
-        Input matrix with molecular readouts.
-    net : pd.Series
-        Series of feature sets as lists.
-    times : int
-        How many random permutations to do.
-    seed : int
-        Random seed to use.
-    
-    Returns
-    -------
-    Returns gsea, norm_gsea activity estimates and p-values.
-    """
+def gsea(mat, net, times=1000, batch_size = 10000, seed=42, verbose=False):
     
     # Flatten net and get offsets
     offsets = net.apply(lambda x: len(x)).values.astype(np.int32)
     net = np.concatenate(net.values)
     
-    # Get modified m and I matrix
-    mat, I = get_M_I(mat)
+    # Get number of batches
+    n_samples = mat.shape[0]
+    n_fsets = offsets.shape[0]
+    n_batches = int(np.ceil(n_samples / batch_size))
     
-    # Compute GSEA
-    es, nes = nb_gsea(mat, I, net, offsets, times, seed)
+    # Init empty acts
+    es = np.zeros((n_samples, n_fsets), dtype=np.float32)
+    nes = np.zeros((n_samples, n_fsets), dtype=np.float32)
+    
+    for i in tqdm(range(n_batches), disable=not verbose):
+        
+        # Subset batch
+        srt, end = i*batch_size, i*batch_size+batch_size
+        sub_mat = mat[srt:end].A
+        
+        # Get modified m and I matrix
+        sub_mat, I = get_M_I(sub_mat)
+        
+        # Compute GSEA per batch
+        es[srt:end], nes[srt:end] = nb_gsea(sub_mat, I, net, offsets, times, seed)
     
     if times != 0:
         pvals = norm.cdf(-np.abs(nes)) * 2
@@ -171,7 +173,8 @@ def gsea(mat, net, times=100, seed=42):
     
     
 def run_gsea(mat, net, source='source', target='target', weight='weight', 
-             times=100, min_n=5, seed=42, verbose=False, use_raw=True):
+             times=1000, batch_size = 10000, min_n=5, seed=42, verbose=False, 
+             use_raw=True):
     """
     Gene Set Enrichment Analysis (GSEA).
     
@@ -192,6 +195,9 @@ def run_gsea(mat, net, source='source', target='target', weight='weight',
         Column name in net with weights.
     times : int
         How many random permutations to do.
+    batch_size : int
+        Size of the samples to use for each batch. Increasing this will consume more 
+        memmory but it will run faster.
     min_n : int
         Minimum of targets per source. If less, sources are removed.
     seed : int
@@ -224,7 +230,8 @@ def run_gsea(mat, net, source='source', target='target', weight='weight',
         print('Running gsea on mat with {0} samples and {1} targets for {2} sources.'.format(m.shape[0], len(c), len(net)))
     
     # Run GSEA
-    estimate, norm_e, pvals = gsea(m.A, net, times=times, seed=seed)
+    estimate, norm_e, pvals = gsea(m, net, times=times, batch_size=batch_size, 
+                                   seed=seed, verbose=verbose)
     
     # Transform to df
     estimate = pd.DataFrame(estimate, index=r, columns=net.index)
