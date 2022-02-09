@@ -71,6 +71,10 @@ def extract(mat, use_raw=True, verbose=False, dtype=np.float32):
             print("{0} features of mat are empty in {1} samples, they will be ignored.".format(n_empty_features, n_empty_samples))
         m, c = m[:,msk], c[msk]
     
+    # Check for non finite values
+    if np.any(~np.isfinite(m.data)):
+        raise ValueError("""mat contains non finite values (nan or inf), please set them to 0 or remove them.""")
+    
     # Sort genes
     msk = np.argsort(c)
     
@@ -184,6 +188,11 @@ def rename_net(net, source='source', target='target', weight='weight'):
     net = net.rename(columns={source: 'source', target: 'target', weight: 'weight'})
     # Sort
     net = net.reindex(columns=['source', 'target', 'weight'])
+    
+    # Check if duplicated
+    is_d = net.duplicated(['source', 'target', 'weight']).sum()
+    if is_d > 0:
+        raise ValueError('net contains repeated edges, please remove them.')
     
     return net
 
