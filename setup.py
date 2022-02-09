@@ -20,7 +20,7 @@ setup(
                       "tqdm",
                       "anndata",
                       "skranger",
-                      "fisher"
+                      "fisher==0.1.9"
                      ],
     packages=["decoupler"],
     python_requires=">=3.8",

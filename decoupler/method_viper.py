@@ -38,25 +38,6 @@ def get_wts_posidxs(wts, idxs, pval1, table, penalty):
     return wts, pos_idxs
 
 
-@nb.njit(nb.f4[:](nb.i4, nb.f4[:,:], nb.i4, nb.f4[:]), cache=True)
-def fill_pval_mat(j, reg, n_targets, s2):
-    n_fsets = reg.shape[1]
-    #col = np.zeros(n_fsets, dtype=nb.f4)
-    col = np.full(n_fsets, np.nan, dtype=nb.f4)
-    for k in nb.prange(n_fsets):
-        if k != j:
-            reg_k = reg[:,k]
-            k_msk = reg_k != 0
-            if k_msk.sum() > n_targets:
-                sum1 = np.sum(reg_k * s2)
-                ss = np.sign(sum1)
-                if ss == 0:
-                    ss = 1
-                ww = np.abs(reg_k) / np.max(np.abs(reg_k))
-                col[k] = np.abs(sum1) / np.sum(np.abs(reg_k)) * ss * np.sqrt(np.sum(ww**2))
-    return col
-
-
 @nb.njit(nb.types.Tuple((nb.f4[:,:], nb.i4[:,:]))(nb.f4[:,:]), cache=True)
 def get_tmp_idxs(pval):
     
@@ -82,29 +63,21 @@ def get_tmp_idxs(pval):
     return tmp, idxs
 
 
-@nb.njit(nb.types.Tuple((nb.f4[:,:], nb.i4[:,:]))(nb.f4[:,:]), cache=True)
-def nb_get_tmp_idxs(pval):
-    
-    size = int(np.sum(~np.isnan(pval)) / 2)
-    
-    tmp = np.zeros((size, 2), dtype=nb.f4)
-    idxs = np.zeros((size, 2), dtype=nb.i4)
-    
-    k = 0
-    for i in nb.prange(pval.shape[0]):
-        for j in range(pval.shape[1]):
-            if i <= j:
-                x = pval[i,j]
-                if not np.isnan(x):
-                    y = pval[j,i]
-                    if not np.isnan(y):
-                        tmp[k,0] = x
-                        tmp[k,1] = y
-                        idxs[k,0] = i
-                        idxs[k,1] = j
-                        k += 1
-
-    return tmp, idxs
+@nb.njit(nb.f4[:](nb.i4, nb.f4[:,:], nb.i4, nb.f4[:]), cache=True, parallel=False)
+def fill_pval_mat(j, reg, n_targets, s2):
+    n_fsets = reg.shape[1]
+    col = np.full(n_fsets, np.nan, dtype=nb.f4)
+    for k in nb.prange(n_fsets):
+        if k != j:
+            k_msk = reg[:,k] != 0
+            if k_msk.sum() >= n_targets:
+                sum1 = np.sum(reg[:,k] * s2)
+                ss = np.sign(sum1)
+                if ss == 0:
+                    ss = 1
+                ww = np.abs(reg[:,k]) / np.max(np.abs(reg[:,k]))
+                col[k] = np.abs(sum1) / np.sum(np.abs(reg[:,k])) * ss * np.sqrt(np.sum(ww**2))
+    return col
 
 
 def get_inter_pvals(nes_i, ss_i, sub_net, n_targets):
@@ -133,10 +106,7 @@ def get_inter_pvals(nes_i, ss_i, sub_net, n_targets):
 
 def shadow_regulon(nes_i, ss_i, net, reg_sign=1.96, n_targets=10, penalty=20):
     # Find significant activities
-    #msk_sign = np.abs(nes_i) > reg_sign
-    # Find significant activities
-    pval = (1-norm.cdf(np.abs(nes_i))) * 2
-    msk_sign = pval < 0.05
+    msk_sign = np.abs(nes_i) > reg_sign
 
     # Filter by significance
     nes_i = nes_i[msk_sign]
@@ -228,9 +198,9 @@ def viper(mat, net, pleiotropy = True, reg_sign = 0.05, n_targets = 10,
         nes[srt:end] = aREA(tmp, net)
     
     if pleiotropy:
-        reg_sign = norm.ppf(1-(reg_sign / 2))
         if verbose:
             print('Computing pleiotropy correction.')
+        reg_sign = norm.ppf(1-(reg_sign / 2))
         for i in tqdm(range(nes.shape[0]), disable=not verbose):  
 
             # Extract per sample
