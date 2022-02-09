@@ -23,21 +23,21 @@ def init_cdfs(pre_res=10000, max_pre=10):
     return pre_cdf
 
 
-@nb.njit(nb.f4[:](nb.f4[:]))
+@nb.njit(nb.f4[:](nb.f4[:]), cache=True)
 def apply_ecdf(x):
     v = np.sort(x)
     n = len(x)
     return (np.searchsorted(v, x, side='right').astype(nb.f4)) / n
 
 
-@nb.njit(nb.f4[:,:](nb.f4[:,:]), parallel=True)
+@nb.njit(nb.f4[:,:](nb.f4[:,:]), parallel=True, cache=True)
 def mat_ecdf(mat):
     for j in nb.prange(mat.shape[1]):
         mat[:,j] = apply_ecdf(mat[:,j])
     return mat
 
 
-@nb.njit(nb.f4[:](nb.f4[:], nb.f4[:]))
+@nb.njit(nb.f4[:](nb.f4[:], nb.f4[:]), cache=True)
 def col_d(x, pre_cdf):
     size = x.shape[0]
     bw = (std(x, 1) / 4.0)
@@ -61,7 +61,7 @@ def col_d(x, pre_cdf):
     return col
 
 
-@nb.njit(nb.f4[:,:](nb.f4[:,:], nb.f4[:]), parallel=True)
+@nb.njit(nb.f4[:,:](nb.f4[:,:], nb.f4[:]), parallel=True, cache=True)
 def mat_d(mat, pre_cdf):
     D = np.zeros(mat.shape, dtype=nb.f4)
     for j in nb.prange(mat.shape[1]):
@@ -136,28 +136,6 @@ def ks_matrix(D, I, fset):
 
 
 def gsva(mat, net, kcdf=False, verbose=False):
-    """
-    Gene Set Variation Analysis (GSVA).
-    
-    Computes GSVA to infer biological activities.
-    
-    Parameters
-    ----------
-    mat : np.array
-        Input matrix with molecular readouts.
-    net : pd.Series
-        Series of feature sets as lists.
-    kcdf : bool
-        Wether to use a Gaussian kernel or not during the non-parametric estimation 
-        of the cumulative distribution function. By default no kernel is used (faster),
-        to reproduce GSVA original behaviour in R set to True.
-    verbose : bool
-        Whether to show progress.
-    
-    Returns
-    -------
-    acts : Array of activities.
-    """
     
     # Get feature Density
     mat = density(mat, kcdf=kcdf)

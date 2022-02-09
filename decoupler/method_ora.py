@@ -19,7 +19,7 @@ from tqdm import tqdm
 import numba as nb
 
 
-@nb.njit(nb.uint[:,:](nb.i4[:], nb.i4[:], nb.i4[:], nb.i4[:], nb.i4), parallel=True)
+@nb.njit(nb.uint[:,:](nb.i4[:], nb.i4[:], nb.i4[:], nb.i4[:], nb.i4), parallel=True, cache=True)
 def get_cont_table(sample, net, starts, offsets, n_background):
     
     sample = set(sample)
@@ -42,19 +42,6 @@ def get_cont_table(sample, net, starts, offsets, n_background):
 
 
 def ora(mat, net, n_up_msk, n_bt_msk, n_background=20000, verbose=False):
-    """
-    Over Representation Analysis (ORA).
-    
-    Computes ORA to infer regulator activities.
-    
-    Parameters
-    ----------
-
-    
-    Returns
-    -------
-    Array of uncorrected pvalues.
-    """
     
     # Flatten net and get offsets
     offsets = net.apply(lambda x: len(x)).values.astype(np.int32)
@@ -76,7 +63,6 @@ def ora(mat, net, n_up_msk, n_bt_msk, n_background=20000, verbose=False):
 
         # Estimate pvals
         _, pvls[i], _ = pvalue_npy(table[:,0],table[:,1],table[:,2],table[:,3])
-    
     
     return pvls
 
@@ -156,7 +142,6 @@ def run_ora(mat, net, source='source', target='target', weight='weight',
     # Transform to df
     pvals = pd.DataFrame(pvals, index=r, columns=net.index)
     pvals.name = 'ora_pvals'
-    pvals.columns.name = None
     estimate = pd.DataFrame(-np.log10(pvals), index=r, columns=pvals.columns)
     estimate.name = 'ora_estimate'
     

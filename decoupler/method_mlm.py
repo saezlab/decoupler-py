@@ -16,7 +16,7 @@ from tqdm import tqdm
 import numba as nb
 
 
-@nb.njit(nb.f4[:,:](nb.f4[:,:], nb.f4[:,:], nb.f4[:,:], nb.i4), parallel=True)
+@nb.njit(nb.f4[:,:](nb.f4[:,:], nb.f4[:,:], nb.f4[:,:], nb.i4), parallel=True, cache=True)
 def fit_mlm(X, y, inv, df):
     X = np.ascontiguousarray(X)
     n_samples = y.shape[1]
@@ -31,24 +31,6 @@ def fit_mlm(X, y, inv, df):
 
 
 def mlm(mat, net, batch_size = 10000, verbose=False):
-    """
-    Multivariate Linear Model (MLM).
-    
-    Computes MLM to infer regulator activities.
-    
-    Parameters
-    ----------
-    mat : np.array
-        Input matrix with molecular readouts.
-    net : np.array
-        Regulatory adjacency matrix.
-    batch_size : int
-        Size of the batches to use. Increasing this will consume more memmory but it will run faster.
-    
-    Returns
-    -------
-    x : Array of activities and p-values.
-    """
     
     # Get number of batches
     n_samples = mat.shape[0]

@@ -17,7 +17,7 @@ from tqdm import tqdm
 import numba as nb
     
 
-@nb.njit(nb.types.UniTuple(nb.f4[:,:],3)(nb.f4[:,:],nb.f4[:,:],nb.f4[:,:],nb.i4[:],nb.i4,nb.i4))
+@nb.njit(nb.types.UniTuple(nb.f4[:,:],3)(nb.f4[:,:],nb.f4[:,:],nb.f4[:,:],nb.i4[:],nb.i4,nb.i4), cache=True)
 def run_perm(estimate, mat, net, idxs, times, seed):
     
     mat = np.ascontiguousarray(mat)

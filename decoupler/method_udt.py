@@ -25,30 +25,11 @@ def fit_dt(regulator, sample, min_leaf=5, seed=42):
         
 
 def udt(mat, net, min_leaf=5, seed=42, verbose=False):
-    """
-    Univariate Decision Tree (UDT).
     
-    Computes UDT to infer regulator activities.
-    
-    Parameters
-    ----------
-    mat : np.array
-        Input matrix with molecular readouts.
-    net : np.array
-        Regulatory adjacency matrix.
-    min_leaf : int
-        The minimum number of samples required to be at a leaf node.
-    seed : int
-        Random seed to use.
-    verbose : bool
-        Whether to show progress. 
-    
-    Returns
-    -------
-    acts : Array of activities.
-    """
-    
+    # Init empty acts
     acts = np.zeros((mat.shape[0], net.shape[1]))
+    
+    # For each sample and regulator fit dt
     for i in tqdm(range(mat.shape[0]), disable=not verbose):
         for j in range(net.shape[1]): 
             acts[i,j] = fit_dt(net[:,j], mat[i], min_leaf=min_leaf, seed=seed)

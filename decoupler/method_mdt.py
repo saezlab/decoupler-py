@@ -14,41 +14,22 @@ from tqdm import tqdm
 
 
 def fit_rf(net, sample, trees=100, min_leaf=5, n_jobs=4, seed=42):
+    
+    # Fit Random Forest
     regr = RangerForestRegressor(n_estimators=trees, min_node_size=min_leaf, 
                                  n_jobs=n_jobs, seed=seed, importance='impurity')
     regr.fit(net, sample)
+    
+    # Extract importances
     return regr.feature_importances_
         
 
 def mdt(mat, net, trees=10, min_leaf=5, n_jobs=4, seed=42, verbose=False):
-    """
-    Multivariate Decision Tree (MDT).
     
-    Computes MDT to infer regulator activities.
-    
-    Parameters
-    ----------
-    mat : sparse array
-        Input matrix with molecular readouts.
-    net : np.array
-        Regulatory adjacency matrix.
-    trees : int
-        Number of trees in the forest.
-    min_leaf : int
-        The minimum number of samples required to be at a leaf node.
-    n_jobs : int
-        Number of jobs to run in parallel
-    seed : int
-        Random seed to use.
-    verbose : bool
-        Whether to show progress.
-    
-    Returns
-    -------
-    acts : Array of activities.
-    """
-    
+    # Init empty acts
     acts = np.zeros((mat.shape[0], net.shape[1]), dtype=np.float32)
+    
+    # For each sample
     for i in tqdm(range(mat.shape[0]), disable=not verbose):
         sample = mat[i].A[0]
         acts[i] = fit_rf(net, sample, trees=trees, min_leaf=min_leaf, n_jobs=n_jobs, seed=seed)

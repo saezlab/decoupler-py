@@ -15,7 +15,7 @@ from anndata import AnnData
 import numba as nb
 
 
-@nb.njit(nb.f4[:,:](nb.i4, nb.i4, nb.f4[:], nb.i4[:], nb.i4[:], nb.i4[:], nb.i4[:], nb.i4), parallel=True)
+@nb.njit(nb.f4[:,:](nb.i4, nb.i4, nb.f4[:], nb.i4[:], nb.i4[:], nb.i4[:], nb.i4[:], nb.i4), parallel=True, cache=True)
 def nb_aucell(n_samples, n_features, data, indptr, indices, net, offsets, n_up):
     
     # Number of feature sets
@@ -65,18 +65,6 @@ def nb_aucell(n_samples, n_features, data, indptr, indices, net, offsets, n_up):
 
 
 def aucell(mat, net, n_up):
-    """
-    AUCell.
-    
-    Computes AUCell to infer biological activities.
-    
-    Parameters
-    ----------
-    
-    Returns
-    -------
-    acts : Array of activities.
-    """
     
     # Flatten net and get offsets
     offsets = net.apply(lambda x: len(x)).values.astype(np.int32)

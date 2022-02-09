@@ -16,7 +16,7 @@ from tqdm import tqdm
 import numba as nb
 
 
-@nb.njit(nb.f4[:,:](nb.i4, nb.i4, nb.f4[:], nb.i4[:], nb.i4[:], nb.f4[:,:]), parallel=True)
+@nb.njit(nb.f4[:,:](nb.i4, nb.i4, nb.f4[:], nb.i4[:], nb.i4[:], nb.f4[:,:]), parallel=True, cache=True)
 def nb_ulm(n_samples, n_features, data, indptr, indices, net):
     
     df, n_fsets = net.shape
@@ -49,24 +49,8 @@ def nb_ulm(n_samples, n_features, data, indptr, indices, net):
 
 
 def ulm(mat, net):
-    """
-    Univariate Linear Model (ULM).
     
-    Computes ULM to infer regulator activities.
-    
-    Parameters
-    ----------
-    mat : np.array
-        Input matrix with molecular readouts.
-    net : np.array
-        Regulatory adjacency matrix.
-    
-    Returns
-    -------
-    x : Array of activities and p-values.
-    """
-    
-    
+    # Get df
     df = net.shape[0]
     df = df - 2
     
