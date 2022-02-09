@@ -172,8 +172,8 @@ def gsea(mat, net, times=1000, batch_size = 10000, seed=42, verbose=False):
         return es, None, None
     
     
-def run_gsea(mat, net, source='source', target='target', weight='weight', 
-             times=1000, batch_size = 10000, min_n=5, seed=42, verbose=False, 
+def run_gsea(mat, net, source='source', target='target', times=1000, 
+             batch_size = 10000, min_n=5, seed=42, verbose=False, 
              use_raw=True):
     """
     Gene Set Enrichment Analysis (GSEA).
@@ -191,8 +191,6 @@ def run_gsea(mat, net, source='source', target='target', weight='weight',
         Column name in net with source nodes.
     target : str
         Column name in net with target nodes.
-    weight : str
-        Column name in net with weights.
     times : int
         How many random permutations to do.
     batch_size : int
@@ -218,8 +216,14 @@ def run_gsea(mat, net, source='source', target='target', weight='weight',
     m, r, c = extract(mat, use_raw=use_raw, verbose=verbose)
     
     # Transform net
-    net = rename_net(net, source=source, target=target, weight=weight)
+    net = rename_net(net, source=source, target=target, weight=None)
     net = filt_min_n(c, net, min_n=min_n)
+    
+    # Randomize feature order to break ties randomly
+    rng = default_rng(seed=seed)
+    idx = np.arange(m.shape[1])
+    rng.shuffle(idx)
+    m, c = m[:,idx], c[idx]
     
     # Transform targets to indxs
     table = {name:i for i,name in enumerate(c)}

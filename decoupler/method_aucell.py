@@ -77,8 +77,8 @@ def aucell(mat, net, n_up):
     return acts
 
 
-def run_aucell(mat, net, source='source', target='target', weight='weight', 
-               n_up=None, min_n=5, seed=42, verbose=False, use_raw=True):
+def run_aucell(mat, net, source='source', target='target', n_up=None, 
+               min_n=5, seed=42, verbose=False, use_raw=True):
     """
     AUCell.
     
@@ -95,10 +95,9 @@ def run_aucell(mat, net, source='source', target='target', weight='weight',
         Column name in net with source nodes.
     target : str
         Column name in net with target nodes.
-    weight : str
-        Column name in net with weights.
     n_up : int
-        Number of top ranked features to select as observed features.
+        Number of top ranked features to select as observed features. If not specified
+        it will be equal to the 5% of the number of features.
     min_n : int
         Minimum of targets per source. If less, sources are removed.
     seed : int
@@ -124,7 +123,7 @@ def run_aucell(mat, net, source='source', target='target', weight='weight',
         raise ValueError('n_up needs to be a value higher than 0.')
     
     # Transform net
-    net = rename_net(net, source=source, target=target, weight=weight)
+    net = rename_net(net, source=source, target=target, weight=None)
     net = filt_min_n(c, net, min_n=min_n)
     
     # Randomize feature order to break ties randomly

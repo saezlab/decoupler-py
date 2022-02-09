@@ -163,8 +163,9 @@ def rename_net(net, source='source', target='target', weight='weight'):
         Column name where to extract source features.
     target : str
         Column name where to extract target features.
-    weight : str
-        Column name where to extract features' weights. 
+    weight : str, None
+        Column name where to extract features' weights. If no weights are available,
+        set to None.
     
     Returns
     -------
@@ -176,16 +177,16 @@ def rename_net(net, source='source', target='target', weight='weight'):
     assert source in net.columns, msg.format(source)
     assert target in net.columns, msg.format(target)
     if weight is not None:
-        assert weight in net.columns, msg.format(weight)
+        assert weight in net.columns, msg.format(weight) + """Alternatively,
+        set to None if no weights are available."""
     else:
-        import sys
-        print("weight column not provided, will be set to 1s.", file=sys.stderr) 
         net = net.copy()
         net['weight'] = 1.0
         weight = 'weight'
     
     # Rename
     net = net.rename(columns={source: 'source', target: 'target', weight: 'weight'})
+    
     # Sort
     net = net.reindex(columns=['source', 'target', 'weight'])
     

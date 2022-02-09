@@ -67,9 +67,9 @@ def ora(mat, net, n_up_msk, n_bt_msk, n_background=20000, verbose=False):
     return pvls
 
 
-def run_ora(mat, net, source='source', target='target', weight='weight', 
-            n_up=None, n_bottom=0, n_background=20000, min_n=5, 
-            seed=42, verbose=False, use_raw=True):
+def run_ora(mat, net, source='source', target='target', n_up=None, 
+            n_bottom=0, n_background=20000, min_n=5, seed=42, 
+            verbose=False, use_raw=True):
     """
     Over Representation Analysis (ORA).
     
@@ -86,8 +86,6 @@ def run_ora(mat, net, source='source', target='target', weight='weight',
         Column name in net with source nodes.
     target : str
         Column name in net with target nodes.
-    weight : str
-        Column name in net with weights.
     n_up : int
         Number of top ranked features to select as observed features.
     n_bottom : int
@@ -125,7 +123,7 @@ def run_ora(mat, net, source='source', target='target', weight='weight',
     
     
     # Transform net
-    net = rename_net(net, source=source, target=target, weight=weight)
+    net = rename_net(net, source=source, target=target, weight=None)
     net = filt_min_n(c, net, min_n=min_n)
     
     # Transform targets to indxs

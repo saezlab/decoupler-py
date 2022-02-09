@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 from scipy.stats import norm
+from numpy.random import default_rng
 
 from .pre import extract, match, rename_net, filt_min_n
 from .method_gsea import std
@@ -150,8 +151,8 @@ def gsva(mat, net, kcdf=False, verbose=False):
     return acts
     
     
-def run_gsva(mat, net, source='source', target='target', weight='weight', 
-             kcdf=False, mx_diff = True, abs_rnk = False, min_n=5,
+def run_gsva(mat, net, source='source', target='target', kcdf=False, 
+             mx_diff = True, abs_rnk = False, min_n=5, seed=42, 
              verbose=False, use_raw=True):
     """
     Gene Set Variation Analysis (GSVA).
@@ -169,8 +170,6 @@ def run_gsva(mat, net, source='source', target='target', weight='weight',
         Column name in net with source nodes.
     target : str
         Column name in net with target nodes.
-    weight : str
-        Column name in net with weights.
     kcdf : bool
         Wether to use a Gaussian kernel or not during the non-parametric estimation 
         of the cumulative distribution function. By default no kernel is used (faster),
@@ -188,6 +187,8 @@ def run_gsva(mat, net, source='source', target='target', weight='weight',
         activated.
     min_n : int
         Minimum of targets per source. If less, sources are removed.
+    seed : int
+        Random seed to use.
     verbose : bool
         Whether to show progress.
     use_raw : bool
@@ -203,8 +204,14 @@ def run_gsva(mat, net, source='source', target='target', weight='weight',
     m, r, c = extract(mat, use_raw=use_raw, verbose=verbose)
     
     # Transform net
-    net = rename_net(net, source=source, target=target, weight=weight)
+    net = rename_net(net, source=source, target=target, weight=None)
     net = filt_min_n(c, net, min_n=min_n)
+    
+    # Randomize feature order to break ties randomly
+    rng = default_rng(seed=seed)
+    idx = np.arange(m.shape[1])
+    rng.shuffle(idx)
+    m, c = m[:,idx], c[idx]
     
     # Transform targets to indxs
     table = {name:i for i,name in enumerate(c)}
