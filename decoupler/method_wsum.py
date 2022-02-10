@@ -104,12 +104,12 @@ def run_wsum(mat, net, source='source', target='target', weight='weight', times=
         Column name in net with target nodes.
     weight : str
         Column name in net with weights.
-    min_n : int
-        Minimum of targets per source. If less, sources are removed.
     times : int
         How many random permutations to do.
     batch_size : int
         Size of the batches to use. Increasing this will consume more memmory but it will run faster.
+    min_n : int
+        Minimum of targets per source. If less, sources are removed.
     seed : int
         Random seed to use.
     verbose : bool
