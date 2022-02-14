@@ -6,7 +6,7 @@ def check_if_omnipath():
     try:
         import omnipath as op
     except:
-        raise('omnipath is not installed. Please install it with: pip install omnipath')
+        raise BaseException('omnipath is not installed. Please install it with: pip install omnipath')
     return op
 
 def get_progeny(top=100):
