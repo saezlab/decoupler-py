@@ -1,6 +1,6 @@
 import unittest
 import decoupler as dc
-
+from anndata import AnnData
 
 class TestMethods(unittest.TestCase):
     
@@ -41,4 +41,6 @@ class TestMethods(unittest.TestCase):
         
     def test_decouple(self):
         dc.decouple(self.mat, self.net, min_n=0, 
-                    verbose=False)
+                    verbose=False, methods='all')
+        dc.decouple(AnnData(self.mat), self.net, min_n=0, 
+                    verbose=False, use_raw=False, methods='all')
