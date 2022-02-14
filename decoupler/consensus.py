@@ -1,74 +1,101 @@
 import numpy as np
 import pandas as pd
 
-from numpy.random import default_rng
+from .method_gsea import std
 
-from scipy.stats import beta
+from scipy.stats import norm
 
-
-def beta_scores(rmat):
-    rmat = np.sort(rmat, axis=0)
-    n = rmat.shape[0]
-    dist_a = np.repeat([np.repeat([np.arange(n)], rmat.shape[1], axis=0)], rmat.shape[2], axis=0).T + 1
-    dist_b = n - dist_a + 1
-    p = beta.cdf(np.sort(rmat, axis=0), dist_a, dist_b)
-    return p
+import numba as nb
 
 
-def corr_beta_pvals(p, k):
-    p = np.clip(p * k, a_min=0, a_max=1)
-    return p
+@nb.njit(nb.f4[:](nb.f4[:]), cache=True)
+def z_score(sel):
+    
+    # N selection
+    n_sel = len(sel)
+    
+    # Mirror distr
+    sel = np.append(sel, -sel)
+    
+    # Compute z-score (mean is 0)
+    z = (sel / std(sel,1))[:n_sel]
+    
+    return z
 
 
-def aggregate_ranks(acts):
-    rmat = (acts.shape[-1] - np.argsort(np.argsort(acts))) / (acts.shape[-1])
-    x = beta_scores(rmat)
-    rho = corr_beta_pvals(np.min(x, axis=0), k = rmat.shape[0])
-    return rho
+@nb.njit(nb.f4[:,:](nb.f4[:,:,:]), parallel=True, cache=True)
+def consensus(acts):
+    
+    # Make a copy not to overwrite
+    x = acts.copy()
+
+    # Extract dims
+    n_methods, n_samples, n_ftrs  = x.shape
+
+    # Init empty cons acts
+    cons = np.zeros((n_samples,n_ftrs), dtype=nb.f4)
+    
+    # For each sample
+    for i in nb.prange(n_samples):
+        sample = x[:,i,:]
+        
+        # Compute z-score per method
+        for k in range(n_methods):
+            
+            # Extract method acts
+            methd = sample[k,:]
+
+            # Compute pos z-score
+            msk = methd > 0
+            if np.any(msk):
+                methd[msk] = z_score(methd[msk])
+
+            # Compute neg z-score
+            msk = methd <= 0
+            if np.any(msk):
+                methd[msk] = z_score(methd[msk])
+            
+        # Compute mean per feature
+        for j in range(n_ftrs):
+            ftr = sample[:,j]
+            cons[i,j] = np.mean(ftr)
+    
+    return cons
 
 
-def run_consensus(res, seed=42):
+def run_consensus(res):
     """
     Consensus.
     
-    Runs a consensus score using RobustRankAggreg after running different 
+    Computes a consensus score after running different 
     methods with decouple.
     
     Parameters
     ----------
     res : dict
         Results from `decouple`.
-    seed : int
-        Random seed to use.
     
     Returns
     -------
-    Returns activity estimates (-log10(p-values)) and p-values.
+    Returns activity estimates and p-values.
     """
     
-    acts = np.abs([res[k].values for k in res if 'pvals' not in k and 
-                   not np.all(np.isnan(res[k].values.astype(np.float32)))])
+    acts = np.array([res[k].values for k in res if 'pvals' not in k and 
+                   not np.all(np.isnan(res[k].values))]).astype(np.float32)
     
-    # Randomize sources order to break ties randomly
-    rng = default_rng(seed=seed)
-    idx = np.arange(acts.shape[2])
-    rng.shuffle(idx)
-    acts = acts[:,:,idx]
+    # Compute mean z-scores
+    estimate = consensus(acts)
     
     # Compute p-vals
-    pvals = aggregate_ranks(acts)
+    pvals = norm.cdf(-np.abs(estimate)) * 2
     
     # Transform to df
     k = list(res.keys())[0]
-    columns = res[k].columns[idx]
-    idx = np.argsort(columns)
-    pvals = pd.DataFrame(pvals[:,idx], index=res[k].index, columns=columns[idx])
-    pvals.name = 'consensus_pvals'
-    pvals.columns.name = None
-    pvals.index.name = None
-    
-    # Get estimate
-    estimate = pd.DataFrame(-np.log10(pvals), columns=pvals.columns)
+    index = res[k].index
+    columns = res[k].columns
+    estimate = pd.DataFrame(estimate, columns=columns, index=index)
     estimate.name = 'consensus_estimate'
+    pvals = pd.DataFrame(pvals, columns=columns, index=index)
+    pvals.name = 'consensus_pvals'
     
     return estimate, pvals
