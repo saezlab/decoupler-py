@@ -236,3 +236,103 @@ def get_toy_data(n_samples=24, seed=42):
     mat = pd.DataFrame(mat, index=samples, columns=features)
     
     return mat, net
+
+
+def summarize_acts(acts, groupby, obs=None, var=None, mode='mean', min_val=1.0):
+    """
+    Summarizes activities obtained per group by their mean or median.
+    
+    Parameters
+    ----------
+    acts : AnnData or pd.DataFrame
+        Activities obtained after running a method.
+    groupby : str
+        Column name of obs to use for grouping.
+    obs : pd.DataFrame
+        None or a data-frame with sample meta-data.
+    var : pd.DataFrame
+        None or a data-frame with feature meta-data.
+    mode : str
+        Wheter to use mean or median to summarize.
+    min_val : float
+        Absolut minimum value to filter out features.
+    
+    Returns
+    -------
+    Data-frame with summaried actvities per group.
+    """
+    
+    # Extract acts, obs and features
+    if type(acts) is AnnData:
+        if obs is not None or var is not None:
+            raise ValueError('If acts is AnnData, obs and var need to be None.')
+        obs = acts.obs[groupby].values.astype('U')
+        features = acts.var.index.values.astype('U')
+        acts = acts.X
+    else:
+        obs = obs[groupby].values.astype('U')
+        features = var.index.astype('U')
+        
+    # Get sizes
+    groups = np.unique(obs)
+    n_groups = len(groups)
+    n_features = acts.shape[1]
+    
+    # Init empty mat
+    summary = np.zeros((n_groups, n_features), dtype=np.float32)
+    
+    for i in range(n_groups):
+        msk = obs == groups[i]
+        if mode == 'mean':
+            summary[i] = np.mean(acts[msk], axis=0, where=np.isfinite(acts[msk]))
+        elif mode == 'median':
+            summary[i] = np.median(acts[msk], axis=0)
+        else:
+            raise ValueError('mode can only be either mean or median.')
+            
+    # Filter by min_val
+    min_val = np.abs(min_val)
+    if mode == 'mean':
+        msk = np.abs(np.mean(summary, axis=0)) > min_val
+    else:
+        msk = np.abs(np.median(summary, axis=0)) > min_val
+    
+    # Transform to df
+    summary = pd.DataFrame(summary[:,msk], columns=features[msk], index=groups)
+    
+    return summary
+
+
+def assign_groups(summary):
+    """
+    Assigns group labels based on summary activities. The maximum positive
+    value is used for assigment.
+    
+    Parameters
+    ----------
+    summary : pd.DataFrame
+        Data-frame with summaried actvities per group
+    
+    Returns
+    -------
+    Dictionary with the group that had the maximum activity.
+    """
+    
+    # Extract from summary
+    obs = np.unique(summary.index.values.astype('U'))
+    groups = np.unique(summary.columns.values.astype('U'))
+    summary = summary.values
+    
+    # Get lens
+    n_obs = len(obs)
+    n_features = summary.shape[1]
+    
+    # Find max value and assign
+    annot_dict = dict()
+    for i in range(n_obs):
+        o = obs[i]
+        mx = np.max(summary[i])
+        idx = np.where(summary[i] == mx)[0][0]
+        annot_dict[o] = groups[idx]
+        
+    return annot_dict

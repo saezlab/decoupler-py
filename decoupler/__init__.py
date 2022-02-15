@@ -1,5 +1,5 @@
 from .pre import extract, match, rename_net, get_net_mat, filt_min_n
-from .utils import melt, show_methods, check_corr, get_acts, get_toy_data
+from .utils import melt, show_methods, check_corr, get_acts, get_toy_data, summarize_acts, assign_groups
 from .method_wmean import run_wmean
 from .method_wsum import run_wsum
 from .method_ulm import run_ulm
