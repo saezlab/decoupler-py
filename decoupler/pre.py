@@ -191,7 +191,7 @@ def rename_net(net, source='source', target='target', weight='weight'):
     net = net.reindex(columns=['source', 'target', 'weight'])
     
     # Check if duplicated
-    is_d = net.duplicated(['source', 'target', 'weight']).sum()
+    is_d = net.duplicated(['source', 'target']).sum()
     if is_d > 0:
         raise ValueError('net contains repeated edges, please remove them.')
     

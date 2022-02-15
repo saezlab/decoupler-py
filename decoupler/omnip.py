@@ -9,7 +9,7 @@ def check_if_omnipath():
         raise BaseException('omnipath is not installed. Please install it with: pip install omnipath')
     return op
 
-def get_progeny(top=100):
+def get_progeny(organism='human', top=100):
     """
     Pathway RespOnsive GENes for activity inference (PROGENy).
     
@@ -20,6 +20,8 @@ def get_progeny(top=100):
     
     Parameters
     ----------
+    organism : str
+        Which organism to use. Only human and mouse are available.
     top : int
         Number of genes per pathway to return.
     
@@ -28,6 +30,9 @@ def get_progeny(top=100):
     DataFrame in long format containing target genes for each pathway with
     their associated weights and p-values.
     """
+    organism = organism.lower()
+    if organism not in ['human', 'mouse']:
+        raise ValueError('organism can only be human or mouse.')
     
     op = check_if_omnipath()
     
@@ -41,6 +46,12 @@ def get_progeny(top=100):
     p['weight'] = p['weight'].astype(np.float32)
     p['p_value'] = p['p_value'].astype(np.float32)
     p.columns = ['source','target','weight','p_value']
+    
+    if organism == 'mouse':
+        p['target'] = [t.lower().capitalize() for t in p['target']]
+        
+    # Remove duplicates
+    p = p[~p.duplicated(['source', 'target'])]
     
     return p
 
