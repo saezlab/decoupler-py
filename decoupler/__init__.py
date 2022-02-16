@@ -13,4 +13,4 @@ from .method_viper import run_viper
 from .method_aucell import run_aucell
 from .decouple import decouple
 from .consensus import run_consensus
-from .omnip import show_resources, get_resource, get_progeny
+from .omnip import show_resources, get_resource, get_progeny, get_dorothea

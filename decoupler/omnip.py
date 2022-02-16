@@ -101,3 +101,83 @@ def show_resources():
     op = check_if_omnipath()
     
     return list(op.requests.Annotations.resources())
+
+
+def get_dorothea(organism='human', levels=['A','B','C']):
+    """
+    DoRothEA.
+    
+    Wrapper to access DoRothEA gene regulatory network. DoRothEA is a 
+    comprehensive resource containing a curated collection of transcription
+    factors (TFs) and their target genes. Each interaction is weigthed by its
+    mode of regulation (either positive or negative) and by its confidence 
+    level.
+    
+    
+    Parameters
+    ----------
+    organism : str
+        Which organism to use. Only human and mouse are available.
+    levels : list
+        List of confidence levels to return. Goes from A to D, A being the most
+        confident and D being the less.
+    
+    Returns
+    -------
+    DataFrame in long format containing target genes for each TF with
+    their associated weights and confidence level.
+    """
+    
+    organism = organism.lower()
+    if organism not in ['human', 'mouse']:
+        raise ValueError('organism can only be human or mouse.')
+    
+    op = check_if_omnipath()
+
+    # Load Dorothea
+    do = op.interactions.Dorothea.get(
+        fields = ['dorothea_level', 'extra_attrs'],
+        dorothea_levels = ['A', 'B', 'C', 'D'],
+        genesymbols = True,
+        organism=organism
+    )
+
+    # Filter extra columns
+    do = do[['source_genesymbol','target_genesymbol','is_stimulation','is_inhibition',
+             'consensus_direction','consensus_stimulation','consensus_inhibition',
+             'dorothea_level']]
+
+    # Remove duplicates
+    do = do[~do.duplicated(['source_genesymbol', 'dorothea_level', 'target_genesymbol'])]
+
+    # Assign top level if more than 2
+    do['dorothea_level'] = [lvl.split(';')[0] for lvl in do['dorothea_level']]
+
+    # Assign mode of regulation
+    mor = []
+    for i in do.itertuples():
+        if i.is_stimulation and i.is_inhibition:
+            if i.consensus_stimulation:
+                mor.append(1)
+            else:
+                mor.append(-1)
+        elif i.is_stimulation:
+            mor.append(1)
+        elif i.is_inhibition:
+            mor.append(-1)
+        else:
+            mor.append(1)
+    do['mor'] = mor
+
+    # Compute weight based on confidence: mor/confidence
+    weight_dict = {'A':1, 'B':2, 'C':3, 'D':4}
+    do['weight'] = [(i.mor)/weight_dict[i.dorothea_level] for i in do.itertuples()]
+
+    # Filter and rename
+    do = do[['source_genesymbol', 'dorothea_level', 'target_genesymbol', 'weight']]
+    do.columns = ['source','confidence','target','weight']
+    
+    # Filter by levels
+    do = do[np.isin(do['confidence'], levels)]
+    
+    return do
