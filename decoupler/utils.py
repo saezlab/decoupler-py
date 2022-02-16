@@ -255,7 +255,7 @@ def get_toy_data(n_samples=24, seed=42):
     return mat, net
 
 
-def summarize_acts(acts, groupby, obs=None, var=None, mode='mean', min_val=1.0):
+def summarize_acts(acts, groupby, obs=None, var=None, mode='mean', min_std=0.05):
     """
     Summarizes activities obtained per group by their mean or median.
     
@@ -271,8 +271,8 @@ def summarize_acts(acts, groupby, obs=None, var=None, mode='mean', min_val=1.0):
         None or a data-frame with feature meta-data.
     mode : str
         Wheter to use mean or median to summarize.
-    min_val : float
-        Absolut minimum value to filter out features.
+    min_std : float
+        Minimum std to filter out features.
     
     Returns
     -------
@@ -307,12 +307,9 @@ def summarize_acts(acts, groupby, obs=None, var=None, mode='mean', min_val=1.0):
         else:
             raise ValueError('mode can only be either mean or median.')
             
-    # Filter by min_val
-    min_val = np.abs(min_val)
-    if mode == 'mean':
-        msk = np.abs(np.mean(summary, axis=0)) > min_val
-    else:
-        msk = np.abs(np.median(summary, axis=0)) > min_val
+    # Filter by min_std
+    min_std = np.abs(min_std)
+    msk = np.std(summary, axis=0, ddof=1) > min_std
     
     # Transform to df
     summary = pd.DataFrame(summary[:,msk], columns=features[msk], index=groups)
