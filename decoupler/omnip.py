@@ -90,7 +90,7 @@ def get_resource(name):
 
 def show_resources():
     """
-    Shows the available resources in Omnipath. For more information visit
+    Shows available resources in Omnipath. For more information visit
     the official website for [Omnipath](https://omnipathdb.org/).
     
     Returns
@@ -105,7 +105,7 @@ def show_resources():
 
 def get_dorothea(organism='human', levels=['A','B','C']):
     """
-    DoRothEA.
+    DoRothEA gene regulatory network.
     
     Wrapper to access DoRothEA gene regulatory network. DoRothEA is a 
     comprehensive resource containing a curated collection of transcription

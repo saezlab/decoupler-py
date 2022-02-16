@@ -24,5 +24,8 @@ Check out the Usage section for further information.
    
    installation
    notebooks/usage
+   notebooks/cell_annotation
+   notebooks/progeny
+   notebooks/dorothea
    api
    reference

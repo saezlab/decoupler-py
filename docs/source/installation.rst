@@ -1,9 +1,7 @@
 Installation
 ============
 
-**decoupleR** requires Python version >= 3.7 to run.
-
-.. _PyPI:
+**decoupleR** requires Python version >= 3.8 to run.
 
 PyPI
 ----
@@ -12,8 +10,6 @@ PyPI
 .. code-block:: console
 
    pip install ...
-
-.. _Development Version:
 
 Development Version
 -------------------

@@ -125,7 +125,7 @@ def filt_min_n(c, net, min_n=5):
 
 def match(c, r, net):
     """
-    Match expression matrix with a regulatory adjacency matrix.
+    Matches `mat` with a regulatory adjacency matrix.
     
     Parameters
     ----------
@@ -200,7 +200,7 @@ def rename_net(net, source='source', target='target', weight='weight'):
 
 def get_net_mat(net):
     """
-    Transforms a given network to an adjacency matrix (target x source).
+    Transforms a given network to a regulatory adjacency matrix (targets x sources).
     
     Parameters
     ----------

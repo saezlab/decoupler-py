@@ -86,7 +86,7 @@ def melt(df):
 
 def show_methods():
     """
-    Shows the available methods.
+    Shows available methods.
     The first column correspond to the function name in decoupleR and the 
     second to the method's full name.
     
@@ -110,8 +110,6 @@ def show_methods():
 
 def check_corr(net, source='source', target='target', weight='weight', mat=None, min_n=5, use_raw=True):
     """
-    Check correlation (colinearity).
-    
     Checks the correlation across the regulators in a network. If a mat is also 
     provided, target genes will be prunned to match the ones in mat.
     

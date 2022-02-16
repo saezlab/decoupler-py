@@ -55,3 +55,16 @@ Utils:
    melt
    get_acts
    get_toy_data
+   summarize_acts
+   assign_groups
+   
+Omnipath wrappers:
+------------------
+.. autosummary::
+   :toctree: generated
+   
+   show_resources
+   get_resource
+   get_progeny
+   get_dorothea
+   
