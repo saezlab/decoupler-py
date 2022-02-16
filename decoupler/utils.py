@@ -6,7 +6,7 @@ Functions of general utility used in multiple places.
 import numpy as np
 import pandas as pd
 
-from .pre import rename_net, get_net_mat
+from .pre import extract, rename_net, get_net_mat, filt_min_n
 
 from anndata import AnnData
 
@@ -108,11 +108,12 @@ def show_methods():
     return df
 
 
-def check_corr(net, source='source', target='target', weight='weight'):
+def check_corr(net, source='source', target='target', weight='weight', mat=None, min_n=5, use_raw=True):
     """
     Check correlation (colinearity).
     
-    Checks the correlation across the regulators in a network.
+    Checks the correlation across the regulators in a network. If a mat is also 
+    provided, target genes will be prunned to match the ones in mat.
     
     Parameters
     ----------
@@ -124,6 +125,13 @@ def check_corr(net, source='source', target='target', weight='weight'):
         Column name with target nodes.
     weight : str
         Column name with weights.
+    mat : list, pd.DataFrame or AnnData
+        Optional. If given, target features be filtered if they are
+        not in mat.
+    min_n : int
+        Minimum of targets per source. If less, sources are removed.
+    use_raw : bool
+        Use raw attribute of mat if present.
     
     Returns
     -------
@@ -132,6 +140,15 @@ def check_corr(net, source='source', target='target', weight='weight'):
     
     # Transform net
     net = rename_net(net, source=source, target=target, weight=weight)
+    
+    # If mat is provided
+    if mat is not None:
+        # Extract sparse matrix and array of genes
+        _, _, c = extract(mat, use_raw=use_raw)
+    else:
+        c = np.unique(net['target'].values).astype('U')
+    
+    net = filt_min_n(c, net, min_n=min_n)
     sources, targets, net = get_net_mat(net)
     
     # Compute corr
