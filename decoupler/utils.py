@@ -255,7 +255,7 @@ def get_toy_data(n_samples=24, seed=42):
     return mat, net
 
 
-def summarize_acts(acts, groupby, obs=None, var=None, mode='mean', min_std=0.05):
+def summarize_acts(acts, groupby, obs=None, var=None, mode='mean', min_std=1.0):
     """
     Summarizes activities obtained per group by their mean or median.
     
