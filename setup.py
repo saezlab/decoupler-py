@@ -19,11 +19,10 @@ setup(
                       "sklearn",
                       "tqdm",
                       "anndata",
-                      "skranger",
-                      "fisher"
+                      "skranger"
                      ],
     packages=["decoupler"],
-    python_requires=">=3.8,<3.10",
+    python_requires=">=3.8",
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",

@@ -8,10 +8,9 @@ import pandas as pd
 
 from numpy.random import default_rng
 from scipy.stats import rankdata
+from math import log, exp, lgamma
 
 from .pre import extract, match, rename_net, filt_min_n
-
-from fisher import pvalue_npy
 
 from anndata import AnnData
 from tqdm import tqdm
@@ -19,12 +18,49 @@ from tqdm import tqdm
 import numba as nb
 
 
-@nb.njit(nb.uint[:,:](nb.i4[:], nb.i4[:], nb.i4[:], nb.i4[:], nb.i4), parallel=True, cache=True)
-def get_cont_table(sample, net, starts, offsets, n_background):
+@nb.njit(nb.f4(nb.i4,nb.i4,nb.i4,nb.i4), cache=True)
+def mlnTest2r(a, ab, ac, abcd):
+    if 0 > a or a > ab or a > ac or ab + ac > abcd + a:
+        raise ValueError('invalid contingency table')
+    a_min = max(0, ab + ac - abcd)
+    a_max = min(ab, ac)
+    if a_min == a_max:
+        return 0.
+    p0 = lgamma(ab + 1) + lgamma(ac + 1) + lgamma(abcd - ac + 1) + lgamma(abcd - ab + 1) - lgamma(abcd + 1)
+    pa = lgamma(a + 1) + lgamma(ab - a + 1) + lgamma(ac - a + 1) + lgamma(abcd - ab - ac + a + 1)
+    if ab * ac > a * abcd:
+        sl = 0.
+        for i in range(a - 1, a_min - 1, -1):
+            sl_new = sl + exp(pa - lgamma(i + 1) - lgamma(ab - i + 1) - lgamma(ac - i + 1) - lgamma(abcd - ab - ac + i + 1))
+            if sl_new == sl:
+                break
+            sl = sl_new
+        return -log(1. - max(0, exp(p0 - pa) * sl))
+    else:
+        sr = 1.
+        for i in range(a + 1, a_max + 1):
+            sr_new = sr + exp(pa - lgamma(i + 1) - lgamma(ab - i + 1) - lgamma(ac - i + 1) - lgamma(abcd - ab - ac + i + 1))
+            if sr_new == sr:
+                break
+            sr = sr_new
+        return max(0, pa - p0 - log(sr))
+    
+    
+@nb.njit(nb.f4(nb.i4,nb.i4,nb.i4,nb.i4), cache=True)
+def test1r(a, b, c, d):
+    """
+    Code adapted from:
+    https://github.com/painyeph/FishersExactTest/blob/master/fisher.py
+    """
+    return exp(-mlnTest2r(a, a + b, a + c, a + b + c + d))
+
+
+@nb.njit(nb.f4[:](nb.i4[:], nb.i4[:], nb.i4[:], nb.i4[:], nb.i4), parallel=True, cache=True)
+def get_pvals(sample, net, starts, offsets, n_background):
     
     sample = set(sample)
     n_fsets = offsets.shape[0]
-    table = np.zeros((n_fsets,4), dtype=nb.uint)
+    pvals = np.zeros(n_fsets, dtype=nb.f4)
     
     for i in nb.prange(n_fsets):
         # Extract feature set
@@ -33,12 +69,14 @@ def get_cont_table(sample, net, starts, offsets, n_background):
         fset = set(net[srt:off])
         
         # Build table
-        table[i,0] = len(sample.intersection(fset))
-        table[i,1] = len(fset.difference(sample))
-        table[i,2] = len(sample.difference(fset))
-        table[i,3] = n_background - table[i,0] - table[i,1] - table[i,2]
+        a = len(sample.intersection(fset))
+        b = len(fset.difference(sample))
+        c = len(sample.difference(fset))
+        d = n_background - a - b - c
         
-    return table
+        pvals[i] = test1r(a, b, c, d)
+        
+    return pvals
 
 
 def ora(mat, net, n_up_msk, n_bt_msk, n_background=20000, verbose=False):
@@ -58,11 +96,8 @@ def ora(mat, net, n_up_msk, n_bt_msk, n_background=20000, verbose=False):
         sample = rankdata(mat[i].A, method='ordinal').astype(np.int32)
         sample = ranks[(sample > n_up_msk) | (sample < n_bt_msk)]
 
-        # Generate Table
-        table = get_cont_table(sample, net, starts, offsets, n_background)
-
         # Estimate pvals
-        _, pvls[i], _ = pvalue_npy(table[:,0],table[:,1],table[:,2],table[:,3])
+        pvls[i] = get_pvals(sample, net, starts, offsets, n_background)
     
     return pvls
 
