@@ -8,7 +8,7 @@ setup(
     version="0.0.1",
     author="Pau Badia i Mompel",
     author_email="pau.badia@uni-heidelberg.de",
-    description="Ensemble of computational methods to infer biological activities from omics data",
+    description="Ensemble of methods to infer biological activities from omics data",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/saezlab/decoupler-py",
@@ -23,7 +23,7 @@ setup(
                       "fisher"
                      ],
     packages=["decoupler"],
-    python_requires=">=3.8",
+    python_requires=">=3.8,<3.10",
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
