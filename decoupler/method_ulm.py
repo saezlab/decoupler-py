@@ -6,7 +6,7 @@ Code to run the Univariate Linear Model (ULM) method.
 import numpy as np
 import pandas as pd
 
-import scipy.stats.stats
+from scipy.stats import t
 
 from .pre import extract, match, rename_net, get_net_mat, filt_min_n
 
@@ -59,7 +59,7 @@ def ulm(mat, net):
     es = nb_ulm(n_samples, n_features, mat.data, mat.indptr, mat.indices, net)
     
     # Get p-values
-    _, pvals = scipy.stats.stats._ttest_finish(df, es, 'two-sided')
+    pvals = t.sf(abs(es), df) * 2
         
     return es, pvals
 
