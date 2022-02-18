@@ -16,10 +16,8 @@ setup(
         "Bug Tracker": "https://github.com/saezlab/decoupler-py/issues",
     },
     install_requires=["numba",
-                      "sklearn",
                       "tqdm",
-                      "anndata",
-                      "skranger"
+                      "anndata"
                      ],
     packages=["decoupler"],
     python_requires=">=3.8",
