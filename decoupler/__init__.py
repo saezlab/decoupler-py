@@ -16,7 +16,10 @@ from .omnip import show_resources, get_resource, get_progeny, get_dorothea
 # External libraries go out of main setup
 try:
     from .method_mdt import run_mdt
-    from .method_udt import run_udt
 except:
     pass
 
+try:
+    from .method_udt import run_udt
+except:
+    pass
