@@ -27,5 +27,6 @@ Check out the Usage section for further information.
    notebooks/cell_annotation
    notebooks/progeny
    notebooks/dorothea
+   notebooks/msigdb
    api
    reference
