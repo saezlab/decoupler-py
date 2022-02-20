@@ -13,7 +13,7 @@ from skranger.ensemble import RangerForestRegressor
 from tqdm import tqdm
 
 
-def fit_rf(net, sample, trees=100, min_leaf=5, n_jobs=4, seed=42):
+def fit_rf(net, sample, trees=100, min_leaf=5, n_jobs=-1, seed=42):
     
     # Fit Random Forest
     regr = RangerForestRegressor(n_estimators=trees, min_node_size=min_leaf, 
@@ -38,7 +38,7 @@ def mdt(mat, net, trees=10, min_leaf=5, n_jobs=4, seed=42, verbose=False):
 
 
 def run_mdt(mat, net, source='source', target='target', weight='weight', trees=100, 
-            min_leaf=5, n_jobs=4, min_n=5, seed=42, verbose=False, use_raw=True):
+            min_leaf=5, n_jobs=-1, min_n=5, seed=42, verbose=False, use_raw=True):
     """
     Multivariate Decision Tree (MDT).
     
