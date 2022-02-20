@@ -8,7 +8,8 @@ sys.path.insert(0, os.path.abspath('../..'))
 # -- Project information
 
 project = 'decoupleR'
-copyright = '2021, Badia-i-Mompel P., Vélez J., Braunger J., Geiss C., Dimitrov D., Müller-Dott S., Taus P., Dugourd A., Holland C.H., Ramirez Flores R.O. and Saez-Rodriguez J.'
+copyright = """2021, Badia-i-Mompel P., Vélez J., Braunger J., Geiss C., Dimitrov D., Müller-Dott S., Taus P., Dugourd A.,
+Holland C.H., Ramirez Flores R.O. and Saez-Rodriguez J."""
 author = 'Pau Badia i Mompel'
 
 release = '0.1'

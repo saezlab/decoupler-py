@@ -92,7 +92,7 @@ def run_aucell(mat, net, source='source', target='target', n_up=None, min_n=5, s
     target : str
         Column name in net with target nodes.
     n_up : int
-        Number of top ranked features to select as observed features. If not specified it will be equal to the 5% of the 
+        Number of top ranked features to select as observed features. If not specified it will be equal to the 5% of the
         number of features.
     min_n : int
         Minimum of targets per source. If less, sources are removed.
