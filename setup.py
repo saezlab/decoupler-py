@@ -20,7 +20,7 @@ setup(
                       "anndata"
                      ],
     packages=["decoupler"],
-    python_requires=">=3.8",
+    python_requires=">=3.8,<3.10",
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
