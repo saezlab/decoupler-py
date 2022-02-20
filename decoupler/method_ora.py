@@ -51,6 +51,7 @@ def test1r(a, b, c, d):
     Code adapted from:
     https://github.com/painyeph/FishersExactTest/blob/master/fisher.py
     """
+
     return exp(-mlnTest2r(a, a + b, a + c, a + b + c + d))
 
 
@@ -76,6 +77,7 @@ def get_pvals(sample, net, starts, offsets, n_background):
 
         # Store
         pvals[i] = test1r(a, b, c, d)
+
     return pvals
 
 
@@ -100,6 +102,7 @@ def ora(mat, net, n_up_msk, n_bt_msk, n_background=20000, verbose=False):
 
         # Estimate pvals
         pvls[i] = get_pvals(sample, net, starts, offsets, n_background)
+
     return pvls
 
 
@@ -107,7 +110,9 @@ def run_ora(mat, net, source='source', target='target', n_up=None, n_bottom=0, n
             verbose=False, use_raw=True):
     """
     Over Representation Analysis (ORA).
+
     Wrapper to run ORA.
+
     Parameters
     ----------
     mat : list, pd.DataFrame or AnnData
@@ -133,6 +138,7 @@ def run_ora(mat, net, source='source', target='target', n_up=None, n_bottom=0, n
         Whether to show progress.
     use_raw : bool
         Use raw attribute of mat if present.
+
     Returns
     -------
     Returns ora activity estimates (-log10(p-values)) and p-values

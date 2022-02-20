@@ -185,8 +185,7 @@ def run_gsea(mat, net, source='source', target='target', times=1000, batch_size=
     Parameters
     ----------
     mat : list, pd.DataFrame or AnnData
-        List of [features, matrix], dataframe (samples x features) or an AnnData
-        instance.
+        List of [features, matrix], dataframe (samples x features) or an AnnData instance.
     net : pd.DataFrame
         Network in long format.
     source : str
