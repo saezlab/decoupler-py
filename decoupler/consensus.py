@@ -10,6 +10,9 @@ import numba as nb
 
 @nb.njit(nb.f4[:](nb.f4[:]), cache=True)
 def z_score(sel):
+    # Skip if all zeros
+    if np.all(sel == 0):
+        return sel
 
     # N selection
     n_sel = len(sel)
