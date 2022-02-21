@@ -48,19 +48,20 @@ def melt(df):
         res = []
         for methd in methods:
             for k in df:
-                # Extract pvals from this method
-                pvals = df[methd+'_pvals'].reset_index().melt(id_vars='index')['value'].values
-
                 # Melt estimates
                 if methd in k and 'pvals' not in k:
                     m = df[k].reset_index().melt(id_vars='index')
-
                     m = m_rename(m, k)
                     if 'estimate' not in k:
                         name = methd + '_' + k.split('_')[1]
                     else:
                         name = methd
                     m['method'] = name
+                    # Extract pvals from this method
+                    if methd+'_pvals' in df:
+                        pvals = df[methd+'_pvals'].reset_index().melt(id_vars='index')['value'].values
+                    else:
+                        pvals = np.full(m.shape[0], np.nan)
                     m['pval'] = pvals
 
                     res.append(m)
