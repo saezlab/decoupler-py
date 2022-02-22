@@ -39,7 +39,9 @@ def get_progeny(organism='human', top=100):
     p = p.unstack('label').droplevel(axis=1, level=0).reset_index()
     p.columns.name = None
     p = p[['genesymbol', 'p_value', 'pathway', 'weight']]
-    p = p.sort_values('p_value').groupby('pathway').head(top).reset_index()
+    p['p_value'] = p['p_value'].astype(np.float32)
+    p['weight'] = p['weight'].astype(np.float32)
+    p = p.sort_values('p_value').groupby('pathway').head(top).sort_values(['pathway','p_value']).reset_index()
     p = p[['pathway', 'genesymbol', 'weight', 'p_value']]
     p['weight'] = p['weight'].astype(np.float32)
     p['p_value'] = p['p_value'].astype(np.float32)
@@ -71,8 +73,6 @@ def get_resource(name):
     DataFrame in long format relating genes to biological entities.
     """
 
-    op = check_if_omnipath()
-
     resources = show_resources()
     msg = '{0} is not a valid resource. Please, run decoupler.show_resources to see the list of available resources.'
     assert name in resources, msg.format(name)
@@ -100,12 +100,12 @@ def show_resources():
     return list(op.requests.Annotations.resources())
 
 
-def get_dorothea(organism='human', levels=['A', 'B', 'C']):
+def get_dorothea(organism='human', levels=['A', 'B', 'C'], weight_dict = {'A': 1, 'B': 2, 'C': 3, 'D': 4}):
     """
     DoRothEA gene regulatory network.
 
     Wrapper to access DoRothEA gene regulatory network. DoRothEA is a comprehensive resource containing a curated collection of
-    transcription factors (TFs) and their target genes. Each interaction is weigthed by its mode of regulation (either positive
+    transcription factors (TFs) and their target genes. Each interaction is weighted by its mode of regulation (either positive
     or negative) and by its confidence level.
 
     Parameters
@@ -114,6 +114,9 @@ def get_dorothea(organism='human', levels=['A', 'B', 'C']):
         Which organism to use. Only human and mouse are available.
     levels : list
         List of confidence levels to return. Goes from A to D, A being the most confident and D being the less.
+    weight_dict : dict
+        Dictionary of values to divide the mode of regulation (-1 or 1), one for each confidence level. Bigger values will
+        generate weights close to zero.
 
     Returns
     -------
@@ -162,7 +165,6 @@ def get_dorothea(organism='human', levels=['A', 'B', 'C']):
     do['mor'] = mor
 
     # Compute weight based on confidence: mor/confidence
-    weight_dict = {'A': 1, 'B': 2, 'C': 3, 'D': 4}
     do['weight'] = [(i.mor)/weight_dict[i.dorothea_level] for i in do.itertuples()]
 
     # Filter and rename
