@@ -77,6 +77,8 @@ def get_resource(name):
     msg = '{0} is not a valid resource. Please, run decoupler.show_resources to see the list of available resources.'
     assert name in resources, msg.format(name)
 
+    op = check_if_omnipath()
+    
     df = op.requests.Annotations.get(resources=name)
     df = df.set_index(['record_id', 'uniprot', 'genesymbol', 'entity_type', 'source', 'label'])
     df = df.unstack('label').droplevel(axis=1, level=0)
