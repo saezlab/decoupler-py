@@ -8,7 +8,4 @@ python:
   install:
   - method: pip
     path: .
-    extra_requirements:
-    - doc
-    - numpydoc
-    - nbsphinx
+  - requirements: docs/source/requirements.txt
