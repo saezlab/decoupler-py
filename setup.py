@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="decoupler",
-    version="0.0.1",
+    version="1.0.0",
     author="Pau Badia i Mompel",
     author_email="pau.badia@uni-heidelberg.de",
     description="Ensemble of methods to infer biological activities from omics data",

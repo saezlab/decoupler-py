@@ -12,8 +12,7 @@ copyright = """2021, Badia-i-Mompel P., Vélez J., Braunger J., Geiss C., Dimitr
 Holland C.H., Ramirez Flores R.O. and Saez-Rodriguez J."""
 author = 'Pau Badia i Mompel'
 
-release = '0.1'
-version = '0.1.0'
+version = '1.0.0'
 
 # -- General configuration
 
