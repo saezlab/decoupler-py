@@ -33,7 +33,7 @@ def run_perm(estimate, mat, net, idxs, div, times, seed):
         null_dst[:, :, i] = mat.dot(net[idxs]) / div
         pvals += np.abs(null_dst[:, :, i]) > np.abs(estimate)
 
-    # Compute empirical p-value    
+    # Compute empirical p-value
     pvals = np.where(pvals == 0.0, 1.0, pvals).astype(nb.f4)
     pvals = np.where(pvals == times, times-1, pvals).astype(nb.f4)
     pvals = pvals / times

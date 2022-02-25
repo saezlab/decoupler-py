@@ -41,7 +41,7 @@ def get_progeny(organism='human', top=100):
     p = p[['genesymbol', 'p_value', 'pathway', 'weight']]
     p['p_value'] = p['p_value'].astype(np.float32)
     p['weight'] = p['weight'].astype(np.float32)
-    p = p.sort_values('p_value').groupby('pathway').head(top).sort_values(['pathway','p_value']).reset_index()
+    p = p.sort_values('p_value').groupby('pathway').head(top).sort_values(['pathway', 'p_value']).reset_index()
     p = p[['pathway', 'genesymbol', 'weight', 'p_value']]
     p['weight'] = p['weight'].astype(np.float32)
     p['p_value'] = p['p_value'].astype(np.float32)
@@ -78,7 +78,7 @@ def get_resource(name):
     assert name in resources, msg.format(name)
 
     op = check_if_omnipath()
-    
+
     df = op.requests.Annotations.get(resources=name)
     df = df.set_index(['record_id', 'uniprot', 'genesymbol', 'entity_type', 'source', 'label'])
     df = df.unstack('label').droplevel(axis=1, level=0)
@@ -102,7 +102,7 @@ def show_resources():
     return list(op.requests.Annotations.resources())
 
 
-def get_dorothea(organism='human', levels=['A', 'B', 'C'], weight_dict = {'A': 1, 'B': 2, 'C': 3, 'D': 4}):
+def get_dorothea(organism='human', levels=['A', 'B', 'C'], weight_dict={'A': 1, 'B': 2, 'C': 3, 'D': 4}):
     """
     DoRothEA gene regulatory network.
 
