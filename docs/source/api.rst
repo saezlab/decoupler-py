@@ -68,3 +68,9 @@ Omnipath wrappers:
    get_progeny
    get_dorothea
    
+Plotting
+--------
+.. autosummary::
+   :toctree: generated
+   
+   plot_volcano

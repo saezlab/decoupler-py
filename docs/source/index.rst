@@ -28,5 +28,6 @@ Check out the Usage section for further information.
    notebooks/progeny
    notebooks/dorothea
    notebooks/msigdb
+   notebooks/pseudobulk
    api
    reference
