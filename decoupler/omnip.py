@@ -79,7 +79,7 @@ def get_resource(name):
 
     op = check_if_omnipath()
 
-    df = op.requests.Annotations.get(resources=name)
+    df = op.requests.Annotations.get(resources=name, entity_type="protein")
     df = df.set_index(['record_id', 'uniprot', 'genesymbol', 'entity_type', 'source', 'label'])
     df = df.unstack('label').droplevel(axis=1, level=0)
     df = df.drop(columns=[name for name in df.index.names if name in df.columns]).reset_index()

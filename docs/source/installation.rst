@@ -1,15 +1,15 @@
 Installation
 ============
 
-**decoupleR** requires Python version >= 3.8 to run.
+**decoupler** requires Python version >= 3.8 to run.
 
 PyPI
 ----
-**decoupleR** is also available on PyPI:
+**decoupler** is also available on PyPI:
 
 .. code-block:: console
 
-   pip install ...
+   pip install decoupler
 
 Development Version
 -------------------

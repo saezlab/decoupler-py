@@ -12,12 +12,11 @@ def check_if_matplotlib():
     return plt
 
 
-def plot_volcano(logFCs, pvals, name, contrast, net, top=5, source='source', 
-                 target='target', weight='weight', sign_thr=0.05, lFCs_thr=0.5,
-                 figsize=(7,5), dpi=100):
+def plot_volcano(logFCs, pvals, name, contrast, net, top=5, source='source', target='target', weight='weight', sign_thr=0.05,
+                 lFCs_thr=0.5, figsize=(7, 5), dpi=100):
     """
     Plot logFC and p-values of a selected source by a specific contrast.
-    
+
     Parameters
     ----------
     logFCs : pd.DataFrame
@@ -47,12 +46,12 @@ def plot_volcano(logFCs, pvals, name, contrast, net, top=5, source='source',
     dpi : int
         DPI resolution of figure.
     """
-    
+
     plt = check_if_matplotlib()
-    
+
     # Rename nets
     net = rename_net(net, source=source, target=target, weight=weight)
-    
+
     # Get max and if + and -
     max_n = np.std(np.abs(net['weight']), ddof=1)*2
     has_neg = np.any(net['weight'] < 0)
@@ -64,9 +63,14 @@ def plot_volcano(logFCs, pvals, name, contrast, net, top=5, source='source',
     source_net = source_net[~np.any(pd.isnull(source_net), axis=1)]
 
     # Plot
-    fig, ax = plt.subplots(1,1, figsize=figsize, dpi=dpi)
-    source_net.plot.scatter(x='logFC', y='pvals', c='weight', cmap='coolwarm', vmin=-max_n, vmax=max_n, sharex=False, ax=ax)
-    signs = source_net[(np.abs(source_net['logFC']) > lFCs_thr) & \
+    fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=dpi)
+    if has_neg:
+        source_net.plot.scatter(x='logFC', y='pvals', c='weight', cmap='coolwarm',
+                                vmin=-max_n, vmax=max_n, sharex=False, ax=ax)
+    else:
+        source_net.plot.scatter(x='logFC', y='pvals', c='weight', cmap='coolwarm',
+                                vmin=0, vmax=max_n, sharex=False, ax=ax)
+    signs = source_net[(np.abs(source_net['logFC']) > lFCs_thr) &
                        (source_net['pvals'] > -np.log10(0.05))].sort_values('pvals', ascending=False)
     signs = signs.iloc[:top]
     ax.axhline(y=-np.log10(sign_thr), linestyle='--', color="black")

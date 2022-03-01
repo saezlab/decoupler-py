@@ -4,7 +4,7 @@ API
 .. automodule:: decoupler
    :noindex:
    
-Import decoupleR as::
+Import decoupler as::
 
    import decoupler as dc
 
@@ -57,6 +57,8 @@ Utils:
    get_toy_data
    summarize_acts
    assign_groups
+   get_pseudobulk
+   get_contrast
    
 Omnipath wrappers:
 ------------------
