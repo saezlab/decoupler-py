@@ -21,8 +21,8 @@ def fit_mlm(X, y, inv, df):
     X = np.ascontiguousarray(X)
     n_samples = y.shape[1]
     n_fsets = X.shape[1]
-    coef, _, _, _ = np.linalg.lstsq(X, y)
-    sse = np.sum((X.dot(coef) - y)**2, axis=0) / df
+    coef, sse, _, _ = np.linalg.lstsq(X, y)
+    sse = sse / df
     se = np.zeros((n_samples, n_fsets), dtype=nb.f4)
     for i in nb.prange(n_samples):
         se[i] = np.sqrt(np.diag(sse[i] * inv))
