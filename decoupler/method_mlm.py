@@ -22,6 +22,10 @@ def fit_mlm(X, y, inv, df):
     n_samples = y.shape[1]
     n_fsets = X.shape[1]
     coef, sse, _, _ = np.linalg.lstsq(X, y)
+    if len(sse) == 0:
+        raise ValueError("""Couldn\'t fit a multivariate linear model. This can happen because there are more sources
+        (covariates) than unique targets (samples), or because the network\'s matrix rank is smaller than the number of
+        sources.""")
     sse = sse / df
     se = np.zeros((n_samples, n_fsets), dtype=nb.f4)
     for i in nb.prange(n_samples):
