@@ -39,6 +39,7 @@ def get_progeny(organism='human', top=100):
     p = p.unstack('label').droplevel(axis=1, level=0).reset_index()
     p.columns.name = None
     p = p[['genesymbol', 'p_value', 'pathway', 'weight']]
+    p = p[~p.duplicated(['pathway', 'genesymbol'])]
     p['p_value'] = p['p_value'].astype(np.float32)
     p['weight'] = p['weight'].astype(np.float32)
     p = p.sort_values('p_value').groupby('pathway').head(top).sort_values(['pathway', 'p_value']).reset_index()
@@ -49,9 +50,6 @@ def get_progeny(organism='human', top=100):
 
     if organism == 'mouse':
         p['target'] = [t.lower().capitalize() for t in p['target']]
-
-    # Remove duplicates
-    p = p[~p.duplicated(['source', 'target'])]
 
     return p
 
