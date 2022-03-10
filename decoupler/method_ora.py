@@ -6,6 +6,8 @@ Code to run the Over Representation Analysis (ORA) method.
 import numpy as np
 import pandas as pd
 
+from numpy.random import default_rng
+
 from scipy.stats import rankdata
 from math import log, exp, lgamma
 
@@ -166,6 +168,12 @@ def run_ora(mat, net, source='source', target='target', n_up=None, n_bottom=0, n
     # Transform net
     net = rename_net(net, source=source, target=target, weight=None)
     net = filt_min_n(c, net, min_n=min_n)
+
+    # Randomize feature order to break ties randomly
+    rng = default_rng(seed=seed)
+    idx = np.arange(m.shape[1])
+    rng.shuffle(idx)
+    m, c = m[:, idx], c[idx]
 
     # Transform targets to indxs
     table = {name: i for i, name in enumerate(c)}
