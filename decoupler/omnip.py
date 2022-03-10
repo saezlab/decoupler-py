@@ -172,6 +172,6 @@ def get_dorothea(organism='human', levels=['A', 'B', 'C'], weight_dict={'A': 1, 
     do.columns = ['source', 'confidence', 'target', 'weight']
 
     # Filter by levels
-    do = do[np.isin(do['confidence'], levels)]
+    do = do[np.isin(do['confidence'], levels)].sort_values('confidence').reset_index(drop=True)
 
     return do
