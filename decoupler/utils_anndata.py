@@ -258,7 +258,7 @@ def get_contrast(adata, group_col, condition_col, condition, reference, method='
 
         # Run DEA if enough samples
         _, counts = np.unique(sub_adata.obs[condition_col], return_counts=True)
-        if np.min(counts) > 2:
+        if np.min(counts) >= 2:
             rank_genes_groups(sub_adata, groupby=condition_col, groups=[condition, reference], reference=reference,
                               method=method)
         else:
