@@ -250,11 +250,16 @@ def get_contrast(adata, group_col, condition_col, condition, reference, method='
 
         # Sub-set by group
         sub_adata = adata[adata.obs[group_col] == grp].copy()
-
+        
+        # Subset condition_col
+        sub_adata.obs = sub_adata.obs[[condition_col]]
+        sub_adata = sub_adata[np.isin(sub_adata.obs[condition_col], [condition, reference])]
+        if sub_adata.shape[0] < 4:
+            continue
+        
         # Transform string columns to categories (removes anndata warnings)
-        for col in sub_adata.obs.columns:
-            if sub_adata.obs[col].dtype == 'object' or sub_adata.obs[col].dtype == 'category':
-                sub_adata.obs[col] = pd.Categorical(sub_adata.obs[col])
+        if sub_adata.obs[condition_col].dtype == 'object' or sub_adata.obs[condition_col].dtype == 'category':
+            sub_adata.obs[condition_col] = pd.Categorical(sub_adata.obs[condition_col])
 
         # Run DEA if enough samples
         _, counts = np.unique(sub_adata.obs[condition_col], return_counts=True)
