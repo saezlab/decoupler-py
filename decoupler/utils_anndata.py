@@ -76,7 +76,7 @@ def compute_psbulk(psbulk, props, X, sample_col, groups_col, smples, groups, obs
             profile = X[obs[sample_col] == smp]
 
             # Skip if few cells or not enough counts
-            if profile.shape[0] < min_cells or np.sum(profile) < min_counts:
+            if profile.shape[0] <= min_cells or np.sum(profile) <= min_counts:
                 i += 1
                 continue
 
@@ -105,7 +105,7 @@ def compute_psbulk(psbulk, props, X, sample_col, groups_col, smples, groups, obs
                 profile = X[(obs[sample_col] == smp) & (obs[groups_col] == grp)]
 
                 # Skip if few cells or not enough counts
-                if profile.shape[0] < min_cells or np.sum(profile) < min_counts:
+                if profile.shape[0] <= min_cells or np.sum(profile) <= min_counts:
                     i += 1
                     continue
 
@@ -191,7 +191,7 @@ def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, min_prop
             profile = psbulk[offset:offset + len(smples)]
 
             # Remove features
-            msk = np.sum(prop, axis=0) > min_smpls
+            msk = np.sum(prop, axis=0) >= min_smpls
             profile[:, ~msk] = 0
 
             # Append
@@ -224,7 +224,7 @@ def get_contrast(adata, group_col, condition_col, condition, reference, method='
     condition : str
         Name of the condition to test inside condition_col.
     reference : str
-        Name of the reference to use inside condition_col.
+        Name of the reference to use inside condition_col. If 'rest', compare each group to the union of the rest of the group.
     method : str
         Method to use for scanpy's `rank_genes_groups` function.
 
@@ -242,6 +242,10 @@ def get_contrast(adata, group_col, condition_col, condition, reference, method='
     # Find unique groups
     groups = np.unique(adata.obs[group_col].values.astype(str))
 
+    # Process reference
+    if reference is None:
+        reference = 'rest'
+
     # Init empty logFC and pvals
     logFCs = pd.DataFrame(columns=adata.var.index)
     p_vals = pd.DataFrame(columns=adata.var.index)
@@ -250,20 +254,20 @@ def get_contrast(adata, group_col, condition_col, condition, reference, method='
 
         # Sub-set by group
         sub_adata = adata[adata.obs[group_col] == grp].copy()
-        
+
         # Subset condition_col
         sub_adata.obs = sub_adata.obs[[condition_col]]
-        sub_adata = sub_adata[np.isin(sub_adata.obs[condition_col], [condition, reference])]
-        if sub_adata.shape[0] < 4:
-            continue
-        
+
         # Transform string columns to categories (removes anndata warnings)
         if sub_adata.obs[condition_col].dtype == 'object' or sub_adata.obs[condition_col].dtype == 'category':
             sub_adata.obs[condition_col] = pd.Categorical(sub_adata.obs[condition_col])
 
         # Run DEA if enough samples
-        _, counts = np.unique(sub_adata.obs[condition_col], return_counts=True)
-        if np.min(counts) >= 2:
+        unq, counts = np.unique(sub_adata.obs[condition_col], return_counts=True)
+        is_ref_in_unq = True
+        if reference is not None or reference != 'rest':
+            is_ref_in_unq = reference in unq
+        if np.min(counts) >= 2 and condition in unq and is_ref_in_unq:
             rank_genes_groups(sub_adata, groupby=condition_col, groups=[condition, reference], reference=reference,
                               method=method)
         else:
