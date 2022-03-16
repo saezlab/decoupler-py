@@ -17,8 +17,7 @@ from tqdm import tqdm
 import numba as nb
 
 
-@nb.njit(nb.types.Tuple((nb.f4[:, :], nb.i4[:]))(nb.f4[:, :], nb.i4[:, :], nb.f4[:], nb.i4[:], nb.i4), parallel=True,
-         cache=True)
+@nb.njit(nb.types.Tuple((nb.f4[:, :], nb.i4[:]))(nb.f4[:, :], nb.i4[:, :], nb.f4[:], nb.i4[:], nb.i4), cache=True)
 def get_wts_posidxs(wts, idxs, pval1, table, penalty):
     pos_idxs = np.zeros(idxs.shape[0], dtype=nb.i4)
     for j in nb.prange(idxs.shape[0]):
@@ -64,7 +63,7 @@ def get_tmp_idxs(pval):
     return tmp, idxs
 
 
-@nb.njit(nb.f4[:](nb.i4, nb.f4[:, :], nb.i4, nb.f4[:]), cache=True, parallel=False)
+@nb.njit(nb.f4[:](nb.i4, nb.f4[:, :], nb.i4, nb.f4[:]), cache=True)
 def fill_pval_mat(j, reg, n_targets, s2):
     n_fsets = reg.shape[1]
     col = np.full(n_fsets, np.nan, dtype=nb.f4)
