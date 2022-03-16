@@ -324,3 +324,74 @@ def assign_groups(summary):
         annot_dict[o] = groups[idx]
 
     return annot_dict
+
+
+def get_top_targets(logFCs, pvals, name, contrast, net, source='source', target='target', weight='weight', sign_thr=1,
+                     lFCs_thr=0.0):
+    """
+    Return significant target features for a given source and contrast.
+
+    Parameters
+    ----------
+    logFCs : pd.DataFrame
+        Data-frame of logFCs (contrasts x features).
+    pvals : pd.DataFrame
+        Data-frame of p-values (contrasts x features).
+    name : str
+        Name of the source to plot.
+    contrast : str
+        Name of the contrast (row) to plot.
+    net : pd.DataFrame
+        Network data-frame.
+    source : str
+        Column name in net with source nodes.
+    target : str
+        Column name in net with target nodes.
+    weight : str
+        Column name in net with weights.
+    sign_thr : float
+        Significance threshold for p-values.
+    lFCs_thr : float
+        Significance threshold for logFCs.
+
+    Returns
+    -------
+    Dataframe containing the significant targets of a given source.
+    """
+
+    # Rename net
+    net = rename_net(net, source=source, target=target, weight=weight)
+
+    # Find targets in net that match with logFCs
+    targets = net[net['source'] == name]['target'].values
+    msk = np.isin(logFCs.columns, targets)
+
+    # Build df
+    df = logFCs.loc[[contrast], msk].T.rename({contrast : 'logFC'}, axis=1)
+    df['pval'] = pvals.loc[[contrast], msk].T
+    df = df.sort_values('pval')
+
+    # Filter by thresholds
+    df = df[(np.abs(df['logFC']) > lFCs_thr) & (np.abs(df['pval']) < sign_thr)]
+
+    return df
+
+
+def format_contrast_results(logFCs, pvals):
+    """
+    Formats the results from get_contrast into a long format data-frame.
+
+    logFCs : pd.DataFrame
+        Data-frame of logFCs (contrasts x features).
+    pvals : pd.DataFrame
+        Data-frame of p-values (contrasts x features).
+
+    Returns
+    -------
+    DataFrame in long format.
+    """
+
+    df = melt([logFCs, pvals]).rename({'sample': 'contrast', 'source': 'name', 'score': 'logFC'}, axis=1)
+    df = df[['contrast', 'name', 'logFC', 'pval']].sort_values('pval').reset_index(drop=True)
+
+    return df

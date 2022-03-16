@@ -315,8 +315,12 @@ def get_contrast(adata, group_col, condition_col, condition, reference=None, met
         df = rank_genes_groups_df(sub_adata, group=condition)
         df[group_col] = grp
         logFC = df.pivot(columns='names', index=group_col, values='logfoldchanges')
-        logFCs = logFCs.append(logFC)
+        logFCs = pd.concat([logFCs, logFC])
         p_val = df.pivot(columns='names', index=group_col, values='pvals')
-        p_vals = p_vals.append(p_val)
+        p_vals = pd.concat([p_vals, p_val])
+
+    # Add name
+    logFCs.name = 'contrast_logFCs'
+    p_vals.name = 'contrast_pvals'
 
     return logFCs, p_vals

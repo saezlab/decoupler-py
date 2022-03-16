@@ -59,6 +59,8 @@ Utils:
    assign_groups
    get_pseudobulk
    get_contrast
+   get_top_targets
+   format_contrast_results
    
 Omnipath wrappers:
 ------------------
