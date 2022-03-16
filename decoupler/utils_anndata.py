@@ -6,6 +6,7 @@ Functions to process AnnData objects.
 import numpy as np
 from scipy.sparse import csr_matrix
 import pandas as pd
+import sys
 
 from anndata import AnnData
 
@@ -207,7 +208,42 @@ def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, min_prop
     return psbulk
 
 
-def get_contrast(adata, group_col, condition_col, condition, reference, method='t-test'):
+def get_unq_dict(col, condition, reference):
+    unq, counts = np.unique(col, return_counts=True)
+    unq_dict = dict()
+    for i in range(len(unq)):
+        k = unq[i]
+        v = counts[i]
+        if k == condition:
+            unq_dict[k] = v
+        if reference == 'rest':
+            unq_dict.setdefault('rest', 0) 
+            unq_dict[reference] += v
+        elif k == reference:
+            unq_dict[k] = v
+    return unq_dict
+
+
+def check_if_skip(grp, condition_col, condition, reference, unq_dict):
+    skip = True
+    if reference not in unq_dict and reference != 'rest':
+        print('Skipping group "{0}" since reference "{1}" not in column "{2}".'.format(grp, reference, condition_col),
+              file=sys.stderr)
+    elif condition not in unq_dict:
+        print('Skipping group "{0}" since condition "{1}" not in column "{2}".'.format(grp, condition, condition_col),
+              file=sys.stderr)
+    elif unq_dict[reference] < 2:
+        print('Skipping group "{0}" since reference "{1}" has less than 2 samples.'.format(grp, reference, condition_col),
+              file=sys.stderr)
+    elif unq_dict[condition] < 2:
+        print('Skipping group "{0}" since condition "{1}" has less than 2 samples.'.format(grp, condition, condition_col),
+              file=sys.stderr)
+    else:
+        skip = False
+    return skip
+
+
+def get_contrast(adata, group_col, condition_col, condition, reference=None, method='t-test'):
     """
     Computes simple contrast between two conditions from pseudo-bulk profiles. After genertaing pseudo-bulk profiles with
     `dc.get_pseudobulk`, computes Differential Expression Analysis using scanpy's `rank_genes_groups` function between two
@@ -218,13 +254,14 @@ def get_contrast(adata, group_col, condition_col, condition, reference, method='
     adata : AnnData
         Input pseudo-bulk AnnData object.
     group_col : str
-        Column of `obs` where to extract the groups names.
+        Column of `obs` where to extract the groups names, for example cell types.
     condition_col : str
-        Column of `obs` where to extract the condition names.
+        Column of `obs` where to extract the condition names, for example disease status.
     condition : str
         Name of the condition to test inside condition_col.
     reference : str
-        Name of the reference to use inside condition_col. If 'rest', compare each group to the union of the rest of the group.
+        Name of the reference to use inside condition_col. If 'rest' or None, compare each group to the union of the rest of
+        the group.
     method : str
         Method to use for scanpy's `rank_genes_groups` function.
 
@@ -238,13 +275,20 @@ def get_contrast(adata, group_col, condition_col, condition, reference, method='
         from scanpy.get import rank_genes_groups_df
     except Exception:
         raise BaseException('scanpy is not installed. Please install it with: pip install scanpy')
-
+    
     # Find unique groups
     groups = np.unique(adata.obs[group_col].values.astype(str))
 
     # Process reference
-    if reference is None:
+    if reference is None or reference == 'rest':
         reference = 'rest'
+        glst = 'all'
+    else:
+        glst = [condition, reference]
+
+    # Condition and reference must be different
+    if condition == reference:
+        raise ValueError('condition and reference cannot be identical.')
 
     # Init empty logFC and pvals
     logFCs = pd.DataFrame(columns=adata.var.index)
@@ -254,8 +298,6 @@ def get_contrast(adata, group_col, condition_col, condition, reference, method='
 
         # Sub-set by group
         sub_adata = adata[adata.obs[group_col] == grp].copy()
-
-        # Subset condition_col
         sub_adata.obs = sub_adata.obs[[condition_col]]
 
         # Transform string columns to categories (removes anndata warnings)
@@ -263,15 +305,11 @@ def get_contrast(adata, group_col, condition_col, condition, reference, method='
             sub_adata.obs[condition_col] = pd.Categorical(sub_adata.obs[condition_col])
 
         # Run DEA if enough samples
-        unq, counts = np.unique(sub_adata.obs[condition_col], return_counts=True)
-        is_ref_in_unq = True
-        if reference is not None or reference != 'rest':
-            is_ref_in_unq = reference in unq
-        if np.min(counts) >= 2 and condition in unq and is_ref_in_unq:
-            rank_genes_groups(sub_adata, groupby=condition_col, groups=[condition, reference], reference=reference,
-                              method=method)
-        else:
+        unq_dict = get_unq_dict(sub_adata.obs[condition_col], condition, reference)
+        skip = check_if_skip(grp, condition_col, condition, reference, unq_dict)
+        if skip:
             continue
+        rank_genes_groups(sub_adata, groupby=condition_col, groups=glst, reference=reference, method=method)
 
         # Extract DEA results
         df = rank_genes_groups_df(sub_adata, group=condition)
