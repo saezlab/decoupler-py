@@ -5,14 +5,28 @@ import sys
 sys.path.insert(0, os.path.abspath('../..'))
 
 
+def read(rel_path: str) -> str:
+    here = os.path.abspath(os.path.dirname(__file__))
+    with open(os.path.join(here, rel_path)) as fp:
+        return fp.read()
+
+
+def get_version(rel_path: str) -> str:
+    for line in read(rel_path).splitlines():
+        if line.startswith("__version__"):
+            delim = '"' if '"' in line else "'"
+            return line.split(delim)[1]
+    raise RuntimeError("Unable to find version string.")
+
+
 # -- Project information
 
-project = 'decoupleR'
-copyright = """2021, Badia-i-Mompel P., Vélez J., Braunger J., Geiss C., Dimitrov D., Müller-Dott S., Taus P., Dugourd A.,
+project = 'decoupler'
+copyright = """2022, Badia-i-Mompel P., Vélez Santiago J., Braunger J., Geiss C., Dimitrov D., Müller-Dott S., Taus P., Dugourd A.,
 Holland C.H., Ramirez Flores R.O. and Saez-Rodriguez J."""
 author = 'Pau Badia i Mompel'
-release = '1.0.0'
-version = '1.0.0'
+release = get_version("../../decoupler/__init__.py")
+version = get_version("../../decoupler/__init__.py")
 
 # -- General configuration
 

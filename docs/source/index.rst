@@ -16,6 +16,13 @@ This is its faster and memory efficient Python implementation, for the R version
 
 Check out the `Usage <https://decoupler-py.readthedocs.io/en/latest/notebooks/usage.html>`_ or any other tutorial for further information.
 
+License
+-------
+Footprint methods inside decoupler can be used for academic or commercial purposes, except ``viper`` which holds a non-commercial license. 
+
+The data redistributed by OmniPath does not have a license, each original resource carries their own. 
+`Here <https://omnipathdb.org/info>`_ one can find the license information of all the resources in OmniPath.
+
 .. toctree::
    :maxdepth: 1
    :hidden:
