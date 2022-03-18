@@ -26,7 +26,7 @@ def extract(mat, use_raw=True, verbose=False, dtype=np.float32):
     Returns
     -------
     m : csr_matrix
-        Sparse matrix contianing molecular readouts or statistics.
+        Sparse matrix containing molecular readouts or statistics.
     r : ndarray
         Array of sample names.
     c : ndarray

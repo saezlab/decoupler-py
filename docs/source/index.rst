@@ -35,4 +35,5 @@ The data redistributed by OmniPath does not have a license, each original resour
    notebooks/msigdb
    notebooks/pseudobulk
    api
+   release_notes
    reference
