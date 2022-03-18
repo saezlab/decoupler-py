@@ -67,13 +67,15 @@ def run_ulm(mat, net, source='source', target='target', weight='weight', min_n=5
     """
     Univariate Linear Model (ULM).
 
-    Wrapper to run ULM.
+    ULM fits a linear model for each sample and regulator, where the observed molecular readouts in `mat` are the response
+    variable and the regulator weights in `net` are the explanatory one. Target features with no associated weight are set to
+    zero. The obtained t-value from the fitted model is the activity (`ulm_estimate`) of a given regulator.
 
     Parameters
     ----------
-    mat : list, pd.DataFrame or AnnData
+    mat : list, DataFrame or AnnData
         List of [features, matrix], dataframe (samples x features) or an AnnData instance.
-    net : pd.DataFrame
+    net : DataFrame
         Network in long format.
     source : str
         Column name in net with source nodes.
@@ -90,7 +92,10 @@ def run_ulm(mat, net, source='source', target='target', weight='weight', min_n=5
 
     Returns
     -------
-    Returns ulm activity estimates and p-values or stores them in `mat.obsm['ulm_estimate']` and `mat.obsm['ulm_pvals']`.
+    estimate : DataFrame
+        ULM scores. Stored in `.obsm['ulm_estimate']` if `mat` is AnnData.
+    pvals : DataFrame
+        Obtained p-values. Stored in `.obsm['ulm_pvals']` if `mat` is AnnData.
     """
 
     # Extract sparse matrix and array of genes

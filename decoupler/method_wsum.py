@@ -91,13 +91,16 @@ def run_wsum(mat, net, source='source', target='target', weight='weight', times=
     """
     Weighted sum (WSUM).
 
-    Wrapper to run WSUM.
+    WSUM infers regulator activities by first multiplying each target feature by its associated weight which then are summed
+    to an enrichment score (`wsum_estimate`). Furthermore, permutations of random target features can be performed to obtain a
+    null distirbution that can be used to compute a z-score (`wsum_norm`), or a corrected estimate (`wsum_corr`) by multiplying
+    `wsum_estimate` by the minus log10 of the obtained empirical p-value.
 
     Parameters
     ----------
-    mat : list, pd.DataFrame or AnnData
+    mat : list, DataFrame or AnnData
         List of [features, matrix], dataframe (samples x features) or an AnnData instance.
-    net : pd.DataFrame
+    net : DataFrame
         Network in long format.
     source : str
         Column name in net with source nodes.
@@ -120,8 +123,14 @@ def run_wsum(mat, net, source='source', target='target', weight='weight', times=
 
     Returns
     -------
-    Returns wsum, norm_wsum, corr_wsum activity estimates and p-values or stores them in `mat.obsm['wsum_estimate']`,
-    `mat.obsm['wsum_norm']`, `mat.obsm['wsum_corr']` and `mat.obsm['wsum_pvals']`.
+    estimate : DataFrame
+        WSUM scores. Stored in `.obsm['wsum_estimate']` if `mat` is AnnData.
+    norm : DataFrame
+        Normalized WSUM scores. Stored in `.obsm['wsum_norm']` if `mat` is AnnData.
+    corr : DataFrame
+        Corrected WSUM scores. Stored in `.obsm['wsum_corr']` if `mat` is AnnData.
+    pvals : DataFrame
+        Obtained p-values. Stored in `.obsm['wsum_pvals']` if `mat` is AnnData.
     """
 
     # Extract sparse matrix and array of genes

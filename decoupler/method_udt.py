@@ -41,13 +41,16 @@ def run_udt(mat, net, source='source', target='target', weight='weight', min_lea
     """
     Univariate Decision Tree (UDT).
 
-    Wrapper to run UDT.
+    UDT fits a single regression decission tree for each sample and regulator, where the observed molecular readouts in `mat`
+    are the response variable and the regulator weights in `net` are the explanatory one. Target features with no associated
+    weight are set to zero. The obtained feature importance from the fitted model is the activity (`udt_estimate`) of a given
+    regulator.
 
     Parameters
     ----------
-    mat : list, pd.DataFrame or AnnData
+    mat : list, DataFrame or AnnData
         List of [features, matrix], dataframe (samples x features) or an AnnData instance.
-    net : pd.DataFrame
+    net : DataFrame
         Network in long format.
     source : str
         Column name in net with source nodes.
@@ -68,7 +71,10 @@ def run_udt(mat, net, source='source', target='target', weight='weight', min_lea
 
     Returns
     -------
-    Returns udt activity estimates or stores them in `mat.obsm['udt_estimate']`.
+    estimate : DataFrame
+        UDT scores. Stored in `.obsm['udt_estimate']` if `mat` is AnnData.
+    pvals : DataFrame
+        Obtained p-values. Stored in `.obsm['udt_pvals']` if `mat` is AnnData.
     """
 
     # Extract sparse matrix and array of genes

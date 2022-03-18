@@ -26,16 +26,17 @@ def m_rename(m, name):
 
 def melt(df):
     """
-    Function to generate a long format dataframe similar to the one obtained in the R implementation of decoupleR.
+    Function to generate a long format dataframe similar to the one obtained in the R implementation of decoupler.
 
     Parameters
     ----------
-    df : dict, tuple, list or pd.DataFrame
+    df : dict, tuple, list or DataFrame
         Output of decouple, of an individual method or an individual dataframe.
 
     Returns
     -------
-    m : melted long format dataframe.
+    m : DataFrame
+        Melted long format dataframe.
     """
 
     # If input is result from decoule function
@@ -88,11 +89,12 @@ def melt(df):
 def show_methods():
     """
     Shows available methods.
-    The first column correspond to the function name in decoupleR and the second to the method's full name.
+    The first column correspond to the function name in decoupler and the second to the method's full name.
 
     Returns
     -------
-    df : dataframe with the available methods.
+    df : DataFrame
+        Dataframe with the available methods.
     """
 
     import decoupler
@@ -110,12 +112,12 @@ def show_methods():
 
 def check_corr(net, source='source', target='target', weight='weight', mat=None, min_n=5, use_raw=True):
     """
-    Checks the correlation across the regulators in a network. If a mat is also provided, target genes will be prunned to match
-    the ones in mat.
+    Checks the correlation across the regulators in a network. If a mat is also provided, target features will be prunned to
+    match the ones in mat.
 
     Parameters
     ----------
-    net : pd.DataFrame
+    net : DataFrame
         Network in long format.
     source : str
         Column name with source nodes.
@@ -123,7 +125,7 @@ def check_corr(net, source='source', target='target', weight='weight', mat=None,
         Column name with target nodes.
     weight : str
         Column name with weights.
-    mat : list, pd.DataFrame or AnnData
+    mat : list, DataFrame or AnnData
         Optional. If given, target features be filtered if they are
         not in mat.
     min_n : int
@@ -133,7 +135,8 @@ def check_corr(net, source='source', target='target', weight='weight', mat=None,
 
     Returns
     -------
-    corr : Correlation pairs dataframe.
+    corr : DataFrame
+        Correlation pairs dataframe.
     """
 
     # Transform net
@@ -167,8 +170,8 @@ def get_acts(adata, obsm_key):
     """
     Extracts activities as AnnData object.
 
-    From an AnnData object with source activities stored in `.obsm`, generates a new AnnData object with activities in X. This
-    allows to reuse many scanpy visualization functions.
+    From an AnnData object with source activities stored in `.obsm`, generates a new AnnData object with activities in `X`.
+    This allows to reuse many scanpy processing and visualization functions.
 
     Parameters
     ----------
@@ -179,7 +182,8 @@ def get_acts(adata, obsm_key):
 
     Returns
     -------
-    New AnnData object with activities in X.
+    acts : AnnData
+        New AnnData object with activities in X.
     """
 
     obs = adata.obs
@@ -203,7 +207,10 @@ def get_toy_data(n_samples=24, seed=42):
 
     Returns
     -------
-    `mat` and `net` examples.
+    mat : DataFrame
+        `mat` example.
+    net : DataFrame
+        `net` example.
     """
 
     from numpy.random import default_rng
@@ -233,26 +240,28 @@ def get_toy_data(n_samples=24, seed=42):
 
 def summarize_acts(acts, groupby, obs=None, var=None, mode='mean', min_std=1.0):
     """
-    Summarizes activities obtained per group by their mean or median.
+    Summarizes activities obtained per group by their mean or median and removes features that do not change across samples.
 
     Parameters
     ----------
-    acts : AnnData or pd.DataFrame
+    acts : AnnData or DataFrame
         Activities obtained after running a method.
     groupby : str
         Column name of obs to use for grouping.
-    obs : pd.DataFrame
+    obs : DataFrame
         None or a data-frame with sample meta-data.
-    var : pd.DataFrame
+    var : DataFrame
         None or a data-frame with feature meta-data.
     mode : str
         Wheter to use mean or median to summarize.
     min_std : float
-        Minimum std to filter out features.
+        Minimum std to filter out features. Only features with enough variability will be returned. Decrease it to return more
+        features.
 
     Returns
     -------
-    Data-frame with summaried actvities per group.
+    summary : DataFrame
+        Dataframe with summaried actvities per group.
     """
 
     # Extract acts, obs and features
@@ -299,12 +308,13 @@ def assign_groups(summary):
 
     Parameters
     ----------
-    summary : pd.DataFrame
-        Data-frame with summaried actvities per group
+    summary : DataFrame
+        Dataframe with summaried actvities per group
 
     Returns
     -------
-    Dictionary with the group that had the maximum activity.
+    annot_dict : dict
+        Dictionary with the group that had the maximum positive activity.
     """
 
     # Extract from summary
@@ -327,21 +337,21 @@ def assign_groups(summary):
 
 
 def get_top_targets(logFCs, pvals, name, contrast, net, source='source', target='target', weight='weight', sign_thr=1,
-                     lFCs_thr=0.0):
+                    lFCs_thr=0.0):
     """
     Return significant target features for a given source and contrast.
 
     Parameters
     ----------
-    logFCs : pd.DataFrame
+    logFCs : DataFrame
         Data-frame of logFCs (contrasts x features).
-    pvals : pd.DataFrame
+    pvals : DataFrame
         Data-frame of p-values (contrasts x features).
     name : str
         Name of the source to plot.
     contrast : str
         Name of the contrast (row) to plot.
-    net : pd.DataFrame
+    net : DataFrame
         Network data-frame.
     source : str
         Column name in net with source nodes.
@@ -356,7 +366,8 @@ def get_top_targets(logFCs, pvals, name, contrast, net, source='source', target=
 
     Returns
     -------
-    Dataframe containing the significant targets of a given source.
+    df : DataFrame
+        Dataframe containing the significant targets of a given source.
     """
 
     # Rename net
@@ -367,7 +378,7 @@ def get_top_targets(logFCs, pvals, name, contrast, net, source='source', target=
     msk = np.isin(logFCs.columns, targets)
 
     # Build df
-    df = logFCs.loc[[contrast], msk].T.rename({contrast : 'logFC'}, axis=1)
+    df = logFCs.loc[[contrast], msk].T.rename({contrast: 'logFC'}, axis=1)
     df['pval'] = pvals.loc[[contrast], msk].T
     df = df.sort_values('pval')
 
@@ -381,14 +392,15 @@ def format_contrast_results(logFCs, pvals):
     """
     Formats the results from get_contrast into a long format data-frame.
 
-    logFCs : pd.DataFrame
-        Data-frame of logFCs (contrasts x features).
-    pvals : pd.DataFrame
-        Data-frame of p-values (contrasts x features).
+    logFCs : DataFrame
+        Dataframe of logFCs (contrasts x features).
+    pvals : DataFrame
+        Dataframe of p-values (contrasts x features).
 
     Returns
     -------
-    DataFrame in long format.
+    df : DataFrame
+        DataFrame in long format.
     """
 
     df = melt([logFCs, pvals]).rename({'sample': 'contrast', 'source': 'name', 'score': 'logFC'}, axis=1)

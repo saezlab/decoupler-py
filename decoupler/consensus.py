@@ -70,7 +70,12 @@ def run_consensus(res):
     """
     Consensus.
 
-    Computes a consensus score after running different methods with decouple.
+    Computes a consensus score after running different methods with decouple. For each method, the obtained activities are
+    transformed into z-scores, first for positive values and then for negative ones. These two sets of z-score transformed
+    activities are computed by subsetting the values bigger or lower than 0, then by mirroring the selected values into their
+    opposite sign and finally calculating a classic z-score. This transformation ensures that values across methods are
+    comparable, and that they remain in their original sign (active or inactive). The final consensus score is the mean across
+    different methods.
 
     Parameters
     ----------
@@ -79,7 +84,10 @@ def run_consensus(res):
 
     Returns
     -------
-    Returns activity estimates and p-values.
+    estimate : DataFrame
+        Consensus scores.
+    pvals : DataFrame
+        Obtained p-values.
     """
 
     acts = np.array([res[k].values for k in res if 'pvals' not in k and not

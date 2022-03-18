@@ -79,13 +79,19 @@ def run_aucell(mat, net, source='source', target='target', n_up=None, min_n=5, s
     """
     AUCell.
 
-    Wrapper to run AUCell.
+    AUCell (Aibar et al., 2017) uses the Area Under the Curve (AUC) to calculate whether a set of targets is enriched within
+    the molecular readouts of each sample. To do so, AUCell first ranks the molecular features of each sample from highest to
+    lowest value, resolving ties randomly. Then, an AUC can be calculated using by default the top 5% molecular features in the
+    ranking. Therefore, this metric, `aucell_estimate`, represents the proportion of abundant molecular features in the target
+    set, and their relative abundance value compared to the other features within the sample.
+
+    Aibar S. et al. (2017) Scenic: single-cell regulatory network inference and clustering. Nat. Methods, 14, 1083–1086.
 
     Parameters
     ----------
-    mat : list, pd.DataFrame or AnnData
+    mat : list, DataFrame or AnnData
         List of [features, matrix], dataframe (samples x features) or an AnnData instance.
-    net : pd.DataFrame
+    net : DataFrame
         Network in long format.
     source : str
         Column name in net with source nodes.
@@ -103,9 +109,8 @@ def run_aucell(mat, net, source='source', target='target', n_up=None, min_n=5, s
     use_raw : bool
         Use raw attribute of mat if present.
 
-    Returns
-    -------
-    Returns aucell activity estimates or stores them in `mat.obsm['aucell_estimate']`.
+    estimate : DataFrame
+        AUCell scores. Stored in `.obsm['aucell_estimate']` if `mat` is AnnData.
     """
 
     # Extract sparse matrix and array of genes

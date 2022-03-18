@@ -41,13 +41,16 @@ def run_mdt(mat, net, source='source', target='target', weight='weight', trees=1
     """
     Multivariate Decision Tree (MDT).
 
-    Wrapper to run MDT.
+    MDT fits a multivariate regression random forest for each sample, where the observed molecular readouts in `mat` are the
+    response variable and the regulator weights in `net` are the covariates. Target features with no associated weight are set
+    to zero. The obtained feature importances from the fitted model are the activities (`mdt_estimate`) of the regulators in
+    `net`.
 
     Parameters
     ----------
-    mat : list, pd.DataFrame or AnnData
+    mat : list, DataFrame or AnnData
         List of [features, matrix], dataframe (samples x features) or an AnnData instance.
-    net : pd.DataFrame
+    net : DataFrame
         Network in long format.
     source : str
         Column name in net with source nodes.
@@ -72,7 +75,10 @@ def run_mdt(mat, net, source='source', target='target', weight='weight', trees=1
 
     Returns
     -------
-    Returns mdt activity estimates or stores them in `mat.obsm['mdt_estimate']`.
+    estimate : DataFrame
+        MDT scores. Stored in `.obsm['mdt_estimate']` if `mat` is AnnData.
+    pvals : DataFrame
+        Obtained p-values. Stored in `.obsm['mdt_pvals']` if `mat` is AnnData.
     """
 
     # Extract sparse matrix and array of genes

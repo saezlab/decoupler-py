@@ -70,13 +70,15 @@ def run_mlm(mat, net, source='source', target='target', weight='weight', batch_s
     """
     Multivariate Linear Model (MLM).
 
-    Wrapper to run MLM.
+    MLM fits a multivariate linear model for each sample, where the observed molecular readouts in `mat` are the response
+    variable and the regulator weights in `net` are the covariates. Target features with no associated weight are set to
+    zero. The obtained t-values from the fitted model are the activities (`mlm_estimate`) of the regulators in `net`.
 
     Parameters
     ----------
-    mat : list, pd.DataFrame or AnnData
+    mat : list, DataFrame or AnnData
         List of [features, matrix], dataframe (samples x features) or an AnnData instance.
-    net : pd.DataFrame
+    net : DataFrame
         Network in long format.
     source : str
         Column name in net with source nodes.
@@ -95,7 +97,10 @@ def run_mlm(mat, net, source='source', target='target', weight='weight', batch_s
 
     Returns
     -------
-    Returns mlm activity estimates and p-values or stores them in `mat.obsm['mlm_estimate']` and `mat.obsm['mlm_pvals']`.
+    estimate : DataFrame
+        MLM scores. Stored in `.obsm['mlm_estimate']` if `mat` is AnnData.
+    pvals : DataFrame
+        Obtained p-values. Stored in `.obsm['mlm_pvals']` if `mat` is AnnData.
     """
 
     # Extract sparse matrix and array of genes

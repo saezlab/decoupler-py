@@ -19,16 +19,16 @@ def plot_volcano(logFCs, pvals, name, contrast, net, top=5, source='source', tar
 
     Parameters
     ----------
-    logFCs : pd.DataFrame
+    logFCs : DataFrame
         Data-frame of logFCs (contrasts x features).
-    pvals : pd.DataFrame
+    pvals : DataFrame
         Data-frame of p-values (contrasts x features).
     name : str
         Name of the source to plot.
     contrast : str
         Name of the contrast (row) to plot.
-    net : pd.DataFrame
-        Network data-frame.
+    net : DataFrame
+        Network dataframe.
     top : int
         Number of top differentially expressed features.
     source : str

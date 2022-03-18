@@ -113,14 +113,18 @@ def run_ora(mat, net, source='source', target='target', n_up=None, n_bottom=0, n
     """
     Over Representation Analysis (ORA).
 
-    Wrapper to run ORA.
+    ORA measures the overlap between the target feature set and a list of most altered molecular features in `mat`.
+    The most altered molecular features can be selected from the top and or bottom of the molecular readout distribution, by
+    default it is the top 5% positive values. With these, a contingency table is build and a one-tailed Fisher’s exact test is
+    computed to determine if a regulator’s set of features are over-represented in the selected features from the data.
+    The resulting score, `ora_estimate`, is the minus log10 of the obtained p-value.
 
     Parameters
     ----------
-    mat : list, pd.DataFrame or AnnData
+    mat : list, DataFrame or AnnData
         List of [features, matrix], dataframe (samples x features) or an AnnData
         instance.
-    net : pd.DataFrame
+    net : DataFrame
         Network in long format.
     source : str
         Column name in net with source nodes.
@@ -143,9 +147,10 @@ def run_ora(mat, net, source='source', target='target', n_up=None, n_bottom=0, n
 
     Returns
     -------
-    Returns ora activity estimates (-log10(p-values)) and p-values
-    or stores them in `mat.obsm['ora_estimate']` and
-    `mat.obsm['ora_pvals']`.
+    estimate : DataFrame
+        ORA scores, which are the -log(p-values). Stored in `.obsm['ora_estimate']` if `mat` is AnnData.
+    pvals : DataFrame
+        Obtained p-values. Stored in `.obsm['ora_pvals']` if `mat` is AnnData.
     """
 
     # Extract sparse matrix and array of genes

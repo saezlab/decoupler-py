@@ -25,7 +25,8 @@ def get_progeny(organism='human', top=100):
 
     Returns
     -------
-    DataFrame in long format containing target genes for each pathway with their associated weights and p-values.
+    p : DataFrame
+        Dataframe in long format containing target genes for each pathway with their associated weights and p-values.
     """
 
     organism = organism.lower()
@@ -68,7 +69,8 @@ def get_resource(name):
 
     Returns
     -------
-    DataFrame in long format relating genes to biological entities.
+    df : DataFrame
+        Dataframe in long format relating genes to biological entities.
     """
 
     resources = show_resources()
@@ -92,7 +94,8 @@ def show_resources():
 
     Returns
     -------
-    List of available resources to query with [decoupler.get_resource].
+    lst : list
+        List of available resources to query with `dc.get_resource`.
     """
 
     op = check_if_omnipath()
@@ -120,7 +123,8 @@ def get_dorothea(organism='human', levels=['A', 'B', 'C'], weight_dict={'A': 1, 
 
     Returns
     -------
-    DataFrame in long format containing target genes for each TF with their associated weights and confidence level.
+    do : DataFrame
+        Dataframe in long format containing target genes for each TF with their associated weights and confidence level.
     """
 
     organism = organism.lower()

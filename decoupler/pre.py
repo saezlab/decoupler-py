@@ -25,9 +25,12 @@ def extract(mat, use_raw=True, verbose=False, dtype=np.float32):
 
     Returns
     -------
-    m : sparse matrix
-    r : array of samples
-    c : array of features
+    m : csr_matrix
+        Sparse matrix contianing molecular readouts or statistics.
+    r : ndarray
+        Array of sample names.
+    c : ndarray
+        Array of feature names.
     """
 
     if type(mat) is list:
@@ -83,20 +86,21 @@ def filt_min_n(c, net, min_n=5):
     """
     Removes sources of a `net` with less than min_n targets.
 
-    First it filters target genes in `net` that are not in `mat` and then removes sources with less than `min_n` targets.
+    First it filters target features in `net` that are not in `mat` and then removes sources with less than `min_n` targets.
 
     Parameters
     ----------
-    c : narray
+    c : ndarray
         Column names of `mat`.
-    net : pd.DataFrame
+    net : DataFrame
         Network in long format.
     min_n : int
         Minimum of targets per source. If less, sources are removed.
 
     Returns
     -------
-    net : Filtered net.
+    net : DataFrame
+        Filtered net in long format.
     """
 
     # Find shared targets between mat and net
@@ -125,16 +129,17 @@ def match(c, r, net):
 
     Parameters
     ----------
-    c : array
+    c : ndarray
         Column names of `mat`.
-    r : array
+    r : ndarray
         Row  names of `net`.
-    net : array
+    net : ndarray
         Regulatory adjacency matrix.
 
     Returns
     -------
-    regX : Matching regulatory adjacency matrix.
+    regX : ndarray
+        Matching regulatory adjacency matrix.
     """
 
     # Init empty regX
@@ -149,11 +154,11 @@ def match(c, r, net):
 
 def rename_net(net, source='source', target='target', weight='weight'):
     """
-    Renames input network to match decoupleR's format (source, target, weight).
+    Renames input network to match decoupler's format (source, target, weight).
 
     Parameters
     ----------
-    net : pd.DataFrame
+    net : DataFrame
         Network in long format.
     source : str
         Column name where to extract source features.
@@ -164,7 +169,8 @@ def rename_net(net, source='source', target='target', weight='weight'):
 
     Returns
     -------
-    net : Renamed pd.DataFrame network.
+    net : DataFrame
+        Renamed network.
     """
 
     # Check if names are in columns
@@ -198,14 +204,17 @@ def get_net_mat(net):
 
     Parameters
     ----------
-    net : pd.DataFrame
+    net : DataFrame
         Network in long format.
 
     Returns
     -------
-    sources : Array of source names.
-    targets : Array of target names.
-    X : Matrix of interactions bewteen sources and targets (target x source).
+    sources : ndarray
+        Array of source names.
+    targets : ndarray
+        Array of target names.
+    X : ndarray
+        Array of interactions bewteen sources and targets (target x source).
     """
 
     # Pivot df to a wider format

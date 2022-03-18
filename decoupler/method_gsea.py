@@ -180,13 +180,20 @@ def run_gsea(mat, net, source='source', target='target', times=1000, batch_size=
     """
     Gene Set Enrichment Analysis (GSEA).
 
-    Wrapper to run GSEA.
+    GSEA (Aravind et al., 2005) starts by transforming the input molecular readouts in `mat` to ranks for each sample. Then,
+    an enrichment score `gsea_estimate` is calculated by walking down the list of features, increasing a running-sum statistic
+    when a feature in the target feature set is encountered and decreasing it when it is not. The final score is the maximum
+    deviation from zero encountered in the random walk. Finally, a normalized score `gsea_norm`, can be obtained by computing
+    the z-score of the estimate compared to a null distribution obtained from N random permutations.
+
+    Aravind S. et al. (2005) Gene set enrichment analysis: A knowledge-based approach for interpreting genome-wide expression
+    profiles. PNAS. 102, 43.
 
     Parameters
     ----------
-    mat : list, pd.DataFrame or AnnData
+    mat : list, DataFrame or AnnData
         List of [features, matrix], dataframe (samples x features) or an AnnData instance.
-    net : pd.DataFrame
+    net : DataFrame
         Network in long format.
     source : str
         Column name in net with source nodes.
@@ -208,8 +215,12 @@ def run_gsea(mat, net, source='source', target='target', times=1000, batch_size=
 
     Returns
     -------
-    Returns gsea, norm_gsea activity estimates and p-values or stores them in `mat.obsm['gsea_estimate']`,
-    `mat.obsm['gsea_norm']`, and `mat.obsm['gsea_pvals']`.
+    estimate : DataFrame
+        GSEA scores. Stored in `.obsm['gsea_estimate']` if `mat` is AnnData.
+    norm : DataFrame
+        Normalized GSEA scores. Stored in `.obsm['gsea_norm']` if `mat` is AnnData.
+    pvals : DataFrame
+        Obtained p-values. Stored in `.obsm['gsea_pvals']` if `mat` is AnnData.
     """
 
     # Extract sparse matrix and array of genes

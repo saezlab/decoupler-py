@@ -138,7 +138,7 @@ def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, min_prop
         Column of `obs` where to extract the samples names.
     groups_col : str
         Column of `obs` where to extract the groups names.
-    obs : pd.DataFrame, None
+    obs : DataFrame, None
         If provided, meta-data dataframe.
     layer : str
         If provided, which element of layers to use.
@@ -153,8 +153,8 @@ def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, min_prop
 
     Returns
     -------
-    Returns new AnnData object with unormalized pseudobulk profiles per sample
-    and group.
+    psbulk : AnnData
+        Returns new AnnData object with unormalized pseudobulk profiles per sample and group.
     """
 
     # Use one column if the same
@@ -217,7 +217,7 @@ def get_unq_dict(col, condition, reference):
         if k == condition:
             unq_dict[k] = v
         if reference == 'rest':
-            unq_dict.setdefault('rest', 0) 
+            unq_dict.setdefault('rest', 0)
             unq_dict[reference] += v
         elif k == reference:
             unq_dict[k] = v
@@ -233,11 +233,9 @@ def check_if_skip(grp, condition_col, condition, reference, unq_dict):
         print('Skipping group "{0}" since condition "{1}" not in column "{2}".'.format(grp, condition, condition_col),
               file=sys.stderr)
     elif unq_dict[reference] < 2:
-        print('Skipping group "{0}" since reference "{1}" has less than 2 samples.'.format(grp, reference, condition_col),
-              file=sys.stderr)
+        print('Skipping group "{0}" since reference "{1}" has less than 2 samples.'.format(grp, reference), file=sys.stderr)
     elif unq_dict[condition] < 2:
-        print('Skipping group "{0}" since condition "{1}" has less than 2 samples.'.format(grp, condition, condition_col),
-              file=sys.stderr)
+        print('Skipping group "{0}" since condition "{1}" has less than 2 samples.'.format(grp, condition), file=sys.stderr)
     else:
         skip = False
     return skip
@@ -245,9 +243,8 @@ def check_if_skip(grp, condition_col, condition, reference, unq_dict):
 
 def get_contrast(adata, group_col, condition_col, condition, reference=None, method='t-test'):
     """
-    Computes simple contrast between two conditions from pseudo-bulk profiles. After genertaing pseudo-bulk profiles with
-    `dc.get_pseudobulk`, computes Differential Expression Analysis using scanpy's `rank_genes_groups` function between two
-    conditions.
+    Computes Differential Expression Analysis using scanpy's `rank_genes_groups` function between two conditions from
+    pseudo-bulk profiles.
 
     Parameters
     ----------
@@ -267,7 +264,10 @@ def get_contrast(adata, group_col, condition_col, condition, reference=None, met
 
     Returns
     -------
-    Returns logfoldchanges and p-values per gene.
+    logFCs : DataFrame
+        Dataframe containing log-fold changes per gene.
+    p_vals : DataFrame
+         Dataframe containing p-values per gene.
     """
 
     try:
@@ -275,7 +275,7 @@ def get_contrast(adata, group_col, condition_col, condition, reference=None, met
         from scanpy.get import rank_genes_groups_df
     except Exception:
         raise BaseException('scanpy is not installed. Please install it with: pip install scanpy')
-    
+
     # Find unique groups
     groups = np.unique(adata.obs[group_col].values.astype(str))
 

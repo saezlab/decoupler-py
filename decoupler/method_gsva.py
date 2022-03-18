@@ -158,13 +158,19 @@ def run_gsva(mat, net, source='source', target='target', kcdf=False, mx_diff=Tru
     """
     Gene Set Variation Analysis (GSVA).
 
-    Wrapper to run GSVA.
+    GSVA (Hänzelmann et al., 2013) starts by transforming the input molecular readouts in `mat` to a readout-level statistic
+    using Gaussian kernel estimation of the cumulative density function. Then, readout-level statistics are ranked per sample
+    and normalized to up-weight the two tails of the rank distribution. Afterwards, an enrichment score `gsva_estimate` is
+    calculated using a running sum statistic that is normalized by subtracting the largest negative estimate from the largest
+    positive one.
+
+    Hänzelmann S. et al. (2013) GSVA: gene set variation analysis for microarray and RNA-seq data. BMC Bioinformatics, 14, 7.
 
     Parameters
     ----------
-    mat : list, pd.DataFrame or AnnData
+    mat : list, DataFrame or AnnData
         List of [features, matrix], dataframe (samples x features) or an AnnData instance.
-    net : pd.DataFrame
+    net : DataFrame
         Network in long format.
     source : str
         Column name in net with source nodes.
@@ -191,7 +197,8 @@ def run_gsva(mat, net, source='source', target='target', kcdf=False, mx_diff=Tru
 
     Returns
     -------
-    Returns gsva activity estimates or stores them in `mat.obsm['gsva_estimate']`.
+    estimate : DataFrame
+        GSVA scores. Stored in `.obsm['gsva_estimate']` if `mat` is AnnData.
     """
 
     # Extract sparse matrix and array of genes

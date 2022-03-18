@@ -230,13 +230,17 @@ def run_viper(mat, net, source='source', target='target', weight='weight', pleio
     """
     Virtual Inference of Protein-activity by Enriched Regulon (VIPER).
 
-    Wrapper to run VIPER.
+    VIPER (Alvarez et al., 2016) estimates biological activities by performing a three-tailed enrichment score calculation. For
+    further information check the supplementary information of the decoupler mansucript or the original publication.
+
+    Alvarez M.J.et al. (2016) Functional characterization of somatic mutations in cancer using network-based inference of
+    protein activity. Nat. Genet., 48, 838–847.
 
     Parameters
     ----------
-    mat : list, pd.DataFrame or AnnData
+    mat : list, DataFrame or AnnData
         List of [features, matrix], dataframe (samples x features) or an AnnData instance.
-    net : pd.DataFrame
+    net : DataFrame
         Network in long format.
     source : str
         Column name in net with source nodes.
@@ -264,7 +268,10 @@ def run_viper(mat, net, source='source', target='target', weight='weight', pleio
 
     Returns
     -------
-    Returns viper activity estimates and p-values or stores them in `mat.obsm['viper_estimate']` and `mat.obsm['viper_pvals']`.
+    estimate : DataFrame
+        VIPER scores. Stored in `.obsm['viper_estimate']` if `mat` is AnnData.
+    pvals : DataFrame
+        Obtained p-values. Stored in `.obsm['viper_pvals']` if `mat` is AnnData.
     """
 
     # Extract sparse matrix and array of genes

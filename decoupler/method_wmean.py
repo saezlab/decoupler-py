@@ -93,13 +93,16 @@ def run_wmean(mat, net, source='source', target='target', weight='weight', times
     """
     Weighted sum (WMEAN).
 
-    Wrapper to run WMEAN.
+    WMEAN infers regulator activities by first multiplying each target feature by its associated weight which then are summed
+    to an enrichment score (`wmean_estimate`). Furthermore, permutations of random target features can be performed to obtain a
+    null distirbution that can be used to compute a z-score (`wmean_norm`), or a corrected estimate (`wmean_corr`) by
+    multiplying `wsum_estimate` by the minus log10 of the obtained empirical p-value.
 
     Parameters
     ----------
-    mat : list, pd.DataFrame or AnnData
+    mat : list, DataFrame or AnnData
         List of [features, matrix], dataframe (samples x features) or an AnnData instance.
-    net : pd.DataFrame
+    net : DataFrame
         Network in long format.
     source : str
         Column name in net with source nodes.
@@ -122,8 +125,14 @@ def run_wmean(mat, net, source='source', target='target', weight='weight', times
 
     Returns
     -------
-    Returns wmean, norm_wmean, corr_wmean activity estimates and p-values or stores them in `mat.obsm['wmean_estimate']`,
-    `mat.obsm['wmean_norm']`, `mat.obsm['wmean_corr']` and `mat.obsm['wmean_pvals']`.
+    estimate : DataFrame
+        WMEAN scores. Stored in `.obsm['wmean_estimate']` if `mat` is AnnData.
+    norm : DataFrame
+        Normalized WMEAN scores. Stored in `.obsm['wmean_norm']` if `mat` is AnnData.
+    corr : DataFrame
+        Corrected WMEAN scores. Stored in `.obsm['wmean_corr']` if `mat` is AnnData.
+    pvals : DataFrame
+        Obtained p-values. Stored in `.obsm['wmean_pvals']` if `mat` is AnnData.
     """
 
     # Extract sparse matrix and array of genes

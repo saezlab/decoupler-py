@@ -93,9 +93,9 @@ def decouple(mat, net, source='source', target='target', weight='weight', method
 
     Parameters
     ----------
-    mat : list, pd.DataFrame or AnnData
+    mat : list, DataFrame or AnnData
         List of [features, matrix], dataframe (samples x features) or an AnnData instance.
-    net : pd.DataFrame
+    net : DataFrame
         Network in long format.
     source : str
         Column name in net with source nodes.
@@ -112,7 +112,7 @@ def decouple(mat, net, source='source', target='target', weight='weight', method
         Boolean whether to run a consensus score between methods.
     cns_metds : list
         List of estimate names to use for the calculation of the consensus score. If empty it will use all the estimates
-        obtained after running the different methods.
+        obtained after running the different methods. If methods is also None, it will use mlm, ulm and norm_wsum instead.
     min_n : int
         Minimum of targets per source. If less, sources are removed.
     verbose : bool
@@ -122,8 +122,9 @@ def decouple(mat, net, source='source', target='target', weight='weight', method
 
     Returns
     -------
-    Returns dictionary of activity estimates and p-values or stores them in `mat.obsm['method_estimate']` and
-    `mat.obsm['method_pvals']` for each method.
+    results : dict
+        Dictionary of activity estimates and p-values. If `mat` is AnnData, results for each method are stored in
+        `.obsm['method_estimate']` and if available in `.obsm['method_pvals']`.
     """
 
     # Parse methods
