@@ -41,7 +41,7 @@ def run_udt(mat, net, source='source', target='target', weight='weight', min_lea
     """
     Univariate Decision Tree (UDT).
 
-    UDT fits a single regression decission tree for each sample and regulator, where the observed molecular readouts in `mat`
+    UDT fits a single regression decision tree for each sample and regulator, where the observed molecular readouts in `mat`
     are the response variable and the regulator weights in `net` are the explanatory one. Target features with no associated
     weight are set to zero. The obtained feature importance from the fitted model is the activity (`udt_estimate`) of a given
     regulator.

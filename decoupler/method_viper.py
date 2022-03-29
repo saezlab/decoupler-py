@@ -231,7 +231,7 @@ def run_viper(mat, net, source='source', target='target', weight='weight', pleio
     Virtual Inference of Protein-activity by Enriched Regulon (VIPER).
 
     VIPER (Alvarez et al., 2016) estimates biological activities by performing a three-tailed enrichment score calculation. For
-    further information check the supplementary information of the decoupler mansucript or the original publication.
+    further information check the supplementary information of the decoupler manuscript or the original publication.
 
     Alvarez M.J.et al. (2016) Functional characterization of somatic mutations in cancer using network-based inference of
     protein activity. Nat. Genet., 48, 838–847.

@@ -93,7 +93,7 @@ def run_wsum(mat, net, source='source', target='target', weight='weight', times=
 
     WSUM infers regulator activities by first multiplying each target feature by its associated weight which then are summed
     to an enrichment score (`wsum_estimate`). Furthermore, permutations of random target features can be performed to obtain a
-    null distirbution that can be used to compute a z-score (`wsum_norm`), or a corrected estimate (`wsum_corr`) by multiplying
+    null distribution that can be used to compute a z-score (`wsum_norm`), or a corrected estimate (`wsum_corr`) by multiplying
     `wsum_estimate` by the minus log10 of the obtained empirical p-value.
 
     Parameters

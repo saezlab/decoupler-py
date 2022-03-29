@@ -130,8 +130,8 @@ def run_ora(mat, net, source='source', target='target', n_up=None, n_bottom=0, n
         Column name in net with source nodes.
     target : str
         Column name in net with target nodes.
-    n_up : int
-        Number of top ranked features to select as observed features.
+    n_up : int, None
+        Number of top ranked features to select as observed features. By default is the top 5% of positive features.
     n_bottom : int
         Number of bottom ranked features to select as observed features.
     n_background : int
