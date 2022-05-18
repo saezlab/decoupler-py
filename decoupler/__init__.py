@@ -1,4 +1,4 @@
-__version__ = '1.1.0'  # noqa: F401
+__version__ = '1.1.1'  # noqa: F401
 __version_info__ = tuple([int(num) for num in __version__.split('.')])  # noqa: F401
 
 from .pre import extract, match, rename_net, get_net_mat, filt_min_n  # noqa: F401
@@ -9,7 +9,7 @@ from .method_wmean import run_wmean  # noqa: F401
 from .method_wsum import run_wsum  # noqa: F401
 from .method_ulm import run_ulm  # noqa: F401
 from .method_mlm import run_mlm  # noqa: F401
-from .method_ora import run_ora  # noqa: F401
+from .method_ora import run_ora, test1r  # noqa: F401
 from .method_gsva import run_gsva  # noqa: F401
 from .method_gsea import run_gsea  # noqa: F401
 from .method_viper import run_viper  # noqa: F401
