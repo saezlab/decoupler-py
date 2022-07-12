@@ -44,6 +44,7 @@ Running multiple methods:
    :toctree: generated
 
    decouple
+   cons
    
 Utils:
 ------

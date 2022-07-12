@@ -1,4 +1,4 @@
-__version__ = '1.1.3'  # noqa: F401
+__version__ = '1.1.4'  # noqa: F401
 __version_info__ = tuple([int(num) for num in __version__.split('.')])  # noqa: F401
 
 from .pre import extract, match, rename_net, get_net_mat, filt_min_n  # noqa: F401
@@ -14,8 +14,8 @@ from .method_gsva import run_gsva  # noqa: F401
 from .method_gsea import run_gsea  # noqa: F401
 from .method_viper import run_viper  # noqa: F401
 from .method_aucell import run_aucell  # noqa: F401
-from .decouple import decouple  # noqa: F401
-from .consensus import run_consensus  # noqa: F401
+from .decouple import decouple, run_consensus  # noqa: F401
+from .consensus import cons  # noqa: F401
 from .omnip import show_resources, get_resource, get_progeny, get_dorothea  # noqa: F401
 from .plotting import plot_volcano  # noqa: F401
 
