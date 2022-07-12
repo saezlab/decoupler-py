@@ -37,4 +37,10 @@ class TestAnnDataUtils(unittest.TestCase):
                           min_prop=0.2, min_cells=1, min_counts=10, min_smpls=1)
         sc.pp.normalize_total(pdata, target_sum=1e4)
         sc.pp.log1p(pdata)
-        dc.get_contrast(pdata, self.groups_col, self.condition_col, 'Disease', reference='Healthy', method='t-test')
+        logFCs, pvals = dc.get_contrast(pdata, self.groups_col, self.condition_col,
+                                        'Disease', reference='Healthy', method='t-test')
+        dc.format_contrast_results(logFCs, pvals)
+        dc.get_top_targets(logFCs, pvals, 'C01', sign_thr=1, lFCs_thr=0.5)
+        dc.get_top_targets(logFCs, pvals, 'C01', name='T3', net=self.net, sign_thr=1, lFCs_thr=0.5)
+        dc.plot_volcano(logFCs, pvals, 'C01', top=5, sign_thr=0.05, lFCs_thr=1)
+        dc.plot_volcano(logFCs, pvals, 'C01', name='T3', net=self.net, top=5, sign_thr=0.05, lFCs_thr=1)

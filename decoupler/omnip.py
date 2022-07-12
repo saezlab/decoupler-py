@@ -5,7 +5,7 @@ def check_if_omnipath():
     try:
         import omnipath as op
     except Exception:
-        raise BaseException('omnipath is not installed. Please install it with: pip install omnipath')
+        raise ImportError('omnipath is not installed. Please install it with: pip install omnipath')
     return op
 
 

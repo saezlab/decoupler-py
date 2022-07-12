@@ -342,13 +342,13 @@ def get_contrast(adata, group_col, condition_col, condition, reference=None, met
         logFCs = pd.concat([logFCs, logFC])
         p_val = df.pivot(columns='names', index=group_col, values='pvals')
         p_vals = pd.concat([p_vals, p_val])
+        
+    # Force dtype
+    logFCs = logFCs.astype(np.float32)
+    p_vals = p_vals.astype(np.float32)
 
     # Add name
     logFCs.name = 'contrast_logFCs'
     p_vals.name = 'contrast_pvals'
-    
-    # Force dtype
-    logFCs = logFCs.astype(np.float32)
-    p_vals = p_vals.astype(np.float32)
 
     return logFCs, p_vals

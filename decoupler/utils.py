@@ -336,10 +336,11 @@ def assign_groups(summary):
     return annot_dict
 
 
-def get_top_targets(logFCs, pvals, name, contrast, net, source='source', target='target', weight='weight', sign_thr=1,
+def get_top_targets(logFCs, pvals, contrast, name=None, net=None, source='source', target='target', weight='weight', sign_thr=1,
                     lFCs_thr=0.0):
     """
-    Return significant target features for a given source and contrast.
+    Return significant target features for a given source and contrast. If no name or net are provided, return all significant
+    features without subsetting.
 
     Parameters
     ----------
@@ -348,11 +349,11 @@ def get_top_targets(logFCs, pvals, name, contrast, net, source='source', target=
     pvals : DataFrame
         Data-frame of p-values (contrasts x features).
     name : str
-        Name of the source to plot.
+        Name of the source.
     contrast : str
-        Name of the contrast (row) to plot.
-    net : DataFrame
-        Network data-frame.
+        Name of the contrast (row).
+    net : DataFrame, None
+        Network data-frame. If None, return without subsetting targets by it.
     source : str
         Column name in net with source nodes.
     target : str
@@ -370,20 +371,27 @@ def get_top_targets(logFCs, pvals, name, contrast, net, source='source', target=
         Dataframe containing the significant targets of a given source.
     """
 
-    # Rename net
-    net = rename_net(net, source=source, target=target, weight=weight)
+    # Check for net
+    if net is not None:
+        # Rename net
+        net = rename_net(net, source=source, target=target, weight=weight)
 
-    # Find targets in net that match with logFCs
-    targets = net[net['source'] == name]['target'].values
-    msk = np.isin(logFCs.columns, targets)
+        # Find targets in net that match with logFCs
+        if name is None:
+            raise ValueError('If net is given, name cannot be None.')
+        targets = net[net['source'] == name]['target'].values
+        msk = np.isin(logFCs.columns, targets)
 
-    # Build df
-    df = logFCs.loc[[contrast], msk].T.rename({contrast: 'logFC'}, axis=1)
-    df['pval'] = pvals.loc[[contrast], msk].T
-    df = df.sort_values('pval')
+        # Build df
+        df = logFCs.loc[[contrast], msk].T.rename({contrast: 'logFCs'}, axis=1)
+        df['pvals'] = pvals.loc[[contrast], msk].T
+    else:
+        df = logFCs.loc[[contrast]].T.rename({contrast: 'logFCs'}, axis=1)
+        df['pvals'] = pvals.loc[[contrast]].T
 
     # Filter by thresholds
-    df = df[(np.abs(df['logFC']) > lFCs_thr) & (np.abs(df['pval']) < sign_thr)]
+    df = df.sort_values('pvals')
+    df = df[(np.abs(df['logFCs']) >= lFCs_thr) & (np.abs(df['pvals']) <= sign_thr)]
 
     return df
 
