@@ -322,5 +322,9 @@ def get_contrast(adata, group_col, condition_col, condition, reference=None, met
     # Add name
     logFCs.name = 'contrast_logFCs'
     p_vals.name = 'contrast_pvals'
+    
+    # Force dtype
+    logFCs = logFCs.astype(np.float32)
+    pvals = pvals.astype(np.float32)
 
     return logFCs, p_vals
