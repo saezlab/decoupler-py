@@ -11,13 +11,18 @@ import sys
 from anndata import AnnData
 
 
-def extract_psbulk_inputs(adata, obs, layer):
+def extract_psbulk_inputs(adata, obs, layer, use_raw):
 
     # Extract count matrix X
     if layer is not None:
         X = adata.layers[layer]
     elif type(adata) is AnnData:
-        X = adata.X
+        if use_raw:
+            if adata.raw is None:
+                raise ValueError("Received `use_raw=True`, but `mat.raw` is empty.")
+            X = adata.raw.X
+        else:
+            X = adata.X
     else:
         X = adata.values
 
@@ -34,6 +39,20 @@ def extract_psbulk_inputs(adata, obs, layer):
         X = csr_matrix(X)
 
     return X, obs, var
+
+
+def test_for_raw_counts(X):
+    is_finite = np.all(np.isfinite(X.data))
+    if not is_finite:
+        raise ValueError('Data contains non finite values (nan or inf), please set them to 0 or remove them.')
+    is_positive = np.all(X.data > 0)
+    if not is_positive:
+        raise ValueError("""Data contains negative values. Check the parameters use_raw and layers to
+        determine if you are selecting the correct data, which should be positive integer counts.""")
+    is_integer = float(np.sum(X.data)).is_integer()
+    if not is_integer:
+        raise ValueError("""Data contains float (decimal) values. Check the parameters use_raw and layers to
+        determine if you are selecting the correct data, which should be positive integer counts.""")
 
 
 def format_psbulk_inputs(sample_col, groups_col, obs):
@@ -122,7 +141,7 @@ def compute_psbulk(psbulk, props, X, sample_col, groups_col, smples, groups, obs
                 i += 1
 
 
-def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, min_prop=0.2, min_cells=10, min_counts=1000,
+def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=False, min_prop=0.2, min_cells=10, min_counts=1000,
                    min_smpls=2):
     """
     Generates an unormalized pseudo-bulk profile per sample and group.
@@ -142,6 +161,8 @@ def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, min_prop
         If provided, meta-data dataframe.
     layer : str
         If provided, which element of layers to use.
+    use_raw : bool
+        Use `raw` attribute of `adata` if present.
     min_prop : float
         Minimum proportion of cells with non-zero values.
     min_cells : int
@@ -162,7 +183,10 @@ def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, min_prop
         groups_col = None
 
     # Extract inputs
-    X, obs, var = extract_psbulk_inputs(adata, obs, layer)
+    X, obs, var = extract_psbulk_inputs(adata, obs, layer, use_raw)
+    
+    # Test if raw counts are present
+    test_for_raw_counts(X)
 
     # Format inputs
     obs, smples, groups, n_rows = format_psbulk_inputs(sample_col, groups_col, obs)
