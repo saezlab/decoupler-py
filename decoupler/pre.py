@@ -10,6 +10,33 @@ import pandas as pd
 from anndata import AnnData
 
 
+def check_mat(m, r, c, verbose=False):
+
+    # Check for empty features
+    msk_features = np.sum(m != 0, axis=0).A1 == 0
+    n_empty_features = np.sum(msk_features)
+    if n_empty_features > 0:
+        if verbose:
+            print("{0} features of mat are empty, they will be removed.".format(n_empty_features))
+        c = c[~msk_features]
+        m = m[:, ~msk_features]
+
+    # Check for empty samples
+    msk_samples = np.sum(m != 0, axis=1).A1 == 0
+    n_empty_samples = np.sum(msk_samples)
+    if n_empty_samples > 0:
+        if verbose:
+            print("{0} samples of mat are empty, they will be removed.".format(n_empty_samples))
+        r = r[~msk_samples]
+        m = m[~msk_samples]
+
+    # Check for non finite values
+    if np.any(~np.isfinite(m.data)):
+        raise ValueError("""mat contains non finite values (nan or inf), please set them to 0 or remove them.""")
+
+    return m, r, c
+
+
 def extract(mat, use_raw=True, verbose=False, dtype=np.float32):
     """
     Processes different input types so that they can be used downstream.
@@ -57,27 +84,8 @@ def extract(mat, use_raw=True, verbose=False, dtype=np.float32):
         raise ValueError("""mat must be a list of [matrix, samples, features], dataframe (samples x features) or an AnnData
         instance.""")
 
-    # Check for empty features
-    msk_features = np.sum(m != 0, axis=0).A1 == 0
-    n_empty_features = np.sum(msk_features)
-    if n_empty_features > 0:
-        if verbose:
-            print("{0} features of mat are empty, they will be removed.".format(n_empty_features))
-        c = c[~msk_features]
-        m = m[:, ~msk_features]
-
-    # Check for empty samples
-    msk_samples = np.sum(m != 0, axis=1).A1 == 0
-    n_empty_samples = np.sum(msk_samples)
-    if n_empty_samples > 0:
-        if verbose:
-            print("{0} samples of mat are empty, they will be removed.".format(n_empty_samples))
-        r = r[~msk_samples]
-        m = m[~msk_samples]
-
-    # Check for non finite values
-    if np.any(~np.isfinite(m.data)):
-        raise ValueError("""mat contains non finite values (nan or inf), please set them to 0 or remove them.""")
+    # Check mat for empty or not finite values
+    m, r, c = check_mat(m, r, c, verbose=verbose)
 
     # Sort genes
     msk = np.argsort(c)

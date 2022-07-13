@@ -12,8 +12,9 @@ def check_if_matplotlib():
     return plt
 
 
-def plot_volcano(logFCs, pvals, contrast, name=None, net=None, top=5, source='source', target='target', weight='weight', sign_thr=0.05,
-                 lFCs_thr=0.5, figsize=(7, 5), dpi=100, ax=None, return_fig=False, save=None):
+def plot_volcano(logFCs, pvals, contrast, name=None, net=None, top=5, source='source', target='target',
+                 weight='weight', sign_thr=0.05, lFCs_thr=0.5, figsize=(7, 5), dpi=100, ax=None,
+                 return_fig=False, save=None):
     """
     Plot logFC and p-values. If name and net are provided, it does the same for the targets of a selected source.
 
@@ -55,11 +56,11 @@ def plot_volcano(logFCs, pvals, contrast, name=None, net=None, top=5, source='so
 
     plt = check_if_matplotlib()
     sign_thr = -np.log10(sign_thr)
-    
+
     # Plot
     if ax is None:
         fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=dpi)
-    
+
     # Check for net
     if net is not None:
         # Rename nets
@@ -76,13 +77,13 @@ def plot_volcano(logFCs, pvals, contrast, name=None, net=None, top=5, source='so
         df['logFCs'] = logFCs.loc[[contrast]].T
         df['pvals'] = -np.log10(pvals.loc[[contrast]].T)
         df = df[~np.any(pd.isnull(df), axis=1)]
-        
+
         if has_neg:
             vmin = -max_n
         else:
             vmin = 0
         df.plot.scatter(x='logFCs', y='pvals', c='weight', cmap='coolwarm',
-                                vmin=vmin, vmax=max_n, sharex=False, ax=ax)
+                        vmin=vmin, vmax=max_n, sharex=False, ax=ax)
         ax.set_title('{0} | {1}'.format(contrast, name))
     else:
         df = logFCs.loc[[contrast]].T.rename({contrast: 'logFCs'}, axis=1)
@@ -93,17 +94,16 @@ def plot_volcano(logFCs, pvals, contrast, name=None, net=None, top=5, source='so
         df.loc[(df['logFCs'] <= -lFCs_thr) & (df['pvals'] >= sign_thr), 'weight'] = '#1F77B4'
         df.plot.scatter(x='logFCs', y='pvals', c='weight', cmap='coolwarm', sharex=False, ax=ax)
         ax.set_title('{0}'.format(contrast))
-    
+
     # Draw sign lines
     ax.axhline(y=sign_thr, linestyle='--', color="black")
     ax.axvline(x=lFCs_thr, linestyle='--', color="black")
     ax.axvline(x=-lFCs_thr, linestyle='--', color="black")
-    
+
     # Plot top sign features
-    signs = df[(np.abs(df['logFCs']) >= lFCs_thr) &
-                       (df['pvals'] >= sign_thr)].sort_values('pvals', ascending=False)
+    signs = df[(np.abs(df['logFCs']) >= lFCs_thr) & (df['pvals'] >= sign_thr)].sort_values('pvals', ascending=False)
     signs = signs.iloc[:top]
-    
+
     # Add labels
     ax.set_ylabel('-log10(pvals)')
     texts = []

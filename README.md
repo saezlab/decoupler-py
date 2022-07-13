@@ -25,6 +25,10 @@ Alternatively, to stay up-to-date with the newest version, run:
 pip install git+https://github.com/saezlab/decoupler-py.git
 ```
 
+## scverse
+**decoupler** is part of the [scverse](https://scverse.org) ecosystem, a collection of tools for single-cell omics data analysis in python.
+For more information check the link.
+
 ## License
 Footprint methods inside decoupler can be used for academic or commercial purposes, except `viper` which holds a non-commercial license. 
 

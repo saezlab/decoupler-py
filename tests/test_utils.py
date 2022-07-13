@@ -7,7 +7,7 @@ import decoupler as dc
 
 
 class TestUtils(unittest.TestCase):
-    
+
     mat, net = dc.get_toy_data()
 
     def test_get_toy_data(self):
@@ -47,8 +47,6 @@ class TestUtils(unittest.TestCase):
         estimate, pvals = dc.run_mlm(self.mat, self.net, min_n=0)
         dc.melt(estimate)
         dc.melt(pvals)
-        
+
     def test_denserun(self):
         dc.dense_run(dc.run_consensus, self.mat, self.net, min_n=0)
-        
-        

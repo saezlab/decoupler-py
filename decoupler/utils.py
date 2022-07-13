@@ -337,8 +337,8 @@ def assign_groups(summary):
     return annot_dict
 
 
-def get_top_targets(logFCs, pvals, contrast, name=None, net=None, source='source', target='target', weight='weight', sign_thr=1,
-                    lFCs_thr=0.0):
+def get_top_targets(logFCs, pvals, contrast, name=None, net=None, source='source', target='target',
+                    weight='weight', sign_thr=1, lFCs_thr=0.0):
     """
     Return significant target features for a given source and contrast. If no name or net are provided, return all significant
     features without subsetting.
@@ -422,7 +422,7 @@ def dense_run(func, mat, net, source='source', target='target', weight='weight',
               args={}, estimate_loc=0):
     """
     Run a method without zero values.
-    
+
     This function runs any method in decoupler (see `dc.show_methods()`) in a dense manner, meaning that all zero vales
     are removed for each sample. Since this is sample dependent, parallelization is not available most of the time and
     running times might increase. This function is useful to test what effect does null imputation do to the inference of
@@ -465,15 +465,15 @@ def dense_run(func, mat, net, source='source', target='target', weight='weight',
     # Extract sparse matrix and array of features
     m, r, c = extract(mat, use_raw=use_raw, verbose=verbose)
     fname = func.__name__.split('run_')[1]
-    
+
     if verbose:
         print('Dense run of {0} on mat with {1} samples and {2} potential targets.'.format(fname, m.shape[0], len(c)))
-    
+
     net = rename_net(net, source=source, target=target, weight=weight)
-    
+
     acts, pvals = [], []
     for i in tqdm(range(m.shape[0]), disable=not verbose):
-        
+
         # Extract single sample
         sample = m[i]
         i_r = r[[i]]
@@ -488,7 +488,7 @@ def dense_run(func, mat, net, source='source', target='target', weight='weight',
 
         # Overwrite min_n, verbose and use_raw
         args['min_n'], args['verbose'], args['use_raw'] = min_n, False, use_raw
-        
+
         # Check if weight method or not
         is_weighted = 'weight' in func.__code__.co_varnames
 
@@ -496,7 +496,7 @@ def dense_run(func, mat, net, source='source', target='target', weight='weight',
         try:
             sub_net = filt_min_n(i_c, net, min_n=min_n)
             skip = False
-        except:
+        except ValueError:
             act = pd.DataFrame([], index=i_r)
             pval = act.copy()
             acts.append(act)
@@ -504,13 +504,13 @@ def dense_run(func, mat, net, source='source', target='target', weight='weight',
             skip = True
         if skip:
             continue
-        
+
         # Run method
         if is_weighted:
             act = func(mat=row, net=sub_net, source=source, target=target, weight=weight, **args)
         else:
             act = func(mat=row, net=sub_net, source=source, target=target, **args)
-        
+
         # Split
         if type(act) is tuple:
             act, pval = act[estimate_loc], act[-1]
@@ -525,11 +525,11 @@ def dense_run(func, mat, net, source='source', target='target', weight='weight',
     # Join
     acts = pd.concat(acts, join='outer')
     pvals = pd.concat(pvals, join='outer')
-    
+
     # Name
     acts.name = '{0}_estimate'.format(fname)
     pvals.name = '{0}_pvals'.format(fname)
-    
+
     # AnnData support
     if isinstance(mat, AnnData):
         # Update obsm AnnData object

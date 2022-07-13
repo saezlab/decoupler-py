@@ -43,6 +43,6 @@ class TestMethods(unittest.TestCase):
     def test_decouple(self):
         dc.decouple(self.mat, self.net, min_n=0, verbose=False, methods='all')
         dc.decouple(AnnData(self.mat), self.net, min_n=0, verbose=False, use_raw=False, methods='all')
-        
+
     def test_consensus(self):
         dc.run_consensus(self.mat, self.net, min_n=0)

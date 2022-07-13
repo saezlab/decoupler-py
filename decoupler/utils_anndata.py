@@ -141,8 +141,8 @@ def compute_psbulk(psbulk, props, X, sample_col, groups_col, smples, groups, obs
                 i += 1
 
 
-def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=False, min_prop=0.2, min_cells=10, min_counts=1000,
-                   min_smpls=2):
+def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=False, min_prop=0.2, min_cells=10,
+                   min_counts=1000, min_smpls=2):
     """
     Generates an unormalized pseudo-bulk profile per sample and group.
 
@@ -184,7 +184,7 @@ def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=
 
     # Extract inputs
     X, obs, var = extract_psbulk_inputs(adata, obs, layer, use_raw)
-    
+
     # Test if raw counts are present
     test_for_raw_counts(X)
 
@@ -342,7 +342,7 @@ def get_contrast(adata, group_col, condition_col, condition, reference=None, met
         logFCs = pd.concat([logFCs, logFC])
         p_val = df.pivot(columns='names', index=group_col, values='pvals')
         p_vals = pd.concat([p_vals, p_val])
-        
+
     # Force dtype
     logFCs = logFCs.astype(np.float32)
     p_vals = p_vals.astype(np.float32)

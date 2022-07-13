@@ -164,7 +164,7 @@ def decouple(mat, net, source='source', target='target', weight='weight', method
 def run_consensus(mat, net, source='source', target='target', weight='weight', min_n=5, verbose=False, use_raw=True):
     """
     Consensus score from top methods.
-    
+
     This consensus score is calculated from the three top performer methods: `ulm`, `mlm` and `wsum_norm`.
     For each of these methods, the obtained activities are transformed into z-scores, first for positive
     values and then for negative ones. These two sets of z-score transformed activities are computed by
@@ -200,7 +200,7 @@ def run_consensus(mat, net, source='source', target='target', weight='weight', m
     pvals : DataFrame
         Obtained p-values. Stored in `.obsm['consensus_pvals']` if `mat` is AnnData.
     """
-    
+
     # Extract sparse matrix and array of features
     m, r, c = extract(mat, use_raw=use_raw, verbose=verbose)
 
@@ -208,9 +208,9 @@ def run_consensus(mat, net, source='source', target='target', weight='weight', m
         print('Running consensus.')
 
     # Run top methods
-    res = decouple(mat=[m, r, c], net=net, source=source, target=target, weight=weight, min_n=min_n,
-                      verbose=verbose, use_raw=use_raw)
-    
+    res = decouple(mat=[m, r, c], net=net, source=source, target=target, weight=weight,
+                   min_n=min_n, verbose=verbose, use_raw=use_raw)
+
     # Exctract
     estimate, pvals = res['consensus_estimate'], res['consensus_pvals']
 
