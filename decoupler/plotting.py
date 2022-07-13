@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from .pre import rename_net
+from .pre import extract, rename_net
 
 
 def check_if_matplotlib():
@@ -10,6 +10,22 @@ def check_if_matplotlib():
     except Exception:
         raise ImportError('matplotlib is not installed. Please install it with: pip install matplotlib')
     return plt
+
+
+def check_if_seaborn():
+    try:
+        import seaborn as sns
+    except Exception:
+        raise ImportError('seaborn is not installed. Please install it with: pip install seaborn')
+    return sns
+
+
+def save_plot(fig, ax, save):
+    if save is not None:
+        if ax is not None:
+            fig.savefig(save)
+        else:
+            raise ValueError("ax is not None, cannot save figure.")
 
 
 def plot_volcano(logFCs, pvals, contrast, name=None, net=None, top=5, source='source', target='target',
@@ -54,7 +70,10 @@ def plot_volcano(logFCs, pvals, contrast, name=None, net=None, top=5, source='so
         Path to where to save the plot. Infer the filetype if ending on {`.pdf`, `.png`, `.svg`}.
     """
 
+    # Load plotting packages
     plt = check_if_matplotlib()
+    
+    # Transform sign_thr
     sign_thr = -np.log10(sign_thr)
 
     # Plot
@@ -110,11 +129,46 @@ def plot_volcano(logFCs, pvals, contrast, name=None, net=None, top=5, source='so
     for x, y, s in zip(signs['logFCs'], signs['pvals'], signs.index):
         texts.append(ax.text(x, y, s))
 
-    if save is not None:
-        if ax is not None:
-            fig.savefig(save)
-        else:
-            raise ValueError("ax is not None, cannot save figure.")
+    save_plot(fig, ax, save)
 
-    if return_fig:
+    if return_fig and ax is None:
+        return fig
+
+
+def plot_violins(mat, thr=None, log=False, use_raw=False, figsize=(7, 5), dpi=100, ax=None, title=None, ylabel=None, 
+                 color='#1F77B4', return_fig=False, save=None):
+    
+    # Load plotting packages
+    sns = check_if_seaborn()
+    plt = check_if_matplotlib()
+
+    # Extract data
+    m, r, c = extract(mat, use_raw=use_raw)
+
+    # Format
+    x = np.repeat(r, m.shape[1])
+    y = m.A.flatten()
+    
+    # Plot
+    if ax is None:
+        fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=dpi)
+    
+    # log(x+1) transform
+    if log:
+        y = np.log1p(y)
+
+    sns.violinplot(x=x, y=y, ax=ax, color=color)
+    if thr is not None:
+        ax.axhline(y=thr, linestyle='--', color="black")
+    ax.tick_params(axis='x', rotation=90)
+    
+    # Label
+    if  title is not None:
+        ax.set_title(title)
+    if ylabel is not None:
+        ax.set_ylabel(ylabel)
+
+    save_plot(fig, ax, save)
+
+    if return_fig and ax is None:
         return fig

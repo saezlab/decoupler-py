@@ -238,3 +238,25 @@ def get_net_mat(net):
     X = X.values
 
     return sources.astype('U'), targets.astype('U'), X.astype(np.float32)
+
+
+def mask_features(mat, log=False, thr=1, use_raw=False):
+    if log:
+        thr = np.exp(thr) - 1
+    if type(mat) is list:
+        m, r, c = mat
+        m[m < thr] = 0.0
+        return [m, r, c]
+    elif type(mat) is pd.DataFrame:
+        mat.loc[mat.values < thr] = 0.0
+        return mat
+    elif type(mat) is AnnData:
+        if use_raw:
+            if mat.raw is None:
+                raise ValueError("Received `use_raw=True`, but `mat.raw` is empty.")
+            mat.raw.X[mat.raw.X < thr] = 0.0
+        else:
+            mat.X[mat.X < thr] = 0.0
+    else:
+        raise ValueError("""mat must be a list of [matrix, samples, features], dataframe (samples x features) or an AnnData
+        instance.""")

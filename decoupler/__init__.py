@@ -1,7 +1,7 @@
-__version__ = '1.1.7'  # noqa: F401
+__version__ = '1.1.8'  # noqa: F401
 __version_info__ = tuple([int(num) for num in __version__.split('.')])  # noqa: F401
 
-from .pre import extract, match, rename_net, get_net_mat, filt_min_n  # noqa: F401
+from .pre import extract, match, rename_net, get_net_mat, filt_min_n, mask_features  # noqa: F401
 from .utils import melt, show_methods, check_corr, get_acts, get_toy_data, summarize_acts, assign_groups  # noqa: F401
 from .utils import get_top_targets, format_contrast_results, dense_run  # noqa: F401
 from .utils_anndata import get_pseudobulk, get_contrast  # noqa: F401
@@ -17,7 +17,7 @@ from .method_aucell import run_aucell  # noqa: F401
 from .decouple import decouple, run_consensus  # noqa: F401
 from .consensus import cons  # noqa: F401
 from .omnip import show_resources, get_resource, get_progeny, get_dorothea  # noqa: F401
-from .plotting import plot_volcano  # noqa: F401
+from .plotting import plot_volcano, plot_violins  # noqa: F401
 
 # External libraries go out of main setup
 try:
