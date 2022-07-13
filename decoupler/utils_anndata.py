@@ -274,8 +274,8 @@ def get_contrast(adata, group_col, condition_col, condition, reference=None, met
     ----------
     adata : AnnData
         Input pseudo-bulk AnnData object.
-    group_col : str
-        Column of `obs` where to extract the groups names, for example cell types.
+    group_col : str, None
+        Column of `obs` where to extract the groups names, for example cell types. If None, do not group.
     condition_col : str
         Column of `obs` where to extract the condition names, for example disease status.
     condition : str
@@ -298,10 +298,7 @@ def get_contrast(adata, group_col, condition_col, condition, reference=None, met
         from scanpy.tl import rank_genes_groups
         from scanpy.get import rank_genes_groups_df
     except Exception:
-        raise BaseException('scanpy is not installed. Please install it with: pip install scanpy')
-
-    # Find unique groups
-    groups = np.unique(adata.obs[group_col].values.astype(str))
+        raise ImportError('scanpy is not installed. Please install it with: pip install scanpy')
 
     # Process reference
     if reference is None or reference == 'rest':
@@ -309,6 +306,15 @@ def get_contrast(adata, group_col, condition_col, condition, reference=None, met
         glst = 'all'
     else:
         glst = [condition, reference]
+
+    if group_col is not None:
+        # Find unique groups
+        groups = np.unique(adata.obs[group_col].values.astype(str))
+    else:
+        group_col = 'tmpcol'
+        grp = '{0}.vs.{1}'.format(condition, reference)
+        adata.obs[group_col] = grp
+        groups = [grp]
 
     # Condition and reference must be different
     if condition == reference:
@@ -350,5 +356,8 @@ def get_contrast(adata, group_col, condition_col, condition, reference=None, met
     # Add name
     logFCs.name = 'contrast_logFCs'
     p_vals.name = 'contrast_pvals'
+
+    if group_col is None:
+        del adata.obs[group_col]
 
     return logFCs, p_vals
