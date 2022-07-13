@@ -1,9 +1,9 @@
-__version__ = '1.1.6'  # noqa: F401
+__version__ = '1.1.7'  # noqa: F401
 __version_info__ = tuple([int(num) for num in __version__.split('.')])  # noqa: F401
 
 from .pre import extract, match, rename_net, get_net_mat, filt_min_n  # noqa: F401
 from .utils import melt, show_methods, check_corr, get_acts, get_toy_data, summarize_acts, assign_groups  # noqa: F401
-from .utils import get_top_targets, format_contrast_results  # noqa: F401
+from .utils import get_top_targets, format_contrast_results, dense_run  # noqa: F401
 from .utils_anndata import get_pseudobulk, get_contrast  # noqa: F401
 from .method_wmean import run_wmean  # noqa: F401
 from .method_wsum import run_wsum  # noqa: F401

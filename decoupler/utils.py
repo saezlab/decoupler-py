@@ -9,6 +9,7 @@ import pandas as pd
 from .pre import extract, rename_net, get_net_mat, filt_min_n
 
 from anndata import AnnData
+from tqdm import tqdm
 
 
 def m_rename(m, name):
@@ -415,3 +416,124 @@ def format_contrast_results(logFCs, pvals):
     df = df[['contrast', 'name', 'logFC', 'pval']].sort_values('pval').reset_index(drop=True)
 
     return df
+
+
+def dense_run(func, mat, net, source='source', target='target', weight='weight', min_n=5, verbose=False, use_raw=True,
+              args={}, estimate_loc=0):
+    """
+    Run a method without zero values.
+    
+    This function runs any method in decoupler (see `dc.show_methods()`) in a dense manner, meaning that all zero vales
+    are removed for each sample. Since this is sample dependent, parallelization is not available most of the time and
+    running times might increase. This function is useful to test what effect does null imputation do to the inference of
+    activities.
+
+    Parameters
+    ----------
+    func : function
+        Function to call a decoupler method, check `dc.show_methods()` for the full list.
+    mat : list, DataFrame or AnnData
+        List of [features, matrix], dataframe (samples x features) or an AnnData instance.
+    net : DataFrame
+        Network in long format.
+    source : str
+        Column name in net with source nodes.
+    target : str
+        Column name in net with target nodes.
+    weight : str
+        Column name in net with weights (if needed).
+    min_n : int
+        Minimum of targets per source. If less, sources are removed.
+    verbose : bool
+        Whether to show progress.
+    use_raw : bool
+        Use raw attribute of mat if present.
+    args : dict
+        A dict of argument to pass to func.
+    estimate_loc : int
+        Which index is the desired estimate. Only relevant for methods that return more than
+        one estime like wmean, wsum or gsea.
+
+    Returns
+    -------
+    estimate : DataFrame
+        Estimate scores. Stored in `.obsm['*_estimate']` if `mat` is AnnData.
+    pvals : DataFrame
+        Obtained p-values. Stored in `.obsm['*_pvals']` if `mat` is AnnData.
+    """
+
+    # Extract sparse matrix and array of features
+    m, r, c = extract(mat, use_raw=use_raw, verbose=verbose)
+    fname = func.__name__.split('run_')[1]
+    
+    if verbose:
+        print('Dense run of {0} on mat with {1} samples and {2} potential targets.'.format(fname, m.shape[0], len(c)))
+    
+    net = rename_net(net, source=source, target=target, weight=weight)
+    
+    acts, pvals = [], []
+    for i in tqdm(range(m.shape[0]), disable=not verbose):
+        
+        # Extract single sample
+        sample = m[i]
+        i_r = r[[i]]
+
+        # Remove zeros
+        idx = sample.indices
+        i_c = c[idx]
+        sample = sample[:, idx]
+
+        # Run activity
+        row = [sample, i_r, i_c]
+
+        # Overwrite min_n, verbose and use_raw
+        args['min_n'], args['verbose'], args['use_raw'] = min_n, False, use_raw
+        
+        # Check if weight method or not
+        is_weighted = 'weight' in func.__code__.co_varnames
+
+        # Test if it can run
+        try:
+            sub_net = filt_min_n(i_c, net, min_n=min_n)
+            skip = False
+        except:
+            act = pd.DataFrame([], index=i_r)
+            pval = act.copy()
+            acts.append(act)
+            pvals.append(pval)
+            skip = True
+        if skip:
+            continue
+        
+        # Run method
+        if is_weighted:
+            act = func(mat=row, net=sub_net, source=source, target=target, weight=weight, **args)
+        else:
+            act = func(mat=row, net=sub_net, source=source, target=target, **args)
+        
+        # Split
+        if type(act) is tuple:
+            act, pval = act[estimate_loc], act[-1]
+        else:
+            pval = act.copy()
+            pval.loc[:, :] = np.nan
+
+        # Append
+        acts.append(act)
+        pvals.append(pval)
+
+    # Join
+    acts = pd.concat(acts, join='outer')
+    pvals = pd.concat(pvals, join='outer')
+    
+    # Name
+    acts.name = '{0}_estimate'.format(fname)
+    pvals.name = '{0}_pvals'.format(fname)
+    
+    # AnnData support
+    if isinstance(mat, AnnData):
+        # Update obsm AnnData object
+        mat.obsm[acts.name] = acts
+        mat.obsm[pvals.name] = pvals
+    else:
+        return acts, pvals

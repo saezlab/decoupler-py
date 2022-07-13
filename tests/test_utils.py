@@ -7,10 +7,12 @@ import decoupler as dc
 
 
 class TestUtils(unittest.TestCase):
+    
+    mat, net = dc.get_toy_data()
 
     def test_get_toy_data(self):
 
-        self.mat, self.net = dc.get_toy_data()
+        dc.get_toy_data()
 
     def test_show_methods(self):
 
@@ -20,23 +22,19 @@ class TestUtils(unittest.TestCase):
 
     def tes_check_corr(self):
 
-        net = self.net
-
-        corrs = dc.check_corr(net)
-        n_reg = net['source'].unique()
+        corrs = dc.check_corr(self.net)
+        n_reg = self.net['source'].unique()
         n_pairs = (n_reg * (n_reg - 1)) / 2
 
         self.assertTrue(n_pairs == corrs.shape[0])
 
     def test_get_acts(self):
 
-        # Run act with AnnData
-        mat, net = dc.get_toy_data()
-        m, r, c = dc.extract(mat, net)
+        m, r, c = dc.extract(self.mat)
         var = pd.DataFrame(index=c)
         obs = pd.DataFrame(index=r)
         adata = AnnData(csr_matrix(m), var=var, obs=obs)
-        dc.run_mlm(adata, net, min_n=0, use_raw=False)
+        dc.run_mlm(adata, self.net, min_n=0, use_raw=False)
 
         estimate = dc.get_acts(adata, 'mlm_estimate')
         pvals = dc.get_acts(adata, 'mlm_pvals')
@@ -46,6 +44,11 @@ class TestUtils(unittest.TestCase):
 
     def test_melt(self):
 
-        mat, net = dc.get_toy_data()
-
-        estimate, pvals = dc.run_mlm(mat, net, min_n=0)
+        estimate, pvals = dc.run_mlm(self.mat, self.net, min_n=0)
+        dc.melt(estimate)
+        dc.melt(pvals)
+        
+    def test_denserun(self):
+        dc.dense_run(dc.run_consensus, self.mat, self.net, min_n=0)
+        
+        
