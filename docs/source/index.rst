@@ -32,6 +32,11 @@ Check out the `Usage <https://decoupler-py.readthedocs.io/en/latest/notebooks/us
 
 If you have any question or problem do not hesitate to open an `issue <https://github.com/saezlab/decoupler-py/issues>`_.
 
+scverse
+-------
+**decoupler** is part of the `scverse <https://scverse.org>`_ ecosystem, a collection of tools for single-cell omics data analysis in python.
+For more information check the link.
+
 License
 -------
 Footprint methods inside decoupler can be used for academic or commercial purposes, except ``viper`` which holds a non-commercial license. 
@@ -56,6 +61,7 @@ from omics data. Bioinformatics Advances. https://doi.org/10.1093/bioadv/vbac016
    notebooks/dorothea
    notebooks/msigdb
    notebooks/pseudobulk
+   notebooks/bulk
    api
    release_notes
    reference
