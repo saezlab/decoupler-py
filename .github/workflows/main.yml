@@ -28,7 +28,7 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test and add coverage
       run: |
-        pytest --cov .
+        pytest --cov decoupler
     - name: Upload coverage reports to Codecov
       run: |
         curl -Os https://uploader.codecov.io/latest/linux/codecov
