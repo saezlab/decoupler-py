@@ -53,8 +53,18 @@ from omics data. Bioinformatics Advances. https://doi.org/10.1093/bioadv/vbac016
 .. toctree::
    :maxdepth: 1
    :hidden:
-   
+   :caption: Main
+
    installation
+   api
+   release_notes
+   reference
+
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+   :caption: Vignettes
+
    notebooks/usage
    notebooks/cell_annotation
    notebooks/progeny
@@ -62,6 +72,3 @@ from omics data. Bioinformatics Advances. https://doi.org/10.1093/bioadv/vbac016
    notebooks/msigdb
    notebooks/pseudobulk
    notebooks/bulk
-   api
-   release_notes
-   reference
