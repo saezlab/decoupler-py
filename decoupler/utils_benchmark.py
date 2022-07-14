@@ -2,8 +2,10 @@
 Utility functions to benchmark resources on known data
 """
 
+from statistics import mean
 import numpy as np
 import pandas as pd
+from sklearn.preprocessing import label_binarize
 import decoupler as dc
 
 from sklearn.metrics import roc_auc_score, average_precision_score
@@ -129,7 +131,7 @@ def get_target_masks(long_data, targets, subset = None):
 
     return target_ind, target_names
 
-def get_performance(data, metric = 'mcroc', n_iter = 100, seed = 42, method_name = None):
+def get_performance(data, metric = 'mcroc', n_iter = 100, seed = 42, prefix = None, **kwargs):
     """
     Compute binary classifier performance
 
@@ -138,7 +140,7 @@ def get_performance(data, metric = 'mcroc', n_iter = 100, seed = 42, method_name
         metric (str or list of str, optional): Which metric(s) to use. Currently implemeted methods are: 'mcroc', 'mcprc', 'roc', 'prc'. Defaults to 'mcroc'.
         n_iter (int, optional): Number of iterations for the undersampling procedures for the 'mcroc' and 'mcprc' metrics. Defaults to 100.
         seed (int, optional): Seed used to generate the undersampling for the 'mcroc' and 'mcprc' metrics. Defaults to 42.
-        method_name (str, optional): Name of the decoupler method used to do activity prediction. Added as prefix to the output dictionary: e.g. 'mlm_roc'. Defaults to 100.
+        prefix (str, optional): Added as prefix to the performance metric key in the output dictionary e.g. 'mlm_roc' if equal to 'mlm'. Defaults to 100.
 
     Returns:
         perf: Dict of prediction performance(s) on the given data. 'mcroc' and 'mcprc' metrics will return the values for each sampling. Other methods return a single value.
@@ -158,7 +160,7 @@ def get_performance(data, metric = 'mcroc', n_iter = 100, seed = 42, method_name
         if met == 'mcroc' or met == 'mcprc':
             # Compute AUC for each mask (with equalised class priors)
             aucs = []
-            for mask in tqdm(masks):
+            for mask in tqdm(masks, disable= not kwargs.get('verbose', True)):
                 auc = get_auc(x = data['GT'][mask],
                             y = data['score'][mask],
                             mode = met[2:])
@@ -168,14 +170,14 @@ def get_performance(data, metric = 'mcroc', n_iter = 100, seed = 42, method_name
             # Compute AUC on the whole (unequalised class priors) data
             aucs = get_auc(x = data['GT'], y = data['score'], mode = met)
         
-        if method_name is None:
+        if prefix is None:
             perf[met] = aucs
         else:
-            perf[method_name + '_' + met] = aucs
+            perf[prefix + '_' + met] = aucs
 
     return perf
 
-def get_target_performance(data, targets, metric='mcroc', subset = None, n_iter = 100, seed = 42):
+def get_target_performance(data, targets, metric='mcroc', subset = None, n_iter = 100, seed = 42, prefix = None, **kwargs):
     """
     Compute binary classifier performance for each target or subet of targets
 
@@ -186,6 +188,7 @@ def get_target_performance(data, targets, metric='mcroc', subset = None, n_iter 
         subset (list of str, optional): A subset of the targets for which to compute performance. If None, then the performance will be calculated for all targets. Defaults to None.
         n_iter (int, optional): Number of iterations for the undersampling procedures for the 'mcroc' and 'mcprc' metrics. Defaults to 100.
         seed (int, optional):  Seed used to generate the undersampling for the 'mcroc' and 'mcprc' metrics. Defaults to 42.
+        prefix (str, optional):Added as prefix to the output dictionary. Defaults to 100.
 
     Returns:
         perf : Dict of prediction performance(s) for each target or subset of targets. 'mcroc' and 'mcprc' metrics will return the values for each sampling. Other methods return a single value.
@@ -195,11 +198,16 @@ def get_target_performance(data, targets, metric='mcroc', subset = None, n_iter 
 
     perf = {}
     for trgt, name in zip(masks, target_names):
-        perf[name] = get_performance(data.iloc[trgt.tolist()].reset_index(), metric, n_iter, seed)
+        if prefix is None:
+            p = name
+        else:
+            p = prefix  + '_' + name
+
+        perf.update(get_performance(data.iloc[trgt.tolist()].reset_index(), metric, n_iter, seed, prefix = p, **kwargs))
 
     return perf
 
-def get_scores_GT(decoupler_results, metadata, meta_target_col = 'target'):
+def get_scores_GT(decoupler_results, metadata, meta_perturbation_col = 'target'):
     """
 
     Convert decouple output to flattenend vectors and combine with GT information
@@ -207,31 +215,33 @@ def get_scores_GT(decoupler_results, metadata, meta_target_col = 'target'):
     Args:
         decoupler_results (dict): Output of decouple
         metadata (DataFrame): Metadata of the perturbation experiment containing the activated/inhibited targets and the sign of the perturbation
-        meta_target_col (str, optional): Column name in the metadata with perturbation targets. Defaults to 'target'.
+        meta_perturbation_col (str, optional): Column name in the metadata with perturbation targets. Defaults to 'target'.
 
     Returns:
-        scores_gt: dict of flattenend score,gt dataframes for each method
+        scores_gt: dict of flattenend dataframes for each method
+        targets: dict with target names for which activities were inferred for each method respectively
     """
     computed_methods = list(set([i.split('_')[0] for i in decoupler_results.keys()])) # get the methods that were able to be computed (filtering of methods done by decouple)
     scores_gt = {}
+    targets = {}
     for m in computed_methods:
         # estimates = res[m + 'estimate']
         # pvals = res[m + 'pvals']
 
         # remove experiments with no prediction for the perturbed TF
-        missing = list(set( metadata[meta_target_col]) - set(decoupler_results[m + '_estimate'].columns))
-        keep = [trgt not in missing for trgt in metadata[meta_target_col].to_list()]
+        missing = list(set( metadata[meta_perturbation_col]) - set(decoupler_results[m + '_estimate'].columns))
+        keep = [trgt not in missing for trgt in metadata[meta_perturbation_col].to_list()]
         meta = metadata[keep]
         estimates = decoupler_results[m + '_estimate'][keep]
         # pvals = res[m + '_pvals'][keep]
 
         # mirror estimates
         estimates = estimates.mul(meta['sign'], axis = 0)
-        gt = meta.pivot(columns = meta_target_col, values = 'sign').fillna(0)
+        gt = meta.pivot(columns = meta_perturbation_col, values = 'sign').fillna(0)
 
         # add 0s in the ground-truth array for targets predicted by decoupler
         # for which there is no ground truth in the provided metadata (assumed 0)
-        missing = list(set(estimates.columns) - set(meta[meta_target_col]))
+        missing = list(set(estimates.columns) - set(meta[meta_perturbation_col]))
         gt = pd.concat([gt, pd.DataFrame(0, index= gt.index, columns=missing)], axis = 1, join = 'inner').sort_index(axis=1)
 
         # flatten and then combine estimates and GT vectors
@@ -240,10 +250,11 @@ def get_scores_GT(decoupler_results, metadata, meta_target_col = 'target'):
         df_scores['GT'] = abs(df_scores['GT'])
 
         scores_gt[m] = df_scores
+        targets[m] = list(estimates.columns)
 
-    return scores_gt
+    return scores_gt, targets
 
-def run_benchmark(data, metadata, network, methods = None, metric = 'roc', meta_target_col = 'target', net_source_col = 'source', net_target_col = 'target', filter_experiments= True, filter_sources = False, **kwargs):
+def run_benchmark(data, metadata, network, methods = None, metric = 'roc', meta_perturbation_col = 'target', net_source_col = 'source', filter_experiments= True, filter_sources = False, **kwargs):
     """
     Benchmark methods or networks on a given set of perturbation experiments using activity inference with decoupler.
 
@@ -253,9 +264,8 @@ def run_benchmark(data, metadata, network, methods = None, metric = 'roc', meta_
         network (DataFrame): Network in long format passed on to the decouple function
         methods (str or list of str, optional): List of methods to run. If none are provided use weighted top performers (mlm, ulm and wsum). To benchmark all methods set to "all". Defaults to None.
         metric (str or list of str, optional): Performance metric(s) to compute. See the description of get_performance for more details. Defaults to 'roc'.
-        meta_target_col (str, optional): Column name in the metadata with perturbation targets. Defaults to 'target'.
+        meta_perturbation_col (str, optional): Column name in the metadata with perturbation targets. Defaults to 'target'.
         net_source_col (str, optional): Column name in network with source nodes. Defaults to 'source'.
-        net_target_col (str, optional): Column name in net with target nodes. Defaults to 'target'.
         filter_experiments (bool, optional): Whether to filter out experiments whose perturbed targets cannot be infered from the given network. Defaults to True.
         filter_sources (bool, optional): Whether to fitler out sources in the network for which there are not perturbation experiments (reduces the number of predictions made by decouple). Defaults to False.
         **kwargs: other arguments to pass on to get_performance (e.g. n_iter etc)
@@ -267,24 +277,27 @@ def run_benchmark(data, metadata, network, methods = None, metric = 'roc', meta_
 
     #subset by TFs with GT available
     if filter_sources:
-        keep = [src in metadata[meta_target_col].to_list() for src in network[net_source_col].to_list()]
+        keep = [src in metadata[meta_perturbation_col].to_list() for src in network[net_source_col].to_list()]
         network = network[keep]
 
     # filter out experiments without predictions available
     if filter_experiments:
-        keep = [trgt in network[net_target_col].to_list() for trgt in metadata[meta_target_col].to_list()]
+        keep = [trgt in network[net_source_col].to_list() for trgt in metadata[meta_perturbation_col].to_list()]
         data = data[keep]
         metadata = metadata[keep]
 
     # run prediction
-    res = dc.decouple(data, network, methods=methods)
+    res = dc.decouple(data, network, methods=methods, verbose = kwargs.get('verbose', True))
 
-    scores_gt = get_scores_GT(res, metadata, meta_target_col)
+    scores_gt, targets = get_scores_GT(res, metadata, meta_perturbation_col)
 
     bench = {}
     for method in scores_gt.keys():
-        print('Calculating performance metrics for', method)
-        perf = get_performance(scores_gt[method], metric, method_name= method, **kwargs)
+        if kwargs.get('verbose', True): print('Calculating performance metrics for', method)
+        if kwargs.get('by_target', False):
+            perf = get_target_performance(scores_gt[method], targets[method], metric, prefix = method, **kwargs)
+        else:
+            perf = get_performance(scores_gt[method], metric, prefix= method, **kwargs)
         bench.update(perf)
     
     #make dataframe with mean perfomances
@@ -293,12 +306,16 @@ def run_benchmark(data, metadata, network, methods = None, metric = 'roc', meta_
         mean_perfs[key]=np.mean(value)
     mean_perfs = pd.DataFrame.from_dict(mean_perfs, orient='index').reset_index(level=0)
     mean_perfs.columns = ['id','value']
-    mean_perfs[['method','metric']] = mean_perfs['id'].str.split('_', expand=True)
-    mean_perfs = mean_perfs.pivot(index='method', columns='metric', values='value')
+    if kwargs.get('by_target', False):
+        mean_perfs[['method','target','metric']] = mean_perfs['id'].str.split('_', expand=True)
+        mean_perfs = mean_perfs.pivot(index=['method','target'], columns='metric', values='value')
+    else:
+        mean_perfs[['method','metric']] = mean_perfs['id'].str.split('_', expand=True)
+        mean_perfs = mean_perfs.pivot(index='method', columns='metric', values='value')
 
-    return mean_perfs, bench
+    return mean_perfs.reset_index(), bench
 
-def benchmark_scatterplot(mean_perf, x = 'mcroc', y = 'mcprc'):
+def benchmark_scatterplot(mean_perf, x = 'mcroc', y = 'mcprc', label_col=None):
     """
     Creates a scatter plot for each given method for two performance metrics
 
@@ -325,8 +342,9 @@ def benchmark_scatterplot(mean_perf, x = 'mcroc', y = 'mcprc'):
     if (x in ['roc','mcroc'] and y in ['roc','mcroc']) or (x in ['prc','mcprc'] and y in ['prc','mcprc']):
         ax.axline((0,0),slope=1, color = 'black', linestyle = ':')
 
-    for i, label in enumerate(mean_perf.index):
-        ax.annotate(label.capitalize(), (mean_perf[x][i], mean_perf[y][i]))
+    if label_col is not None and label_col in mean_perf.columns:
+        for i, label in enumerate(mean_perf[label_col]):
+            ax.annotate(label.capitalize(), (mean_perf[x][i], mean_perf[y][i]))
 
     if x in ['mcroc', 'mcprc', 'roc', 'prc']:
         x = x + ' AUC'
