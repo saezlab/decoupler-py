@@ -337,6 +337,32 @@ def assign_groups(summary):
     return annot_dict
 
 
+def p_adjust_fdr(p):
+    """
+    Benjamini-Hochberg p-value correction for multiple hypothesis testing.
+
+    Parameters
+    ----------
+    p : ndarray, list
+        Array or list of p-values to correct.
+
+    Returns
+    -------
+    corr_p : ndarray
+        Array of corrected p-values.
+    """
+
+    # Code adapted from: https://stackoverflow.com/a/33532498/8395875
+    p = np.asfarray(p)
+    by_descend = p.argsort()[::-1]
+    by_orig = by_descend.argsort()
+    steps = float(len(p)) / np.arange(len(p), 0, -1)
+    q = np.minimum(1, np.minimum.accumulate(steps * p[by_descend]))
+    corr_p = q[by_orig]
+
+    return corr_p
+
+
 def get_top_targets(logFCs, pvals, contrast, name=None, net=None, source='source', target='target',
                     weight='weight', sign_thr=1, lFCs_thr=0.0):
     """
@@ -362,14 +388,14 @@ def get_top_targets(logFCs, pvals, contrast, name=None, net=None, source='source
     weight : str
         Column name in net with weights.
     sign_thr : float
-        Significance threshold for p-values.
+        Significance threshold for adjusted p-values.
     lFCs_thr : float
         Significance threshold for logFCs.
 
     Returns
     -------
     df : DataFrame
-        Dataframe containing the significant targets of a given source.
+        Dataframe containing the significant features.
     """
 
     # Check for net
@@ -390,9 +416,12 @@ def get_top_targets(logFCs, pvals, contrast, name=None, net=None, source='source
         df = logFCs.loc[[contrast]].T.rename({contrast: 'logFCs'}, axis=1)
         df['pvals'] = pvals.loc[[contrast]].T
 
+    # Compute FDR correction
+    df['adj_pvals'] = p_adjust_fdr(df['pvals'].values.flatten())
+
     # Filter by thresholds
     df = df.sort_values('pvals')
-    df = df[(np.abs(df['logFCs']) >= lFCs_thr) & (np.abs(df['pvals']) <= sign_thr)]
+    df = df[(np.abs(df['logFCs']) >= lFCs_thr) & (np.abs(df['adj_pvals']) <= sign_thr)]
 
     return df
 
