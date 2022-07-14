@@ -364,7 +364,7 @@ def p_adjust_fdr(p):
 
 
 def get_top_targets(logFCs, pvals, contrast, name=None, net=None, source='source', target='target',
-                    weight='weight', sign_thr=1, lFCs_thr=0.0):
+                    weight='weight', sign_thr=1, lFCs_thr=0.0, fdr_corr=True):
     """
     Return significant target features for a given source and contrast. If no name or net are provided, return all significant
     features without subsetting.
@@ -416,12 +416,18 @@ def get_top_targets(logFCs, pvals, contrast, name=None, net=None, source='source
         df = logFCs.loc[[contrast]].T.rename({contrast: 'logFCs'}, axis=1)
         df['pvals'] = pvals.loc[[contrast]].T
 
-    # Compute FDR correction
-    df['adj_pvals'] = p_adjust_fdr(df['pvals'].values.flatten())
-
-    # Filter by thresholds
+    # Sort
     df = df.sort_values('pvals')
-    df = df[(np.abs(df['logFCs']) >= lFCs_thr) & (np.abs(df['adj_pvals']) <= sign_thr)]
+
+    if fdr_corr:
+        # Compute FDR correction
+        df['adj_pvals'] = p_adjust_fdr(df['pvals'].values.flatten())
+        pval_col = 'adj_pvals'
+    else:
+        pval_col = 'pvals'
+        
+    # Filter by thresholds
+    df = df[(np.abs(df['logFCs']) >= lFCs_thr) & (np.abs(df[pval_col]) <= sign_thr)]
 
     return df
 
