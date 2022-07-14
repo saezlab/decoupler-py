@@ -167,34 +167,6 @@ def check_corr(net, source='source', target='target', weight='weight', mat=None,
     return corr
 
 
-def get_acts(adata, obsm_key):
-    """
-    Extracts activities as AnnData object.
-
-    From an AnnData object with source activities stored in `.obsm`, generates a new AnnData object with activities in `X`.
-    This allows to reuse many scanpy processing and visualization functions.
-
-    Parameters
-    ----------
-    adata : AnnData
-        Annotated data matrix with activities stored in .obsm.
-    obsm_key
-        `.osbm` key to extract.
-
-    Returns
-    -------
-    acts : AnnData
-        New AnnData object with activities in X.
-    """
-
-    obs = adata.obs
-    var = pd.DataFrame(index=adata.obsm[obsm_key].columns)
-    uns = adata.uns
-    obsm = adata.obsm
-
-    return AnnData(np.array(adata.obsm[obsm_key]), obs=obs, var=var, uns=uns, obsm=obsm)
-
-
 def get_toy_data(n_samples=24, seed=42):
     """
     Generate a toy `mat` and `net` for testing.
@@ -239,7 +211,7 @@ def get_toy_data(n_samples=24, seed=42):
     return mat, net
 
 
-def summarize_acts(acts, groupby, obs=None, var=None, mode='mean', min_std=1.0):
+def summarize_acts(acts, groupby, obs=None, mode='mean', min_std=1.0):
     """
     Summarizes activities obtained per group by their mean or median and removes features that do not change across samples.
 
@@ -251,8 +223,6 @@ def summarize_acts(acts, groupby, obs=None, var=None, mode='mean', min_std=1.0):
         Column name of obs to use for grouping.
     obs : DataFrame
         None or a data-frame with sample meta-data.
-    var : DataFrame
-        None or a data-frame with feature meta-data.
     mode : str
         Wheter to use mean or median to summarize.
     min_std : float
@@ -267,14 +237,14 @@ def summarize_acts(acts, groupby, obs=None, var=None, mode='mean', min_std=1.0):
 
     # Extract acts, obs and features
     if type(acts) is AnnData:
-        if obs is not None or var is not None:
-            raise ValueError('If acts is AnnData, obs and var need to be None.')
+        if obs is not None:
+            raise ValueError('If acts is AnnData, obs needs to be None.')
         obs = acts.obs[groupby].values.astype('U')
         features = acts.var.index.values.astype('U')
         acts = acts.X
     else:
         obs = obs[groupby].values.astype('U')
-        features = var.index.astype('U')
+        features = acts.columns.astype('U')
 
     # Get sizes
     groups = np.unique(obs)
@@ -361,96 +331,6 @@ def p_adjust_fdr(p):
     corr_p = q[by_orig]
 
     return corr_p
-
-
-def get_top_targets(logFCs, pvals, contrast, name=None, net=None, source='source', target='target',
-                    weight='weight', sign_thr=1, lFCs_thr=0.0, fdr_corr=True):
-    """
-    Return significant target features for a given source and contrast. If no name or net are provided, return all significant
-    features without subsetting.
-
-    Parameters
-    ----------
-    logFCs : DataFrame
-        Data-frame of logFCs (contrasts x features).
-    pvals : DataFrame
-        Data-frame of p-values (contrasts x features).
-    name : str
-        Name of the source.
-    contrast : str
-        Name of the contrast (row).
-    net : DataFrame, None
-        Network data-frame. If None, return without subsetting targets by it.
-    source : str
-        Column name in net with source nodes.
-    target : str
-        Column name in net with target nodes.
-    weight : str
-        Column name in net with weights.
-    sign_thr : float
-        Significance threshold for adjusted p-values.
-    lFCs_thr : float
-        Significance threshold for logFCs.
-
-    Returns
-    -------
-    df : DataFrame
-        Dataframe containing the significant features.
-    """
-
-    # Check for net
-    if net is not None:
-        # Rename net
-        net = rename_net(net, source=source, target=target, weight=weight)
-
-        # Find targets in net that match with logFCs
-        if name is None:
-            raise ValueError('If net is given, name cannot be None.')
-        targets = net[net['source'] == name]['target'].values
-        msk = np.isin(logFCs.columns, targets)
-
-        # Build df
-        df = logFCs.loc[[contrast], msk].T.rename({contrast: 'logFCs'}, axis=1)
-        df['pvals'] = pvals.loc[[contrast], msk].T
-    else:
-        df = logFCs.loc[[contrast]].T.rename({contrast: 'logFCs'}, axis=1)
-        df['pvals'] = pvals.loc[[contrast]].T
-
-    # Sort
-    df = df.sort_values('pvals')
-
-    if fdr_corr:
-        # Compute FDR correction
-        df['adj_pvals'] = p_adjust_fdr(df['pvals'].values.flatten())
-        pval_col = 'adj_pvals'
-    else:
-        pval_col = 'pvals'
-        
-    # Filter by thresholds
-    df = df[(np.abs(df['logFCs']) >= lFCs_thr) & (np.abs(df[pval_col]) <= sign_thr)]
-
-    return df
-
-
-def format_contrast_results(logFCs, pvals):
-    """
-    Formats the results from get_contrast into a long format data-frame.
-
-    logFCs : DataFrame
-        Dataframe of logFCs (contrasts x features).
-    pvals : DataFrame
-        Dataframe of p-values (contrasts x features).
-
-    Returns
-    -------
-    df : DataFrame
-        DataFrame in long format.
-    """
-
-    df = melt([logFCs, pvals]).rename({'sample': 'contrast', 'source': 'name', 'score': 'logFC'}, axis=1)
-    df = df[['contrast', 'name', 'logFC', 'pval']].sort_values('pval').reset_index(drop=True)
-
-    return df
 
 
 def dense_run(func, mat, net, source='source', target='target', weight='weight', min_n=5, verbose=False, use_raw=True,
