@@ -4,6 +4,7 @@
 [![GitHub issues](https://img.shields.io/github/issues/saezlab/decoupler-py.svg)](https://github.com/saezlab/decoupler-py/issues/)
 [![Downloads](https://pepy.tech/badge/decoupler)](https://pepy.tech/project/decoupler)
 [![Documentation Status](https://readthedocs.org/projects/decoupler-py/badge/?version=latest)](https://decoupler-py.readthedocs.io/en/latest/?badge=latest)
+[![codecov](https://codecov.io/gh/saezlab/decoupler-py/branch/main/graph/badge.svg?token=TM0P29KKN5)](https://codecov.io/gh/saezlab/decoupler-py)
 <!-- badges: end -->
 
 **decoupler** is a package containing different statistical methods to extract biological activities from omics data within a unified framework.
