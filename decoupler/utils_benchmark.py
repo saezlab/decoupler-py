@@ -315,7 +315,7 @@ def run_benchmark(data, metadata, network, methods = None, metric = 'roc', meta_
 
     return mean_perfs.reset_index(), bench
 
-def benchmark_scatterplot(mean_perf, x = 'mcroc', y = 'mcprc', label_col=None):
+def benchmark_scatterplot(mean_perf, x = 'mcroc', y = 'mcprc', ax = None, label_col=None):
     """
     Creates a scatter plot for each given method for two performance metrics
 
@@ -327,8 +327,9 @@ def benchmark_scatterplot(mean_perf, x = 'mcroc', y = 'mcprc', label_col=None):
     Returns:
         ax: Axes of a scatter plot
     """
+    mean_perf = mean_perf.reset_index()
 
-    ax = plt.subplot(111)
+    if ax is None: ax = plt.subplot(111)
     ax.scatter(x = mean_perf[x], y = mean_perf[y])
     ax.set_aspect('equal')
 
@@ -357,7 +358,7 @@ def benchmark_scatterplot(mean_perf, x = 'mcroc', y = 'mcprc', label_col=None):
 
     return ax
 
-def benchmark_boxplot(benchmark_data, metric = 'mcroc'):
+def benchmark_boxplot(benchmark_data, metric = 'mcroc', ax = None):
     """
     Creates boxplots for an iterative performance metric (i.e. mcroc and mcprc)
 
@@ -378,8 +379,7 @@ def benchmark_boxplot(benchmark_data, metric = 'mcroc'):
     if len(keys) == 0:
         raise ValueError('The given metric was not found in the benchmark data')
 
-    fig = plt.figure()
-    ax = plt.subplot(111)
+    if ax is None: ax = plt.subplot(111)
     for i, key in enumerate(keys):
         ax.boxplot(benchmark_data[key], positions = [i])
     ax.set_xlim(-0.5, len(keys) - 0.5)
