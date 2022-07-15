@@ -245,6 +245,7 @@ def summarize_acts(acts, groupby, obs=None, mode='mean', min_std=1.0):
     else:
         obs = obs[groupby].values.astype('U')
         features = acts.columns.astype('U')
+        acts = acts.values
 
     # Get sizes
     groups = np.unique(obs)

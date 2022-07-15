@@ -1,83 +1,80 @@
-import unittest
-from numpy.testing import assert_allclose
+import pytest
 import pandas as pd
+import numpy as np
 from scipy.sparse import csr_matrix
 from anndata import AnnData
-from ..pre import extract, filt_min_n, get_net_mat, match, rename_net
-from ..utils import get_toy_data
+from ..pre import check_mat, extract, filt_min_n, match, rename_net, get_net_mat, mask_features
 
 
-class TestPre(unittest.TestCase):
+def test_check_mat():
+    m = csr_matrix(np.array([[1,0,2], [1, 0, 3], [0, 0, 0]]))
+    r = np.array(['S1', 'S2', 'S3'])
+    c = np.array(['G1', 'G2', 'G3'])
+    check_mat(m, r, c, verbose=True)
+    m = csr_matrix(np.array([[1,0,2], [np.nan, 0, 3], [0, 0, 0]]))
+    with pytest.raises(ValueError):
+        check_mat(m, r, c)
 
-    mat, net = get_toy_data()
+def test_extract():
+    m = np.array([[1,0,2], [1, 0, 3], [0, 0, 0]])
+    r = np.array(['S1', 'S2', 'S3'])
+    c = np.array(['G1', 'G2', 'G3'])
+    df = pd.DataFrame(m, index=r, columns=c)
+    adata = AnnData(df)
+    adata_raw = adata.copy()
+    adata_raw.raw = adata_raw
+    extract([m, r, c])
+    extract(df)
+    extract(adata, use_raw=False)
+    extract(adata_raw, use_raw=True)
+    with pytest.raises(ValueError):   
+        extract('asdfg')
+    with pytest.raises(ValueError):
+        extract(adata, use_raw=True)
 
-    def test_extract(self):
+def test_filt_min_n():
+    net = pd.DataFrame([['T1', 'G1', 1], ['T1', 'G2', 1], ['T2', 'G3', 1], ['T2', 'G4', 0.5]],
+                       columns=['source', 'target', 'weight'])
+    c = np.array(['G1', 'G2', 'G3'])
+    filt_min_n(c, net, min_n=2)
+    with pytest.raises(ValueError):
+        filt_min_n(c, net, min_n=5)
 
-        mat, r, c = self.mat.values, self.mat.index, self.mat.columns
+def test_match():
+    c = np.array(['G1', 'G2', 'G3', 'G4'])
+    targets = np.array(['G2', 'G1', 'G4', 'G3'])
+    net = np.array([[1. , 0. ], [1. , 0. ], [0. , 1. ], [0. , 0.5]])
+    match(c, targets, net)
 
-        # Input is list
-        m_lt, r_lt, c_lt = extract([mat, r, c])
+def test_rename_net():
+    net = pd.DataFrame([['T1', 'G1', 1], ['T1', 'G2', 1], ['T2', 'G3', 1], ['T2', 'G4', 0.5]],
+                       columns=['source', 'target', 'weight'])
+    rename_net(net)
+    rename_net(net, weight=None)
+    net = pd.DataFrame([['T1', 'G1', 1], ['T1', 'G1', 1], ['T2', 'G3', 1], ['T2', 'G4', 0.5]],
+                       columns=['source', 'target', 'weight'])
+    with pytest.raises(ValueError):
+        rename_net(net)
 
-        # Input is DF
-        m_df, r_df, c_df = extract(self.mat)
+def test_get_net_mat():
+    net = pd.DataFrame([['T1', 'G1', 1], ['T1', 'G2', 1], ['T2', 'G3', 1], ['T2', 'G4', 0.5]],
+                       columns=['source', 'target', 'weight'])
+    get_net_mat(net)
 
-        # Input is AnnData without raw
-        var = pd.DataFrame(index=c)
-        obs = pd.DataFrame(index=r)
-        adata = AnnData(csr_matrix(mat), var=var, obs=obs)
-
-        m_an, r_an, c_an = extract(adata, use_raw=False)
-
-        # Input is AnnData with raw
-        adata.raw = adata
-        m_ar, r_ar, c_ar = extract(adata)
-
-        # Assert mat
-        assert_allclose(m_lt.A, mat)
-        assert_allclose(m_df.A, mat)
-        assert_allclose(m_an.A, mat)
-        assert_allclose(m_ar.A, mat)
-
-        # Assert samples
-        r = list(r)
-        self.assertEqual(list(r_lt), r)
-        self.assertEqual(list(r_df), r)
-        self.assertEqual(list(r_an), r)
-        self.assertEqual(list(r_ar), r)
-
-        # Assert columns
-        c = list(c)
-        self.assertEqual(list(c_lt), c)
-        self.assertEqual(list(c_df), c)
-        self.assertEqual(list(c_an), c)
-        self.assertEqual(list(c_ar), c)
-
-    def test_filt_min_n(self):
-
-        mat, net = self.mat, self.net
-        mat, r, c = extract(mat)
-
-        f_net = filt_min_n(c, net, min_n=4)
-
-        self.assertTrue(net.shape[0] > f_net.shape[1])
-
-    def test_get_net_mat(self):
-
-        net = self.net
-        sources, targets, regX = get_net_mat(net)
-
-        self.assertTrue(regX.shape[0] == len(targets))
-        self.assertTrue(regX.shape[1] == len(sources))
-
-    def test_match(self):
-
-        mat, net = self.mat, self.net
-        mat, r, c = extract(mat)
-        sources, targets, net = get_net_mat(net)
-
-        match(c, targets, net)
-
-    def test_rename_net(self):
-
-        net = self.net
-        rename_net(net, source='source', target='target', weight='weight')
+def test_mask_features():
+    m = np.array([[1,0,2], [1, 0, 3], [0, 0, 0]])
+    r = np.array(['S1', 'S2', 'S3'])
+    c = np.array(['G1', 'G2', 'G3'])
+    df = pd.DataFrame(m, index=r, columns=c)
+    adata = AnnData(df)
+    adata_raw = adata.copy()
+    adata_raw.raw = adata_raw
+    mask_features([m, r, c])
+    mask_features([m, r, c], log=True)
+    mask_features(df)
+    mask_features(adata)
+    mask_features(adata_raw, use_raw=True)
+    with pytest.raises(ValueError):
+        mask_features('asdfg')
+    with pytest.raises(ValueError):
+        mask_features(adata, use_raw=True)

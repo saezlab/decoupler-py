@@ -1,42 +1,35 @@
-import unittest
-from ..omnip import show_resources, get_resource, get_progeny, get_dorothea
+import pytest
 import pandas as pd
+from ..omnip import check_if_omnipath, get_progeny, get_resource, show_resources, get_resource, get_dorothea
 
 
-class TestOmnipath(unittest.TestCase):
+def test_check_if_omnipath():
+    check_if_omnipath()
 
-    def test_showresources(self):
-        lst = show_resources()
-        self.assertTrue(type(lst) is list)
-        self.assertTrue(len(lst) > 0)
+def test_get_progeny():
+    df = get_progeny(organism='human', top=100)
+    n_paths = len(df['source'].unique())
+    n_rows = (n_paths * 100)
+    assert type(df) is pd.DataFrame
+    assert df.shape[0] == n_rows
+    with pytest.raises(ValueError):   
+        get_progeny(organism='asdfgh')
+    get_progeny(organism='mouse')
 
-    def test_getresource(self):
-        res = get_resource('TFcensus')
-        self.assertTrue(type(res) is pd.DataFrame)
-        self.assertTrue(res.shape[0] > 0)
+def test_get_resource():
+    res = get_resource('TFcensus')
+    assert type(res) is pd.DataFrame
+    assert res.shape[0] > 0
 
-    def test_getprogeny_human(self):
-        n = 100
-        df = get_progeny(organism='human', top=n)
-        n_paths = len(df['source'].unique())
-        n_rows = (n_paths * 100)
-        self.assertTrue(type(df) is pd.DataFrame)
-        self.assertTrue(df.shape[0] == n_rows)
+def test_show_resources():
+    lst = show_resources()
+    assert type(lst) is list
+    assert len(lst) > 0
 
-    def test_getprogeny_mouse(self):
-        n = 100
-        df = get_progeny(organism='mouse', top=n)
-        n_paths = len(df['source'].unique())
-        n_rows = (n_paths * 100)
-        self.assertTrue(type(df) is pd.DataFrame)
-        self.assertTrue(df.shape[0] == n_rows)
-
-    def test_getdorothea_human(self):
-        df = get_dorothea(organism='human')
-        self.assertTrue(type(df) is pd.DataFrame)
-        self.assertTrue(df.shape[0] > 0)
-
-    def test_getdorothea_mouse(self):
-        df = get_dorothea(organism='mouse')
-        self.assertTrue(type(df) is pd.DataFrame)
-        self.assertTrue(df.shape[0] > 0)
+def test_get_dorothea():
+    df = get_dorothea(organism='human')
+    assert type(df) is pd.DataFrame
+    assert df.shape[0] > 0
+    with pytest.raises(ValueError):   
+        get_dorothea(organism='asdfgh')
+    get_dorothea(organism='mouse')

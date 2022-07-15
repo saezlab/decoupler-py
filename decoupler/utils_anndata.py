@@ -10,6 +10,37 @@ import sys
 
 from anndata import AnnData
 
+from .utils import melt, p_adjust_fdr
+from .pre import rename_net
+
+
+def get_acts(adata, obsm_key):
+    """
+    Extracts activities as AnnData object.
+
+    From an AnnData object with source activities stored in `.obsm`, generates a new AnnData object with activities in `X`.
+    This allows to reuse many scanpy processing and visualization functions.
+
+    Parameters
+    ----------
+    adata : AnnData
+        Annotated data matrix with activities stored in .obsm.
+    obsm_key
+        `.osbm` key to extract.
+
+    Returns
+    -------
+    acts : AnnData
+        New AnnData object with activities in X.
+    """
+
+    obs = adata.obs
+    var = pd.DataFrame(index=adata.obsm[obsm_key].columns)
+    uns = adata.uns
+    obsm = adata.obsm
+
+    return AnnData(np.array(adata.obsm[obsm_key]), obs=obs, var=var, uns=uns, obsm=obsm)
+
 
 def extract_psbulk_inputs(adata, obs, layer, use_raw):
 
@@ -41,7 +72,7 @@ def extract_psbulk_inputs(adata, obs, layer, use_raw):
     return X, obs, var
 
 
-def test_for_raw_counts(X):
+def check_for_raw_counts(X):
     is_finite = np.all(np.isfinite(X.data))
     if not is_finite:
         raise ValueError('Data contains non finite values (nan or inf), please set them to 0 or remove them.')
@@ -186,7 +217,7 @@ def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=
     X, obs, var = extract_psbulk_inputs(adata, obs, layer, use_raw)
 
     # Test if raw counts are present
-    test_for_raw_counts(X)
+    check_for_raw_counts(X)
 
     # Format inputs
     obs, smples, groups, n_rows = format_psbulk_inputs(sample_col, groups_col, obs)
@@ -361,3 +392,93 @@ def get_contrast(adata, group_col, condition_col, condition, reference=None, met
         del adata.obs[group_col]
 
     return logFCs, p_vals
+
+
+def get_top_targets(logFCs, pvals, contrast, name=None, net=None, source='source', target='target',
+                    weight='weight', sign_thr=1, lFCs_thr=0.0, fdr_corr=True):
+    """
+    Return significant target features for a given source and contrast. If no name or net are provided, return all significant
+    features without subsetting.
+
+    Parameters
+    ----------
+    logFCs : DataFrame
+        Data-frame of logFCs (contrasts x features).
+    pvals : DataFrame
+        Data-frame of p-values (contrasts x features).
+    name : str
+        Name of the source.
+    contrast : str
+        Name of the contrast (row).
+    net : DataFrame, None
+        Network data-frame. If None, return without subsetting targets by it.
+    source : str
+        Column name in net with source nodes.
+    target : str
+        Column name in net with target nodes.
+    weight : str
+        Column name in net with weights.
+    sign_thr : float
+        Significance threshold for adjusted p-values.
+    lFCs_thr : float
+        Significance threshold for logFCs.
+
+    Returns
+    -------
+    df : DataFrame
+        Dataframe containing the significant features.
+    """
+
+    # Check for net
+    if net is not None:
+        # Rename net
+        net = rename_net(net, source=source, target=target, weight=weight)
+
+        # Find targets in net that match with logFCs
+        if name is None:
+            raise ValueError('If net is given, name cannot be None.')
+        targets = net[net['source'] == name]['target'].values
+        msk = np.isin(logFCs.columns, targets)
+
+        # Build df
+        df = logFCs.loc[[contrast], msk].T.rename({contrast: 'logFCs'}, axis=1)
+        df['pvals'] = pvals.loc[[contrast], msk].T
+    else:
+        df = logFCs.loc[[contrast]].T.rename({contrast: 'logFCs'}, axis=1)
+        df['pvals'] = pvals.loc[[contrast]].T
+
+    # Sort
+    df = df.sort_values('pvals')
+
+    if fdr_corr:
+        # Compute FDR correction
+        df['adj_pvals'] = p_adjust_fdr(df['pvals'].values.flatten())
+        pval_col = 'adj_pvals'
+    else:
+        pval_col = 'pvals'
+        
+    # Filter by thresholds
+    df = df[(np.abs(df['logFCs']) >= lFCs_thr) & (np.abs(df[pval_col]) <= sign_thr)]
+
+    return df
+
+
+def format_contrast_results(logFCs, pvals):
+    """
+    Formats the results from get_contrast into a long format data-frame.
+
+    logFCs : DataFrame
+        Dataframe of logFCs (contrasts x features).
+    pvals : DataFrame
+        Dataframe of p-values (contrasts x features).
+
+    Returns
+    -------
+    df : DataFrame
+        DataFrame in long format.
+    """
+
+    df = melt([logFCs, pvals]).rename({'sample': 'contrast', 'source': 'name', 'score': 'logFC'}, axis=1)
+    df = df[['contrast', 'name', 'logFC', 'pval']].sort_values('pval').reset_index(drop=True)
+
+    return df

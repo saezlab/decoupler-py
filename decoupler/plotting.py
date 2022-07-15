@@ -98,6 +98,7 @@ def plot_volcano(logFCs, pvals, contrast, name=None, net=None, top=5, source='so
     sign_thr = -np.log10(sign_thr)
 
     # Plot
+    fig = None
     if ax is None:
         fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=dpi)
 
@@ -201,6 +202,7 @@ def plot_violins(mat, thr=None, log=False, use_raw=False, figsize=(7, 5), dpi=10
     y = m.A.flatten()
 
     # Plot
+    fig = None
     if ax is None:
         fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=dpi)
 

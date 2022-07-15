@@ -73,7 +73,7 @@ def extract(mat, use_raw=True, verbose=False, dtype=np.float32):
         if use_raw:
             if mat.raw is None:
                 raise ValueError("Received `use_raw=True`, but `mat.raw` is empty.")
-            m = mat.raw.X
+            m = csr_matrix(mat.raw.X)
             c = mat.raw.var.index.values
         else:
             m = csr_matrix(mat.X)
@@ -248,7 +248,7 @@ def mask_features(mat, log=False, thr=1, use_raw=False):
         m[m < thr] = 0.0
         return [m, r, c]
     elif type(mat) is pd.DataFrame:
-        mat.loc[mat.values < thr] = 0.0
+        mat.loc[:, :] = np.where(mat.values < thr, 0.0, mat.values)
         return mat
     elif type(mat) is AnnData:
         if use_raw:

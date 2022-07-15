@@ -178,4 +178,7 @@ def get_dorothea(organism='human', levels=['A', 'B', 'C'], weight_dict={'A': 1, 
     # Filter by levels
     do = do[np.isin(do['confidence'], levels)].sort_values('confidence').reset_index(drop=True)
 
+    if organism == 'mouse':
+        do['target'] = [t.lower().capitalize() for t in do['target']]
+
     return do
