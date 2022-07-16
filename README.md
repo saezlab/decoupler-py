@@ -1,6 +1,6 @@
 # decoupler - Ensemble of methods to infer biological activities <img src="https://github.com/saezlab/decoupleR/blob/master/inst/figures/logo.svg?raw=1" align="right" width="120" class="no-scaled-link" />
 <!-- badges: start -->
-[![main_build](https://github.com/saezlab/decoupler-py/actions/workflows/python-package.yml/badge.svg)](https://github.com/saezlab/decoupler-py/actions)
+[![main](https://github.com/saezlab/decoupler-py/actions/workflows/main.yml/badge.svg)](https://github.com/saezlab/decoupler-py/actions)
 [![GitHub issues](https://img.shields.io/github/issues/saezlab/decoupler-py.svg)](https://github.com/saezlab/decoupler-py/issues/)
 [![Downloads](https://pepy.tech/badge/decoupler)](https://pepy.tech/project/decoupler)
 [![Documentation Status](https://readthedocs.org/projects/decoupler-py/badge/?version=latest)](https://decoupler-py.readthedocs.io/en/latest/?badge=latest)

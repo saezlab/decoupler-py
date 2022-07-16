@@ -3,7 +3,7 @@ decoupler - Ensemble of methods to infer biological activities
 
 |MainBuild| |Issues| |PyPIDownloads| |Docs| |Codecov|
 
-.. |MainBuild| image:: https://github.com/saezlab/decoupler-py/actions/workflows/python-package.yml/badge.svg
+.. |MainBuild| image:: https://github.com/saezlab/decoupler-py/actions/workflows/main.yml/badge.svg
    :target: https://github.com/saezlab/decoupler-py/actions
    
 .. |Issues| image:: https://img.shields.io/github/issues/saezlab/decoupler-py.svg
