@@ -1,7 +1,8 @@
 import pytest
 import pandas as pd
 from anndata import AnnData
-from ..utils import m_rename, melt, show_methods, check_corr, get_toy_data, summarize_acts, assign_groups, p_adjust_fdr, dense_run
+from ..utils import m_rename, melt, show_methods, check_corr, get_toy_data, summarize_acts
+from ..utils import assign_groups, p_adjust_fdr, dense_run
 from ..method_mlm import run_mlm
 
 
@@ -12,6 +13,7 @@ def test_m_rename():
     p_tmp = pd.DataFrame([['S01', 'T1', 0.06], ['S02', 'T1', 0.05]],
                          columns=['index', 'variable', 'value'])
     m_rename(p_tmp, 'mlm_pvals')
+
 
 def test_melt():
     estimate = pd.DataFrame([[3.5, -0.5, 0.3], [3.6, -0.6, 0.04], [-1, 2, -1.8]],
@@ -30,11 +32,13 @@ def test_melt():
     with pytest.raises(ValueError):   
         melt({0, 1, 2, 3})
 
+
 def test_show_methods():
 
     methods = show_methods()
 
     assert methods.shape[0] > 0
+
 
 def test_check_corr():
 
@@ -44,9 +48,11 @@ def test_check_corr():
     check_corr(net, min_n=2)
     check_corr(net, mat=mat, min_n=2)
 
+
 def test_get_toy_data():
 
     get_toy_data()
+
 
 def test_summarize_acts():
 
@@ -59,6 +65,7 @@ def test_summarize_acts():
     with pytest.raises(ValueError):
         summarize_acts(adata, 'celltype', obs, 'mean', 0)
 
+
 def test_assign_groups():
     estimate = pd.DataFrame([[3.5, -0.5, 0.3], [3.6, -0.6, 0.04], [-1, 2, -1.8]],
                     columns=['T1', 'T2', 'T3'], index=['S01', 'S02', 'S03'])
@@ -66,8 +73,10 @@ def test_assign_groups():
     sum_acts = summarize_acts(estimate, obs=obs, groupby='celltype', min_std=0)
     assign_groups(sum_acts)
 
+
 def test_p_adjust_fdr():
     p_adjust_fdr([1, 0.8, 0.8, 0.3, 0.01])
+
 
 def test_denserun():
     mat = pd.DataFrame([[1,2,3,4,5,6]], columns=['G01','G02','G03','G06','G07','G08'])
