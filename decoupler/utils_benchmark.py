@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import label_binarize
 import decoupler as dc
+from .utils_calibrated_metrics import average_precision as calibrated_average_precision
 
 from sklearn.metrics import roc_auc_score, average_precision_score
 from numpy.random import default_rng
@@ -72,7 +73,7 @@ def down_sampling(y, seed=7, n = 100):
 Compute AUC of ROC or PRC
 """
 
-def get_auc(x, y, mode):
+def get_auc(x, y, mode, pi0 = None):
     """
     Computes AUROC for each label
     
@@ -95,6 +96,8 @@ def get_auc(x, y, mode):
         auc = roc_auc_score(x, y) 
     elif mode == "prc":
         auc = average_precision_score(x, y)
+    elif mode == 'calprc':
+        auc = calibrated_average_precision(x, y_pred= y, pi0=pi0)
     else: 
         raise ValueError("mode can only be roc or prc")
     return auc
@@ -137,7 +140,7 @@ def get_performance(data, metric = 'mcroc', n_iter = 100, seed = 42, prefix = No
 
     Args:
         data (DataFrame): DataFrame with a 'score' and 'GT' column. 'GT' column contains groud-truth ( e.g. 0, 1). 'score' can be continuous or same as 'GT'
-        metric (str or list of str, optional): Which metric(s) to use. Currently implemeted methods are: 'mcroc', 'mcprc', 'roc', 'prc'. Defaults to 'mcroc'.
+        metric (str or list of str, optional): Which metric(s) to use. Currently implemeted methods are: 'mcroc', 'mcprc', 'roc', 'prc', 'calprc'. Defaults to 'mcroc'.
         n_iter (int, optional): Number of iterations for the undersampling procedures for the 'mcroc' and 'mcprc' metrics. Defaults to 100.
         seed (int, optional): Seed used to generate the undersampling for the 'mcroc' and 'mcprc' metrics. Defaults to 42.
         prefix (str, optional): Added as prefix to the performance metric key in the output dictionary e.g. 'mlm_roc' if equal to 'mlm'. Defaults to 100.
@@ -146,7 +149,7 @@ def get_performance(data, metric = 'mcroc', n_iter = 100, seed = 42, prefix = No
         perf: Dict of prediction performance(s) on the given data. 'mcroc' and 'mcprc' metrics will return the values for each sampling. Other methods return a single value.
     """
 
-    available_metrics = ['mcroc', 'mcprc', 'roc', 'prc']
+    available_metrics = ['mcroc', 'mcprc', 'roc', 'prc', 'calprc']
     metrics = [available_metrics[i] for i in np.argwhere(np.in1d(available_metrics, metric)).flatten().tolist()]
 
     if len(metrics) == 0:
@@ -166,9 +169,9 @@ def get_performance(data, metric = 'mcroc', n_iter = 100, seed = 42, prefix = No
                             mode = met[2:])
                 aucs.append(auc)
 
-        elif met == 'roc' or met == 'prc':
+        elif met == 'roc' or met == 'prc' or met == 'calprc':
             # Compute AUC on the whole (unequalised class priors) data
-            aucs = get_auc(x = data['GT'], y = data['score'], mode = met)
+            aucs = get_auc(x = data['GT'], y = data['score'], mode = met, pi0 = kwargs.get('pi0', None))
         
         if prefix is None:
             perf[met] = aucs
@@ -207,7 +210,7 @@ def get_target_performance(data, targets, metric='mcroc', subset = None, n_iter 
 
     return perf
 
-def get_scores_GT(decoupler_results, metadata, meta_perturbation_col = 'target'):
+def get_scores_GT(decoupler_results, metadata):
     """
 
     Convert decouple output to flattenend vectors and combine with GT information
@@ -229,19 +232,19 @@ def get_scores_GT(decoupler_results, metadata, meta_perturbation_col = 'target')
         # pvals = res[m + 'pvals']
 
         # remove experiments with no prediction for the perturbed TF
-        missing = list(set( metadata[meta_perturbation_col]) - set(decoupler_results[m + '_estimate'].columns))
-        keep = [trgt not in missing for trgt in metadata[meta_perturbation_col].to_list()]
+        missing = list(set(metadata['source']) - set(decoupler_results[m + '_estimate'].columns))
+        keep = [trgt not in missing for trgt in metadata['source'].to_list()]
         meta = metadata[keep]
         estimates = decoupler_results[m + '_estimate'][keep]
         # pvals = res[m + '_pvals'][keep]
 
         # mirror estimates
         estimates = estimates.mul(meta['sign'], axis = 0)
-        gt = meta.pivot(columns = meta_perturbation_col, values = 'sign').fillna(0)
+        gt = meta.pivot(columns = 'source', values = 'sign').fillna(0)
 
         # add 0s in the ground-truth array for targets predicted by decoupler
         # for which there is no ground truth in the provided metadata (assumed 0)
-        missing = list(set(estimates.columns) - set(meta[meta_perturbation_col]))
+        missing = list(set(estimates.columns) - set(meta['source']))
         gt = pd.concat([gt, pd.DataFrame(0, index= gt.index, columns=missing)], axis = 1, join = 'inner').sort_index(axis=1)
 
         # flatten and then combine estimates and GT vectors
@@ -253,6 +256,81 @@ def get_scores_GT(decoupler_results, metadata, meta_perturbation_col = 'target')
         targets[m] = list(estimates.columns)
 
     return scores_gt, targets
+
+def format_benchmark_data(data, metadata, network, meta_perturbation_col = 'treatment', metadata_sign_col = 'sign', net_source_col = 'source', net_weight_col = 'weight', filter_experiments = True, filter_sources = False):
+
+    if not all(item in network.columns for item in [net_source_col, net_weight_col]):
+        missing = list(set([net_source_col, net_weight_col]) - set(network.columns))
+        raise ValueError('{0} column(s) are missing from the input network'.format(str(missing)))
+
+    if not all(item in metadata.columns for item in [meta_perturbation_col, metadata_sign_col]):
+        missing = list(set([meta_perturbation_col, metadata_sign_col]) - set(metadata.columns))
+        raise ValueError('{0} column(s) are missing from the input metadata'.format(str(missing)))
+
+    network = network.rename(columns={net_source_col:'source', net_weight_col:'weight'})
+    metadata = metadata.rename(columns={meta_perturbation_col:'source', metadata_sign_col:'sign'})
+
+    #subset by TFs with GT available
+    if filter_sources:
+        keep = [src in metadata['source'].to_list() for src in network['source'].to_list()]
+        network = network[keep]
+
+    # filter out experiments without predictions available
+    if filter_experiments:
+        keep = [src in network['source'].to_list() for src in metadata['source'].to_list()]
+        data = data[keep]
+        metadata = metadata[keep]
+
+    return data, metadata, network
+
+def performances(flat_data, sources, metric = 'roc', by = 'method', verbose = True, **kwargs):
+    bench = {}
+    kwargs['verbose'] = verbose
+
+    for method in flat_data.keys():
+        if verbose: print('Calculating performance metrics for', method)
+        if 'method' in by or 'all' in by:
+            perf = get_performance(flat_data[method], metric, prefix= method, **kwargs)
+            bench.update(perf)
+        if 'source' in by or 'all' in by:
+            perf = get_target_performance(flat_data[method], sources[method], metric, prefix = method, **kwargs)
+            bench[method + '_bySource'] = perf
+
+    return bench
+
+def get_mean_performances(benchmark_dict):
+    #make dataframes with mean perfomances
+    perf_method = {}
+    perf_bySource = {}
+    for topkey, topvalue in benchmark_dict.items():
+        if '_bySource' in topkey:
+            for key, value in topvalue.items():
+                perf_bySource[key] = np.mean(value)
+        else:
+            perf_method[topkey] = np.mean(topvalue)
+
+    perfs = []
+
+    if len(perf_method) > 0:
+        perf_method = pd.DataFrame.from_dict(perf_method, orient='index').reset_index()
+        perf_method.columns = ['id','value']
+        perf_method[['method','metric']] = perf_method['id'].str.split('_', expand=True)
+        perf_method = perf_method.pivot(index='method', columns='metric', values='value').reset_index()
+        perfs.append(perf_method)
+
+    if len(perf_bySource) > 0:
+        perf_bySource = pd.DataFrame.from_dict(perf_bySource, orient='index').reset_index()
+        perf_bySource.columns = ['id','value']
+        perf_bySource[['method','source','metric']] = perf_bySource['id'].str.split('_', expand=True)
+        perf_bySource = perf_bySource.pivot(index=['method','source'], columns='metric', values='value').reset_index()
+        perfs.append(perf_bySource)
+
+    mean_perf = pd.concat(perfs)
+    if 'source' in mean_perf.columns:
+        mean_perf['source'] = mean_perf['source'].fillna('overall')
+
+    return mean_perf.reset_index()
+
 
 def run_benchmark(data, metadata, network, methods = None, metric = 'roc', meta_perturbation_col = 'target', net_source_col = 'source', filter_experiments= True, filter_sources = False, **kwargs):
     """
@@ -275,45 +353,21 @@ def run_benchmark(data, metadata, network, methods = None, metric = 'roc', meta_
         bench: dict containing the whole data for each method and metric. Useful if you want to see the distribution for each subsampling for the mcroc and mcprc methods
     """
 
-    #subset by TFs with GT available
-    if filter_sources:
-        keep = [src in metadata[meta_perturbation_col].to_list() for src in network[net_source_col].to_list()]
-        network = network[keep]
+    #format and filter the data, metadata and networks
+    data, metadata, network = format_benchmark_data(data, metadata, network, meta_perturbation_col=meta_perturbation_col,
+                                                    net_source_col=net_source_col, filter_experiments=filter_experiments, filter_sources=filter_sources)
 
-    # filter out experiments without predictions available
-    if filter_experiments:
-        keep = [trgt in network[net_source_col].to_list() for trgt in metadata[meta_perturbation_col].to_list()]
-        data = data[keep]
-        metadata = metadata[keep]
+    #run prediction
+    res = dc.decouple(data, network, methods=methods, args = kwargs.get('args', {}), verbose = kwargs.get('verbose', True))
 
-    # run prediction
-    res = dc.decouple(data, network, methods=methods, verbose = kwargs.get('verbose', True))
+    #
+    scores_gt, sources = get_scores_GT(res, metadata)
 
-    scores_gt, targets = get_scores_GT(res, metadata, meta_perturbation_col)
-
-    bench = {}
-    for method in scores_gt.keys():
-        if kwargs.get('verbose', True): print('Calculating performance metrics for', method)
-        if kwargs.get('by_target', False):
-            perf = get_target_performance(scores_gt[method], targets[method], metric, prefix = method, **kwargs)
-        else:
-            perf = get_performance(scores_gt[method], metric, prefix= method, **kwargs)
-        bench.update(perf)
+    bench = performances(scores_gt, sources, metric = metric, **kwargs)
     
-    #make dataframe with mean perfomances
-    mean_perfs = {}
-    for key, value in bench.items():
-        mean_perfs[key]=np.mean(value)
-    mean_perfs = pd.DataFrame.from_dict(mean_perfs, orient='index').reset_index(level=0)
-    mean_perfs.columns = ['id','value']
-    if kwargs.get('by_target', False):
-        mean_perfs[['method','target','metric']] = mean_perfs['id'].str.split('_', expand=True)
-        mean_perfs = mean_perfs.pivot(index=['method','target'], columns='metric', values='value')
-    else:
-        mean_perfs[['method','metric']] = mean_perfs['id'].str.split('_', expand=True)
-        mean_perfs = mean_perfs.pivot(index='method', columns='metric', values='value')
+    mean_perfs = get_mean_performances(bench)
 
-    return mean_perfs.reset_index(), bench
+    return mean_perfs, bench
 
 def benchmark_scatterplot(mean_perf, x = 'mcroc', y = 'mcprc', ax = None, label_col=None):
     """
@@ -340,17 +394,17 @@ def benchmark_scatterplot(mean_perf, x = 'mcroc', y = 'mcprc', ax = None, label_
     ax.set_xlim(min_v - border, max_v + border)
     ax.set_ylim(min_v - border, max_v + border)
 
-    if (x in ['roc','mcroc'] and y in ['roc','mcroc']) or (x in ['prc','mcprc'] and y in ['prc','mcprc']):
+    if (x in ['roc','mcroc'] and y in ['roc','mcroc']) or (x in ['prc','mcprc', 'calprc'] and y in ['prc','mcprc', 'calprc']):
         ax.axline((0,0),slope=1, color = 'black', linestyle = ':')
 
     if label_col is not None and label_col in mean_perf.columns:
         for i, label in enumerate(mean_perf[label_col]):
             ax.annotate(label.capitalize(), (mean_perf[x][i], mean_perf[y][i]))
 
-    if x in ['mcroc', 'mcprc', 'roc', 'prc']:
+    if x in ['mcroc', 'mcprc', 'roc', 'prc', 'calprc']:
         x = x + ' AUC'
 
-    if y in ['mcroc', 'mcprc', 'roc', 'prc']:
+    if y in ['mcroc', 'mcprc', 'roc', 'prc', 'calprc']:
         y = y + ' AUC'
 
     ax.set_xlabel(x.upper())
