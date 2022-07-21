@@ -85,6 +85,9 @@ def get_auc(x, y, mode, pi0 = None):
         
     y: array (flattened)
         vector of continuous values
+
+    pi0: float
+        Reference ratio for calibrated metrics. Corresponds to the baseline/reference class inbalance to which to set the metric. Defaults to None.
         
         
     Returns
@@ -143,7 +146,7 @@ def get_source_masks(long_data, sources, subset = None, min_exp = 5):
 
     return source_ind, names
 
-def get_performance(data, metric = 'roc', n_iter = 100, seed = 42, prefix = None, **kwargs):
+def get_performance(data, metric = 'roc', n_iter = 100, seed = 42, prefix = None, pi0 = 0.5):
     """
     Compute binary classifier performance
 
@@ -152,7 +155,8 @@ def get_performance(data, metric = 'roc', n_iter = 100, seed = 42, prefix = None
         metric (str or list of str, optional): Which metric(s) to use. Currently implemeted methods are: 'mcroc', 'mcprc', 'roc', 'prc', 'calprc' and 'ci'. Defaults to 'roc'.
         n_iter (int, optional): Number of iterations for the undersampling procedures for the 'mcroc' and 'mcprc' metrics. Defaults to 100.
         seed (int, optional): Seed used to generate the undersampling for the 'mcroc' and 'mcprc' metrics. Defaults to 42.
-        prefix (str, optional): Added as prefix to the performance metric key in the output dictionary e.g. 'mlm_roc' if equal to 'mlm'. Defaults to 100.
+        prefix (str, optional): Added as prefix to the performance metric key in the output dictionary e.g. 'mlm_roc' if equal to 'mlm'. Defaults to None.
+        pi0 (float, optional): Reference ratio used to calculate calibrated metrics. Must be between 0 and 1. Defaults to 0.5.
 
     Returns:
         perf: Dict of prediction performance(s) on the given data. 'mcroc' and 'mcprc' metrics will return the values for each sampling. Other methods return a single value.
@@ -172,7 +176,7 @@ def get_performance(data, metric = 'roc', n_iter = 100, seed = 42, prefix = None
         if met == 'mcroc' or met == 'mcprc':
             # Compute AUC for each mask (with equalised class priors)
             aucs = []
-            for mask in tqdm(masks, disable= not kwargs.get('verbose', True)):
+            for mask in masks:
                 auc = get_auc(x = data['GT'][mask],
                             y = data['score'][mask],
                             mode = met[2:])
@@ -180,7 +184,7 @@ def get_performance(data, metric = 'roc', n_iter = 100, seed = 42, prefix = None
 
         elif met == 'roc' or met == 'prc' or met == 'calprc' or met == 'ci':
             # Compute AUC on the whole (unequalised class priors) data
-            aucs = get_auc(x = data['GT'], y = data['score'], mode = met, pi0 = kwargs.get('pi0', None))
+            aucs = get_auc(x = data['GT'], y = data['score'], mode = met, pi0 = pi0)
         
         if prefix is None:
             perf[met] = aucs
@@ -189,7 +193,7 @@ def get_performance(data, metric = 'roc', n_iter = 100, seed = 42, prefix = None
 
     return perf
 
-def get_source_performance(data, sources, metric='mcroc', subset = None, n_iter = 100, seed = 42, prefix = None, **kwargs):
+def get_source_performance(data, sources, metric='roc', subset = None, n_iter = 100, seed = 42, prefix = None, pi0 = 0.5, min_exp = 5):
     """
     Compute binary classifier performance for each source or susbet of sources
 
@@ -200,13 +204,15 @@ def get_source_performance(data, sources, metric='mcroc', subset = None, n_iter 
         subset (list of str, optional): A subset of the targets for which to compute performance. If None, then the performance will be calculated for all targets. Defaults to None.
         n_iter (int, optional): Number of iterations for the undersampling procedures for the 'mcroc' and 'mcprc' metrics. Defaults to 100.
         seed (int, optional):  Seed used to generate the undersampling for the 'mcroc' and 'mcprc' metrics. Defaults to 42.
-        prefix (str, optional):Added as prefix to the output dictionary. Defaults to 100.
+        prefix (str, optional): Added as prefix to the output dictionary. Defaults to 100.
+        pi0 (float, optional): Reference ratio for calibrated metrics. Corresponds to the baseline/reference class inbalance to which to set the metric. Should be between 0 and 1. Defaults to 0.5.
+        min_exp (int, optional): Minium number of perturbation experiments required to compute performance scores. Defaults to 5.
 
     Returns:
         perf : Dict of prediction performance(s) for each target or subset of targets. 'mcroc' and 'mcprc' metrics will return the values for each sampling. Other methods return a single value.
     """
 
-    masks, source_names = get_source_masks(data, sources, subset = subset, min_exp = kwargs.get('min_exp', 5))
+    masks, source_names = get_source_masks(data, sources, subset = subset, min_exp = min_exp)
 
     perf = {}
     for trgt, name in zip(masks, source_names):
@@ -215,7 +221,7 @@ def get_source_performance(data, sources, metric='mcroc', subset = None, n_iter 
         else:
             p = prefix  + '_' + name
 
-        perf.update(get_performance(data.iloc[trgt.tolist()].reset_index(), metric, n_iter, seed, prefix = p, **kwargs))
+        perf.update(get_performance(data.iloc[trgt.tolist()].reset_index(), metric, n_iter, seed, prefix = p, pi0=pi0))
 
     return perf
 
@@ -286,19 +292,18 @@ def get_scores_GT(decoupler_results, metadata, by = None, min_exp = 5):
 
     return scores_gt, targets
 
-def format_benchmark_data(data, metadata, network, meta_perturbation_col = 'treatment', metadata_sign_col = 'sign', net_source_col = 'source', net_weight_col = 'weight', filter_experiments = True, filter_sources = False):
-
+def format_benchmark_data(data, metadata, network, meta_perturbation_col = 'treatment', meta_sign_col = 'sign', net_source_col = 'source', net_weight_col = 'weight', filter_experiments = True, filter_sources = False):
 
     if not all(item in network.columns for item in [net_source_col, net_weight_col]):
         missing = list(set([net_source_col, net_weight_col]) - set(network.columns))
         raise ValueError('{0} column(s) are missing from the input network'.format(str(missing)))
 
-    if not all(item in metadata.columns for item in [meta_perturbation_col, metadata_sign_col]):
-        missing = list(set([meta_perturbation_col, metadata_sign_col]) - set(metadata.columns))
+    if not all(item in metadata.columns for item in [meta_perturbation_col, meta_sign_col]):
+        missing = list(set([meta_perturbation_col, meta_sign_col]) - set(metadata.columns))
         raise ValueError('{0} column(s) are missing from the input metadata'.format(str(missing)))
 
     network = network.rename(columns={net_source_col:'source', net_weight_col:'weight'})
-    metadata = metadata.rename(columns={meta_perturbation_col:'source', metadata_sign_col:'sign'})
+    metadata = metadata.rename(columns={meta_perturbation_col:'source', meta_sign_col:'sign'})
 
     #subset by TFs with GT available
     if filter_sources:
@@ -313,17 +318,16 @@ def format_benchmark_data(data, metadata, network, meta_perturbation_col = 'trea
 
     return data, metadata, network
 
-def performances(flat_data, sources, metric = 'roc', by = 'method', verbose = True, **kwargs):
-    bench = {}
-    kwargs['verbose'] = verbose
+def performances(flat_data, sources, metric = 'roc', by = 'method', subset = None, n_iter = 100, seed = 7, pi0 = 0.5, min_exp = 5, verbose = True):
 
+    bench = {}
     for method in flat_data.keys():
         if verbose: print('Calculating performance metrics for', method)
         if 'method' in by or 'sign' in by or 'all' in by:
-            perf = get_performance(flat_data[method], metric, prefix= method, **kwargs)
+            perf = get_performance(flat_data[method], metric, n_iter = n_iter, seed = seed, prefix= method, pi0=pi0)
             bench.update(perf)
         if ('source' in by or 'all' in by) and ('_positive' not in method and '_negative' not in method):
-            perf = get_source_performance(flat_data[method], sources[method], metric, prefix = method, **kwargs)
+            perf = get_source_performance(flat_data[method], sources[method], metric, subset = subset, n_iter = n_iter, seed = seed, prefix = method, pi0 = pi0, min_exp = min_exp)
             bench[method + '_bySource'] = perf
 
     return bench
@@ -374,7 +378,8 @@ def get_mean_performances(benchmark_dict):
     return mean_perf.reset_index()
 
 
-def run_benchmark(data, metadata, network, methods = None, metric = 'roc', meta_perturbation_col = 'target', net_source_col = 'source', filter_experiments= True, filter_sources = False, **kwargs):
+def run_benchmark(data, metadata, network, methods = None, metric = ['roc', 'calprc'], meta_perturbation_col = 'target', meta_sign_col = 'sign', net_source_col = 'source', net_weight_col = 'weight',
+filter_experiments= True, filter_sources = False, by = 'method', subset = None, min_exp = 5, pi0 = 0.5, n_iter = 100, seed = 7, verbose = True, **kwargs):
     """
     Benchmark methods or networks on a given set of perturbation experiments using activity inference with decoupler.
 
@@ -383,12 +388,21 @@ def run_benchmark(data, metadata, network, methods = None, metric = 'roc', meta_
         metadata (DataFrame): Metadata of the perturbation experiment containing the activated/inhibited targets and the sign of the perturbation
         network (DataFrame): Network in long format passed on to the decouple function
         methods (str or list of str, optional): List of methods to run. If none are provided use weighted top performers (mlm, ulm and wsum). To benchmark all methods set to "all". Defaults to None.
-        metric (str or list of str, optional): Performance metric(s) to compute. See the description of get_performance for more details. Defaults to 'roc'.
+        metric (str or list of str, optional): Performance metric(s) to compute. See the description of get_performance for more details. Defaults to ['roc', 'calprc'].
         meta_perturbation_col (str, optional): Column name in the metadata with perturbation targets. Defaults to 'target'.
+        meta_sign_col (str, optional): Column name in the metadata with sign of perturbation. Defaults to 'sign'.
         net_source_col (str, optional): Column name in network with source nodes. Defaults to 'source'.
+        net_weight_col (str, optional): Column name in network with interaction weight. Defaults to 'weight'.
         filter_experiments (bool, optional): Whether to filter out experiments whose perturbed targets cannot be infered from the given network. Defaults to True.
         filter_sources (bool, optional): Whether to fitler out sources in the network for which there are not perturbation experiments (reduces the number of predictions made by decouple). Defaults to False.
-        **kwargs: other arguments to pass on to get_performance (e.g. n_iter etc)
+        by (str or list of str, optional): How to compute/decompose the performance score: any of 'method', 'sign' or 'source'. Defaults to 'method'.
+        subset (str or list of str, optional): Subset of sources for which to compute an individual performance score. Requires by to contain 'source'. Sources with fewer than 'min_exp' experiments in the dataset are ignored Defaults to None
+        min_exp (int, optional): Minium number of perturbation experiments required to compute performance scores. Defaults to 5.
+        pi0 (float, optional): Reference ratio for calibrated metrics. Corresponds to the baseline/reference class inbalance to which to set the metric. Defaults to 0.5.
+        n_iter (int, optional): Number of iterations/subsampling used for the 'mcroc' and 'mcprc' metrics. Defaults to 100.
+        seed (int, otional): Random seed to use for subsampling for the 'mcroc' and 'mcprc' metrics. Defaults to 7.
+        verbose (bool, optional): Whether to print progession. Defaults to True.
+        **kwargs: Other arguments to pass on to decouple
 
     Returns:
         mean_perf: DataFrame containing the mean performance for each metric and for each method (mean has to be done for the mcroc and mcprc metrics)
@@ -396,16 +410,17 @@ def run_benchmark(data, metadata, network, methods = None, metric = 'roc', meta_
     """
 
     #format and filter the data, metadata and networks
-    data, metadata, network = format_benchmark_data(data, metadata, network, meta_perturbation_col=meta_perturbation_col,
-                                                    net_source_col=net_source_col, filter_experiments=filter_experiments, filter_sources=filter_sources)
+    data, metadata, network = format_benchmark_data(data, metadata, network, meta_perturbation_col=meta_perturbation_col, meta_sign_col = meta_sign_col,
+                                                    net_source_col=net_source_col, net_weight_col = net_weight_col, filter_experiments=filter_experiments, filter_sources=filter_sources)
 
+    
     #run prediction
-    res = dc.decouple(data, network, methods=methods, args = kwargs.get('args', {}), verbose = kwargs.get('verbose', True))
+    res = dc.decouple(data, network, methods=methods, verbose = verbose, **kwargs)
 
-    #
-    scores_gt, sources = get_scores_GT(res, metadata, by=kwargs.get('by', None), min_exp = kwargs.get('min_exp', 5))
+    #flatten and select predicitons before computing performance measures
+    scores_gt, sources = get_scores_GT(res, metadata, by= by, min_exp = min_exp)
 
-    bench = performances(scores_gt, sources, metric = metric, **kwargs)
+    bench = performances(scores_gt, sources, metric = metric, by = by, subset = subset, n_iter = n_iter, seed = seed, pi0 = pi0, min_exp = min_exp, verbose = verbose)
     
     mean_perfs = get_mean_performances(bench)
 
