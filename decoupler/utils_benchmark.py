@@ -269,12 +269,13 @@ def get_scores_GT(decoupler_results, metadata, by = None, min_exp = 5):
         flat_scores.append(df_scores)
 
         if by is not None and 'sign' in by:
-            pos_scores = df_scores[df_scores['GT'] >= 0].copy()
-            scores_names.append(m + '_positive')
-            flat_scores.append(pos_scores)
-            neg_scores = df_scores[df_scores['GT'] <= 0].copy()
-            flat_scores.append(neg_scores)
-            scores_names.append(m + '_negative')
+            keep = [meta['sign'] == 1, meta['sign'] == - 1]
+            sign = ['_positive', '_negative']
+
+            for ind, s in zip(keep, sign):
+                df = pd.DataFrame({'score': estimates[ind].to_numpy().flatten(), 'GT': gt[ind].to_numpy().flatten()})
+                flat_scores.append(df)
+                scores_names.append(m + s)
 
         for score, name in zip(flat_scores, scores_names):
             score['GT'] = abs(score['GT'])
