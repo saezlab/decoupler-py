@@ -215,13 +215,57 @@ def get_source_performance(data, sources, metric='roc', subset = None, n_iter = 
     masks, source_names = get_source_masks(data, sources, subset = subset, min_exp = min_exp)
 
     perf = {}
-    for trgt, name in zip(masks, source_names):
+    for src, name in zip(masks, source_names):
         if prefix is None:
             p = name
         else:
             p = prefix  + '_' + name
 
-        perf.update(get_performance(data.iloc[trgt.tolist()].reset_index(), metric, n_iter, seed, prefix = p, pi0=pi0))
+        perf.update(get_performance(data.iloc[src.tolist()].reset_index(), metric, n_iter, seed, prefix = p, pi0=pi0))
+
+    return perf
+
+def get_meta_masks(flat_data, metadata, column, min_exp = 5):
+
+    items = np.sort(metadata[column].unique())
+    n_features = flat_data.shape[0] / metadata.shape[0]
+
+    indexes = []
+    names = []
+    for item in items:
+        #get row numbers of all experiments corresponding to this level
+        ids = np.flatnonzero(metadata[column] == item)
+        if len(ids) >= min_exp:
+            #find indexes of flattened array from row number in original array
+            indexes.append(np.concatenate([np.arange(id * n_features, (id * n_features) + n_features, step = 1) for id in ids]))
+            names.append(str(item))
+        
+    return indexes, names
+
+def get_meta_performance(flat_data, metadata, columns, metric= 'roc', n_iter = 100, seed = 7, prefix= None, pi0=0.5, min_exp = 5):
+
+    if type(columns) != list:
+        columns = [columns]
+
+    #check that columns are in metadata
+    columns = list(set(metadata.columns).intersection(set(columns)))
+
+    if len(columns) == 0:
+        raise ValueError('None of the columns are in the metadata')
+
+    perf = {}
+    for column in columns:
+
+        masks, names = get_meta_masks(flat_data, metadata, column = column, min_exp = min_exp)
+
+        for slice, name in zip(masks, names):
+            name = column + ':' + name
+            if prefix is None:
+                p = name
+            else:
+                p = prefix  + '_' + name
+
+            perf.update(get_performance(flat_data.iloc[slice.tolist()].reset_index(), metric, n_iter, seed, prefix = p, pi0=pi0))
 
     return perf
 
@@ -241,16 +285,18 @@ def get_scores_GT(decoupler_results, metadata, by = None, min_exp = 5):
     Returns:
         scores_gt: dict of flattenend dataframes for each method
         targets: dict with target names for which activities were inferred for each method respectively
+        meta: filtered metadata, based on decoupler output
     """
     computed_methods = list(set([i.split('_')[0] for i in decoupler_results.keys()])) # get the methods that were able to be computed (filtering of methods done by decouple)
     scores_gt = {}
     targets = {}
+    metadatas = {}
 
     for m in computed_methods:
         # estimates = res[m + 'estimate']
         # pvals = res[m + 'pvals']
 
-        # remove experiments with no prediction for the perturbed TF
+        # remove experiments with no prediction for the perturbed TFs
         missing = list(set(metadata['source']) - set(decoupler_results[m + '_estimate'].columns))
         keep = [trgt not in missing for trgt in metadata['source'].to_list()]
         meta = metadata[keep]
@@ -288,9 +334,10 @@ def get_scores_GT(decoupler_results, metadata, by = None, min_exp = 5):
             if score['GT'].sum() > min_exp:
                 scores_gt[name] = score.reset_index()
                 targets[name] = list(estimates.columns)
+                metadatas[name] = meta
 
 
-    return scores_gt, targets
+    return scores_gt, targets, metadatas
 
 def format_benchmark_data(data, metadata, network, meta_perturbation_col = 'treatment', meta_sign_col = 'sign', net_source_col = 'source', net_weight_col = 'weight', filter_experiments = True, filter_sources = False):
 
@@ -318,7 +365,7 @@ def format_benchmark_data(data, metadata, network, meta_perturbation_col = 'trea
 
     return data, metadata, network
 
-def performances(flat_data, sources, metric = 'roc', by = 'method', subset = None, n_iter = 100, seed = 7, pi0 = 0.5, min_exp = 5, verbose = True):
+def performances(flat_data, sources, metadatas, columns = None, metric = 'roc', by = 'method', subset = None, n_iter = 100, seed = 7, pi0 = 0.5, min_exp = 5, verbose = True):
 
     bench = {}
     for method in flat_data.keys():
@@ -326,9 +373,13 @@ def performances(flat_data, sources, metric = 'roc', by = 'method', subset = Non
         if 'method' in by or 'sign' in by or 'all' in by:
             perf = get_performance(flat_data[method], metric, n_iter = n_iter, seed = seed, prefix= method, pi0=pi0)
             bench.update(perf)
-        if ('source' in by or 'all' in by) and ('_positive' not in method and '_negative' not in method):
+        if('source' in by or 'all' in by) and ('_positive' not in method and '_negative' not in method):
             perf = get_source_performance(flat_data[method], sources[method], metric, subset = subset, n_iter = n_iter, seed = seed, prefix = method, pi0 = pi0, min_exp = min_exp)
             bench[method + '_bySource'] = perf
+        if(columns is not None) and ('_positive' not in method and '_negative' not in method):
+            perf = get_meta_performance(flat_data[method], metadatas[method], columns, metric, n_iter = n_iter, seed = seed, prefix= method, pi0=pi0, min_exp = min_exp)
+            bench[method + '_byMeta'] = perf
+
 
     return bench
 
@@ -337,10 +388,14 @@ def get_mean_performances(benchmark_dict):
     perf_method = {}
     perf_bySource = {}
     perf_bySign = {}
+    perf_byMeta = {}
     for topkey, topvalue in benchmark_dict.items():
         if '_bySource' in topkey:
             for key, value in topvalue.items():
                 perf_bySource[key] = np.mean(value)
+        elif '_byMeta' in topkey:
+            for key, value in topvalue.items():
+                perf_byMeta[key] = np.mean(value)
         elif '_negative' in topkey or '_positive' in topkey:
             perf_bySign[topkey] = np.mean(topvalue)
         else:
@@ -354,7 +409,7 @@ def get_mean_performances(benchmark_dict):
         perf_method[['method','metric']] = perf_method['id'].str.split('_', expand=True)
         perf_method = perf_method.pivot(index='method', columns='metric', values='value').reset_index()
         perfs.append(perf_method)
-    
+
     if len(perf_bySign) > 0:
         perf_bySign = pd.DataFrame.from_dict(perf_bySign, orient='index').reset_index()
         perf_bySign.columns = ['id','value']
@@ -369,16 +424,29 @@ def get_mean_performances(benchmark_dict):
         perf_bySource = perf_bySource.pivot(index=['method','source'], columns='metric', values='value').reset_index()
         perfs.append(perf_bySource)
 
+    if len(perf_byMeta) > 0:
+        perf_byMeta = pd.DataFrame.from_dict(perf_byMeta, orient='index').reset_index()
+        perf_byMeta.columns = ['id','value']
+        perf_byMeta[['method','meta','metric']] = perf_byMeta['id'].str.split('_', expand=True)
+
+        perf_byMeta = perf_byMeta.pivot(index = ['method', 'meta'], columns = 'metric', values = 'value').reset_index()
+
+        perf_byMeta[['meta', 'level']] = perf_byMeta['meta'].str.split(':', expand=True)
+        factors = perf_byMeta['meta'].unique()
+
+        perf_byMeta = perf_byMeta.pivot(index=list(set(perf_byMeta.columns) -set(['meta', 'level'])), columns='meta', values='level').reset_index()
+
+        perf_byMeta = perf_byMeta.rename(dict(zip(factors ,'meta_' + factors)), axis = 1)
+        perfs.append(perf_byMeta)
+
+
     mean_perf = pd.concat(perfs)
-    if 'source' in mean_perf.columns:
-        mean_perf['source'] = mean_perf['source'].fillna('overall')
-    if 'sign' in mean_perf.columns:
-        mean_perf['sign'] = mean_perf['sign'].fillna('overall')
+    mean_perf = mean_perf.fillna('').reset_index()
 
-    return mean_perf.reset_index()
+    return mean_perf.drop(labels='index', axis = 1)
 
 
-def run_benchmark(data, metadata, network, methods = None, metric = ['roc', 'calprc'], meta_perturbation_col = 'target', meta_sign_col = 'sign', net_source_col = 'source', net_weight_col = 'weight',
+def run_benchmark(data, metadata, network, methods = None, metric = ['roc', 'calprc'], columns = None, meta_perturbation_col = 'target', meta_sign_col = 'sign', net_source_col = 'source', net_weight_col = 'weight',
 filter_experiments= True, filter_sources = False, by = 'method', subset = None, min_exp = 5, pi0 = 0.5, n_iter = 100, seed = 7, verbose = True, **kwargs):
     """
     Benchmark methods or networks on a given set of perturbation experiments using activity inference with decoupler.
@@ -389,13 +457,14 @@ filter_experiments= True, filter_sources = False, by = 'method', subset = None, 
         network (DataFrame): Network in long format passed on to the decouple function
         methods (str or list of str, optional): List of methods to run. If none are provided use weighted top performers (mlm, ulm and wsum). To benchmark all methods set to "all". Defaults to None.
         metric (str or list of str, optional): Performance metric(s) to compute. See the description of get_performance for more details. Defaults to ['roc', 'calprc'].
+        column (str or list of str, optional): Metadata columns that contain the levels for which you want individual performance decomposition. Defaults to None.
         meta_perturbation_col (str, optional): Column name in the metadata with perturbation targets. Defaults to 'target'.
         meta_sign_col (str, optional): Column name in the metadata with sign of perturbation. Defaults to 'sign'.
         net_source_col (str, optional): Column name in network with source nodes. Defaults to 'source'.
         net_weight_col (str, optional): Column name in network with interaction weight. Defaults to 'weight'.
         filter_experiments (bool, optional): Whether to filter out experiments whose perturbed targets cannot be infered from the given network. Defaults to True.
         filter_sources (bool, optional): Whether to fitler out sources in the network for which there are not perturbation experiments (reduces the number of predictions made by decouple). Defaults to False.
-        by (str or list of str, optional): How to compute/decompose the performance score: any of 'method', 'sign' or 'source'. Defaults to 'method'.
+        by (str or list of str, optional): How to compute/decompose the performance score: any of 'method' and/or 'source'. Defaults to 'method'.
         subset (str or list of str, optional): Subset of sources for which to compute an individual performance score. Requires by to contain 'source'. Sources with fewer than 'min_exp' experiments in the dataset are ignored Defaults to None
         min_exp (int, optional): Minium number of perturbation experiments required to compute performance scores. Defaults to 5.
         pi0 (float, optional): Reference ratio for calibrated metrics. Corresponds to the baseline/reference class inbalance to which to set the metric. Defaults to 0.5.
@@ -418,10 +487,10 @@ filter_experiments= True, filter_sources = False, by = 'method', subset = None, 
     res = dc.decouple(data, network, methods=methods, verbose = verbose, **kwargs)
 
     #flatten and select predicitons before computing performance measures
-    scores_gt, sources = get_scores_GT(res, metadata, by= by, min_exp = min_exp)
+    scores_gt, sources, metadatas = get_scores_GT(res, metadata, by= by, min_exp = min_exp)
 
-    bench = performances(scores_gt, sources, metric = metric, by = by, subset = subset, n_iter = n_iter, seed = seed, pi0 = pi0, min_exp = min_exp, verbose = verbose)
-    
+    bench = performances(scores_gt, sources, metadatas, columns = columns, metric = metric, by = by, subset = subset, n_iter = n_iter, seed = seed, pi0 = pi0, min_exp = min_exp, verbose = verbose)
+
     mean_perfs = get_mean_performances(bench)
 
     return mean_perfs, bench
