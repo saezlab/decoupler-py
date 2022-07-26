@@ -339,7 +339,10 @@ def get_scores_GT(decoupler_results, metadata, by = None, min_exp = 5):
 
     return scores_gt, targets, metadatas
 
-def format_benchmark_data(data, metadata, network, meta_perturbation_col = 'treatment', meta_sign_col = 'sign', net_source_col = 'source', net_weight_col = 'weight', filter_experiments = True, filter_sources = False):
+def format_benchmark_data(data, metadata, network, columns = None, meta_perturbation_col = 'treatment', meta_sign_col = 'sign', net_source_col = 'source', net_weight_col = 'weight', filter_experiments = True, filter_sources = False):
+
+    if metadata.shape[0] != data.shape[0]:
+        raise ValueError('The data and metadata do not have the same number of rows! ({0} vs. {1})\n'.format(data.shape[0], metadata.shape[0]))
 
     if not all(item in network.columns for item in [net_source_col, net_weight_col]):
         missing = list(set([net_source_col, net_weight_col]) - set(network.columns))
@@ -363,7 +366,27 @@ def format_benchmark_data(data, metadata, network, meta_perturbation_col = 'trea
         data = data[keep]
         metadata = metadata[keep]
 
-    return data, metadata, network
+    if columns is not None:
+        if type(columns) != list:
+            columns = [columns]
+
+        if meta_perturbation_col in columns:
+            columns.append('source')
+
+        if meta_sign_col in columns:
+            columns.append('sign')
+
+        #check that columns are in metadata
+        columns = list(set(metadata.columns).intersection(set(columns)))
+
+        if len(columns) == 0:
+            raise ValueError('None of the columns are in the metadata')
+
+        for c in columns:
+            if type(metadata[c][0]) == 'str':
+                metadata[c] = metadata[c].str.replace('[_,:]', ' ')
+
+    return data, metadata, network, columns
 
 def performances(flat_data, sources, metadatas, columns = None, metric = 'roc', by = 'method', subset = None, n_iter = 100, seed = 7, pi0 = 0.5, min_exp = 5, verbose = True):
 
@@ -479,7 +502,7 @@ filter_experiments= True, filter_sources = False, by = 'method', subset = None, 
     """
 
     #format and filter the data, metadata and networks
-    data, metadata, network = format_benchmark_data(data, metadata, network, meta_perturbation_col=meta_perturbation_col, meta_sign_col = meta_sign_col,
+    data, metadata, network, columns = format_benchmark_data(data, metadata, network, columns, meta_perturbation_col=meta_perturbation_col, meta_sign_col = meta_sign_col,
                                                     net_source_col=net_source_col, net_weight_col = net_weight_col, filter_experiments=filter_experiments, filter_sources=filter_sources)
 
     
