@@ -383,7 +383,7 @@ def format_benchmark_data(data, metadata, network, columns = None, meta_perturba
             raise ValueError('None of the columns are in the metadata')
 
         for c in columns:
-            if type(metadata[c][0]) == 'str':
+            if isinstance(metadata[c][0],str):
                 metadata[c] = metadata[c].str.replace('[_,:]', ' ')
 
     return data, metadata, network, columns
