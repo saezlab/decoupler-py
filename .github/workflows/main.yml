@@ -28,8 +28,7 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test and add coverage
       run: |
-        export NUMBA_DISABLE_JIT=1
-        pytest --cov decoupler
+        pytest --cov --disable-warnings decoupler
     - name: Upload coverage reports to Codecov
       run: |
         curl -Os https://uploader.codecov.io/latest/linux/codecov
@@ -59,4 +58,4 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test
       run: |
-        pytest .
+        pytest --disable-warnings .
