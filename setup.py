@@ -33,7 +33,8 @@ setup(
     },
     install_requires=["numba",
                       "tqdm",
-                      "anndata"],
+                      "anndata",
+                      "matplotlib"],
     packages=["decoupler"],
     python_requires=">=3.8",
     classifiers=[

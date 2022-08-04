@@ -18,6 +18,7 @@ from .decouple import decouple, run_consensus  # noqa: F401
 from .consensus import cons  # noqa: F401
 from .omnip import show_resources, get_resource, get_progeny, get_dorothea  # noqa: F401
 from .plotting import plot_volcano, plot_violins, plot_barplot  # noqa: F401
+from .utils_benchmark import format_benchmark_data, get_scores_GT, performances, get_mean_performances, run_benchmark # noqa: F401
 
 # External libraries go out of main setup
 try:
