@@ -6,7 +6,8 @@ Code to run methods simultaneously.
 import decoupler as dc
 from anndata import AnnData
 
-from .consensus import run_consensus
+from .consensus import cons
+from .pre import extract
 
 
 def get_wrappers(methods):
@@ -144,9 +145,9 @@ def decouple(mat, net, source='source', target='target', weight='weight', method
         if cns_metds is not None:
             if type(cns_metds) is not list:
                 cns_metds = [cns_metds]
-            res = run_consensus({k: results[k] for k in results if k in cns_metds})
+            res = cons({k: results[k] for k in results if k in cns_metds})
         else:
-            res = run_consensus(results)
+            res = cons(results)
 
         # Store obtained dfs
         for r in res:
@@ -158,3 +159,65 @@ def decouple(mat, net, source='source', target='target', weight='weight', method
             mat.obsm[r] = results[r]
     else:
         return results
+
+
+def run_consensus(mat, net, source='source', target='target', weight='weight', min_n=5, verbose=False, use_raw=True):
+    """
+    Consensus score from top methods.
+
+    This consensus score is calculated from the three top performer methods: `ulm`, `mlm` and `wsum_norm`.
+    For each of these methods, the obtained activities are transformed into z-scores, first for positive
+    values and then for negative ones. These two sets of z-score transformed activities are computed by
+    subsetting the values bigger or lower than 0, then by mirroring the selected values into their
+    opposite sign and finally calculating a classic z-score. This transformation ensures that values across
+    methods are comparable, and that they remain in their original sign (active or inactive). The final
+    consensus score is the mean across different methods. A p-value is then estimated from these using a
+    cumulative distribution function.
+
+    Parameters
+    ----------
+    mat : list, DataFrame or AnnData
+        List of [features, matrix], dataframe (samples x features) or an AnnData instance.
+    net : DataFrame
+        Network in long format.
+    source : str
+        Column name in net with source nodes.
+    target : str
+        Column name in net with target nodes.
+    weight : str
+        Column name in net with weights.
+    min_n : int
+        Minimum of targets per source. If less, sources are removed.
+    verbose : bool
+        Whether to show progress.
+    use_raw : bool
+        Use raw attribute of mat if present.
+
+    Returns
+    -------
+    estimate : DataFrame
+        Consensus scores. Stored in `.obsm['consensus_estimate']` if `mat` is AnnData.
+    pvals : DataFrame
+        Obtained p-values. Stored in `.obsm['consensus_pvals']` if `mat` is AnnData.
+    """
+
+    # Extract sparse matrix and array of features
+    m, r, c = extract(mat, use_raw=use_raw, verbose=verbose)
+
+    if verbose:
+        print('Running consensus.')
+
+    # Run top methods
+    res = decouple(mat=[m, r, c], net=net, source=source, target=target, weight=weight,
+                   min_n=min_n, verbose=verbose, use_raw=use_raw)
+
+    # Exctract
+    estimate, pvals = res['consensus_estimate'], res['consensus_pvals']
+
+    # AnnData support
+    if isinstance(mat, AnnData):
+        # Update obsm AnnData object
+        mat.obsm[estimate.name] = estimate
+        mat.obsm[pvals.name] = pvals
+    else:
+        return estimate, pvals

@@ -10,6 +10,33 @@ import pandas as pd
 from anndata import AnnData
 
 
+def check_mat(m, r, c, verbose=False):
+
+    # Check for empty features
+    msk_features = np.sum(m != 0, axis=0).A1 == 0
+    n_empty_features = np.sum(msk_features)
+    if n_empty_features > 0:
+        if verbose:
+            print("{0} features of mat are empty, they will be removed.".format(n_empty_features))
+        c = c[~msk_features]
+        m = m[:, ~msk_features]
+
+    # Check for empty samples
+    msk_samples = np.sum(m != 0, axis=1).A1 == 0
+    n_empty_samples = np.sum(msk_samples)
+    if n_empty_samples > 0:
+        if verbose:
+            print("{0} samples of mat are empty, they will be removed.".format(n_empty_samples))
+        r = r[~msk_samples]
+        m = m[~msk_samples]
+
+    # Check for non finite values
+    if np.any(~np.isfinite(m.data)):
+        raise ValueError("""mat contains non finite values (nan or inf), please set them to 0 or remove them.""")
+
+    return m, r, c
+
+
 def extract(mat, use_raw=True, verbose=False, dtype=np.float32):
     """
     Processes different input types so that they can be used downstream.
@@ -46,7 +73,7 @@ def extract(mat, use_raw=True, verbose=False, dtype=np.float32):
         if use_raw:
             if mat.raw is None:
                 raise ValueError("Received `use_raw=True`, but `mat.raw` is empty.")
-            m = mat.raw.X
+            m = csr_matrix(mat.raw.X)
             c = mat.raw.var.index.values
         else:
             m = csr_matrix(mat.X)
@@ -57,24 +84,8 @@ def extract(mat, use_raw=True, verbose=False, dtype=np.float32):
         raise ValueError("""mat must be a list of [matrix, samples, features], dataframe (samples x features) or an AnnData
         instance.""")
 
-    # Filter empty features (at least in 3 samples)
-    if m.shape[0] <= 3:
-        msk = np.sum(m != 0, axis=0).A1 != 0
-        n_empty_samples = m.shape[0]
-    else:
-        msk = np.sum(m != 0, axis=0).A1 >= 3
-        n_empty_samples = m.shape[0] - 3
-
-    n_empty_features = np.sum(~msk)
-    if n_empty_features > 0:
-        if verbose:
-            print("{0} features of mat are empty in {1} samples, they will be ignored.".format(n_empty_features,
-                                                                                               n_empty_samples))
-        m, c = m[:, msk], c[msk]
-
-    # Check for non finite values
-    if np.any(~np.isfinite(m.data)):
-        raise ValueError("""mat contains non finite values (nan or inf), please set them to 0 or remove them.""")
+    # Check mat for empty or not finite values
+    m, r, c = check_mat(m, r, c, verbose=verbose)
 
     # Sort genes
     msk = np.argsort(c)
@@ -227,3 +238,25 @@ def get_net_mat(net):
     X = X.values
 
     return sources.astype('U'), targets.astype('U'), X.astype(np.float32)
+
+
+def mask_features(mat, log=False, thr=1, use_raw=False):
+    if log:
+        thr = np.exp(thr) - 1
+    if type(mat) is list:
+        m, r, c = mat
+        m[m < thr] = 0.0
+        return [m, r, c]
+    elif type(mat) is pd.DataFrame:
+        mat.loc[:, :] = np.where(mat.values < thr, 0.0, mat.values)
+        return mat
+    elif type(mat) is AnnData:
+        if use_raw:
+            if mat.raw is None:
+                raise ValueError("Received `use_raw=True`, but `mat.raw` is empty.")
+            mat.raw.X[mat.raw.X < thr] = 0.0
+        else:
+            mat.X[mat.X < thr] = 0.0
+    else:
+        raise ValueError("""mat must be a list of [matrix, samples, features], dataframe (samples x features) or an AnnData
+        instance.""")

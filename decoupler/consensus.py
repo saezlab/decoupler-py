@@ -27,7 +27,7 @@ def z_score(sel):
 
 
 @nb.njit(nb.f4[:, :](nb.f4[:, :, :]), parallel=True, cache=True)
-def consensus(acts):
+def mean_z_scores(acts):
 
     # Make a copy not to overwrite
     x = acts.copy()
@@ -66,16 +66,11 @@ def consensus(acts):
     return cons
 
 
-def run_consensus(res):
+def cons(res):
     """
-    Consensus.
+    Consensus score between methods.
 
-    Computes a consensus score after running different methods with decouple. For each method, the obtained activities are
-    transformed into z-scores, first for positive values and then for negative ones. These two sets of z-score transformed
-    activities are computed by subsetting the values bigger or lower than 0, then by mirroring the selected values into their
-    opposite sign and finally calculating a classic z-score. This transformation ensures that values across methods are
-    comparable, and that they remain in their original sign (active or inactive). The final consensus score is the mean across
-    different methods.
+    Computes a consensus score from the results of `decouple`.
 
     Parameters
     ----------
@@ -94,7 +89,7 @@ def run_consensus(res):
                      np.all(np.isnan(res[k].values))]).astype(np.float32)
 
     # Compute mean z-scores
-    estimate = consensus(acts)
+    estimate = mean_z_scores(acts)
 
     # Compute p-vals
     pvals = norm.cdf(-np.abs(estimate)) * 2

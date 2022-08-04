@@ -5,7 +5,7 @@ def check_if_omnipath():
     try:
         import omnipath as op
     except Exception:
-        raise BaseException('omnipath is not installed. Please install it with: pip install omnipath')
+        raise ImportError('omnipath is not installed. Please install it with: pip install omnipath')
     return op
 
 
@@ -37,7 +37,9 @@ def get_progeny(organism='human', top=100):
 
     p = op.requests.Annotations.get(resources='PROGENy')
     p = p.set_index(['record_id', 'uniprot', 'genesymbol', 'entity_type', 'source', 'label'])
-    p = p.unstack('label').droplevel(axis=1, level=0).reset_index()
+    p = p.unstack('label').droplevel(axis=1, level=0)
+    p.columns = np.array(p.columns)
+    p = p.reset_index()
     p.columns.name = None
     p = p[['genesymbol', 'p_value', 'pathway', 'weight']]
     p = p[~p.duplicated(['pathway', 'genesymbol'])]
@@ -82,7 +84,9 @@ def get_resource(name):
     df = op.requests.Annotations.get(resources=name, entity_type="protein")
     df = df.set_index(['record_id', 'uniprot', 'genesymbol', 'entity_type', 'source', 'label'])
     df = df.unstack('label').droplevel(axis=1, level=0)
-    df = df.drop(columns=[name for name in df.index.names if name in df.columns]).reset_index()
+    df = df.drop(columns=[name for name in df.index.names if name in df.columns])
+    df.columns = list(df.columns)
+    df = df.reset_index()
     df = df.drop(columns=['record_id', 'uniprot', 'entity_type', 'source'])
     return df
 
@@ -177,5 +181,8 @@ def get_dorothea(organism='human', levels=['A', 'B', 'C'], weight_dict={'A': 1, 
 
     # Filter by levels
     do = do[np.isin(do['confidence'], levels)].sort_values('confidence').reset_index(drop=True)
+
+    if organism == 'mouse':
+        do['target'] = [t.lower().capitalize() for t in do['target']]
 
     return do

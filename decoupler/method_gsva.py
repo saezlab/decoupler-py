@@ -177,7 +177,7 @@ def run_gsva(mat, net, source='source', target='target', kcdf=False, mx_diff=Tru
     target : str
         Column name in net with target nodes.
     kcdf : bool
-        Wether to use a Gaussian kernel or not during the non-parametric estimation of the cumulative distribution function.
+        Whether to use a Gaussian kernel or not during the non-parametric estimation of the cumulative distribution function.
         By default no kernel is used (faster), to reproduce GSVA original behaviour in R set to True.
     mx_diff : bool
         Changes how the enrichment statistic (ES) is calculated. If True (default), ES is calculated as the difference between

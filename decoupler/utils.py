@@ -9,6 +9,7 @@ import pandas as pd
 from .pre import extract, rename_net, get_net_mat, filt_min_n
 
 from anndata import AnnData
+from tqdm import tqdm
 
 
 def m_rename(m, name):
@@ -166,34 +167,6 @@ def check_corr(net, source='source', target='target', weight='weight', mat=None,
     return corr
 
 
-def get_acts(adata, obsm_key):
-    """
-    Extracts activities as AnnData object.
-
-    From an AnnData object with source activities stored in `.obsm`, generates a new AnnData object with activities in `X`.
-    This allows to reuse many scanpy processing and visualization functions.
-
-    Parameters
-    ----------
-    adata : AnnData
-        Annotated data matrix with activities stored in .obsm.
-    obsm_key
-        `.osbm` key to extract.
-
-    Returns
-    -------
-    acts : AnnData
-        New AnnData object with activities in X.
-    """
-
-    obs = adata.obs
-    var = pd.DataFrame(index=adata.obsm[obsm_key].columns)
-    uns = adata.uns
-    obsm = adata.obsm
-
-    return AnnData(np.array(adata.obsm[obsm_key]), obs=obs, var=var, uns=uns, obsm=obsm)
-
-
 def get_toy_data(n_samples=24, seed=42):
     """
     Generate a toy `mat` and `net` for testing.
@@ -238,7 +211,7 @@ def get_toy_data(n_samples=24, seed=42):
     return mat, net
 
 
-def summarize_acts(acts, groupby, obs=None, var=None, mode='mean', min_std=1.0):
+def summarize_acts(acts, groupby, obs=None, mode='mean', min_std=1.0):
     """
     Summarizes activities obtained per group by their mean or median and removes features that do not change across samples.
 
@@ -250,8 +223,6 @@ def summarize_acts(acts, groupby, obs=None, var=None, mode='mean', min_std=1.0):
         Column name of obs to use for grouping.
     obs : DataFrame
         None or a data-frame with sample meta-data.
-    var : DataFrame
-        None or a data-frame with feature meta-data.
     mode : str
         Wheter to use mean or median to summarize.
     min_std : float
@@ -266,14 +237,15 @@ def summarize_acts(acts, groupby, obs=None, var=None, mode='mean', min_std=1.0):
 
     # Extract acts, obs and features
     if type(acts) is AnnData:
-        if obs is not None or var is not None:
-            raise ValueError('If acts is AnnData, obs and var need to be None.')
+        if obs is not None:
+            raise ValueError('If acts is AnnData, obs needs to be None.')
         obs = acts.obs[groupby].values.astype('U')
         features = acts.var.index.values.astype('U')
         acts = acts.X
     else:
         obs = obs[groupby].values.astype('U')
-        features = var.index.astype('U')
+        features = acts.columns.astype('U')
+        acts = acts.values
 
     # Get sizes
     groups = np.unique(obs)
@@ -285,10 +257,11 @@ def summarize_acts(acts, groupby, obs=None, var=None, mode='mean', min_std=1.0):
 
     for i in range(n_groups):
         msk = obs == groups[i]
+        f_msk = np.isfinite(acts[msk])
         if mode == 'mean':
-            summary[i] = np.mean(acts[msk], axis=0, where=np.isfinite(acts[msk]))
+            summary[i] = np.mean(acts[msk][f_msk], axis=0)
         elif mode == 'median':
-            summary[i] = np.median(acts[msk], axis=0)
+            summary[i] = np.median(acts[msk][f_msk], axis=0)
         else:
             raise ValueError('mode can only be either mean or median.')
 
@@ -336,74 +309,148 @@ def assign_groups(summary):
     return annot_dict
 
 
-def get_top_targets(logFCs, pvals, name, contrast, net, source='source', target='target', weight='weight', sign_thr=1,
-                    lFCs_thr=0.0):
+def p_adjust_fdr(p):
     """
-    Return significant target features for a given source and contrast.
+    Benjamini-Hochberg p-value correction for multiple hypothesis testing.
 
     Parameters
     ----------
-    logFCs : DataFrame
-        Data-frame of logFCs (contrasts x features).
-    pvals : DataFrame
-        Data-frame of p-values (contrasts x features).
-    name : str
-        Name of the source to plot.
-    contrast : str
-        Name of the contrast (row) to plot.
+    p : ndarray, list
+        Array or list of p-values to correct.
+
+    Returns
+    -------
+    corr_p : ndarray
+        Array of corrected p-values.
+    """
+
+    # Code adapted from: https://stackoverflow.com/a/33532498/8395875
+    p = np.asfarray(p)
+    by_descend = p.argsort()[::-1]
+    by_orig = by_descend.argsort()
+    steps = float(len(p)) / np.arange(len(p), 0, -1)
+    q = np.minimum(1, np.minimum.accumulate(steps * p[by_descend]))
+    corr_p = q[by_orig]
+
+    return corr_p
+
+
+def dense_run(func, mat, net, source='source', target='target', weight='weight', min_n=5, verbose=False, use_raw=True,
+              args={}, estimate_loc=0):
+    """
+    Run a method without zero values.
+
+    This function runs any method in decoupler (see `dc.show_methods()`) in a dense manner, meaning that all zero vales
+    are removed for each sample. Since this is sample dependent, parallelization is not available most of the time and
+    running times might increase. This function is useful to test what effect does null imputation do to the inference of
+    activities.
+
+    Parameters
+    ----------
+    func : function
+        Function to call a decoupler method, check `dc.show_methods()` for the full list.
+    mat : list, DataFrame or AnnData
+        List of [features, matrix], dataframe (samples x features) or an AnnData instance.
     net : DataFrame
-        Network data-frame.
+        Network in long format.
     source : str
         Column name in net with source nodes.
     target : str
         Column name in net with target nodes.
     weight : str
-        Column name in net with weights.
-    sign_thr : float
-        Significance threshold for p-values.
-    lFCs_thr : float
-        Significance threshold for logFCs.
+        Column name in net with weights (if needed).
+    min_n : int
+        Minimum of targets per source. If less, sources are removed.
+    verbose : bool
+        Whether to show progress.
+    use_raw : bool
+        Use raw attribute of mat if present.
+    args : dict
+        A dict of argument to pass to func.
+    estimate_loc : int
+        Which index is the desired estimate. Only relevant for methods that return more than
+        one estime like wmean, wsum or gsea.
 
     Returns
     -------
-    df : DataFrame
-        Dataframe containing the significant targets of a given source.
+    estimate : DataFrame
+        Estimate scores. Stored in `.obsm['*_estimate']` if `mat` is AnnData.
+    pvals : DataFrame
+        Obtained p-values. Stored in `.obsm['*_pvals']` if `mat` is AnnData.
     """
 
-    # Rename net
+    # Extract sparse matrix and array of features
+    m, r, c = extract(mat, use_raw=use_raw, verbose=verbose)
+    fname = func.__name__.split('run_')[1]
+
+    if verbose:
+        print('Dense run of {0} on mat with {1} samples and {2} potential targets.'.format(fname, m.shape[0], len(c)))
+
     net = rename_net(net, source=source, target=target, weight=weight)
 
-    # Find targets in net that match with logFCs
-    targets = net[net['source'] == name]['target'].values
-    msk = np.isin(logFCs.columns, targets)
+    acts, pvals = [], []
+    for i in tqdm(range(m.shape[0]), disable=not verbose):
 
-    # Build df
-    df = logFCs.loc[[contrast], msk].T.rename({contrast: 'logFC'}, axis=1)
-    df['pval'] = pvals.loc[[contrast], msk].T
-    df = df.sort_values('pval')
+        # Extract single sample
+        sample = m[i]
+        i_r = r[[i]]
 
-    # Filter by thresholds
-    df = df[(np.abs(df['logFC']) > lFCs_thr) & (np.abs(df['pval']) < sign_thr)]
+        # Remove zeros
+        idx = sample.indices
+        i_c = c[idx]
+        sample = sample[:, idx]
 
-    return df
+        # Run activity
+        row = [sample, i_r, i_c]
 
+        # Overwrite min_n, verbose and use_raw
+        args['min_n'], args['verbose'], args['use_raw'] = min_n, False, use_raw
 
-def format_contrast_results(logFCs, pvals):
-    """
-    Formats the results from get_contrast into a long format data-frame.
+        # Check if weight method or not
+        is_weighted = 'weight' in func.__code__.co_varnames
 
-    logFCs : DataFrame
-        Dataframe of logFCs (contrasts x features).
-    pvals : DataFrame
-        Dataframe of p-values (contrasts x features).
+        # Test if it can run
+        try:
+            sub_net = filt_min_n(i_c, net, min_n=min_n)
+            skip = False
+        except ValueError:
+            act = pd.DataFrame([], index=i_r)
+            pval = act.copy()
+            acts.append(act)
+            pvals.append(pval)
+            skip = True
+        if skip:
+            continue
 
-    Returns
-    -------
-    df : DataFrame
-        DataFrame in long format.
-    """
+        # Run method
+        if is_weighted:
+            act = func(mat=row, net=sub_net, source=source, target=target, weight=weight, **args)
+        else:
+            act = func(mat=row, net=sub_net, source=source, target=target, **args)
 
-    df = melt([logFCs, pvals]).rename({'sample': 'contrast', 'source': 'name', 'score': 'logFC'}, axis=1)
-    df = df[['contrast', 'name', 'logFC', 'pval']].sort_values('pval').reset_index(drop=True)
+        # Split
+        if type(act) is tuple:
+            act, pval = act[estimate_loc], act[-1]
+        else:
+            pval = act.copy()
+            pval.loc[:, :] = np.nan
 
-    return df
+        # Append
+        acts.append(act)
+        pvals.append(pval)
+
+    # Join
+    acts = pd.concat(acts, join='outer')
+    pvals = pd.concat(pvals, join='outer')
+
+    # Name
+    acts.name = '{0}_estimate'.format(fname)
+    pvals.name = '{0}_pvals'.format(fname)
+
+    # AnnData support
+    if isinstance(mat, AnnData):
+        # Update obsm AnnData object
+        mat.obsm[acts.name] = acts
+        mat.obsm[pvals.name] = pvals
+    else:
+        return acts, pvals

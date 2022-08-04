@@ -118,7 +118,9 @@ def run_aucell(mat, net, source='source', target='target', n_up=None, min_n=5, s
 
     # Set n_up
     if n_up is None:
-        n_up = np.round(0.05*len(c))
+        n_up = np.ceil(0.05*len(c))
+    else:
+        n_up = np.ceil(n_up)
     if not 0 < n_up:
         raise ValueError('n_up needs to be a value higher than 0.')
 

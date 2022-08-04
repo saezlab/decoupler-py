@@ -1,9 +1,9 @@
 decoupler - Ensemble of methods to infer biological activities
 ==============================================================
 
-|MainBuild| |Issues| |PyPIDownloads| |Docs|
+|MainBuild| |Issues| |PyPIDownloads| |Docs| |Codecov|
 
-.. |MainBuild| image:: https://github.com/saezlab/decoupler-py/actions/workflows/python-package.yml/badge.svg
+.. |MainBuild| image:: https://github.com/saezlab/decoupler-py/actions/workflows/main.yml/badge.svg
    :target: https://github.com/saezlab/decoupler-py/actions
    
 .. |Issues| image:: https://img.shields.io/github/issues/saezlab/decoupler-py.svg
@@ -14,6 +14,9 @@ decoupler - Ensemble of methods to infer biological activities
    
 .. |Docs| image:: https://readthedocs.org/projects/decoupler-py/badge/?version=latest
    :target: https://decoupler-py.readthedocs.io/en/latest/?badge=latest
+
+.. |Codecov| image:: https://codecov.io/gh/saezlab/decoupler-py/branch/main/graph/badge.svg?token=TM0P29KKN5
+   :target: https://codecov.io/gh/saezlab/decoupler-py
 
 **decoupler** is a package containing different statistical methods to extract biological activities from omics data within a unified framework. It allows to flexibly test any method with any prior knowledge resource and incorporates methods that take into account the sign and weight. It can be used with any omic, as long as its features can be linked to a biological process based on prior knowledge. For example, in transcriptomics gene sets regulated by a transcription factor, or in phospho-proteomics phosphosites that are targeted by a kinase.
 
@@ -32,6 +35,11 @@ Check out the `Usage <https://decoupler-py.readthedocs.io/en/latest/notebooks/us
 
 If you have any question or problem do not hesitate to open an `issue <https://github.com/saezlab/decoupler-py/issues>`_.
 
+scverse
+-------
+**decoupler** is part of the `scverse <https://scverse.org>`_ ecosystem, a collection of tools for single-cell omics data analysis in python.
+For more information check the link.
+
 License
 -------
 Footprint methods inside decoupler can be used for academic or commercial purposes, except ``viper`` which holds a non-commercial license. 
@@ -48,14 +56,22 @@ from omics data. Bioinformatics Advances. https://doi.org/10.1093/bioadv/vbac016
 .. toctree::
    :maxdepth: 1
    :hidden:
-   
+   :caption: Main
+
    installation
+   api
+   release_notes
+   reference
+
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+   :caption: Vignettes
+
    notebooks/usage
    notebooks/cell_annotation
    notebooks/progeny
    notebooks/dorothea
    notebooks/msigdb
    notebooks/pseudobulk
-   api
-   release_notes
-   reference
+   notebooks/bulk

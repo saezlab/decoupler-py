@@ -44,6 +44,8 @@ Running multiple methods:
    :toctree: generated
 
    decouple
+   cons
+   dense_run
    
 Utils:
 ------
@@ -61,6 +63,7 @@ Utils:
    get_contrast
    get_top_targets
    format_contrast_results
+   p_adjust_fdr
    
 Omnipath wrappers:
 ------------------
@@ -78,3 +81,5 @@ Plotting
    :toctree: generated
    
    plot_volcano
+   plot_violins
+   plot_barplot
