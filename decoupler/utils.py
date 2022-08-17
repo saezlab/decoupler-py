@@ -255,13 +255,15 @@ def summarize_acts(acts, groupby, obs=None, mode='mean', min_std=1.0):
     # Init empty mat
     summary = np.zeros((n_groups, n_features), dtype=np.float32)
 
+    acts[np.isinf(acts)] = np.nan
+
     for i in range(n_groups):
         msk = obs == groups[i]
-        f_msk = np.isfinite(acts[msk])
         if mode == 'mean':
-            summary[i] = np.mean(acts[msk][f_msk], axis=0)
+            temp = acts[msk]
+            summary[i] = np.mean(acts[msk], axis=0)
         elif mode == 'median':
-            summary[i] = np.median(acts[msk][f_msk], axis=0)
+            summary[i] = np.median(acts[msk], axis=0)
         else:
             raise ValueError('mode can only be either mean or median.')
 
