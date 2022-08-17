@@ -36,7 +36,7 @@ setup(
                       "anndata",
                       "matplotlib"],
     packages=["decoupler"],
-    python_requires=">=3.8",
+    python_requires=">=3.6",
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent"]
