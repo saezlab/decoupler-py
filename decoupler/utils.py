@@ -258,19 +258,18 @@ def summarize_acts(acts, groupby, obs=None, mode='mean', min_std=1.0):
     for i in range(n_groups):
         msk = obs == groups[i]
         f_msk = np.isfinite(acts[msk])
-        if mode == 'mean':
-            for i in range(n_groups):
-                msk = obs == groups[i]
-                grp_acts = acts[msk]
-                for j in range(n_features):
-                    ftr_acts = grp_acts[:, j]
-                    f_msk = np.isfinite(ftr_acts)
-                    if mode == 'mean':
-                        summary[i, j] = np.mean(ftr_acts[f_msk])
-                    elif mode == 'median':
-                        summary[i, j] = np.median(ftr_acts[f_msk])
-                    else:
-                        raise ValueError('mode can only be either mean or median.')
+        for i in range(n_groups):
+            msk = obs == groups[i]
+            grp_acts = acts[msk]
+            for j in range(n_features):
+                ftr_acts = grp_acts[:, j]
+                f_msk = np.isfinite(ftr_acts)
+                if mode == 'mean':
+                    summary[i, j] = np.mean(ftr_acts[f_msk])
+                elif mode == 'median':
+                    summary[i, j] = np.median(ftr_acts[f_msk])
+                else:
+                    raise ValueError('mode can only be either mean or median.')
 
     # Filter by min_std
     min_std = np.abs(min_std)
