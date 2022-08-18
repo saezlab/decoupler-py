@@ -61,7 +61,8 @@ def test_summarize_acts():
     obs = pd.DataFrame([['C01', 'C01', 'C02']], columns=estimate.index, index=['celltype']).T
     adata = AnnData(estimate, obs=obs)
     summarize_acts(estimate, obs=obs, groupby='celltype', mode='median', min_std=0)
-    summarize_acts(adata, groupby='celltype', mode='mean', min_std=0)
+    acts = summarize_acts(adata, groupby='celltype', mode='mean', min_std=0)
+    assert np.unique(acts.values).size > 2
     with pytest.raises(ValueError):
         summarize_acts(adata, 'celltype', obs, 'mean', 0)
 
