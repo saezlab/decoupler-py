@@ -4,7 +4,8 @@ import numpy as np
 from anndata import AnnData
 from ..utils import m_rename, melt, show_methods, check_corr, get_toy_data, summarize_acts
 from ..utils import assign_groups, p_adjust_fdr, dense_run
-from ..method_mlm import run_mlm, run_ora
+from ..method_mlm import run_mlm
+from ..method_ora import run_ora
 
 
 def test_m_rename():
