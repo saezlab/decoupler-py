@@ -84,7 +84,7 @@ def test_p_adjust_fdr():
 
 
 def test_denserun():
-    mat = pd.DataFrame([[1,2,3,4,5,6], [1,0,0,0,0,0]], columns=['G01','G02','G03','G06','G07','G08'])
+    mat = pd.DataFrame([[0,2,3,4,5,6], [1,0,0,0,0,0]], columns=['G01','G02','G03','G06','G07','G08'])
     net = pd.DataFrame([['T1', 'G01', 1], ['T1', 'G02', 1], ['T2', 'G06', 1], ['T2', 'G07', 0.5],
                         ['T3', 'G06', -0.5], ['T3', 'G07', -3]], columns=['source', 'target', 'weight'])
     acts, _ = dense_run(run_mlm, mat, net, min_n=2, verbose=True)
