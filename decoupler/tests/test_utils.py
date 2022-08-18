@@ -4,7 +4,7 @@ import numpy as np
 from anndata import AnnData
 from ..utils import m_rename, melt, show_methods, check_corr, get_toy_data, summarize_acts
 from ..utils import assign_groups, p_adjust_fdr, dense_run
-from ..method_mlm import run_mlm
+from ..method_mlm import run_mlm, run_ora
 
 
 def test_m_rename():
@@ -61,11 +61,13 @@ def test_summarize_acts():
                     columns=['T1', 'T2', 'T3'], index=['S01', 'S02', 'S03'])
     obs = pd.DataFrame([['C01', 'C01', 'C02']], columns=estimate.index, index=['celltype']).T
     adata = AnnData(estimate, obs=obs)
-    summarize_acts(estimate, obs=obs, groupby='celltype', mode='median', min_std=0)
-    acts = summarize_acts(adata, groupby='celltype', mode='mean', min_std=0)
+    acts = summarize_acts(estimate, obs=obs, groupby='celltype', mode='median', min_std=0)
+    acts = summarize_acts(adata, obs=None, groupby='celltype', mode='mean', min_std=0)
     assert np.unique(acts.values).size > 2
     with pytest.raises(ValueError):
-        summarize_acts(adata, 'celltype', obs, 'mean', 0)
+        summarize_acts(adata, groupby='celltype', obs=obs, mode='mean', min_std=0)
+    with pytest.raises(ValueError):
+        summarize_acts(adata, groupby='celltype', mode='asd', min_std=0)
 
 
 def test_assign_groups():
@@ -81,7 +83,17 @@ def test_p_adjust_fdr():
 
 
 def test_denserun():
-    mat = pd.DataFrame([[1,2,3,4,5,6]], columns=['G01','G02','G03','G06','G07','G08'])
+    mat = pd.DataFrame([[1,2,3,4,5,6], [1,0,0,0,0,0]], columns=['G01','G02','G03','G06','G07','G08'])
     net = pd.DataFrame([['T1', 'G01', 1], ['T1', 'G02', 1], ['T2', 'G06', 1], ['T2', 'G07', 0.5],
                         ['T3', 'G06', -0.5], ['T3', 'G07', -3]], columns=['source', 'target', 'weight'])
-    dense_run(run_mlm, mat, net, min_n=0)
+    acts, _ = dense_run(run_mlm, mat, net, min_n=2, verbose=True)
+    assert acts.shape[1] == 2
+    assert not np.all(np.isnan(acts.values[0]))
+    assert np.all(np.isnan(acts.values[1]))
+
+    mat = AnnData(mat)
+    dense_run(run_ora, mat, net, min_n=2, verbose=True, use_raw=False)
+    acts = mat.obsm['ora_estimate']
+    assert acts.shape[1] == 2
+    assert not np.all(np.isnan(acts.values[0]))
+    assert np.all(np.isnan(acts.values[1]))
