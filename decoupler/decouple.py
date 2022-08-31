@@ -104,7 +104,7 @@ def decouple(mat, net, source='source', target='target', weight='weight', method
         Column name in net with target nodes.
     weight : str
         Column name in net with weights.
-    methods : list, str
+    methods : list, str, None
         List of methods to run. If none are provided use weighted top performers (mlm, ulm and wsum). To run all methods set to
         "all".
     args : dict
