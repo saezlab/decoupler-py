@@ -9,14 +9,22 @@ import pandas as pd
 from .pre import extract, match, rename_net, get_net_mat, filt_min_n
 
 from anndata import AnnData
-from skranger.ensemble import RangerForestRegressor
 from tqdm import tqdm
 
 
-def fit_rf(net, sample, trees=100, min_leaf=5, n_jobs=-1, seed=42):
+def check_if_skranger():
+    try:
+        from skranger import ensemble
+    except Exception:
+        raise ImportError('skranger is not installed. Please install it with: pip install skranger')
+    return ensemble
+
+
+def fit_rf(sr, net, sample, trees=100, min_leaf=5, n_jobs=-1, seed=42):
 
     # Fit Random Forest
-    regr = RangerForestRegressor(n_estimators=trees, min_node_size=min_leaf, n_jobs=n_jobs, seed=seed, importance='impurity')
+    regr = sr.RangerForestRegressor(n_estimators=trees, min_node_size=min_leaf, n_jobs=n_jobs,
+                                    seed=seed, importance='impurity')
     regr.fit(net, sample)
 
     # Extract importances
@@ -25,13 +33,16 @@ def fit_rf(net, sample, trees=100, min_leaf=5, n_jobs=-1, seed=42):
 
 def mdt(mat, net, trees=10, min_leaf=5, n_jobs=4, seed=42, verbose=False):
 
+    # Check if skranger is installed
+    sr = check_if_skranger()
+
     # Init empty acts
     acts = np.zeros((mat.shape[0], net.shape[1]), dtype=np.float32)
 
     # For each sample
     for i in tqdm(range(mat.shape[0]), disable=not verbose):
         sample = mat[i].A[0]
-        acts[i] = fit_rf(net, sample, trees=trees, min_leaf=min_leaf, n_jobs=n_jobs, seed=seed)
+        acts[i] = fit_rf(sr, net, sample, trees=trees, min_leaf=min_leaf, n_jobs=n_jobs, seed=seed)
 
     return acts
 
