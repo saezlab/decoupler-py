@@ -27,31 +27,41 @@ def check_if_seaborn():
     return sns
 
 
+def check_if_adjustText():
+    try:
+        import adjustText as at
+    except Exception:
+        raise ImportError('adjustText is not installed. Please install it with: pip install adjustText')
+    return at
+
+
 def save_plot(fig, ax, save):
     if save is not None:
         if ax is not None:
-            fig.savefig(save)
+            fig.savefig(save, bbox_inches='tight')
         else:
             raise ValueError("ax is not None, cannot save figure.")
 
 
-def set_limits(vmin, vcenter, vmax, values):
+def filter_limits(df, sign_limit=None, lFCs_limit=None):
 
-    if vmin is None:
-        vmin = values.min()
+    # Define limits if not defined
+    if sign_limit is None:
+        sign_limit = np.inf
+    if lFCs_limit is None:
+        lFCs_limit = np.inf
 
-    if vmax is None:
-        vmax = values.max()
+    # Filter by absolute value limits
+    msk_sign = df['pvals'] < np.abs(sign_limit)
+    msk_lFCs = np.abs(df['logFCs']) < np.abs(lFCs_limit)
+    df = df.loc[msk_sign & msk_lFCs]
 
-    if vcenter is None:
-        vcenter = values.mean()
-
-    return vmin, vcenter, vmax
+    return df
 
 
 def plot_volcano(logFCs, pvals, contrast, name=None, net=None, top=5, source='source', target='target',
-                 weight='weight', sign_thr=0.05, lFCs_thr=0.5, figsize=(7, 5), dpi=100, ax=None,
-                 return_fig=False, save=None):
+                 weight='weight', sign_thr=0.05, lFCs_thr=0.5, sign_limit=None, lFCs_limit=None, figsize=(7, 5),
+                 dpi=100, ax=None, return_fig=False, save=None):
     """
     Plot logFC and p-values. If name and net are provided, it does the same for the targets of a selected source.
 
@@ -79,6 +89,10 @@ def plot_volcano(logFCs, pvals, contrast, name=None, net=None, top=5, source='so
         Significance threshold for p-values.
     lFCs_thr : float
         Significance threshold for logFCs.
+    sign_limit : float
+        Limit of p-values to plot in -log10.
+    lFCs_limit : float
+        Limit of logFCs to plot in absolute value.
     figsize : tuple
         Figure size.
     dpi : int
@@ -89,10 +103,22 @@ def plot_volcano(logFCs, pvals, contrast, name=None, net=None, top=5, source='so
         Whether to return a Figure object or not.
     save : str, None
         Path to where to save the plot. Infer the filetype if ending on {`.pdf`, `.png`, `.svg`}.
+
+    Returns
+    -------
+    fig : Figure, None
+        If return_fig, returns Figure object.
     """
 
     # Load plotting packages
     plt = check_if_matplotlib()
+    at = check_if_adjustText()
+
+    # Match dfs
+    index = logFCs.index.intersection(pvals.index)
+    columns = logFCs.columns.intersection(pvals.columns)
+    logFCs = logFCs.loc[index, columns]
+    pvals = pvals.loc[index, columns]
 
     # Transform sign_thr
     sign_thr = -np.log10(sign_thr)
@@ -118,6 +144,7 @@ def plot_volcano(logFCs, pvals, contrast, name=None, net=None, top=5, source='so
         df['logFCs'] = logFCs.loc[[contrast]].T
         df['pvals'] = -np.log10(pvals.loc[[contrast]].T)
         df = df[~np.any(pd.isnull(df), axis=1)]
+        df = filter_limits(df, sign_limit=sign_limit, lFCs_limit=lFCs_limit)
 
         if has_neg:
             vmin = -max_n
@@ -130,6 +157,7 @@ def plot_volcano(logFCs, pvals, contrast, name=None, net=None, top=5, source='so
         df = logFCs.loc[[contrast]].T.rename({contrast: 'logFCs'}, axis=1)
         df['pvals'] = -np.log10(pvals.loc[[contrast]].T)
         df = df[~np.any(pd.isnull(df), axis=1)]
+        df = filter_limits(df, sign_limit=sign_limit, lFCs_limit=lFCs_limit)
         df['weight'] = 'gray'
         df.loc[(df['logFCs'] >= lFCs_thr) & (df['pvals'] >= sign_thr), 'weight'] = '#D62728'
         df.loc[(df['logFCs'] <= -lFCs_thr) & (df['pvals'] >= sign_thr), 'weight'] = '#1F77B4'
@@ -150,6 +178,7 @@ def plot_volcano(logFCs, pvals, contrast, name=None, net=None, top=5, source='so
     texts = []
     for x, y, s in zip(signs['logFCs'], signs['pvals'], signs.index):
         texts.append(ax.text(x, y, s))
+    at.adjust_text(texts, arrowprops=dict(arrowstyle='-', color='black'), ax=ax)
 
     save_plot(fig, ax, save)
 
@@ -188,6 +217,11 @@ def plot_violins(mat, thr=None, log=False, use_raw=False, figsize=(7, 5), dpi=10
         Whether to return a Figure object or not.
     save : str, None
         Path to where to save the plot. Infer the filetype if ending on {`.pdf`, `.png`, `.svg`}.
+
+    Returns
+    -------
+    fig : Figure, None
+        If return_fig, returns Figure object.
     """
 
     # Load plotting packages
@@ -227,6 +261,26 @@ def plot_violins(mat, thr=None, log=False, use_raw=False, figsize=(7, 5), dpi=10
         return fig
 
 
+def set_limits(vmin, vcenter, vmax, values):
+
+    if vmin is None:
+        vmin = values.min()
+
+    if vmax is None:
+        vmax = values.max()
+
+    if vcenter is None:
+        vcenter = values.mean()
+
+    if vmin >= vcenter:
+        vmin = -vmax
+
+    if vcenter >= vmax:
+        vmax = -vmin
+
+    return vmin, vcenter, vmax
+
+
 def plot_barplot(acts, contrast, top=25, vertical=False, cmap='coolwarm', vmin=None, vcenter=0, vmax=None,
                  figsize=(7, 5), dpi=100, return_fig=False, save=None):
     """
@@ -258,15 +312,26 @@ def plot_barplot(acts, contrast, top=25, vertical=False, cmap='coolwarm', vmin=N
         Whether to return a Figure object or not.
     save : str, None
         Path to where to save the plot. Infer the filetype if ending on {`.pdf`, `.png`, `.svg`}.
+
+    Returns
+    -------
+    fig : Figure, None
+        If return_fig, returns Figure object.
     """
+
     # Load plotting packages
     sns = check_if_seaborn()
     plt = check_if_matplotlib()
     mpl = check_if_matplotlib(return_mpl=True)
 
+    # Check for non finite values
+    if np.any(~np.isfinite(acts)):
+        raise ValueError('Input acts contains non finite values.')
+
     # Process df
     df = acts.loc[[contrast]]
-
+    df.index.name = None
+    df.columns.name = None
     df = (df
 
           # Sort by absolute value and transpose
@@ -314,6 +379,314 @@ def plot_barplot(acts, contrast, top=25, vertical=False, cmap='coolwarm', vmin=N
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=divnorm)
     sm.set_array([])
     fig.colorbar(sm, ax=ax)
+
+    save_plot(fig, ax, save)
+
+    if return_fig and ax is None:
+        return fig
+
+
+def build_msks(df, groupby):
+
+    # Process groupby
+    if type(groupby) is str:
+        groupby = [groupby]
+
+    # Build msks
+    if groupby is None:
+        msks = [np.full(df.shape[0], True)]
+        cats = [None]
+    else:
+        msks = []
+        sub = df[groupby].values
+        cats = np.unique(sub)
+        for cat in cats:
+            msk = sub == cat
+            msks.append(msk)
+    return msks, cats
+
+
+def write_labels(ax, title, xlabel, ylabel, x, y):
+
+    if title is not None:
+        ax.set_title(title)
+    if xlabel is None:
+        xlabel = x.upper()
+    ax.set_xlabel(xlabel)
+    if ylabel is None:
+        ylabel = y.upper()
+    ax.set_ylabel(ylabel)
+
+
+def plot_metrics_scatter(df, x='auroc', y='auprc', groupby=None, show_text=True, show_legend=True, mirror_xy=True,
+                         figsize=(5, 5), dpi=100, ax=None, title=None, xlabel=None, ylabel=None, color='black',
+                         return_fig=False, save=None):
+    """
+    Plot scatter plot of metrics across two different axes.
+
+    Parameters
+    ----------
+    df : DataFrame
+        Performance metrics per method, obtained by running run_benchmark.
+    x : str
+        Name of the metric to plot in the x axis.
+    y : str
+        Name of the metric to plot in the y axis.
+    groupby : str
+        Metrics can be gruped by an extra categorical column.
+    show_text : bool
+        Whether to plot text labels.
+    show_legend : bool
+        Whether to plot the legend.
+    mirror_xy : bool
+        Whether to make x and y axis have the same values.
+    figsize : tuple
+        Figure size.
+    dpi : int
+        DPI resolution of figure.
+    ax : Axes, None
+        A matplotlib axes object. If None returns new figure.
+    title : str
+        Text to write as title of the plot.
+    xlabel : str
+        Text to write as xlabel of the plot.
+    ylabel : str
+        Text to write as ylabel of the plot.
+    color : str
+        Color to plot the dots.
+    return_fig : bool
+        Whether to return a Figure object or not.
+    save : str, None
+        Path to where to save the plot. Infer the filetype if ending on {`.pdf`, `.png`, `.svg`}.
+
+    Returns
+    -------
+    fig : Figure, None
+        If return_fig, returns Figure object.
+    """
+
+    # Load plotting packages
+    plt = check_if_matplotlib()
+    at = check_if_adjustText()
+
+    # Build msks and cats
+    msks, cats = build_msks(df, groupby)
+
+    # Plot for each group in groupby
+    fig = None
+    texts = []
+    for cat, msk in zip(cats, msks):
+
+        # Reformat df
+        sub = (
+            df[msk]
+            .groupby(['method', 'metric'])
+            .mean().reset_index()
+            .pivot(index='method', columns='metric', values='score').reset_index()
+        )
+
+        # Extract values
+        x_vals = sub[x].values
+        y_vals = sub[y].values
+        s_vals = sub['method'].values
+
+        # Plot
+        if ax is None:
+            fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=dpi)
+        ax.set_axisbelow(True)
+        ax.grid(zorder=0)
+        ax.scatter(x_vals, y_vals, zorder=1, label=cat)
+        if show_text:
+            text = [ax.text(x_vals[i], y_vals[i], s_vals[i], zorder=2) for i in range(len(x_vals))]
+            texts.extend(text)
+
+    # Add legend
+    if groupby is not None and show_legend:
+        ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), frameon=False)
+
+    # Adjust limits
+    if mirror_xy:
+        max_n = np.max([np.max(ax.get_xticks()), np.max(ax.get_yticks())])
+        min_n = np.min([np.min(ax.get_xticks()), np.min(ax.get_yticks())])
+        ax.set_xlim(min_n, max_n)
+        ax.set_ylim(min_n, max_n)
+    if show_text:
+        at.adjust_text(texts, arrowprops=dict(arrowstyle='-', color='gray'), ax=ax)
+
+    # Write labels
+    write_labels(ax, title, xlabel, ylabel, x, y)
+
+    save_plot(fig, ax, save)
+
+    if return_fig and ax is None:
+        return fig
+
+
+def plot_metrics_scatter_cols(df, col, x='auroc', y='auprc', groupby=None, n_cols=4, figsize=(10, 12), dpi=100,
+                              return_fig=False, save=None):
+    """
+    Extension of the function plot_metrics_scatter to group metrics by two categories at the same time.
+
+    Parameters
+    ----------
+    df : DataFrame
+        Performance metrics per method, obtained by running run_benchmark.
+    col : str
+        Name of the group column to group by. Each of its categories will become a subplot.
+    x : str
+        Name of the metric to plot in the x axis.
+    y : str
+        Name of the metric to plot in the y axis.
+    groupby : str
+        Name of the group column to additionaly group by. Each of its categories will appear in the legend.
+    n_cols : int
+        Number of columns per row.
+    figsize : tuple
+        Figure size.
+    dpi : int
+        DPI resolution of figure.
+    return_fig : bool
+        Whether to return a Figure object or not.
+    save : str, None
+        Path to where to save the plot. Infer the filetype if ending on {`.pdf`, `.png`, `.svg`}.
+
+    Returns
+    -------
+    fig : Figure, None
+        If return_fig, returns Figure object.
+    """
+
+    # Load plotting packages
+    plt = check_if_matplotlib()
+
+    # Get unique cats
+    cats = np.unique(df[col].values)
+    n_rows = int(np.ceil(cats.size / n_cols))
+
+    # Start figure
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=figsize, dpi=dpi, tight_layout=True, sharex=True, sharey=True)
+    axes = axes.ravel()
+
+    # Draw a subplot per cat
+    for i in range(axes.size):
+        ax = axes[i]
+        if i < len(cats):
+            cat = cats[i]
+            plot_metrics_scatter(df[df[col] == cat], x=x, y=y, groupby=groupby, show_text=False, show_legend=False,
+                                 mirror_xy=False, ax=ax, title=cat, xlabel='', ylabel='')
+        else:
+            ax.axis('off')
+
+    # Format legend
+    handles, labels = axes[len(cats) - 1].get_legend_handles_labels()
+    fig.legend(handles, labels, loc='center left', bbox_to_anchor=(1, 0.5), frameon=False)
+
+    save_plot(fig, ax, save)
+
+    if return_fig and ax is None:
+        return fig
+
+
+def plot_metrics_boxplot(df, metric, groupby=None, figsize=(5, 5), dpi=100, ax=None, title=None,
+                         xlabel=None, ylabel=None, return_fig=False, save=None, **kwargs):
+    """
+    Plot boxplots showing the distribution of scores between methods for a metric.
+
+    Parameters
+    ----------
+    df : DataFrame
+        Performance metrics per method, obtained by running run_benchmark.
+    metric : str
+        Name of metric to plot, must be either "mcauroc" or "mcauprc".
+    groupby : str
+        Metrics can be gruped by an extra categorical column.
+    figsize : tuple
+        Figure size.
+    dpi : int
+        DPI resolution of figure.
+    ax : Axes, None
+        A matplotlib axes object. If None returns new figure.
+    title : str
+        Text to write as title of the plot.
+    xlabel : str
+        Text to write as xlabel of the plot.
+    ylabel : str
+        Text to write as ylabel of the plot.
+    return_fig : bool
+        Whether to return a Figure object or not.
+    save : str, None
+        Path to where to save the plot. Infer the filetype if ending on {`.pdf`, `.png`, `.svg`}.
+    kwargs : dict
+        Other keyword arguments are passed through to seaborn.boxplot().
+
+    Returns
+    -------
+    fig : Figure, None
+        If return_fig, returns Figure object.
+    """
+
+    # Load plotting packages
+    sns = check_if_seaborn()
+    plt = check_if_matplotlib()
+
+    if metric not in ['mcauroc', 'mcauprc']:
+        raise ValueError('Argument metric must be either "mcauroc" or "mcauprc".')
+
+    # Subset metric
+    df = df[df['metric'] == metric]
+
+    # Plot
+    fig = None
+    if ax is None:
+        fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=dpi)
+    ax.set_axisbelow(True)
+    ax.grid(zorder=0)
+
+    if type(groupby) is str and groupby != 'method':
+
+        # Compute order
+        order = (
+            df
+            .groupby(['method', groupby])
+            .mean()
+            .reset_index()
+            .groupby('method')
+            .max()
+            .sort_values('score')
+            .index
+        )
+
+        sns.boxplot(x='method', y='score', hue=groupby, data=df, ax=ax, order=order, **kwargs)
+        ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), frameon=False)
+
+    elif groupby is None:
+
+        # Compute order
+        order = (
+            df
+            .groupby(['method'])
+            .mean()
+            .sort_values('score')
+            .index
+        )
+
+        sns.boxplot(x='method', y='score', data=df, ax=ax, order=order, **kwargs)
+
+    else:
+        raise ValueError('Argument groupby must be a string and not be "method".')
+
+    # Rotate xticks
+    ax.tick_params(axis='x', rotation=90)
+
+    # Write labels
+    if title is not None:
+        ax.set_title(title)
+    if xlabel is None:
+        xlabel = 'Methods'
+    ax.set_xlabel(xlabel)
+    if ylabel is None:
+        ylabel = metric.upper()
+    ax.set_ylabel(ylabel)
 
     save_plot(fig, ax, save)
 
