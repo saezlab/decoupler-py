@@ -4,6 +4,7 @@ Functions of general utility used in multiple places.
 """
 
 import numpy as np
+from numpy.random import default_rng
 import pandas as pd
 
 from .pre import extract, rename_net, get_net_mat, filt_min_n
@@ -17,8 +18,8 @@ def m_rename(m, name):
     m = m.rename({'index': 'sample', 'variable': 'source'}, axis=1)
 
     # Assign score or pval
-    if 'pval' in name:
-        m = m.rename({'value': 'pval'}, axis=1)
+    if 'pvals' in name:
+        m = m.rename({'value': 'pvals'}, axis=1)
     else:
         m = m.rename({'value': 'score'}, axis=1)
 
@@ -64,7 +65,7 @@ def melt(df):
                         pvals = df[methd+'_pvals'].reset_index().melt(id_vars='index')['value'].values
                     else:
                         pvals = np.full(m.shape[0], np.nan)
-                    m['pval'] = pvals
+                    m['pvals'] = pvals
 
                     res.append(m)
 
@@ -169,7 +170,7 @@ def check_corr(net, source='source', target='target', weight='weight', mat=None,
 
 def get_toy_data(n_samples=24, seed=42):
     """
-    Generate a toy `mat` and `net` for testing.
+    Generate a toy mat and net for testing.
 
     Parameters
     ----------
@@ -181,17 +182,19 @@ def get_toy_data(n_samples=24, seed=42):
     Returns
     -------
     mat : DataFrame
-        `mat` example.
+        mat example.
     net : DataFrame
-        `net` example.
+        net example.
     """
 
-    from numpy.random import default_rng
-
     # Network model
-    net = pd.DataFrame([['T1', 'G01', 1], ['T1', 'G02', 1], ['T1', 'G03', 0.7], ['T2', 'G06', 1], ['T2', 'G07', 0.5],
-                        ['T2', 'G08', 1], ['T3', 'G06', -0.5], ['T3', 'G07', -3], ['T3', 'G08', -1], ['T3', 'G11', 1]],
-                       columns=['source', 'target', 'weight'])
+    net = pd.DataFrame([
+        ['T1', 'G01', 1], ['T1', 'G02', 1], ['T1', 'G03', 0.7],
+        ['T2', 'G04', 1], ['T2', 'G06', -0.5], ['T2', 'G07', -3], ['T2', 'G08', -1],
+        ['T3', 'G06', 1], ['T3', 'G07', 0.5], ['T3', 'G08', 1],
+        ['T4', 'G05', 1.9], ['T4', 'G10', -1.5], ['T4', 'G11', -2], ['T4', 'G09', 3.1],
+        ['T5', 'G09', 0.7], ['T5', 'G10', 1.1], ['T5', 'G11', 0.1],
+    ], columns=['source', 'target', 'weight'])
 
     # Simulate two population of samples with different molecular values
     rng = default_rng(seed=seed)
@@ -258,12 +261,18 @@ def summarize_acts(acts, groupby, obs=None, mode='mean', min_std=1.0):
     for i in range(n_groups):
         msk = obs == groups[i]
         f_msk = np.isfinite(acts[msk])
-        if mode == 'mean':
-            summary[i] = np.mean(acts[msk][f_msk], axis=0)
-        elif mode == 'median':
-            summary[i] = np.median(acts[msk][f_msk], axis=0)
-        else:
-            raise ValueError('mode can only be either mean or median.')
+        for i in range(n_groups):
+            msk = obs == groups[i]
+            grp_acts = acts[msk]
+            for j in range(n_features):
+                ftr_acts = grp_acts[:, j]
+                f_msk = np.isfinite(ftr_acts)
+                if mode == 'mean':
+                    summary[i, j] = np.mean(ftr_acts[f_msk])
+                elif mode == 'median':
+                    summary[i, j] = np.median(ftr_acts[f_msk])
+                else:
+                    raise ValueError('mode can only be either mean or median.')
 
     # Filter by min_std
     min_std = np.abs(min_std)
@@ -454,3 +463,52 @@ def dense_run(func, mat, net, source='source', target='target', weight='weight',
         mat.obsm[pvals.name] = pvals
     else:
         return acts, pvals
+
+
+def shuffle_net(net, target=None, weight=None, seed=42, same_seed=True):
+    """
+    Shuffle network to make it random.
+
+    Shuffle a given net by targets, weight or both at the same time.
+    If only targets are shuffled, targets will change but the distirbution of weights for each footprint will be preserved.
+    If only weights are shuffled, targets will be the same but the distirbution of weights for each footprint will change.
+    If targets and weights are shuffled at the same time, both targets and weight distirbtion will change for each footprint.
+
+    Parameters
+    ----------
+    net : DataFrame
+        Network in long format.
+    target : str
+        Column name in net with target nodes.
+    weight : str
+        Column name in net with weights.
+    seed : int
+        Random seed to use.
+    same_seed : bool
+        Whether to share seed between targets and weights if both are not None.
+    """
+
+    # Make copy of net
+    rnet = net.copy()
+
+    # Shuffle
+    if target is None and weight is None:
+        raise ValueError('If target and weight are None, nothing is shuffled.')
+
+    if target is not None:
+        if target not in rnet.columns:
+            raise ValueError('Colum target="{0}" not in rnet. Specify a valid column name.'.format(target))
+        else:
+            rng = default_rng(seed=seed)
+            rng.shuffle(rnet[target].values)
+
+    if weight is not None:
+        if weight not in rnet.columns:
+            raise ValueError('Colum weight="{0}" not in rnet. Specify a valid column name.'.format(weight))
+        else:
+            if not same_seed:
+                seed = seed + 1
+            rng = default_rng(seed=seed)
+            rng.shuffle(rnet[weight].values)
+
+    return rnet
