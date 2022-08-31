@@ -108,6 +108,87 @@ def ora(mat, net, n_up_msk, n_bt_msk, n_background=20000, verbose=False):
     return pvls
 
 
+def get_ora_df(df, net, groupby, features, source='source', target='target', n_background=20000, min_n=5, verbose=False):
+    """
+    Wrapper to run ORA without an input matrix, instead it uses an input DataFrame in long format with one group columns
+    and the significant features in another. Useful for results of differential analysis where no mat is available.
+
+    Parameters
+    ----------
+    df : DataFrame
+        Long format DataFrame with groups and significant features.
+    net : DataFrame
+        Network in long format.
+    groupby : str
+        Column name in df with groups.
+    features : str
+        Column name in df with significant features.
+    source : str
+        Column name in net with source nodes.
+    target : str
+        Column name in net with target nodes.
+    n_background : int
+        Integer indicating the background size.
+    min_n : int
+        Minimum of targets per source. If less, sources are removed.
+    verbose : bool
+        Whether to show progress.
+
+    Returns
+    -------
+    pvals : DataFrame
+        Obtained p-values per group and source.
+    """
+
+    # Extract
+    df = df.copy()
+    cols = df.columns
+    if groupby not in cols:
+        raise ValueError('Column name "{0}" for groupby not found in df. Please specify a valid column.'.format(groupby))
+    if features not in cols:
+        raise ValueError('Column name "{0}" for features not found in df. Please specify a valid column.'.format(features))
+    c = np.unique(df[features].values)
+
+    # Transform net
+    net = rename_net(net, source=source, target=target, weight=None)
+    net = filt_min_n(c, net, min_n=min_n)
+
+    # Transform targets to indxs
+    table = {name: i for i, name in enumerate(c)}
+    net['target'] = [table[target] for target in net['target']]
+    df[features] = [table[target] for target in df[features]]
+
+    # Transform to groups
+    net = net.groupby('source')['target'].apply(lambda x: np.array(x, dtype=np.int32))
+    df = df.groupby(groupby)[features].apply(lambda x: np.array(x, dtype=np.int32))
+    srcs = net.index.values
+    grps = df.index.values
+
+    # Flatten net and get offsets
+    offsets = net.apply(lambda x: len(x)).values.astype(np.int32)
+    net = np.concatenate(net.values)
+
+    # Define starts to subset offsets
+    starts = np.zeros(offsets.shape[0], dtype=np.int32)
+    starts[1:] = np.cumsum(offsets)[:-1]
+
+    # Init empty
+    pvals = np.zeros((grps.size, srcs.size), dtype=np.float32)
+    for i in tqdm(range(grps.size), disable=not verbose):
+
+        # Extract idxs per group
+        idxs = df.iloc[i]
+
+        # Estimate pvals
+        pvals[i] = get_pvals(idxs, net, starts, offsets, n_background)
+
+    # Transform to df
+    pvals = pd.DataFrame(pvals, index=grps, columns=srcs)
+    pvals.name = 'ora_pvals'
+
+    return pvals
+
+
 def run_ora(mat, net, source='source', target='target', n_up=None, n_bottom=0, n_background=20000, min_n=5, seed=42,
             verbose=False, use_raw=True):
     """
