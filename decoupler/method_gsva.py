@@ -79,7 +79,7 @@ def density(mat, kcdf=False):
     return mat
 
 
-@nb.njit(nb.types.Tuple((nb.f4[:, :], nb.i4[:, :]))(nb.f4[:, :]), parallel=True)
+@nb.njit(nb.types.Tuple((nb.f4[:, :], nb.i4[:, :]))(nb.f4[:, :]), parallel=True, cache=True)
 def nb_get_D_I(mat):
     n = mat.shape[1]
     rev_idx = np.abs(np.arange(start=n, stop=0, step=-1, dtype=nb.f4) - n / 2)
@@ -92,7 +92,7 @@ def nb_get_D_I(mat):
     return mat, Idx
 
 
-@nb.njit(nb.f4(nb.f4[:], nb.i4[:], nb.i4, nb.i4[:], nb.i4[:], nb.i4, nb.f4))
+@nb.njit(nb.f4(nb.f4[:], nb.i4[:], nb.i4, nb.i4[:], nb.i4[:], nb.i4, nb.f4), cache=True)
 def ks_sample(D, Idx, n_genes, geneset_mask, fset, n_geneset, dec):
 
     sum_gset = 0.0
@@ -121,7 +121,7 @@ def ks_sample(D, Idx, n_genes, geneset_mask, fset, n_geneset, dec):
     return mx_value_sign
 
 
-@nb.njit(nb.f4[:](nb.f4[:, :], nb.i4[:, :], nb.i4[:]), parallel=True)
+@nb.njit(nb.f4[:](nb.f4[:, :], nb.i4[:, :], nb.i4[:]), parallel=True, cache=True)
 def ks_matrix(D, Idx, fset):
     n_samples, n_genes = D.shape
     n_geneset = fset.shape[0]
