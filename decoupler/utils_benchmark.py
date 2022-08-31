@@ -1,596 +1,374 @@
 """
-Utility functions to benchmark resources on known data
+Utility functions to benchmark methods and nets.
+Functions to benchmark methods and nets using perturbation experiments.
 """
 
-from statistics import mean
 import numpy as np
-import pandas as pd
-from sklearn.preprocessing import label_binarize
-import decoupler as dc
-from .utils_calibrated_metrics import average_precision as calibrated_average_precision
-
-from sklearn.metrics import roc_auc_score, average_precision_score
 from numpy.random import default_rng
-from tqdm import tqdm
-import matplotlib.pyplot as plt
+import pandas as pd
 
-def random_scores_GT(nexp=50, ncol = 4):
+from .utils import get_toy_data
+from .pre import match
+from .metrics import metric_auroc, metric_auprc, metric_mcauroc, metric_mcauprc
+
+
+def get_toy_benchmark_data(n_samples=24, seed=42, shuffle_perc=0.25):
     """
-    Generate random scores and groud-truth matrix, for testing
+    Generate a toy mat, net and obs for testing the benchmark pipeline.
 
-    Args:
-        nexp (int, optional): Number of rows/experiments. Defaults to 50.
-        ncol (int, optional): Number of classes/TFs/pathways. Defaults to 4.
-
-    Returns:
-        _type_: (DataFrame): Dataframe with scores and associated ground truth
-    """
-    df = np.random.randn(nexp, ncol)
-    ind = np.random.randint(0, df.shape[1] ,size=df.shape[0])
-    gt = np.zeros(df.shape)
-    gt[range(gt.shape[0]),ind] = 1
-
-    return pd.DataFrame(np.column_stack((df.flatten(), gt.flatten())), columns = ['score', 'GT'])
-
-"""
-Downsample ground truth vector 
-"""
-
-def down_sampling(y, seed=7, n = 100):
-    """
-    Downsampling of ground truth
-    
     Parameters
     ----------
-    
-    y: array
-        binary groundtruth vector 
-        
-    seed: arbitrary seed for random sampling
-    
-    n: number of iterations
-        
+    n_samples : int
+        Number of samples to generate.
+    seed : int
+        Random seed to use.
+    shuffle_perc : float
+        Percentage of the ground truth to randomize.
+
     Returns
     -------
-    ds_msk: list of downsampling masks for input vectors
+    mat : DataFrame
+        mat example.
+    net : DataFrame
+        net example.
+    obs : DataFrame
+        obs example.
     """
-    
-    msk = []
-    rng = default_rng(seed)
-    
-    # Downsampling
-    for i in range(n):
-        tn_index = np.where(y == 0)[0]
-        tp_index = np.where(y != 0)[0]
-        ds_array = rng.choice(tn_index, size=len(tp_index), replace=True)
-        ds_msk = np.hstack([ds_array, tp_index])
 
-        msk.append(ds_msk)
+    # Get toy data
+    mat, net = get_toy_data(n_samples=n_samples, seed=seed)
 
-    return msk
+    # Simulate 2 populations of perturbations
+    obs = pd.DataFrame(columns=['group'])
+    n_samples = mat.shape[0]
+    n = int(n_samples/2)
+    res = n_samples % 2
+    obs['perturb'] = [['T1', 'T2'] for _ in range(n)] + [['T3', 'T4'] for _ in range(n+res)]
+    obs['group'] = np.tile(['CA', 'CB'], n+res)[: obs['perturb'].size]
+    obs['sign'] = 1
+    obs.index = mat.index.copy()
 
-"""
-Compute AUC of ROC or PRC
-"""
+    # Shuffle a percentage of the samples
+    idxs = np.arange(mat.shape[0])
+    rng = default_rng(seed=seed)
+    idxs = rng.choice(idxs, int(idxs.size * shuffle_perc), replace=False)
+    r_idxs = rng.choice(idxs, idxs.size, replace=False)
+    mat.iloc[r_idxs] = mat.iloc[idxs].values
 
-def get_auc(x, y, mode, pi0 = None):
+    return mat, net, obs
+
+
+def show_metrics():
     """
-    Computes AUROC for each label
-    
-    Parameters
-    ----------
-    
-    x: array
-        binary groundtruth vector
-        
-    y: array (flattened)
-        vector of continuous values
+    Shows available evaluation metrics.
+    The first column correspond to the function name in decoupler and the second to the metrics's full name.
 
-    pi0: float
-        Reference ratio for calibrated metrics. Corresponds to the baseline/reference class inbalance to which to set the metric. Defaults to None.
-        
-        
     Returns
     -------
-    auc: value of auc
+    df : DataFrame
+        Dataframe with the available metrics.
     """
 
-    if mode == "roc":
-        auc = roc_auc_score(x, y) 
-    elif mode == "prc":
-        auc = average_precision_score(x, y)
-    elif mode == 'calprc':
-        auc = calibrated_average_precision(x, y_pred= y, pi0=pi0)
-    elif mode == 'ci':
-        auc = x.sum()/x.size
-    else: 
-        raise ValueError("mode can only be roc or prc")
-    return auc
+    import decoupler
 
-def get_source_masks(long_data, sources, subset = None, min_exp = 5):
-    """
-    Generates a list of indices of a DataFrame that correspond to prediction scores and associated ground-truth for each source
+    df = []
+    lst = dir(decoupler)
+    for m in lst:
+        if m.startswith('metric_'):
+            name = getattr(decoupler, m).__doc__.split('\n')[1].lstrip()
+            df.append([m, name])
+    df = pd.DataFrame(df, columns=['Function', 'Name'])
 
-    Args:
-        long_data (DataFrame): DataFrame with a 'score' and 'GT' column.
-        sources (list): List of sources (have to be in correct order) for which there are entries in long_data.
-        subset (list, optional): A subset of the sources for which to make masks. If None, then the masks will be made for all targets. Defaults to None.
-        min_exp (int, optional): The minimum number of perturbation experiments required to compute an individual source performance score. Defaults to 5.
+    return df
 
-    Returns:
-        target_ind: List of data indices for each target in the targets object
-        target_names : Target name corresponding to the elements in target_ind. Elements in subset are filtered and put in same order as in targets.
-    """
 
-    if long_data.shape[0] < len(sources):
-        raise ValueError('The data given is smaller than the number of targets')
-    elif long_data.shape[0] % len(sources) != 0:
-        raise ValueError('The data is likely misshapen: the number of rows cannot be divided by the number of targets')
+def validate_metrics(metrics):
 
-    if subset is not None:
-        iterateover = np.argwhere(np.in1d(sources, subset)).flatten().tolist()
-        source_names = [sources[i] for i in iterateover]
+    # Check if not list
+    if type(metrics) is str:
+        metrics = [metrics]
+
+    # Retrieve available metrics
+    a_metrics = [metric.split('metric_')[1] for metric in show_metrics()['Function']]
+
+    # Check if given metrics exist
+    for metric in metrics:
+        if metric not in a_metrics:
+            raise ValueError("""Metric {0} not available, please run show_metrics() to see the list of available
+            metrics.""".format(metric))
+
+
+def compute_metric(act, grt, metric, pi0=0.5, n_iter=1000, seed=42):
+
+    if metric == 'auroc':
+        scores = metric_auroc(grt, act)
+    elif metric == 'auprc':
+        scores = metric_auprc(grt, act, pi0=pi0)
+    elif metric == 'mcauroc':
+        scores = metric_mcauroc(grt, act, n_iter=n_iter, seed=seed)
+    elif metric == 'mcauprc':
+        scores = metric_mcauprc(grt, act, n_iter=n_iter, seed=seed)
+
+    # Output must be list
+    if type(scores) is not np.ndarray:
+        scores = np.array([scores])
+
+    return scores
+
+
+def append_by_experiment(df, grpby_i, grp, act, grt, srcs, mthds, metrics, min_exp=5, pi0=0.5,
+                         n_iter=1000, seed=42):
+
+    # Flatten act by method
+    act, grt = act.reshape(-1, act.shape[-1]).T, grt.flatten()
+
+    # Compute Class Imbalance
+    ci = np.sum(grt) / len(grt)
+
+    # Compute per method and metric
+    for m in range(len(mthds)):
+        mth = mthds[m]
+        for metric in metrics:
+            scores = compute_metric(act[m], grt, metric, pi0=pi0, n_iter=n_iter, seed=seed)
+            for score in scores:
+                row = [grpby_i, grp, None, mth, metric, score, ci]
+                df.append(row)
+
+
+def append_by_source(df, grpby_i, grp, act, grt, srcs, mthds, metrics, min_exp=5, pi0=0.5,
+                     n_iter=1000, seed=42):
+
+    # Remove sources with less than min_exp
+    src_msk = np.sum(grt > 0., axis=0) >= min_exp
+    act, grt = act[:, src_msk, :], grt[:, src_msk]
+    srcs = srcs[src_msk]
+
+    # Compute per source, method and metric
+    for s in range(len(srcs)):
+        src = srcs[s]
+        tmp_grt = grt[:, s]
+
+        # Compute Class Imbalance
+        ci = np.sum(tmp_grt) / len(tmp_grt)
+
+        for m in range(len(mthds)):
+            mth = mthds[m]
+            tmp_act = act[:, s, m]
+            for metric in metrics:
+                scores = compute_metric(tmp_act, tmp_grt, metric, pi0=pi0, n_iter=n_iter, seed=seed)
+                for score in scores:
+                    row = [grpby_i, grp, src, mth, metric, score, ci]
+                    df.append(row)
+
+
+def append_metrics_scores(df, grpby_i, grp, act, grt, srcs, mthds, metrics, by, min_exp=5, pi0=0.5,
+                          n_iter=1000, seed=42):
+
+    if not min_exp > 0:
+        raise ValueError('Argument min_exp must be bigger than 0.')
+
+    if by == 'experiment':
+        append_by_experiment(df, grpby_i, grp, act, grt, srcs, mthds, metrics, min_exp=min_exp, pi0=pi0,
+                             n_iter=n_iter, seed=seed)
+
+    elif by == 'source':
+        append_by_source(df, grpby_i, grp, act, grt, srcs, mthds, metrics, min_exp=min_exp, pi0=pi0,
+                         n_iter=n_iter, seed=seed)
+
+
+def mirror_acts(acts, grts):
+
+    for i in range(acts.shape[0]):
+        grt_i = grts[i]
+
+        # Check that exps don't have both signs of perturbations
+        sign = np.unique(grt_i[grt_i != 0])
+        if sign.size > 1:
+            raise ValueError('Experiments with sources perturbed in both signs (-1 and +1) are not supported.')
+
+        # Mirror acts
+        acts[i] = acts[i] * sign
+
+    # Set grts to 1
+    grts[grts != 0.] = 1.
+
+
+def build_acts_tensor(res):
+
+    # Get unique methods
+    mthds = [m for m in res.keys() if '_pvals' not in m]
+
+    # Extract dimensions
+    exps = res[mthds[0]].index.values
+    srcs = res[mthds[0]].columns.values
+
+    # Build acts tensor and sort by exps and srcs
+    n_exp, n_src, n_mth = len(exps), len(srcs), len(mthds)
+    acts = np.zeros((n_exp, n_src, n_mth))
+    for i, m in enumerate(mthds):
+        acts[:, :, i] = res[m].values
+    msk = np.argsort(srcs)
+    acts = acts[:, msk]
+    srcs = srcs[msk]
+    msk = np.argsort(exps)
+    exps = exps[msk]
+
+    return acts, exps, srcs, mthds
+
+
+def build_grts_mat(obs, exps, srcs):
+
+    # Explode nested perturbs and pivot into mat
+    grts = obs.explode('perturb').pivot(columns='perturb', values='sign').fillna(0.)
+
+    # Sort by columns (srcs) and by rows (exps)
+    msk = np.argsort(grts.columns)
+    grts = grts.loc[exps].iloc[:, msk]
+
+    # Remove cols that are not in res srcs
+    msk = np.isin(grts.columns.values, srcs)
+    grts = grts.loc[:, msk]
+
+    return grts
+
+
+def unique_obs(col):
+
+    # Gets unique categories from a column with both lists and elements.
+
+    # Init empty cats
+    cats = set()
+
+    for row in col:
+
+        # Check if col elements are lists
+        if type(row) is list:
+            for r in row:
+                if r not in cats:
+                    cats.add(r)
+        else:
+            if row not in cats:
+                cats.add(row)
+
+    return np.sort(list(cats))
+
+
+def build_msks_tensor(obs, groupby):
+
+    # If groupby
+    if groupby is not None:
+
+        # Init empty lsts
+        msks = []
+        grps = []
+        grpbys = []
+        for grpby_i in groupby:
+
+            # Handle nested groupbys
+            if type(grpby_i) is list:
+                grpby_i = np.sort(grpby_i)
+                grpby_name = '|'.join(grpby_i)
+                if grpby_i.size > 1:
+                    obs[grpby_name] = obs[grpby_i[0]].str.cat(obs[grpby_i[1:]], sep='|')
+                grpby_i = grpby_name
+
+            # Find msk in obs based on groupby
+            grps_j = unique_obs(obs[grpby_i].values)
+            msk_i = []
+            grps_i = []
+            for grp in grps_j:
+                m = np.array([grp in lst for lst in obs[grpby_i]])
+                msk_i.append(m)
+                grps_i.append(grp)
+
+            # Append
+            msks.append(msk_i)
+            grpbys.append(grpby_i)
+            grps.append(grps_i)
+
     else:
-        iterateover = range(len(sources))
-        source_names = sources
-
-    source_ind = []
-    names = []
-    #create indexes
-    for id, name in zip(iterateover, source_names):
-        ind = np.arange(id, long_data.shape[0], len(sources))
-        # check that there is at least min_exp perturbations
-        if long_data.iloc[ind,:]['GT'].sum() >= min_exp:
-            source_ind.append(ind)
-            names.append(name)
-
-    return source_ind, names
-
-def get_performance(data, metric = 'roc', n_iter = 100, seed = 42, prefix = None, pi0 = 0.5):
-    """
-    Compute binary classifier performance
-
-    Args:
-        data (DataFrame): DataFrame with a 'score' and 'GT' column. 'GT' column contains groud-truth ( e.g. 0, 1). 'score' can be continuous or same as 'GT'
-        metric (str or list of str, optional): Which metric(s) to use. Currently implemeted methods are: 'mcroc', 'mcprc', 'roc', 'prc', 'calprc' and 'ci'. Defaults to 'roc'.
-        n_iter (int, optional): Number of iterations for the undersampling procedures for the 'mcroc' and 'mcprc' metrics. Defaults to 100.
-        seed (int, optional): Seed used to generate the undersampling for the 'mcroc' and 'mcprc' metrics. Defaults to 42.
-        prefix (str, optional): Added as prefix to the performance metric key in the output dictionary e.g. 'mlm_roc' if equal to 'mlm'. Defaults to None.
-        pi0 (float, optional): Reference ratio used to calculate calibrated metrics. Must be between 0 and 1. Defaults to 0.5.
-
-    Returns:
-        perf: Dict of prediction performance(s) on the given data. 'mcroc' and 'mcprc' metrics will return the values for each sampling. Other methods return a single value.
-    """
-
-    available_metrics = ['mcroc', 'mcprc', 'roc', 'prc', 'calprc', 'ci']
-    metrics = [available_metrics[i] for i in np.argwhere(np.in1d(available_metrics, metric)).flatten().tolist()]
-
-    if len(metrics) == 0:
-        raise ValueError('None of the performance metrics given as parameter have been implemented')
-
-    if 'mcroc' in metrics or 'mcprc' in metrics:
-        masks = down_sampling(y = data['GT'].values, seed=seed, n=n_iter)
-
-    perf = {}
-    for met in metrics:
-        if met == 'mcroc' or met == 'mcprc':
-            # Compute AUC for each mask (with equalised class priors)
-            aucs = []
-            for mask in masks:
-                auc = get_auc(x = data['GT'][mask],
-                            y = data['score'][mask],
-                            mode = met[2:])
-                aucs.append(auc)
-
-        elif met == 'roc' or met == 'prc' or met == 'calprc' or met == 'ci':
-            # Compute AUC on the whole (unequalised class priors) data
-            aucs = get_auc(x = data['GT'], y = data['score'], mode = met, pi0 = pi0)
-        
-        if prefix is None:
-            perf[met] = aucs
-        else:
-            perf[prefix + '_' + met] = aucs
-
-    return perf
-
-def get_source_performance(data, sources, metric='roc', subset = None, n_iter = 100, seed = 42, prefix = None, pi0 = 0.5, min_exp = 5):
-    """
-    Compute binary classifier performance for each source or susbet of sources
-
-    Args:
-        data (DataFrame): DataFrame with a 'score' and 'GT' column. 'GT' column contains groud-truth ( e.g. 0, 1). 'score' can be continuous or same as 'GT'
-        targets (list of str): List of targets (have to be in correct order) for which there are entries in data.
-        metric (str, or list of str optional): Which metrics to use. Currently implemeted methods are: 'mcroc', 'mcprc', 'roc', 'prc'. Defaults to 'mcroc'.
-        subset (list of str, optional): A subset of the targets for which to compute performance. If None, then the performance will be calculated for all targets. Defaults to None.
-        n_iter (int, optional): Number of iterations for the undersampling procedures for the 'mcroc' and 'mcprc' metrics. Defaults to 100.
-        seed (int, optional):  Seed used to generate the undersampling for the 'mcroc' and 'mcprc' metrics. Defaults to 42.
-        prefix (str, optional): Added as prefix to the output dictionary. Defaults to 100.
-        pi0 (float, optional): Reference ratio for calibrated metrics. Corresponds to the baseline/reference class inbalance to which to set the metric. Should be between 0 and 1. Defaults to 0.5.
-        min_exp (int, optional): Minium number of perturbation experiments required to compute performance scores. Defaults to 5.
-
-    Returns:
-        perf : Dict of prediction performance(s) for each target or subset of targets. 'mcroc' and 'mcprc' metrics will return the values for each sampling. Other methods return a single value.
-    """
-
-    masks, source_names = get_source_masks(data, sources, subset = subset, min_exp = min_exp)
-
-    perf = {}
-    for src, name in zip(masks, source_names):
-        if prefix is None:
-            p = name
-        else:
-            p = prefix  + '_' + name
-
-        perf.update(get_performance(data.iloc[src.tolist()].reset_index(), metric, n_iter, seed, prefix = p, pi0=pi0))
-
-    return perf
-
-def get_meta_masks(flat_data, metadata, column, min_exp = 5):
-
-    items = np.sort(metadata[column].unique())
-    n_features = flat_data.shape[0] / metadata.shape[0]
-
-    indexes = []
-    names = []
-    for item in items:
-        #get row numbers of all experiments corresponding to this level
-        ids = np.flatnonzero(metadata[column] == item)
-        if len(ids) >= min_exp:
-            #find indexes of flattened array from row number in original array
-            indexes.append(np.concatenate([np.arange(id * n_features, (id * n_features) + n_features, step = 1) for id in ids]))
-            names.append(str(item))
-        
-    return indexes, names
-
-def get_meta_performance(flat_data, metadata, columns, metric= 'roc', n_iter = 100, seed = 7, prefix= None, pi0=0.5, min_exp = 5):
-
-    if type(columns) != list:
-        columns = [columns]
-
-    #check that columns are in metadata
-    columns = list(set(metadata.columns).intersection(set(columns)))
-
-    if len(columns) == 0:
-        raise ValueError('None of the columns are in the metadata')
-
-    perf = {}
-    for column in columns:
+        msks = None
+        grpbys = None
+        grps = None
 
-        masks, names = get_meta_masks(flat_data, metadata, column = column, min_exp = min_exp)
-
-        for slice, name in zip(masks, names):
-            name = column + ':' + name
-            if prefix is None:
-                p = name
-            else:
-                p = prefix  + '_' + name
-
-            perf.update(get_performance(flat_data.iloc[slice.tolist()].reset_index(), metric, n_iter, seed, prefix = p, pi0=pi0))
-
-    return perf
-
-def get_scores_GT(decoupler_results, metadata, by = None, min_exp = 5):
-    """
-
-    Convert decouple output to flattenend vectors and combine with GT information
-
-    Args:
-        decoupler_results (dict): Output of decouple
-        metadata (DataFrame): Metadata of the perturbation experiment containing the activated/inhibited targets and the sign of the perturbation
-        meta_perturbation_col (str, optional): Column name in the metadata with perturbation targets. Defaults to 'target'.
-        by (str or list of str, optional): How to decompose performance. By 'sign' will also subselect scores of activating/inhibiting perturbations specifically, in addition to the overall scores. Defaults to None.
-        min_exp (int, optional): Min number of perturbation experiments in order to compute score. Defaults to 5.
-
-
-    Returns:
-        scores_gt: dict of flattenend dataframes for each method
-        targets: dict with target names for which activities were inferred for each method respectively
-        meta: filtered metadata, based on decoupler output
-    """
-    computed_methods = list(set([i.split('_')[0] for i in decoupler_results.keys()])) # get the methods that were able to be computed (filtering of methods done by decouple)
-    scores_gt = {}
-    targets = {}
-    metadatas = {}
+    return msks, grpbys, grps
 
-    for m in computed_methods:
-        # estimates = res[m + 'estimate']
-        # pvals = res[m + 'pvals']
 
-        # remove experiments with no prediction for the perturbed TFs
-        missing = list(set(metadata['source']) - set(decoupler_results[m + '_estimate'].columns))
-        keep = [trgt not in missing for trgt in metadata['source'].to_list()]
-        meta = metadata[keep]
-        estimates = decoupler_results[m + '_estimate'][keep]
-        # pvals = res[m + '_pvals'][keep]
-
-        # mirror estimates
-        estimates = estimates.mul(meta['sign'], axis = 0)
-        gt = meta.pivot(columns = 'source', values = 'sign').fillna(0)
+def format_acts_grts(res, obs, groupby):
 
-        # add 0s in the ground-truth array for targets predicted by decoupler
-        # for which there is no ground truth in the provided metadata (assumed 0)
-        missing = list(set(estimates.columns) - set(meta['source']))
-        gt = pd.concat([gt, pd.DataFrame(0, index= gt.index, columns=missing)], axis = 1, join = 'inner').sort_index(axis=1)
-
-        flat_scores = []
-        scores_names = [m]
-
-        # flatten and then combine estimates and GT vectors
-        # set ground truth to be either 0 or 1
-        df_scores = pd.DataFrame({'score': estimates.to_numpy().flatten(), 'GT': gt.to_numpy().flatten()})
-        flat_scores.append(df_scores)
-
-        if by is not None and 'sign' in by:
-            keep = [meta['sign'] == 1, meta['sign'] == - 1]
-            sign = ['_positive', '_negative']
-
-            for ind, s in zip(keep, sign):
-                df = pd.DataFrame({'score': estimates[ind].to_numpy().flatten(), 'GT': gt[ind].to_numpy().flatten()})
-                flat_scores.append(df)
-                scores_names.append(m + s)
-
-        for score, name in zip(flat_scores, scores_names):
-            score['GT'] = abs(score['GT'])
-            if score['GT'].sum() > min_exp:
-                scores_gt[name] = score.reset_index()
-                targets[name] = list(estimates.columns)
-                metadatas[name] = meta
-
-
-    return scores_gt, targets, metadatas
-
-def format_benchmark_data(data, metadata, network, columns = None, meta_perturbation_col = 'treatment', meta_sign_col = 'sign', net_source_col = 'source', net_weight_col = 'weight', filter_experiments = True, filter_sources = False):
-
-    if metadata.shape[0] != data.shape[0]:
-        raise ValueError('The data and metadata do not have the same number of rows! ({0} vs. {1})\n'.format(data.shape[0], metadata.shape[0]))
-
-    if not all(item in network.columns for item in [net_source_col, net_weight_col]):
-        missing = list(set([net_source_col, net_weight_col]) - set(network.columns))
-        raise ValueError('{0} column(s) are missing from the input network'.format(str(missing)))
-
-    if not all(item in metadata.columns for item in [meta_perturbation_col, meta_sign_col]):
-        missing = list(set([meta_perturbation_col, meta_sign_col]) - set(metadata.columns))
-        raise ValueError('{0} column(s) are missing from the input metadata'.format(str(missing)))
-
-    network = network.rename(columns={net_source_col:'source', net_weight_col:'weight'})
-    metadata = metadata.rename(columns={meta_perturbation_col:'source', meta_sign_col:'sign'})
-
-    #subset by TFs with GT available
-    if filter_sources:
-        keep = [src in metadata['source'].to_list() for src in network['source'].to_list()]
-        network = network[keep]
-
-    # filter out experiments without predictions available
-    if filter_experiments:
-        keep = [src in network['source'].to_list() for src in metadata['source'].to_list()]
-        data = data[keep]
-        metadata = metadata[keep]
-
-    if columns is not None:
-        if type(columns) != list:
-            columns = [columns]
-
-        if meta_perturbation_col in columns:
-            columns.append('source')
-
-        if meta_sign_col in columns:
-            columns.append('sign')
-
-        #check that columns are in metadata
-        columns = list(set(metadata.columns).intersection(set(columns)))
-
-        if len(columns) == 0:
-            raise ValueError('None of the columns are in the metadata')
-
-        for c in columns:
-            if isinstance(metadata[c][0],str):
-                metadata[c] = metadata[c].str.replace('[_,:]', ' ')
-
-    return data, metadata, network, columns
-
-def performances(flat_data, sources, metadatas, columns = None, metric = 'roc', by = 'method', subset = None, n_iter = 100, seed = 7, pi0 = 0.5, min_exp = 5, verbose = True):
-
-    bench = {}
-    for method in flat_data.keys():
-        if verbose: print('Calculating performance metrics for', method)
-        if 'method' in by or 'sign' in by or 'all' in by:
-            perf = get_performance(flat_data[method], metric, n_iter = n_iter, seed = seed, prefix= method, pi0=pi0)
-            bench.update(perf)
-        if('source' in by or 'all' in by) and ('_positive' not in method and '_negative' not in method):
-            perf = get_source_performance(flat_data[method], sources[method], metric, subset = subset, n_iter = n_iter, seed = seed, prefix = method, pi0 = pi0, min_exp = min_exp)
-            bench[method + '_bySource'] = perf
-        if(columns is not None) and ('_positive' not in method and '_negative' not in method):
-            perf = get_meta_performance(flat_data[method], metadatas[method], columns, metric, n_iter = n_iter, seed = seed, prefix= method, pi0=pi0, min_exp = min_exp)
-            bench[method + '_byMeta'] = perf
-
-
-    return bench
-
-def get_mean_performances(benchmark_dict):
-    #make dataframes with mean perfomances
-    perf_method = {}
-    perf_bySource = {}
-    perf_bySign = {}
-    perf_byMeta = {}
-    for topkey, topvalue in benchmark_dict.items():
-        if '_bySource' in topkey:
-            for key, value in topvalue.items():
-                perf_bySource[key] = np.mean(value)
-        elif '_byMeta' in topkey:
-            for key, value in topvalue.items():
-                perf_byMeta[key] = np.mean(value)
-        elif '_negative' in topkey or '_positive' in topkey:
-            perf_bySign[topkey] = np.mean(topvalue)
-        else:
-            perf_method[topkey] = np.mean(topvalue)
-
-    perfs = []
-
-    if len(perf_method) > 0:
-        perf_method = pd.DataFrame.from_dict(perf_method, orient='index').reset_index()
-        perf_method.columns = ['id','value']
-        perf_method[['method','metric']] = perf_method['id'].str.split('_', expand=True)
-        perf_method = perf_method.pivot(index='method', columns='metric', values='value').reset_index()
-        perfs.append(perf_method)
-
-    if len(perf_bySign) > 0:
-        perf_bySign = pd.DataFrame.from_dict(perf_bySign, orient='index').reset_index()
-        perf_bySign.columns = ['id','value']
-        perf_bySign[['method', 'sign','metric']] = perf_bySign['id'].str.split('_', expand=True)
-        perf_bySign = perf_bySign.pivot(index=['method','sign'], columns='metric', values='value').reset_index()
-        perfs.append(perf_bySign)
-
-    if len(perf_bySource) > 0:
-        perf_bySource = pd.DataFrame.from_dict(perf_bySource, orient='index').reset_index()
-        perf_bySource.columns = ['id','value']
-        perf_bySource[['method','source','metric']] = perf_bySource['id'].str.split('_', expand=True)
-        perf_bySource = perf_bySource.pivot(index=['method','source'], columns='metric', values='value').reset_index()
-        perfs.append(perf_bySource)
-
-    if len(perf_byMeta) > 0:
-        perf_byMeta = pd.DataFrame.from_dict(perf_byMeta, orient='index').reset_index()
-        perf_byMeta.columns = ['id','value']
-        perf_byMeta[['method','meta','metric']] = perf_byMeta['id'].str.split('_', expand=True)
-
-        perf_byMeta = perf_byMeta.pivot(index = ['method', 'meta'], columns = 'metric', values = 'value').reset_index()
-
-        perf_byMeta[['meta', 'level']] = perf_byMeta['meta'].str.split(':', expand=True)
-        factors = perf_byMeta['meta'].unique()
-
-        perf_byMeta = perf_byMeta.pivot(index=list(set(perf_byMeta.columns) -set(['meta', 'level'])), columns='meta', values='level').reset_index()
-
-        perf_byMeta = perf_byMeta.rename(dict(zip(factors ,'meta_' + factors)), axis = 1)
-        perfs.append(perf_byMeta)
-
-
-    mean_perf = pd.concat(perfs)
-    mean_perf = mean_perf.fillna('').reset_index()
-
-    return mean_perf.drop(labels='index', axis = 1)
-
-
-def run_benchmark(data, metadata, network, methods = None, metric = ['roc', 'calprc'], columns = None, meta_perturbation_col = 'target', meta_sign_col = 'sign', net_source_col = 'source', net_weight_col = 'weight',
-filter_experiments= True, filter_sources = False, by = 'method', subset = None, min_exp = 5, pi0 = 0.5, n_iter = 100, seed = 7, verbose = True, **kwargs):
-    """
-    Benchmark methods or networks on a given set of perturbation experiments using activity inference with decoupler.
-
-    Args:
-        data (DataFrame): Gene expression data where each row is a perturbation experiment and each column a gene
-        metadata (DataFrame): Metadata of the perturbation experiment containing the activated/inhibited targets and the sign of the perturbation
-        network (DataFrame): Network in long format passed on to the decouple function
-        methods (str or list of str, optional): List of methods to run. If none are provided use weighted top performers (mlm, ulm and wsum). To benchmark all methods set to "all". Defaults to None.
-        metric (str or list of str, optional): Performance metric(s) to compute. See the description of get_performance for more details. Defaults to ['roc', 'calprc'].
-        column (str or list of str, optional): Metadata columns that contain the levels for which you want individual performance decomposition. Defaults to None.
-        meta_perturbation_col (str, optional): Column name in the metadata with perturbation targets. Defaults to 'target'.
-        meta_sign_col (str, optional): Column name in the metadata with sign of perturbation. Defaults to 'sign'.
-        net_source_col (str, optional): Column name in network with source nodes. Defaults to 'source'.
-        net_weight_col (str, optional): Column name in network with interaction weight. Defaults to 'weight'.
-        filter_experiments (bool, optional): Whether to filter out experiments whose perturbed targets cannot be infered from the given network. Defaults to True.
-        filter_sources (bool, optional): Whether to fitler out sources in the network for which there are not perturbation experiments (reduces the number of predictions made by decouple). Defaults to False.
-        by (str or list of str, optional): How to compute/decompose the performance score: any of 'method' and/or 'source'. Defaults to 'method'.
-        subset (str or list of str, optional): Subset of sources for which to compute an individual performance score. Requires by to contain 'source'. Sources with fewer than 'min_exp' experiments in the dataset are ignored Defaults to None
-        min_exp (int, optional): Minium number of perturbation experiments required to compute performance scores. Defaults to 5.
-        pi0 (float, optional): Reference ratio for calibrated metrics. Corresponds to the baseline/reference class inbalance to which to set the metric. Defaults to 0.5.
-        n_iter (int, optional): Number of iterations/subsampling used for the 'mcroc' and 'mcprc' metrics. Defaults to 100.
-        seed (int, otional): Random seed to use for subsampling for the 'mcroc' and 'mcprc' metrics. Defaults to 7.
-        verbose (bool, optional): Whether to print progession. Defaults to True.
-        **kwargs: Other arguments to pass on to decouple
-
-    Returns:
-        mean_perf: DataFrame containing the mean performance for each metric and for each method (mean has to be done for the mcroc and mcprc metrics)
-        bench: dict containing the whole data for each method and metric. Useful if you want to see the distribution for each subsampling for the mcroc and mcprc methods
-    """
-
-    #format and filter the data, metadata and networks
-    data, metadata, network, columns = format_benchmark_data(data, metadata, network, columns, meta_perturbation_col=meta_perturbation_col, meta_sign_col = meta_sign_col,
-                                                    net_source_col=net_source_col, net_weight_col = net_weight_col, filter_experiments=filter_experiments, filter_sources=filter_sources)
-
-    
-    #run prediction
-    res = dc.decouple(data, network, methods=methods, verbose = verbose, **kwargs)
-
-    #flatten and select predicitons before computing performance measures
-    scores_gt, sources, metadatas = get_scores_GT(res, metadata, by= by, min_exp = min_exp)
-
-    bench = performances(scores_gt, sources, metadatas, columns = columns, metric = metric, by = by, subset = subset, n_iter = n_iter, seed = seed, pi0 = pi0, min_exp = min_exp, verbose = verbose)
-
-    mean_perfs = get_mean_performances(bench)
-
-    return mean_perfs, bench
-
-def benchmark_scatterplot(mean_perf, x = 'mcroc', y = 'mcprc', ax = None, label_col=None, ann_fontsize = None):
-    """
-    Creates a scatter plot for each given method for two performance metrics
-
-    Args:
-        mean_perf (DataFrame): Mean performance of each method output by run_benchmark()
-        x (str, optional): Which metric to plot on the x axis. Defaults to 'mcroc'.
-        y (str, optional): Which metric to plot on the y axis. Defaults to 'mcprc'.
-
-    Returns:
-        ax: Axes of a scatter plot
-    """
-    mean_perf = mean_perf.reset_index()
-
-    if ax is None: ax = plt.subplot(111)
-    ax.scatter(x = mean_perf[x], y = mean_perf[y])
-    ax.set_aspect('equal')
-
-    min_v = mean_perf[[x,y]].min().min()
-    max_v = mean_perf[[x,y]].max().max()
-    border = (max_v - min_v)/15
-
-    ax.set_xlim(min_v - border, max_v + border)
-    ax.set_ylim(min_v - border, max_v + border)
-
-    if (x in ['roc','mcroc'] and y in ['roc','mcroc']) or (x in ['prc','mcprc', 'calprc'] and y in ['prc','mcprc', 'calprc']):
-        ax.axline((0,0),slope=1, color = 'black', linestyle = ':')
-
-    if label_col is not None and label_col in mean_perf.columns:
-        for i, label in enumerate(mean_perf[label_col]):
-            if ann_fontsize is None:
-                ax.annotate(label.capitalize(), (mean_perf[x][i], mean_perf[y][i]))
-            else:
-                ax.annotate(label.capitalize(), (mean_perf[x][i], mean_perf[y][i]), fontsize = ann_fontsize)
-
-    if x in ['mcroc', 'mcprc', 'roc', 'prc', 'calprc']:
-        x = x + ' AUC'
-
-    if y in ['mcroc', 'mcprc', 'roc', 'prc', 'calprc']:
-        y = y + ' AUC'
-
-    ax.set_xlabel(x.upper())
-    ax.set_ylabel(y.upper())
-
-    return ax
-
-def benchmark_boxplot(benchmark_data, metric = 'mcroc', ax = None):
-    """
-    Creates boxplots for an iterative performance metric (i.e. mcroc and mcprc)
-
-    Args:
-        benchmark_data (dict): dict containing complete output from run_benchmark()
-        metric (str, optional): Metric to plot a distribution for. Either mcroc or mcprc. Defaults to 'mcroc'.
-
-    Returns:
-        ax: Axes of a boxplot
-    """
-
-    if not (metric == 'mcprc' or metric == 'mcroc'):
-        raise ValueError('Plotting of boxplots only possible for the \'mcprc\' and \'mcroc\' methods')
-
-    #TODO: change so that input format corresponds again. Since mc is not that useful anymore, repurpose for target by target boxplots ?
-    keys = [key for key in benchmark_data.keys() if metric in key.split('_')[1]]
-    methods = [key.split('_')[0] for key in keys]
-
-    if len(keys) == 0:
-        raise ValueError('The given metric was not found in the benchmark data')
-
-    if ax is None: ax = plt.subplot(111)
-    for i, key in enumerate(keys):
-        ax.boxplot(benchmark_data[key], positions = [i])
-    ax.set_xlim(-0.5, len(keys) - 0.5)
-    ax.set_ylabel(metric.upper() + ' AUC')
-    ax.set_xticklabels([m.capitalize() for m in methods])
-    
-    return ax
+    # Build acts tensor and sort by exps and srcs
+    acts, exps, srcs, mthds = build_acts_tensor(res)
+
+    # Make sure obs and acts match by exps idxs
+    obs = obs.loc[exps]
+
+    # Build sorted and filtered grts mat
+    grts = build_grts_mat(obs, exps, srcs)
+
+    # Match to same srcs between acts and grts
+    grts = match(srcs, grts.columns, grts.T).T
+
+    # Mirror acts
+    mirror_acts(acts, grts)
+
+    # Build msks tensor
+    msks, grpbys, grps = build_msks_tensor(obs, groupby)
+
+    return acts, grts, msks, srcs, mthds, grpbys, grps
+
+
+def rename_obs(obs, perturb, sign):
+
+    # Check if names are in columns
+    msg = 'Column name "{0}" not found in obs. Please specify a valid column.'
+    assert perturb in obs.columns, msg.format(perturb)
+
+    # Check that they are not the same
+    if perturb == sign:
+        raise ValueError("perturb={0} and sign={1} cannot have the same value.".format(perturb, sign))
+
+    # Validate sign
+    if type(sign) is str:
+        assert sign in obs.columns, msg.format(sign)
+        unq = np.sort(np.unique(obs[sign].values))
+        lbl = np.array([-1, 1])
+        msg = '`sign` values can only be -1 or 1, got {0}.'
+        assert np.all(np.isin(unq, lbl)), msg.format(list(unq))
+    elif sign == 1 or sign == -1:
+        obs = obs.copy()
+        obs['sign'] = sign
+        sign = 'sign'
+    else:
+        raise ValueError("If sign is not a column name, it must be 1 or -1.")
+
+    # Rename
+    obs = obs.rename(columns={perturb: 'perturb', sign: 'sign'})
+
+    return obs
+
+
+def check_groupby(obs, groupby, perturb, by):
+
+    if groupby is not None:
+        if type(groupby) is str:
+            groupby = [groupby]
+
+        for grp_i in groupby:
+            if type(grp_i) is str:
+                grp_i = [grp_i]
+            # For each group inside each groupby
+            for grp_j in grp_i:
+
+                # Check if perturb is in groupby when by=source
+                msg = 'perturb="{0}" column cannot be in groupby if by="source". Please remove it.'
+                assert not (perturb == grp_j and by == 'source'), msg.format(perturb)
+
+                # Assert that columns exist in obs
+                msg = 'Column name "{0}" not found in obs. Please specify a valid column.'
+                assert grp_j in obs.columns, msg.format(grp_j)
+
+                # Assert that column doesn't contain "|"
+                msg = "Column names cannot contain the character \"|\", please rename column {0}.".format(grp_j)
+                assert '|' not in grp_j
+
+    return groupby
