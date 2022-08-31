@@ -66,10 +66,20 @@ def extract_psbulk_inputs(adata, obs, layer, use_raw):
         if obs is None:
             raise ValueError('If adata is a pd.DataFrame, obs cannot be None.')
 
+        # Match indexes of X with obs if DataFrame
+        idxs = adata.index
+        try:
+            obs = obs.loc[idxs]
+        except KeyError:
+            raise KeyError('Indices in obs do not match with mat\'s.')
+
     if type(X) is not csr_matrix:
         X = csr_matrix(X)
 
-    return X, obs, var
+    # Sort genes
+    msk = np.argsort(var.index)
+
+    return X[:, msk], obs, var.iloc[msk]
 
 
 def check_for_raw_counts(X):
@@ -189,7 +199,7 @@ def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=
     groups_col : str
         Column of `obs` where to extract the groups names.
     obs : DataFrame, None
-        If provided, meta-data dataframe.
+        If provided, metadata dataframe.
     layer : str
         If provided, which element of layers to use.
     use_raw : bool
@@ -456,7 +466,7 @@ def get_top_targets(logFCs, pvals, contrast, name=None, net=None, source='source
         pval_col = 'adj_pvals'
     else:
         pval_col = 'pvals'
-        
+
     # Filter by thresholds
     df = df[(np.abs(df['logFCs']) >= lFCs_thr) & (np.abs(df[pval_col]) <= sign_thr)]
 
@@ -478,7 +488,7 @@ def format_contrast_results(logFCs, pvals):
         DataFrame in long format.
     """
 
-    df = melt([logFCs, pvals]).rename({'sample': 'contrast', 'source': 'name', 'score': 'logFC'}, axis=1)
-    df = df[['contrast', 'name', 'logFC', 'pval']].sort_values('pval').reset_index(drop=True)
+    df = melt([logFCs, pvals]).rename({'sample': 'contrast', 'source': 'name', 'score': 'logFCs'}, axis=1)
+    df = df[['contrast', 'name', 'logFCs', 'pvals']].sort_values('pvals').reset_index(drop=True)
 
     return df
