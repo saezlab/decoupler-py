@@ -14,11 +14,13 @@ def test_nb_aucell():
     n_up = np.array([1], dtype=np.int32)[0]
     nb_aucell(n_samples, n_features, m.data, m.indptr, m.indices, net, offsets, n_up)
 
+
 def test_aucell():
     m = csr_matrix(np.array([[1, 0, 2], [1., 0, 3], [0, 0, 0]], dtype=np.float32))
     net = pd.Series([np.array([1, 3], dtype=np.int32), np.array([1, 3], dtype=np.int32)], index=['T1', 'T2'])
     n_up = np.array([1], dtype=np.int32)[0]
     aucell(m, net, n_up)
+
 
 def test_run_aucell():
     m = np.array([[7., 1., 1.], [4., 2., 1.], [1., 2., 5.], [1., 1., 6.]])
@@ -27,7 +29,7 @@ def test_run_aucell():
     df = pd.DataFrame(m, index=r, columns=c)
     adata = AnnData(df)
     net = pd.DataFrame([['T1', 'G2'], ['T1', 'G4'], ['T2', 'G3'], ['T2', 'G1']],
-                   columns=['source', 'target'])
+                       columns=['source', 'target'])
     run_aucell(adata, net, n_up=1.2, min_n=0, verbose=True, use_raw=False)
     with pytest.raises(ValueError):
         run_aucell(adata, net, n_up=-3, min_n=0, verbose=True, use_raw=False)
