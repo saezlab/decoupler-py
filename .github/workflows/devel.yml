@@ -2,7 +2,7 @@ name: devel
 
 on:
   push:
-    branches: [ development ]
+    branches: [ devel ]
   pull_request:
     branches: [ main ]
 
