@@ -470,6 +470,16 @@ def get_top_targets(logFCs, pvals, contrast, name=None, net=None, source='source
     # Filter by thresholds
     df = df[(np.abs(df['logFCs']) >= lFCs_thr) & (np.abs(df[pval_col]) <= sign_thr)]
 
+    # Format names
+    df = df.reset_index().rename({'index': 'name'}, axis=1)
+    df['contrast'] = contrast
+
+    # Order columns
+    if fdr_corr:
+        df = df[['contrast', 'name', 'logFCs', 'pvals', 'adj_pvals']].sort_values('pvals')
+    else:
+        df = df[['contrast', 'name', 'logFCs', 'pvals']].sort_values('pvals')
+
     return df
 
 
@@ -487,8 +497,10 @@ def format_contrast_results(logFCs, pvals):
     df : DataFrame
         DataFrame in long format.
     """
-
+    
     df = melt([logFCs, pvals]).rename({'sample': 'contrast', 'source': 'name', 'score': 'logFCs'}, axis=1)
-    df = df[['contrast', 'name', 'logFCs', 'pvals']].sort_values('pvals').reset_index(drop=True)
+    df = df[['contrast', 'name', 'logFCs', 'pvals']].sort_values('contrast').reset_index(drop=True)
+    df['adj_pvals'] = df.groupby('contrast').apply(lambda x: p_adjust_fdr(x['pvals'])).explode().values
+    df = df.sort_values(['contrast', 'pvals']).reset_index(drop=True)
 
     return df
