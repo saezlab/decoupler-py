@@ -75,3 +75,4 @@ from omics data. Bioinformatics Advances. https://doi.org/10.1093/bioadv/vbac016
    notebooks/msigdb
    notebooks/pseudobulk
    notebooks/bulk
+   notebooks/benchmark

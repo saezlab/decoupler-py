@@ -47,23 +47,31 @@ Running multiple methods:
    cons
    dense_run
    
-Utils:
-------
+General utils:
+--------------
 .. autosummary::
    :toctree: generated
 
+   melt
    show_methods
    check_corr
-   melt
-   get_acts
    get_toy_data
    summarize_acts
    assign_groups
+   dense_run
+   p_adjust_fdr
+   shuffle_net
+
+AnnData utils:
+--------------
+.. autosummary::
+   :toctree: generated
+   
+   get_acts
    get_pseudobulk
    get_contrast
    get_top_targets
    format_contrast_results
-   p_adjust_fdr
    
 Omnipath wrappers:
 ------------------
@@ -83,3 +91,33 @@ Plotting
    plot_volcano
    plot_violins
    plot_barplot
+   plot_metrics_scatter
+   plot_metrics_scatter_cols
+   plot_metrics_boxplot
+
+Metrics
+-------
+.. autosummary::
+   :toctree: generated
+   
+   metric_auroc
+   metric_auprc
+   metric_mcauroc
+   metric_mcauprc
+
+Benchmark utils
+---------------
+.. autosummary::
+   :toctree: generated
+   
+   get_toy_benchmark_data
+   show_metrics
+
+Benchmark
+---------
+.. autosummary::
+   :toctree: generated
+   
+   benchmark
+   format_benchmark_inputs
+   get_performances
