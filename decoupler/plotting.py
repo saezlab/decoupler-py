@@ -83,8 +83,8 @@ def plot_volcano(logFCs, pvals, contrast, name=None, net=None, top=5, source='so
         Column name in net with source nodes.
     target : str
         Column name in net with target nodes.
-    weight : str
-        Column name in net with weights.
+    weight : str, None
+        Column name in net with weights. If none, set to None.
     sign_thr : float
         Significance threshold for p-values.
     lFCs_thr : float
@@ -140,7 +140,7 @@ def plot_volcano(logFCs, pvals, contrast, name=None, net=None, top=5, source='so
         # Filter by shared targets
         if name is None:
             raise ValueError('If net is given, name cannot be None.')
-        df = net[net[source] == name].set_index('target')
+        df = net[net['source'] == name].set_index('target')
         df['logFCs'] = logFCs.loc[[contrast]].T
         df['pvals'] = -np.log10(pvals.loc[[contrast]].T)
         df = df[~np.any(pd.isnull(df), axis=1)]
