@@ -9,14 +9,21 @@ import pandas as pd
 from .pre import extract, match, rename_net, get_net_mat, filt_min_n
 
 from anndata import AnnData
-from sklearn import tree
 from tqdm import tqdm
 
 
-def fit_dt(regulator, sample, min_leaf=5, seed=42):
+def check_if_sklearn():
+    try:
+        import sklearn as sk
+    except Exception:
+        raise ImportError('sklearn is not installed. Please install it with: pip install scikit-learn')
+    return sk
+
+
+def fit_dt(sk, regulator, sample, min_leaf=5, seed=42):
     # Fit DT
     x, y = regulator.reshape(-1, 1), sample.reshape(-1, 1)
-    regr = tree.DecisionTreeRegressor(min_samples_leaf=min_leaf, random_state=seed)
+    regr = sk.tree.DecisionTreeRegressor(min_samples_leaf=min_leaf, random_state=seed)
     regr.fit(x, y)
 
     # Get importance
@@ -25,13 +32,16 @@ def fit_dt(regulator, sample, min_leaf=5, seed=42):
 
 def udt(mat, net, min_leaf=5, seed=42, verbose=False):
 
+    # Check if sklearn is installed
+    sk = check_if_sklearn()
+
     # Init empty acts
     acts = np.zeros((mat.shape[0], net.shape[1]))
 
     # For each sample and regulator fit dt
     for i in tqdm(range(mat.shape[0]), disable=not verbose):
         for j in range(net.shape[1]):
-            acts[i, j] = fit_dt(net[:, j], mat[i], min_leaf=min_leaf, seed=seed)
+            acts[i, j] = fit_dt(sk, net[:, j], mat[i], min_leaf=min_leaf, seed=seed)
 
     return acts
 

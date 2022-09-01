@@ -1,3 +1,8 @@
+"""
+Utility functions to query OmniPath.
+Functions to retrieve resources from the meta-database OmniPath.
+"""
+
 import numpy as np
 
 

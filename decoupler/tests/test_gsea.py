@@ -1,4 +1,3 @@
-import pytest
 import numpy as np
 import pandas as pd
 from scipy.sparse import csr_matrix
@@ -12,6 +11,7 @@ def test_gsea():
     gsea(m, net, times=2)
     gsea(m, net, times=0)
 
+
 def test_run_gsea():
     m = np.array([[7., 1., 1.], [4., 2., 1.], [1., 2., 5.], [1., 1., 6.]])
     r = np.array(['S1', 'S2', 'S3', 'S4'])
@@ -19,6 +19,6 @@ def test_run_gsea():
     df = pd.DataFrame(m, index=r, columns=c)
     adata = AnnData(df)
     net = pd.DataFrame([['T1', 'G2'], ['T1', 'G4'], ['T2', 'G3'], ['T2', 'G1']],
-                   columns=['source', 'target'])
+                       columns=['source', 'target'])
     run_gsea(adata, net, min_n=0, use_raw=False, times=2, verbose=True)
     run_gsea(df, net, min_n=0, use_raw=False, times=2, verbose=True)

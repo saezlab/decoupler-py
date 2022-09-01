@@ -1,9 +1,10 @@
 import pytest
+import numpy as np
 import pandas as pd
 import numpy as np
 from anndata import AnnData
 from ..utils import m_rename, melt, show_methods, check_corr, get_toy_data, summarize_acts
-from ..utils import assign_groups, p_adjust_fdr, dense_run
+from ..utils import assign_groups, p_adjust_fdr, dense_run, shuffle_net
 from ..method_mlm import run_mlm
 from ..method_ora import run_ora
 
@@ -19,10 +20,10 @@ def test_m_rename():
 
 def test_melt():
     estimate = pd.DataFrame([[3.5, -0.5, 0.3], [3.6, -0.6, 0.04], [-1, 2, -1.8]],
-                    columns=['T1', 'T2', 'T3'], index=['S01', 'S02', 'S03'])
+                            columns=['T1', 'T2', 'T3'], index=['S01', 'S02', 'S03'])
     estimate.name = 'mlm_estimate'
     pvals = pd.DataFrame([[.005, .5, .7], [.006, .6, .9], [.004, .3, .7]],
-                            columns=['T1', 'T2', 'T3'], index=['S01', 'S02', 'S03'])
+                         columns=['T1', 'T2', 'T3'], index=['S01', 'S02', 'S03'])
     pvals.name = 'mlm_pvals'
     pvals
     res_dict = {estimate.name: estimate, pvals.name: pvals}
@@ -31,7 +32,7 @@ def test_melt():
     melt(pvals)
     melt(res_dict)
     melt(res_list)
-    with pytest.raises(ValueError):   
+    with pytest.raises(ValueError):
         melt({0, 1, 2, 3})
 
 
@@ -44,7 +45,7 @@ def test_show_methods():
 
 def test_check_corr():
 
-    mat = pd.DataFrame([[1,2,3,4,5,6]], columns=['G01','G02','G03','G06','G07','G08'])
+    mat = pd.DataFrame([[1, 2, 3, 4, 5, 6]], columns=['G01', 'G02', 'G03', 'G06', 'G07', 'G08'])
     net = pd.DataFrame([['T1', 'G01', 1], ['T1', 'G02', 1], ['T2', 'G06', 1], ['T2', 'G07', 0.5],
                         ['T3', 'G06', -0.5], ['T3', 'G07', -3]], columns=['source', 'target', 'weight'])
     check_corr(net, min_n=2)
@@ -59,7 +60,7 @@ def test_get_toy_data():
 def test_summarize_acts():
 
     estimate = pd.DataFrame([[3.5, -0.5, 0.3], [3.6, -0.6, 0.04], [-1, 2, -1.8]],
-                    columns=['T1', 'T2', 'T3'], index=['S01', 'S02', 'S03'])
+                            columns=['T1', 'T2', 'T3'], index=['S01', 'S02', 'S03'])
     obs = pd.DataFrame([['C01', 'C01', 'C02']], columns=estimate.index, index=['celltype']).T
     adata = AnnData(estimate, obs=obs)
     acts = summarize_acts(estimate, obs=obs, groupby='celltype', mode='median', min_std=0)
@@ -73,7 +74,7 @@ def test_summarize_acts():
 
 def test_assign_groups():
     estimate = pd.DataFrame([[3.5, -0.5, 0.3], [3.6, -0.6, 0.04], [-1, 2, -1.8]],
-                    columns=['T1', 'T2', 'T3'], index=['S01', 'S02', 'S03'])
+                            columns=['T1', 'T2', 'T3'], index=['S01', 'S02', 'S03'])
     obs = pd.DataFrame([['C01', 'C01', 'C02']], columns=estimate.index, index=['celltype']).T
     sum_acts = summarize_acts(estimate, obs=obs, groupby='celltype', min_std=0)
     assign_groups(sum_acts)
@@ -84,7 +85,7 @@ def test_p_adjust_fdr():
 
 
 def test_denserun():
-    mat = pd.DataFrame([[0,2,3,4,5,6], [1,0,0,0,0,0]], columns=['G01','G02','G03','G06','G07','G08'])
+    mat = pd.DataFrame([[0, 2, 3, 4, 5, 6], [1, 0, 0, 0, 0, 0]], columns=['G01', 'G02', 'G03', 'G06', 'G07', 'G08'])
     net = pd.DataFrame([['T1', 'G01', 1], ['T1', 'G02', 1], ['T2', 'G06', 1], ['T2', 'G07', 0.5],
                         ['T3', 'G06', -0.5], ['T3', 'G07', -3]], columns=['source', 'target', 'weight'])
     acts, _ = dense_run(run_mlm, mat, net, min_n=2, verbose=True)
@@ -98,3 +99,27 @@ def test_denserun():
     assert acts.shape[1] == 2
     assert not np.all(np.isnan(acts.values[0]))
     assert np.all(np.isnan(acts.values[1]))
+
+
+def test_shuffle_net():
+    net = pd.DataFrame([['T1', 'G01', 1], ['T1', 'G02', 1], ['T2', 'G03', 1], ['T2', 'G04', 0.5],
+                        ['T3', 'G05', -0.5], ['T3', 'G06', -3]], columns=['source', 'target', 'weight'])
+
+    with pytest.raises(ValueError):
+        shuffle_net(net, target=None, weight=None, seed=42, same_seed=True)
+    with pytest.raises(ValueError):
+        shuffle_net(net, target='asd', weight=None, seed=42, same_seed=True)
+    rnet = shuffle_net(net, target='target', weight=None, seed=42, same_seed=True)
+    assert np.any(net.target.values != rnet.target.values)
+    with pytest.raises(ValueError):
+        shuffle_net(net, target=None, weight='asd', seed=42, same_seed=True)
+    rnet = shuffle_net(net, target=None, weight='weight', seed=42, same_seed=True)
+    assert np.any(net.weight.values != rnet.weight.values)
+    rnet = shuffle_net(net, target='target', weight='weight', seed=42, same_seed=True)
+    net_dict = {k: v for k, v in zip(net.target, net.weight)}
+    rnet_dict = {k: v for k, v in zip(rnet.target, rnet.weight)}
+    assert net_dict == rnet_dict
+    rnet = shuffle_net(net, target='target', weight='weight', seed=42, same_seed=False)
+    net_dict = {k: v for k, v in zip(net.target, net.weight)}
+    rnet_dict = {k: v for k, v in zip(rnet.target, rnet.weight)}
+    assert net_dict != rnet_dict
