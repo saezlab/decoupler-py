@@ -497,7 +497,7 @@ def format_contrast_results(logFCs, pvals):
     df : DataFrame
         DataFrame in long format.
     """
-    
+
     df = melt([logFCs, pvals]).rename({'sample': 'contrast', 'source': 'name', 'score': 'logFCs'}, axis=1)
     df = df[['contrast', 'name', 'logFCs', 'pvals']].sort_values('contrast').reset_index(drop=True)
     df['adj_pvals'] = df.groupby('contrast').apply(lambda x: p_adjust_fdr(x['pvals'])).explode().values
