@@ -15,6 +15,7 @@ from tqdm import tqdm
 def check_if_sklearn():
     try:
         import sklearn as sk
+        import sklearn.tree
     except Exception:
         raise ImportError('sklearn is not installed. Please install it with: pip install scikit-learn')
     return sk
