@@ -93,10 +93,11 @@ def run_wmean(mat, net, source='source', target='target', weight='weight', times
     """
     Weighted sum (WMEAN).
 
-    WMEAN infers regulator activities by first multiplying each target feature by its associated weight which then are summed
-    to an enrichment score (`wmean_estimate`). Furthermore, permutations of random target features can be performed to obtain a
-    null distribution that can be used to compute a z-score (`wmean_norm`), or a corrected estimate (`wmean_corr`) by
-    multiplying `wmean_estimate` by the minus log10 of the obtained empirical p-value.
+    WMEAN infers regulator activities by performing the weighted sum of the targets and weights, divided by the
+    absolute sum of the weights to obtain an enrichment score (`wmean_estimate`). Furthermore, permutations of random
+    target features can be performed to obtain a null distribution that can be used to compute a z-score (`wmean_norm`),
+    or a corrected estimate (`wmean_corr`) by multiplying `wmean_estimate` by the minus log10 of the obtained empirical
+    p-value.
 
     Parameters
     ----------
