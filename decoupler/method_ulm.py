@@ -15,7 +15,7 @@ from anndata import AnnData
 import numba as nb
 
 
-@nb.njit(nb.f4[:, :](nb.i4, nb.i4, nb.f4[:], nb.i4[:], nb.i4[:], nb.f4[:, :]), parallel=True, cache=True)
+@nb.njit(nb.f4[:, :](nb.i8, nb.i8, nb.f4[:], nb.i8[:], nb.i8[:], nb.f4[:, :]), parallel=True, cache=True)
 def nb_ulm(n_samples, n_features, data, indptr, indices, net):
 
     df, n_fsets = net.shape
@@ -55,7 +55,7 @@ def ulm(mat, net):
 
     # Compute ulm
     n_samples, n_features = mat.shape
-    es = nb_ulm(n_samples, n_features, mat.data, mat.indptr, mat.indices, net)
+    es = nb_ulm(n_samples, n_features, mat.data, mat.indptr.astype(np.int64), mat.indices.astype(np.int64), net)
 
     # Get p-values
     pvals = t.sf(abs(es), df) * 2

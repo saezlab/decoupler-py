@@ -8,7 +8,7 @@ from ..method_ora import ora, get_ora_df, run_ora
 
 def test_ora():
     m = csr_matrix(np.array([[1, 0, 2], [1., 0, 3], [0, 0, 0]], dtype=np.float32))
-    net = pd.Series([np.array([1, 3], dtype=np.int32), np.array([1, 3], dtype=np.int32)], index=['T1', 'T2'])
+    net = pd.Series([np.array([1, 3], dtype=np.int64), np.array([1, 3], dtype=np.int64)], index=['T1', 'T2'])
     ora(m, net, 1, 0)
 
 

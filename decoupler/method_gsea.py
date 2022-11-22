@@ -17,16 +17,16 @@ from tqdm import tqdm
 import numba as nb
 
 
-@nb.njit(nb.types.Tuple((nb.f4[:, :], nb.i4[:, :]))(nb.f4[:, :]), cache=True)
+@nb.njit(nb.types.Tuple((nb.f4[:, :], nb.i8[:, :]))(nb.f4[:, :]), cache=True)
 def get_M_I(mat):
-    Idx = np.zeros(mat.shape, dtype=nb.i4)
+    Idx = np.zeros(mat.shape, dtype=nb.i8)
     for i in range(mat.shape[0]):
         Idx[i] = np.argsort(-mat[i])
     mat = np.abs(mat)
     return mat, Idx
 
 
-@nb.njit(nb.f4(nb.f4[:], nb.i4), cache=True)
+@nb.njit(nb.f4(nb.f4[:], nb.i8), cache=True)
 def std(arr, ddof):
     N = arr.shape[0]
     m = np.mean(arr)
@@ -35,7 +35,7 @@ def std(arr, ddof):
     return sd
 
 
-@nb.njit(nb.f4(nb.f4[:], nb.i4[:], nb.i4, nb.i4[:], nb.i4[:], nb.i4, nb.f4), cache=True)
+@nb.njit(nb.f4(nb.f4[:], nb.i8[:], nb.i8, nb.i8[:], nb.i8[:], nb.i8, nb.f4), cache=True)
 def ks_sample(D, Idx, n_genes, geneset_mask, fset, n_geneset, dec):
 
     sum_gset = 0.0
@@ -72,12 +72,12 @@ def ks_sample(D, Idx, n_genes, geneset_mask, fset, n_geneset, dec):
     return mx_value
 
 
-@nb.njit(nb.f4[:](nb.f4[:, :], nb.i4[:, :], nb.i4[:]), cache=True)
+@nb.njit(nb.f4[:](nb.f4[:, :], nb.i8[:, :], nb.i8[:]), cache=True)
 def ks_matrix(D, Idx, fset):
     n_samples, n_genes = D.shape
     n_geneset = fset.shape[0]
 
-    geneset_mask = np.zeros(n_genes, dtype=nb.i4)
+    geneset_mask = np.zeros(n_genes, dtype=nb.i8)
     geneset_mask[fset] = 1
 
     dec = 1.0 / (n_genes - n_geneset)
@@ -89,7 +89,7 @@ def ks_matrix(D, Idx, fset):
     return res
 
 
-@nb.njit(nb.f4[:](nb.f4[:, :], nb.i4[:, :], nb.i4[:], nb.f4[:], nb.i4[:, :]), cache=True)
+@nb.njit(nb.f4[:](nb.f4[:, :], nb.i8[:, :], nb.i8[:], nb.f4[:], nb.i8[:, :]), cache=True)
 def ks_perms(D, Idx, fset, es, m_msk):
     times = m_msk.shape[0]
     if times == 0:
@@ -109,7 +109,7 @@ def ks_perms(D, Idx, fset, es, m_msk):
     return nes
 
 
-@nb.njit(nb.types.UniTuple(nb.f4[:, :], 2)(nb.f4[:, :], nb.i4[:, :], nb.i4[:], nb.i4[:], nb.i4, nb.i4), parallel=True,
+@nb.njit(nb.types.UniTuple(nb.f4[:, :], 2)(nb.f4[:, :], nb.i8[:, :], nb.i8[:], nb.i8[:], nb.i8, nb.i8), parallel=True,
          cache=True)
 def nb_gsea(D, Idx, net, offsets, times, seed):
 
@@ -121,13 +121,13 @@ def nb_gsea(D, Idx, net, offsets, times, seed):
     m_nes = np.zeros(m_es.shape, dtype=nb.f4)
 
     # Generate random shuffling matrix
-    m_msk = np.zeros((times, D.shape[1]), dtype=nb.i4)
+    m_msk = np.zeros((times, D.shape[1]), dtype=nb.i8)
     idxs = np.arange(D.shape[1])
     for i in range(times):
         np.random.shuffle(idxs)
         m_msk[i] = idxs
 
-    starts = np.zeros(n_gsets, dtype=nb.i4)
+    starts = np.zeros(n_gsets, dtype=nb.i8)
     starts[1:] = np.cumsum(offsets)[:-1]
     for j in nb.prange(n_gsets):
 
@@ -144,7 +144,7 @@ def nb_gsea(D, Idx, net, offsets, times, seed):
 def gsea(mat, net, times=1000, batch_size=10000, seed=42, verbose=False):
 
     # Flatten net and get offsets
-    offsets = net.apply(lambda x: len(x)).values.astype(np.int32)
+    offsets = net.apply(lambda x: len(x)).values.astype(np.int64)
     net = np.concatenate(net.values)
 
     # Get number of batches
@@ -239,7 +239,7 @@ def run_gsea(mat, net, source='source', target='target', times=1000, batch_size=
     # Transform targets to indxs
     table = {name: i for i, name in enumerate(c)}
     net['target'] = [table[target] for target in net['target']]
-    net = net.groupby('source')['target'].apply(lambda x: np.array(x, dtype=np.int32))
+    net = net.groupby('source')['target'].apply(lambda x: np.array(x, dtype=np.int64))
 
     if verbose:
         print('Running gsea on mat with {0} samples and {1} targets for {2} sources.'.format(m.shape[0], len(c), len(net)))

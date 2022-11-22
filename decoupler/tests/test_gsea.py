@@ -7,7 +7,7 @@ from ..method_gsea import gsea, run_gsea
 
 def test_gsea():
     m = csr_matrix(np.array([[1, 0, 2], [1., 0, 3], [0, 0, 0]], dtype=np.float32))
-    net = pd.Series([np.array([1, 3], dtype=np.int32), np.array([1, 3], dtype=np.int32)], index=['T1', 'T2'])
+    net = pd.Series([np.array([1, 3], dtype=np.int64), np.array([1, 3], dtype=np.int64)], index=['T1', 'T2'])
     gsea(m, net, times=2)
     gsea(m, net, times=0)
 

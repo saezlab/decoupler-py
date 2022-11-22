@@ -19,7 +19,7 @@ from tqdm import tqdm
 import numba as nb
 
 
-@nb.njit(nb.f4(nb.i4, nb.i4, nb.i4, nb.i4), cache=True)
+@nb.njit(nb.f4(nb.i8, nb.i8, nb.i8, nb.i8), cache=True)
 def mlnTest2r(a, ab, ac, abcd):
     if 0 > a or a > ab or a > ac or ab + ac > abcd + a:
         raise ValueError('invalid contingency table')
@@ -47,7 +47,7 @@ def mlnTest2r(a, ab, ac, abcd):
         return max(0, pa - p0 - log(sr))
 
 
-@nb.njit(nb.f4(nb.i4, nb.i4, nb.i4, nb.i4), cache=True)
+@nb.njit(nb.f4(nb.i8, nb.i8, nb.i8, nb.i8), cache=True)
 def test1r(a, b, c, d):
     """
     Code adapted from:
@@ -57,7 +57,7 @@ def test1r(a, b, c, d):
     return exp(-mlnTest2r(a, a + b, a + c, a + b + c + d))
 
 
-@nb.njit(nb.f4[:](nb.i4[:], nb.i4[:], nb.i4[:], nb.i4[:], nb.i4), parallel=True, cache=True)
+@nb.njit(nb.f4[:](nb.i8[:], nb.i8[:], nb.i8[:], nb.i8[:], nb.i8), parallel=True, cache=True)
 def get_pvals(sample, net, starts, offsets, n_background):
 
     # Init vals
@@ -86,20 +86,20 @@ def get_pvals(sample, net, starts, offsets, n_background):
 def ora(mat, net, n_up_msk, n_bt_msk, n_background=20000, verbose=False):
 
     # Flatten net and get offsets
-    offsets = net.apply(lambda x: len(x)).values.astype(np.int32)
+    offsets = net.apply(lambda x: len(x)).values.astype(np.int64)
     net = np.concatenate(net.values)
 
     # Define starts to subset offsets
-    starts = np.zeros(offsets.shape[0], dtype=np.int32)
+    starts = np.zeros(offsets.shape[0], dtype=np.int64)
     starts[1:] = np.cumsum(offsets)[:-1]
 
     # Init empty
     pvls = np.zeros((mat.shape[0], offsets.shape[0]), dtype=np.float32)
-    ranks = np.arange(mat.shape[1], dtype=np.int32)
+    ranks = np.arange(mat.shape[1], dtype=np.int64)
     for i in tqdm(range(mat.shape[0]), disable=not verbose):
 
         # Find ranks
-        sample = rankdata(mat[i].A, method='ordinal').astype(np.int32)
+        sample = rankdata(mat[i].A, method='ordinal').astype(np.int64)
         sample = ranks[(sample > n_up_msk) | (sample < n_bt_msk)]
 
         # Estimate pvals
@@ -159,17 +159,17 @@ def get_ora_df(df, net, groupby, features, source='source', target='target', n_b
     df[features] = [table[target] for target in df[features]]
 
     # Transform to groups
-    net = net.groupby('source')['target'].apply(lambda x: np.array(x, dtype=np.int32))
-    df = df.groupby(groupby)[features].apply(lambda x: np.array(x, dtype=np.int32))
+    net = net.groupby('source')['target'].apply(lambda x: np.array(x, dtype=np.int64))
+    df = df.groupby(groupby)[features].apply(lambda x: np.array(x, dtype=np.int64))
     srcs = net.index.values
     grps = df.index.values
 
     # Flatten net and get offsets
-    offsets = net.apply(lambda x: len(x)).values.astype(np.int32)
+    offsets = net.apply(lambda x: len(x)).values.astype(np.int64)
     net = np.concatenate(net.values)
 
     # Define starts to subset offsets
-    starts = np.zeros(offsets.shape[0], dtype=np.int32)
+    starts = np.zeros(offsets.shape[0], dtype=np.int64)
     starts[1:] = np.cumsum(offsets)[:-1]
 
     # Init empty
@@ -264,7 +264,7 @@ def run_ora(mat, net, source='source', target='target', n_up=None, n_bottom=0, n
     # Transform targets to indxs
     table = {name: i for i, name in enumerate(c)}
     net['target'] = [table[target] for target in net['target']]
-    net = net.groupby('source')['target'].apply(lambda x: np.array(x, dtype=np.int32))
+    net = net.groupby('source')['target'].apply(lambda x: np.array(x, dtype=np.int64))
     if verbose:
         print('Running ora on mat with {0} samples and {1} targets for {2} sources.'.format(m.shape[0], len(c), len(net)))
 

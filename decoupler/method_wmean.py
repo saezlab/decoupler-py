@@ -15,7 +15,7 @@ from tqdm import tqdm
 import numba as nb
 
 
-@nb.njit(nb.types.UniTuple(nb.f4[:, :], 3)(nb.f4[:, :], nb.f4[:, :], nb.f4[:, :], nb.i4[:], nb.f4[:], nb.i4, nb.i4),
+@nb.njit(nb.types.UniTuple(nb.f4[:, :], 3)(nb.f4[:, :], nb.f4[:, :], nb.f4[:, :], nb.i8[:], nb.f4[:], nb.i8, nb.i8),
          cache=True)
 def run_perm(estimate, mat, net, idxs, div, times, seed):
 
@@ -82,7 +82,7 @@ def wmean(mat, net, times, batch_size, seed, verbose):
         estimate[srt:end] = tmp.dot(net) / div
 
         if times > 1:
-            idxs = np.arange(n_features, dtype=np.int32)
+            idxs = np.arange(n_features, dtype=np.int64)
             norm[srt:end], corr[srt:end], pvals[srt:end] = run_perm(estimate[srt:end], tmp, net, idxs, div, times, seed)
 
     return estimate, norm, corr, pvals

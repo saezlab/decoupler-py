@@ -79,11 +79,11 @@ def density(mat, kcdf=False):
     return mat
 
 
-@nb.njit(nb.types.Tuple((nb.f4[:, :], nb.i4[:, :]))(nb.f4[:, :]), parallel=True, cache=True)
+@nb.njit(nb.types.Tuple((nb.f4[:, :], nb.i8[:, :]))(nb.f4[:, :]), parallel=True, cache=True)
 def nb_get_D_I(mat):
     n = mat.shape[1]
     rev_idx = np.abs(np.arange(start=n, stop=0, step=-1, dtype=nb.f4) - n / 2)
-    Idx = np.zeros(mat.shape, dtype=nb.i4)
+    Idx = np.zeros(mat.shape, dtype=nb.i8)
     for i in nb.prange(mat.shape[0]):
         Idx[i] = np.argsort(-mat[i])
         tmp = np.zeros(n, dtype=nb.f4)
@@ -92,7 +92,7 @@ def nb_get_D_I(mat):
     return mat, Idx
 
 
-@nb.njit(nb.f4(nb.f4[:], nb.i4[:], nb.i4, nb.i4[:], nb.i4[:], nb.i4, nb.f4), cache=True)
+@nb.njit(nb.f4(nb.f4[:], nb.i8[:], nb.i8, nb.i8[:], nb.i8[:], nb.i8, nb.f4), cache=True)
 def ks_sample(D, Idx, n_genes, geneset_mask, fset, n_geneset, dec):
 
     sum_gset = 0.0
@@ -121,12 +121,12 @@ def ks_sample(D, Idx, n_genes, geneset_mask, fset, n_geneset, dec):
     return mx_value_sign
 
 
-@nb.njit(nb.f4[:](nb.f4[:, :], nb.i4[:, :], nb.i4[:]), parallel=True, cache=True)
+@nb.njit(nb.f4[:](nb.f4[:, :], nb.i8[:, :], nb.i8[:]), parallel=True, cache=True)
 def ks_matrix(D, Idx, fset):
     n_samples, n_genes = D.shape
     n_geneset = fset.shape[0]
 
-    geneset_mask = np.zeros(n_genes, dtype=nb.i4)
+    geneset_mask = np.zeros(n_genes, dtype=nb.i8)
     geneset_mask[fset] = 1
 
     dec = 1.0 / (n_genes - n_geneset)
@@ -217,7 +217,7 @@ def run_gsva(mat, net, source='source', target='target', kcdf=False, mx_diff=Tru
     # Transform targets to indxs
     table = {name: i for i, name in enumerate(c)}
     net['target'] = [table[target] for target in net['target']]
-    net = net.groupby('source')['target'].apply(lambda x: np.array(x, dtype=np.int32))
+    net = net.groupby('source')['target'].apply(lambda x: np.array(x, dtype=np.int64))
 
     if verbose:
         print('Running gsva on mat with {0} samples and {1} targets for {2} sources.'.format(m.shape[0], len(c), len(net)))

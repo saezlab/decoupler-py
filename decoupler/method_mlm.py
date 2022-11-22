@@ -16,7 +16,7 @@ from tqdm import tqdm
 import numba as nb
 
 
-@nb.njit(nb.f4[:, :](nb.f4[:, :], nb.f4[:, :], nb.f4[:, :], nb.i4), parallel=True, cache=True)
+@nb.njit(nb.f4[:, :](nb.f4[:, :], nb.f4[:, :], nb.f4[:, :], nb.i8), parallel=True, cache=True)
 def fit_mlm(X, y, inv, df):
     X = np.ascontiguousarray(X)
     n_samples = y.shape[1]

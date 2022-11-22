@@ -14,14 +14,14 @@ from anndata import AnnData
 import numba as nb
 
 
-@nb.njit(nb.f4[:, :](nb.i4, nb.i4, nb.f4[:], nb.i4[:], nb.i4[:], nb.i4[:], nb.i4[:], nb.i4), parallel=True, cache=True)
+@nb.njit(nb.f4[:, :](nb.i8, nb.i8, nb.f4[:], nb.i8[:], nb.i8[:], nb.i8[:], nb.i8[:], nb.i8), parallel=True, cache=True)
 def nb_aucell(n_samples, n_features, data, indptr, indices, net, offsets, n_up):
 
     # Number of feature sets
     n_fsets = offsets.shape[0]
 
     # Define starts to subset offsets
-    starts = np.zeros(n_fsets, dtype=nb.i4)
+    starts = np.zeros(n_fsets, dtype=nb.i8)
     starts[1:] = np.cumsum(offsets)[:-1]
 
     # Empty acts
@@ -47,7 +47,7 @@ def nb_aucell(n_samples, n_features, data, indptr, indices, net, offsets, n_up):
             fset = net[srt:off]
 
             # Compute max AUC for fset
-            x_th = np.arange(start=1, stop=fset.shape[0]+1, dtype=nb.i4)
+            x_th = np.arange(start=1, stop=fset.shape[0]+1, dtype=nb.i8)
             x_th = x_th[x_th < n_up]
             max_auc = np.sum(np.diff(np.append(x_th, n_up)) * x_th)
 
@@ -66,11 +66,11 @@ def nb_aucell(n_samples, n_features, data, indptr, indices, net, offsets, n_up):
 def aucell(mat, net, n_up):
 
     # Flatten net and get offsets
-    offsets = net.apply(lambda x: len(x)).values.astype(np.int32)
+    offsets = net.apply(lambda x: len(x)).values.astype(np.int64)
     net = np.concatenate(net.values)
 
     # Compute AUC per fset
-    acts = nb_aucell(mat.shape[0], mat.shape[1], mat.data, mat.indptr, mat.indices, net, offsets, n_up)
+    acts = nb_aucell(mat.shape[0], mat.shape[1], mat.data, mat.indptr.astype(np.int64), mat.indices.astype(np.int64), net, offsets, n_up)
 
     return acts
 
@@ -137,7 +137,7 @@ def run_aucell(mat, net, source='source', target='target', n_up=None, min_n=5, s
     # Transform targets to indxs
     table = {name: i for i, name in enumerate(c)}
     net['target'] = [table[target] for target in net['target']]
-    net = net.groupby('source')['target'].apply(lambda x: np.array(x, dtype=np.int32))
+    net = net.groupby('source')['target'].apply(lambda x: np.array(x, dtype=np.int64))
 
     if verbose:
         print('Running aucell on mat with {0} samples and {1} targets for {2} sources.'.format(m.shape[0], len(c), len(net)))

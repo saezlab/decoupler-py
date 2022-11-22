@@ -17,9 +17,9 @@ from tqdm import tqdm
 import numba as nb
 
 
-@nb.njit(nb.types.Tuple((nb.f4[:, :], nb.i4[:]))(nb.f4[:, :], nb.i4[:, :], nb.f4[:], nb.i4[:], nb.i4), cache=True)
+@nb.njit(nb.types.Tuple((nb.f4[:, :], nb.i8[:]))(nb.f4[:, :], nb.i8[:, :], nb.f4[:], nb.i8[:], nb.i8), cache=True)
 def get_wts_posidxs(wts, idxs, pval1, table, penalty):
-    pos_idxs = np.zeros(idxs.shape[0], dtype=nb.i4)
+    pos_idxs = np.zeros(idxs.shape[0], dtype=nb.i8)
     for j in nb.prange(idxs.shape[0]):
         p = pval1[j]
         if p > 0:
@@ -38,13 +38,13 @@ def get_wts_posidxs(wts, idxs, pval1, table, penalty):
     return wts, pos_idxs
 
 
-@nb.njit(nb.types.Tuple((nb.f4[:, :], nb.i4[:, :]))(nb.f4[:, :]), cache=True)
+@nb.njit(nb.types.Tuple((nb.f4[:, :], nb.i8[:, :]))(nb.f4[:, :]), cache=True)
 def get_tmp_idxs(pval):
 
     size = int(np.sum(~np.isnan(pval)) / 2)
 
     tmp = np.zeros((size, 2), dtype=nb.f4)
-    idxs = np.zeros((size, 2), dtype=nb.i4)
+    idxs = np.zeros((size, 2), dtype=nb.i8)
 
     k = 0
     for i in nb.prange(pval.shape[0]):
@@ -63,7 +63,7 @@ def get_tmp_idxs(pval):
     return tmp, idxs
 
 
-@nb.njit(nb.f4[:](nb.i4, nb.f4[:, :], nb.i4, nb.f4[:]), cache=True)
+@nb.njit(nb.f4[:](nb.i8, nb.f4[:, :], nb.i8, nb.f4[:]), cache=True)
 def fill_pval_mat(j, reg, n_targets, s2):
     n_fsets = reg.shape[1]
     col = np.full(n_fsets, np.nan, dtype=nb.f4)
@@ -133,7 +133,7 @@ def shadow_regulon(nes_i, ss_i, net, reg_sign=1.96, n_targets=10, penalty=20):
     pval1 = np.log10(tmp[:, 1]) - np.log10(tmp[:, 0])
     unique, counts = np.unique(idxs.flatten(), return_counts=True)
 
-    table = np.zeros(unique.max()+1, dtype=np.int32)
+    table = np.zeros(unique.max()+1, dtype=np.int64)
     table[unique] = counts
 
     # Modify interactions based on sign of pval1

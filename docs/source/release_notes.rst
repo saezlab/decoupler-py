@@ -1,6 +1,15 @@
 Release notes
 =============
 
+1.3.0
+-----
+
+Bug fixes
+~~~~~~~~~
+- Fixed change in api from ``sklearn.tree``.
+- Forced gene names in ``extract`` to be in ``unicode`` format.
+- Changed integer format from ``int32`` to ``int64`` to accommodate larger datasets across methods.
+
 1.2.0
 -----
 

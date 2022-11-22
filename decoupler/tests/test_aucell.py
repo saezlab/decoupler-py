@@ -8,17 +8,17 @@ from ..method_aucell import nb_aucell, aucell, run_aucell
 
 def test_nb_aucell():
     m = csr_matrix(np.array([[1, 0, 2], [1., 0, 3], [0, 0, 0]], dtype=np.float32))
-    n_samples, n_features = np.array(m.shape, dtype=np.int32)
-    net = np.array([1, 3, 2, 0], dtype=np.int32)
-    offsets = np.array([2, 2], dtype=np.int32)
-    n_up = np.array([1], dtype=np.int32)[0]
-    nb_aucell(n_samples, n_features, m.data, m.indptr, m.indices, net, offsets, n_up)
+    n_samples, n_features = np.array(m.shape, dtype=np.int64)
+    net = np.array([1, 3, 2, 0], dtype=np.int64)
+    offsets = np.array([2, 2], dtype=np.int64)
+    n_up = np.array([1], dtype=np.int64)[0]
+    nb_aucell(n_samples, n_features, m.data, m.indptr.astype(np.int64), m.indices.astype(np.int64), net, offsets, n_up)
 
 
 def test_aucell():
     m = csr_matrix(np.array([[1, 0, 2], [1., 0, 3], [0, 0, 0]], dtype=np.float32))
-    net = pd.Series([np.array([1, 3], dtype=np.int32), np.array([1, 3], dtype=np.int32)], index=['T1', 'T2'])
-    n_up = np.array([1], dtype=np.int32)[0]
+    net = pd.Series([np.array([1, 3], dtype=np.int64), np.array([1, 3], dtype=np.int64)], index=['T1', 'T2'])
+    n_up = np.array([1], dtype=np.int64)[0]
     aucell(m, net, n_up)
 
 

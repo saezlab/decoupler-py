@@ -162,7 +162,7 @@ def metric_auprc(y_true, y_score, pi0=None):
     return prc_auc(y_true, y_score, pi0)
 
 
-@nb.njit(nb.types.Tuple((nb.f4[:], nb.f4[:, :]))(nb.f4[:], nb.f4[:], nb.i4, nb.i4), cache=True)
+@nb.njit(nb.types.Tuple((nb.f4[:], nb.f4[:, :]))(nb.f4[:], nb.f4[:], nb.i8, nb.i8), cache=True)
 def mc_perm(y_true, y_score, n_iter, seed):
 
     # Separate TPs from TNs
@@ -182,7 +182,7 @@ def mc_perm(y_true, y_score, n_iter, seed):
     np.random.seed(seed)
 
     # Generate random shuffling matrix
-    idx = np.arange(tn_score.size, dtype=nb.i4)
+    idx = np.arange(tn_score.size, dtype=nb.i8)
     scores = np.zeros((n_iter, n_tp * 2), dtype=nb.f4)
     for i in range(n_iter):
         r_i = np.random.choice(idx, n_tp)
