@@ -34,7 +34,7 @@ def check_mat(m, r, c, verbose=False):
     if np.any(~np.isfinite(m.data)):
         raise ValueError("""mat contains non finite values (nan or inf), please set them to 0 or remove them.""")
 
-    return m, r, c
+    return m, r, c.astype('U')
 
 
 def extract(mat, use_raw=True, verbose=False, dtype=np.float32):
