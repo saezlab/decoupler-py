@@ -77,4 +77,4 @@ from omics data. Bioinformatics Advances. https://doi.org/10.1093/bioadv/vbac016
    notebooks/spatial
    notebooks/bulk
    notebooks/benchmark
-   notebook/translate
+   notebooks/translate
