@@ -22,7 +22,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install wheel
         sudo apt install libcurl4-openssl-dev libssl-dev
-        pip install pytest flake8 sklearn skranger omnipath scanpy adjustText git+https://github.com/saezlab/pypath.git .
+        pip install git+https://github.com/saezlab/pypath.git
+        pip install pytest flake8 sklearn skranger omnipath scanpy adjustText .
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
@@ -47,8 +48,9 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install wheel
-        brew install openssl
-        pip install pytest flake8 sklearn skranger omnipath scanpy adjustText git+https://github.com/saezlab/pypath.git .
+        yum install libcurl-devel
+        pip install git+https://github.com/saezlab/pypath.git
+        pip install pytest flake8 sklearn skranger omnipath scanpy adjustText .
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
