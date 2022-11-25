@@ -5,6 +5,9 @@ Functions to retrieve resources from the meta-database OmniPath.
 
 import numpy as np
 
+PYPATH_MIN_VERSION = '0.14.25'
+
+
 def check_if_omnipath():
     try:
         import omnipath as op
@@ -241,9 +244,22 @@ def translate_net(
 
     # Check if pypath is installed
     try:
+
+        ver = lambda v: tuple(map(int, v.split('.')))
+
+        import pypath
         from pypath.utils import homology
         from pypath.share import common
+
+        if ver(pypath.__version__) < ver(PYPATH_MIN_VERSION):
+
+            raise RuntimeError(
+                'The installed version of pypath-omnipath is too old, '
+                f'the oldest compatible version is {PYPATH_MIN_VERSION}.'
+            )
+
     except Exception:
+
         raise ImportError(
             'pypath-omnipath is not installed. Please install it with: '
             'pip install git+https://github.com/saezlab/pypath.git'
