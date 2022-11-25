@@ -10,6 +10,10 @@ Bug fixes
 - Forced gene names in ``extract`` to be in ``unicode`` format.
 - Changed integer format from ``int32`` to ``int64`` to accommodate larger datasets across methods.
 
+Additions
+~~~~~~~~~
+- Added conversion utility function ``translate_net`` to translate nets across organisms.
+
 1.2.0
 -----
 

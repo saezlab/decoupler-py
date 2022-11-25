@@ -57,7 +57,7 @@ def get_progeny(organism='human', top=100):
     p.columns = ['source', 'target', 'weight', 'p_value']
 
     if organism == 'mouse':
-        p['target'] = [t.lower().capitalize() for t in p['target']]
+        p = translate_net(p, source_tax_id=9606, target_tax_id=10090, id_type='genesymbol', translate_source=False)
 
     return p
 
@@ -191,3 +191,81 @@ def get_dorothea(organism='human', levels=['A', 'B', 'C'], weight_dict={'A': 1, 
         do['target'] = [t.lower().capitalize() for t in do['target']]
 
     return do
+
+
+def translate_net(
+        net,
+        source='source',
+        target='target',
+        source_tax_id=9606,
+        target_tax_id=10090,
+        id_type='genesymbol',
+        translate_source=False,
+    ):
+    """
+    Translate networks between species by orthology.
+    
+    This function downloads orthology databases from omnipath and converts genes between species. The first time you
+    run this function will take a while (~15 minutes) but then it stores all the information in cache for quick
+    reusability.
+    
+    In case you need to restart the cache, you can do it by doing: ``rm -r .pypath/cache/``
+
+    Parameters
+    ----------
+    net : DataFrame
+        Network in long format.
+    source : str
+        Column name in net with source nodes.
+    target : str
+        Column name in net with target nodes.
+    source_tax_id : int
+        NCBI Taxonomy ID of the source organism.
+    target_tax_id : int
+        NCBI Taxonomy ID of the target organism.
+    id_type: str
+        Identifier type of the source and target columns. Can be "genesymbol", "uniprot", "ensmbl"
+    translate_source : bool
+        Whether to also translate the source column in net.
+
+    Returns
+    -------
+    hom_net : DataFrame
+        Network in long format with translated genes.
+    """
+
+    # Check if pypath is installed
+    try:
+        from pypath.utils import homology
+    except Exception:
+        raise ImportError(
+            'pypath-omnipath is not installed. Please install it with: '
+            'pip install git+https://github.com/saezlab/pypath.git'
+        )
+
+    # Make a copy of net
+    hom_net = net.copy()
+
+    # Check if also translate source
+    if translate_source:
+        cols = {
+            source: id_type,
+            target: id_type,
+        }
+    else:
+        cols = {
+            target: id_type,
+        }
+
+    # Translate
+    hom_net = homology.translate_df(
+        df = hom_net,
+        target = target_tax_id,
+        cols = cols,
+        source = source_tax_id,
+    )
+
+    # Remove duplicated based on source and target
+    hom_net = hom_net[~hom_net.duplicated([source, target])]
+
+    return hom_net

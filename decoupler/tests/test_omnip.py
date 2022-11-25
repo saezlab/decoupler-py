@@ -1,21 +1,10 @@
 import pytest
 import pandas as pd
-from ..omnip import check_if_omnipath, get_progeny, get_resource, show_resources, get_dorothea
+from ..omnip import check_if_omnipath, get_progeny, get_resource, show_resources, get_dorothea, translate_net
 
 
 def test_check_if_omnipath():
     check_if_omnipath()
-
-
-def test_get_progeny():
-    df = get_progeny(organism='human', top=100)
-    n_paths = len(df['source'].unique())
-    n_rows = (n_paths * 100)
-    assert type(df) is pd.DataFrame
-    assert df.shape[0] == n_rows
-    with pytest.raises(ValueError):
-        get_progeny(organism='asdfgh')
-    get_progeny(organism='mouse')
 
 
 def test_get_resource():
@@ -37,3 +26,23 @@ def test_get_dorothea():
     with pytest.raises(ValueError):
         get_dorothea(organism='asdfgh')
     get_dorothea(organism='mouse')
+
+
+def test_translate_net():
+    df = get_dorothea(organism='human')
+    tr = translate_net(df, source_tax_id=9606, target_tax_id=10090)
+    assert tr.shape[0] > 10
+
+    tr = translate_net(df, source_tax_id=9606, target_tax_id=10090, translate_source=True)
+    assert tr.shape[0] > 10
+
+
+def test_get_progeny():
+    df = get_progeny(organism='human', top=100)
+    n_paths = len(df['source'].unique())
+    n_rows = (n_paths * 100)
+    assert type(df) is pd.DataFrame
+    assert df.shape[0] == n_rows
+    with pytest.raises(ValueError):
+        get_progeny(organism='asdfgh')
+    get_progeny(organism='mouse')
