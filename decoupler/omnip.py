@@ -5,7 +5,6 @@ Functions to retrieve resources from the meta-database OmniPath.
 
 import numpy as np
 
-
 def check_if_omnipath():
     try:
         import omnipath as op
@@ -195,38 +194,44 @@ def get_dorothea(organism='human', levels=['A', 'B', 'C'], weight_dict={'A': 1, 
 
 def translate_net(
         net,
-        source='source',
-        target='target',
+        columns=('source', 'target'),
         source_tax_id=9606,
         target_tax_id=10090,
         id_type='genesymbol',
         translate_source=False,
+        **kwargs
     ):
     """
     Translate networks between species by orthology.
-    
+
     This function downloads orthology databases from omnipath and converts genes between species. The first time you
     run this function will take a while (~15 minutes) but then it stores all the information in cache for quick
     reusability.
-    
+
     In case you need to reset the cache, you can do it by doing: ``rm -r ~/.pypath/cache/``.
 
     Parameters
     ----------
     net : DataFrame
         Network in long format.
-    source : str
-        Column name in net with source nodes.
-    target : str
-        Column name in net with target nodes.
+    columns : str | list[str] | dict[str, str] | None
+        One or more columns to be translated. These columns must contain
+        identifiers of the source organism. It can be a single column name,
+        a list of column names, or a dict with column names as keys and the
+        type of identifiers in these columns as values.
     source_tax_id : int
-        NCBI Taxonomy ID of the source organism.
+        NCBI Taxonomy ID of the organism to translate from.
     target_tax_id : int
-        NCBI Taxonomy ID of the target organism.
-    id_type: str
-        Identifier type of the source and target columns. Can be "genesymbol", "uniprot", "ensmbl"
-    translate_source : bool
-        Whether to also translate the source column in net.
+        NCBI Taxonomy ID of the organism to translate to.
+    id_type: str | tuple[str, str]
+        Shortcut to provide a single identifier type if all columns
+        should be translated from and to the same ID type. If a tuple of two
+        provided, the translation happens from the first ID type and the
+        orthologs returned in the second ID type.
+    kwargs: str | tuple[str, str]
+        Alternative way to pass ``columns``. The only limitation is that
+        column names can not match any of the existing arguments of this
+        function.
 
     Returns
     -------
@@ -237,31 +242,28 @@ def translate_net(
     # Check if pypath is installed
     try:
         from pypath.utils import homology
+        from pypath.share import common
     except Exception:
         raise ImportError(
             'pypath-omnipath is not installed. Please install it with: '
             'pip install git+https://github.com/saezlab/pypath.git'
         )
 
+    if not isinstance(columns, dict):
+
+        columns = common.to_list(columns)
+        columns = dict(zip(columns, [id_type] * len(columns)))
+
+    columns.update(kwargs)
+
     # Make a copy of net
     hom_net = net.copy()
-
-    # Check if also translate source
-    if translate_source:
-        cols = {
-            source: id_type,
-            target: id_type,
-        }
-    else:
-        cols = {
-            target: id_type,
-        }
 
     # Translate
     hom_net = homology.translate_df(
         df = hom_net,
         target = target_tax_id,
-        cols = cols,
+        cols = columns,
         source = source_tax_id,
     )
 
