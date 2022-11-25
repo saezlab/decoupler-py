@@ -209,7 +209,7 @@ def translate_net(
     run this function will take a while (~15 minutes) but then it stores all the information in cache for quick
     reusability.
     
-    In case you need to restart the cache, you can do it by doing: ``rm -r .pypath/cache/``
+    In case you need to reset the cache, you can do it by doing: ``rm -r ~/.pypath/cache/``.
 
     Parameters
     ----------
