@@ -28,15 +28,6 @@ def test_get_dorothea():
     get_dorothea(organism='mouse')
 
 
-def test_translate_net():
-    df = get_dorothea(organism='human')
-    tr = translate_net(df, source_tax_id=9606, target_tax_id=10090)
-    assert tr.shape[0] > 10
-
-    tr = translate_net(df, source_tax_id=9606, target_tax_id=10090, translate_source=True)
-    assert tr.shape[0] > 10
-
-
 def test_get_progeny():
     df = get_progeny(organism='human', top=100)
     n_paths = len(df['source'].unique())
@@ -45,4 +36,3 @@ def test_get_progeny():
     assert df.shape[0] == n_rows
     with pytest.raises(ValueError):
         get_progeny(organism='asdfgh')
-    get_progeny(organism='mouse')
