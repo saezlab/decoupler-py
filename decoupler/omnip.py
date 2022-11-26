@@ -19,8 +19,11 @@ import numpy as np
 import pandas as pd
 
 PYPATH_MIN_VERSION = '0.14.26'
-HUMAN = ('human', 'h. sapiens', 'hsapiens', '9606', 9606)
-MOUSE = ('mouse', 'm. musculus', 'mmusculus', '10090', 10090)
+ORGANISMS = {
+    'human': ('human', 'h. sapiens', 'hsapiens', '9606', 9606),
+    'mouse': ('mouse', 'm. musculus', 'mmusculus', '10090', 10090),
+    'rat': ('rat', 'r. norvegicus', 'rnorvegicus', '10116', 10116),
+}
 DOROTHEA_LEVELS = Literal['A', 'B', 'C', 'D']
 
 
@@ -40,12 +43,23 @@ def _check_if_omnipath() -> ModuleType:
     return op
 
 
+def _is_organism(
+        name: str | int,
+        organism: Literal['human', 'mouse', 'rat'],
+    ) -> bool:
+    """
+    Tells if `name` means one of human, mouse or rat.
+    """
+
+    return str(name).lower() in ORGANISMS.get(organism.lower(), ())
+
+
 def _is_mouse(name: str) -> bool:
     """
     Does the organism name or ID mean mouse?
     """
 
-    return str(name).lower() in MOUSE
+    return _is_organism(name, 'mouse')
 
 
 def _is_human(name: str) -> bool:
@@ -53,7 +67,15 @@ def _is_human(name: str) -> bool:
     Does the organism name or ID mean human?
     """
 
-    return str(name).lower() in HUMAN
+    return _is_organism(name, 'human')
+
+
+def _is_rat(name: str) -> bool:
+    """
+    Does the organism name or ID mean human?
+    """
+
+    return _is_organism(name, 'rat')
 
 
 def get_progeny(organism: str | int = 'human', top: int = 100) -> pd.DataFrame:
@@ -170,7 +192,7 @@ def get_resource(name: str, organism: str | int = 'human') -> pd.DataFrame:
 
         df = translate_net(
             df,
-            organism = organism,
+            target_organism = organism,
             columns = 'genesymbol',
             unique_by = None,
         )
@@ -227,13 +249,18 @@ def get_dorothea(
         their associated weights and confidence level.
     """
 
+    levels = list(levels)
     weights = {'A': 1, 'B': 2, 'C': 3, 'D': 4}
     weights.update(weight_dict or {})
-    levels = list(levels)
 
     organism = organism.lower()
-    if organism not in ['human', 'mouse']:
-        raise ValueError('organism can only be human or mouse.')
+    _organism = (
+        'mouse'
+            if _is_mouse(organism) else
+        'rat'
+            if _is_rat(organism) else
+        'human'
+    )
 
     op = _check_if_omnipath()
 
@@ -242,7 +269,7 @@ def get_dorothea(
         fields = ['dorothea_level', 'extra_attrs'],
         dorothea_levels = ['A', 'B', 'C', 'D'],
         genesymbols = True,
-        organism = organism,
+        organism = _organism,
     )
 
     # Filter extra columns
@@ -265,7 +292,9 @@ def get_dorothea(
 
     # Assign mode of regulation
     mor = []
+
     for i in do.itertuples():
+
         if i.is_stimulation and i.is_inhibition:
             if i.consensus_stimulation:
                 mor.append(1)
@@ -277,6 +306,7 @@ def get_dorothea(
             mor.append(-1)
         else:
             mor.append(1)
+
     do['mor'] = mor
 
     # Compute weight based on confidence: mor/confidence
@@ -296,13 +326,23 @@ def get_dorothea(
     do = (
         do[np.isin(do['confidence'], levels)].
         sort_values('confidence').
-        reset_index(drop=True)
+        reset_index(drop = True)
     )
 
     # I disabled this, not sure why would it be useful -- Denes
     if False and _is_mouse(organism):
 
         do['target'] = [t.lower().capitalize() for t in do['target']]
+
+    if _organism not in ('human', 'mouse', 'rat'):
+
+        do = translate_net(
+            df = do,
+            target_organism = organism,
+            columns = ('source', 'target'),
+            unique_by = ('source', 'target'),
+            id_type = 'genesymbol',
+        )
 
     return do
 
@@ -422,3 +462,4 @@ def translate_net(
         hom_net = hom_net[~hom_net.duplicated(unique_by)]
 
     return hom_net
+
