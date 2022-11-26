@@ -3,6 +3,8 @@ Utility functions to query OmniPath.
 Functions to retrieve resources from the meta-database OmniPath.
 """
 
+from __future__ import annotations
+
 __all__ = [
     'get_progeny',
     'show_resources',
@@ -11,25 +13,56 @@ __all__ = [
     'translate_net',
 ]
 
+from types import ModuleType
+from typing import Iterable, Literal
 import numpy as np
+import pandas as pd
 
 PYPATH_MIN_VERSION = '0.14.26'
+HUMAN = ('human', 'h. sapiens', 'hsapiens', '9606', 9606)
+MOUSE = ('mouse', 'm. musculus', 'mmusculus', '10090', 10090)
+DOROTHEA_LEVELS = Literal['A', 'B', 'C', 'D']
 
 
-def _check_if_omnipath():
+def _check_if_omnipath() -> ModuleType:
+
     try:
+
         import omnipath as op
+
     except Exception:
-        raise ImportError('omnipath is not installed. Please install it with: pip install omnipath')
+
+        raise ImportError(
+            'omnipath is not installed. Please install it with: '
+            'pip install omnipath'
+        )
+
     return op
 
 
-def get_progeny(organism='human', top=100):
+def _is_mouse(name: str) -> bool:
+    """
+    Does the organism name or ID mean mouse?
+    """
+
+    return str(name).lower() in MOUSE
+
+
+def _is_human(name: str) -> bool:
+    """
+    Does the organism name or ID mean human?
+    """
+
+    return str(name).lower() in HUMAN
+
+
+def get_progeny(organism: str | int = 'human', top: int = 100) -> pd.DataFrame:
     """
     Pathway RespOnsive GENes for activity inference (PROGENy).
 
-    Wrapper to access PROGENy model gene weights. Each pathway is defined with a collection of target genes, each interaction
-    has an associated p-value and weight. The top significant interactions per pathway are returned.
+    Wrapper to access PROGENy model gene weights. Each pathway is defined with
+    a collection of target genes, each interaction has an associated p-value
+    and weight. The top significant interactions per pathway are returned.
 
     Parameters
     ----------
@@ -48,9 +81,12 @@ def get_progeny(organism='human', top=100):
 
     op = _check_if_omnipath()
 
-    p = op.requests.Annotations.get(resources='PROGENy')
-    p = p.set_index(['record_id', 'uniprot', 'genesymbol', 'entity_type', 'source', 'label'])
-    p = p.unstack('label').droplevel(axis=1, level=0)
+    p = op.requests.Annotations.get(resources = 'PROGENy')
+    p = p.set_index([
+        'record_id', 'uniprot', 'genesymbol',
+        'entity_type', 'source', 'label',
+    ])
+    p = p.unstack('label').droplevel(axis = 1, level = 0)
     p.columns = np.array(p.columns)
     p = p.reset_index()
     p.columns.name = None
@@ -58,30 +94,39 @@ def get_progeny(organism='human', top=100):
     p = p[~p.duplicated(['pathway', 'genesymbol'])]
     p['p_value'] = p['p_value'].astype(np.float32)
     p['weight'] = p['weight'].astype(np.float32)
-    p = p.sort_values('p_value').groupby('pathway').head(top).sort_values(['pathway', 'p_value']).reset_index()
+    p = (
+        p.
+        sort_values('p_value').
+        groupby('pathway').
+        head(top).
+        sort_values(['pathway', 'p_value']).
+        reset_index()
+    )
     p = p[['pathway', 'genesymbol', 'weight', 'p_value']]
     p['weight'] = p['weight'].astype(np.float32)
     p['p_value'] = p['p_value'].astype(np.float32)
     p.columns = ['source', 'target', 'weight', 'p_value']
 
-    if organism != 'human':
+    if not _is_human(organism):
 
         p = translate_net(
             p,
             columns = 'target',
-            source_tax_id=9606,
-            target_tax_id=organism,
+            source_tax_id = 9606,
+            target_tax_id = organism,
         )
 
     return p
 
 
-def get_resource(name, organism = 'human'):
+def get_resource(name: str, organism: str | int = 'human') -> pd.DataFrame:
     """
     Wrapper to access resources inside Omnipath.
 
-    This wrapper allows to easly query different prior knowledge resources. To check available resources run
-    `decoupler.show_resources()`. For more information visit the official website for [Omnipath](https://omnipathdb.org/).
+    This wrapper allows to easly query different prior knowledge resources. To
+    check available resources run ``decoupler.show_resources()``. For more
+    information visit the official website for
+    [Omnipath](https://omnipathdb.org/).
 
     Parameters
     ----------
@@ -99,26 +144,44 @@ def get_resource(name, organism = 'human'):
     """
 
     resources = show_resources()
-    msg = '{0} is not a valid resource. Please, run decoupler.show_resources to see the list of available resources.'
-    assert name in resources, msg.format(name)
+    msg = (
+        f'{name} is not a valid resource. Please, run '
+        'decoupler.show_resources to see the list of available resources.'
+    )
+    assert name in resources, msg
 
     op = _check_if_omnipath()
 
-    df = op.requests.Annotations.get(resources=name, entity_type="protein")
-    df = df.set_index(['record_id', 'uniprot', 'genesymbol', 'entity_type', 'source', 'label'])
-    df = df.unstack('label').droplevel(axis=1, level=0)
-    df = df.drop(columns=[name for name in df.index.names if name in df.columns])
+    df = op.requests.Annotations.get(resources = name, entity_type = 'protein')
+    df = df.set_index([
+        'record_id', 'uniprot',
+        'genesymbol', 'entity_type',
+        'source', 'label',
+    ])
+    df = df.unstack('label').droplevel(axis = 1, level = 0)
+    df = df.drop(
+        columns = [name for name in df.index.names if name in df.columns]
+    )
     df.columns = list(df.columns)
     df = df.reset_index()
     df = df.drop(columns=['record_id', 'uniprot', 'entity_type', 'source'])
 
-    if organism
+    if not _is_human(organism):
+
+        df = translate_net(
+            df,
+            organism = organism,
+            columns = 'genesymbol',
+            unique_by = None,
+        )
+
+    return df
 
 
-def show_resources():
+def show_resources() -> list:
     """
-    Shows available resources in Omnipath. For more information visit the official website for
-    [Omnipath](https://omnipathdb.org/).
+    Shows available resources in Omnipath. For more information visit the
+    official website for [Omnipath](https://omnipathdb.org/).
 
     Returns
     -------
@@ -131,28 +194,37 @@ def show_resources():
     return list(op.requests.Annotations.resources())
 
 
-def get_dorothea(organism='human', levels=('A', 'B', 'C'), weight_dict=None):
+def get_dorothea(
+        organism: str | int = 'human',
+        levels: DOROTHEA_LEVELS | Iterable[DOROTHEA_LEVELS] = ('A', 'B', 'C'),
+        weight_dict: dict[str, int] | None = None,
+    ) -> pd.DataFrame:
     """
     DoRothEA gene regulatory network.
 
-    Wrapper to access DoRothEA gene regulatory network. DoRothEA is a comprehensive resource containing a curated collection of
-    transcription factors (TFs) and their target genes. Each interaction is weighted by its mode of regulation (either positive
-    or negative) and by its confidence level.
+    Wrapper to access DoRothEA gene regulatory network. DoRothEA is a
+    comprehensive resource containing a curated collection of transcription
+    factors (TFs) and their target genes. Each interaction is weighted by its
+    mode of regulation (either positive or negative) and by its confidence
+    level.
 
     Parameters
     ----------
     organism : str
         Which organism to use. Only human and mouse are available.
     levels : list
-        List of confidence levels to return. Goes from A to D, A being the most confident and D being the less.
+        List of confidence levels to return. Goes from A to D, A being the
+        most confident and D being the less.
     weight_dict : dict
-        Dictionary of values to divide the mode of regulation (-1 or 1), one for each confidence level. Bigger values will
-        generate weights close to zero.
+        Dictionary of values to divide the mode of regulation (-1 or 1),
+        one for each confidence level. Bigger values will generate weights
+        close to zero.
 
     Returns
     -------
     do : DataFrame
-        Dataframe in long format containing target genes for each TF with their associated weights and confidence level.
+        Dataframe in long format containing target genes for each TF with
+        their associated weights and confidence level.
     """
 
     weights = {'A': 1, 'B': 2, 'C': 3, 'D': 4}
@@ -167,19 +239,26 @@ def get_dorothea(organism='human', levels=('A', 'B', 'C'), weight_dict=None):
 
     # Load Dorothea
     do = op.interactions.Dorothea.get(
-        fields=['dorothea_level', 'extra_attrs'],
-        dorothea_levels=['A', 'B', 'C', 'D'],
-        genesymbols=True,
-        organism=organism,
+        fields = ['dorothea_level', 'extra_attrs'],
+        dorothea_levels = ['A', 'B', 'C', 'D'],
+        genesymbols = True,
+        organism = organism,
     )
 
     # Filter extra columns
-    do = do[['source_genesymbol', 'target_genesymbol', 'is_stimulation', 'is_inhibition',
-             'consensus_direction', 'consensus_stimulation', 'consensus_inhibition',
-             'dorothea_level']]
+    do = do[[
+        'source_genesymbol', 'target_genesymbol',
+        'is_stimulation', 'is_inhibition',
+        'consensus_direction', 'consensus_stimulation',
+        'consensus_inhibition', 'dorothea_level',
+    ]]
 
     # Remove duplicates
-    do = do[~do.duplicated(['source_genesymbol', 'dorothea_level', 'target_genesymbol'])]
+    do = do[~do.duplicated([
+        'source_genesymbol',
+        'dorothea_level',
+        'target_genesymbol',
+    ])]
 
     # Assign top level if more than 2
     do['dorothea_level'] = [lvl.split(';')[0] for lvl in do['dorothea_level']]
@@ -201,30 +280,41 @@ def get_dorothea(organism='human', levels=('A', 'B', 'C'), weight_dict=None):
     do['mor'] = mor
 
     # Compute weight based on confidence: mor/confidence
-    do['weight'] = [(i.mor)/weights[i.dorothea_level] for i in do.itertuples()]
+    do['weight'] = [
+        i.mor / weights[i.dorothea_level]
+        for i in do.itertuples()
+    ]
 
     # Filter and rename
-    do = do[['source_genesymbol', 'dorothea_level', 'target_genesymbol', 'weight']]
+    do = do[[
+        'source_genesymbol', 'dorothea_level',
+        'target_genesymbol', 'weight',
+    ]]
     do.columns = ['source', 'confidence', 'target', 'weight']
 
     # Filter by levels
-    do = do[np.isin(do['confidence'], levels)].sort_values('confidence').reset_index(drop=True)
+    do = (
+        do[np.isin(do['confidence'], levels)].
+        sort_values('confidence').
+        reset_index(drop=True)
+    )
 
-    if organism == 'mouse':
+    if _is_mouse(organism):
+
         do['target'] = [t.lower().capitalize() for t in do['target']]
 
     return do
 
 
 def translate_net(
-        net,
-        columns=('source', 'target', 'genesymbol'),
-        source_organism='human',
-        target_organism='mouse',
-        id_type='genesymbol',
-        unique_by=('source', 'target'),
-        **kwargs
-    ):
+        net: pd.DataFrame,
+        columns: str | Iterable[str] = ('source', 'target', 'genesymbol'),
+        source_organism: str | int = 'human',
+        target_organism: str | int = 'mouse',
+        id_type: str | tuple[str, str] = 'genesymbol',
+        unique_by: Iterable[str] | None = ('source', 'target'),
+        **kwargs: dict[str, str]
+    ) -> pd.DataFrame:
     """
     Translate networks between species by orthology.
 
