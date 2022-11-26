@@ -13,11 +13,14 @@ __all__ = [
     'translate_net',
 ]
 
+import os
+import builtins
 from types import ModuleType
 from typing import Iterable, Literal
 import numpy as np
 import pandas as pd
 
+builtins.PYPATH_LOG = os.devnull
 PYPATH_MIN_VERSION = '0.14.27'
 ORGANISMS = {
     'human': ('human', 'h. sapiens', 'hsapiens', '9606', 9606),
