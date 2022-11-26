@@ -18,7 +18,7 @@ from typing import Iterable, Literal
 import numpy as np
 import pandas as pd
 
-PYPATH_MIN_VERSION = '0.14.26'
+PYPATH_MIN_VERSION = '0.14.27'
 ORGANISMS = {
     'human': ('human', 'h. sapiens', 'hsapiens', '9606', 9606),
     'mouse': ('mouse', 'm. musculus', 'mmusculus', '10090', 10090),
@@ -253,7 +253,6 @@ def get_dorothea(
     weights = {'A': 1, 'B': 2, 'C': 3, 'D': 4}
     weights.update(weight_dict or {})
 
-    organism = organism.lower()
     _organism = (
         'mouse'
             if _is_mouse(organism) else
@@ -462,4 +461,3 @@ def translate_net(
         hom_net = hom_net[~hom_net.duplicated(unique_by)]
 
     return hom_net
-
