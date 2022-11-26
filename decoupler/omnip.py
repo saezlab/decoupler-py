@@ -5,7 +5,7 @@ Functions to retrieve resources from the meta-database OmniPath.
 
 import numpy as np
 
-PYPATH_MIN_VERSION = '0.14.25'
+PYPATH_MIN_VERSION = '0.14.26'
 
 
 def check_if_omnipath():
@@ -58,8 +58,14 @@ def get_progeny(organism='human', top=100):
     p['p_value'] = p['p_value'].astype(np.float32)
     p.columns = ['source', 'target', 'weight', 'p_value']
 
-    if organism == 'mouse':
-        p = translate_net(p, source_tax_id=9606, target_tax_id=10090, id_type='genesymbol', translate_source=False)
+    if organism != 'human':
+
+        p = translate_net(
+            p,
+            columns = 'target',
+            source_tax_id=9606,
+            target_tax_id=organism,
+        )
 
     return p
 
@@ -197,21 +203,28 @@ def get_dorothea(organism='human', levels=['A', 'B', 'C'], weight_dict={'A': 1, 
 
 def translate_net(
         net,
-        columns=('source', 'target'),
+        columns=('source', 'target', 'genesymbol'),
         source_tax_id=9606,
         target_tax_id=10090,
         id_type='genesymbol',
-        translate_source=False,
+        unique_by=('source', 'target'),
         **kwargs
     ):
     """
     Translate networks between species by orthology.
 
-    This function downloads orthology databases from omnipath and converts genes between species. The first time you
-    run this function will take a while (~15 minutes) but then it stores all the information in cache for quick
-    reusability.
+    This function downloads orthology databases from omnipath and converts
+    genes between species. The first time you run this function will take a
+    while (~15 minutes) but then it stores all the information in cache for
+    quick reusability.
 
-    In case you need to reset the cache, you can do it by doing: ``rm -r ~/.pypath/cache/``.
+    In case you need to reset the cache, you can do it by doing:
+    ``rm -r ~/.pypath/cache/``.
+
+    With its default parameters, this function translates almost any network
+    or annotation data frame acquired by the functions in this module from
+    human to mouse. For the PROGENy resource you should pass ``columns =
+    "target"``, as here the `source` column contains pathways, not identifers.
 
     Parameters
     ----------
@@ -251,7 +264,10 @@ def translate_net(
         from pypath.utils import homology
         from pypath.share import common
 
-        if ver(pypath.__version__) < ver(PYPATH_MIN_VERSION):
+        if (
+            getattr(pypath, '__version__', None) and
+            ver(pypath.__version__) < ver(PYPATH_MIN_VERSION)
+        ):
 
             raise RuntimeError(
                 'The installed version of pypath-omnipath is too old, '
@@ -271,6 +287,7 @@ def translate_net(
         columns = dict(zip(columns, [id_type] * len(columns)))
 
     columns.update(kwargs)
+    columns = {k: v for k, v in columns.items() if k in net.columns}
 
     # Make a copy of net
     hom_net = net.copy()
@@ -283,7 +300,11 @@ def translate_net(
         source = source_tax_id,
     )
 
-    # Remove duplicated based on source and target
-    hom_net = hom_net[~hom_net.duplicated([source, target])]
+    unique_by = common.to_list(unique_by)
+
+    if unique_by and all(c in hom_net.columns for c in unique_by):
+
+        # Remove duplicated based on source and target
+        hom_net = hom_net[~hom_net.duplicated(unique_by)]
 
     return hom_net
