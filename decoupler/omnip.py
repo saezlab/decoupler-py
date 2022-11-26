@@ -336,10 +336,10 @@ def get_dorothea(
 
         do['target'] = [t.lower().capitalize() for t in do['target']]
 
-    if _organism not in ('human', 'mouse', 'rat'):
+    if _organism not in ('mouse', 'rat') and not _is_human(organism):
 
         do = translate_net(
-            df = do,
+            net = do,
             target_organism = organism,
             columns = ('source', 'target'),
             unique_by = ('source', 'target'),
@@ -430,10 +430,13 @@ def translate_net(
             'pip install git+https://github.com/saezlab/pypath.git'
         )
 
-    source_organism = taxonomy.ensure_ncbi_tax_id(source_organism)
-    target_organism = taxonomy.ensure_ncbi_tax_id(target_organism)
+    _source_organism = taxonomy.ensure_ncbi_tax_id(source_organism)
+    _target_organism = taxonomy.ensure_ncbi_tax_id(target_organism)
 
-    if source_organism == target_organism:
+    assert _source_organism, f'Unknown organism: `{source_organism}`.'
+    assert _target_organism, f'Unknown organism: `{target_organism}`.'
+
+    if _source_organism == _target_organism:
 
         return net
 
@@ -451,9 +454,9 @@ def translate_net(
     # Translate
     hom_net = homology.translate_df(
         df = hom_net,
-        target = target_organism,
+        target = _target_organism,
         cols = columns,
-        source = source_organism,
+        source = _source_organism,
     )
 
     unique_by = common.to_list(unique_by)
