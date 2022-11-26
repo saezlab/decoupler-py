@@ -1,10 +1,17 @@
 import pytest
 import pandas as pd
-from ..omnip import check_if_omnipath, get_progeny, get_resource, show_resources, get_dorothea, translate_net
+from ..omnip import (
+    _check_if_omnipath,
+    get_progeny,
+    get_resource,
+    show_resources,
+    get_dorothea,
+    translate_net,
+)
 
 
 def test_check_if_omnipath():
-    check_if_omnipath()
+    _check_if_omnipath()
 
 
 def test_get_resource():
@@ -23,7 +30,7 @@ def test_get_dorothea():
     df = get_dorothea(organism='human')
     assert type(df) is pd.DataFrame
     assert df.shape[0] > 0
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         get_dorothea(organism='asdfgh')
     get_dorothea(organism='mouse')
 
@@ -34,5 +41,5 @@ def test_get_progeny():
     n_rows = (n_paths * 100)
     assert type(df) is pd.DataFrame
     assert df.shape[0] == n_rows
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         get_progeny(organism='asdfgh')
