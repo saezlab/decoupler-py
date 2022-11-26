@@ -299,7 +299,8 @@ def get_dorothea(
         reset_index(drop=True)
     )
 
-    if _is_mouse(organism):
+    # I disabled this, not sure why would it be useful -- Denes
+    if False and _is_mouse(organism):
 
         do['target'] = [t.lower().capitalize() for t in do['target']]
 
