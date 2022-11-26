@@ -138,8 +138,8 @@ def get_progeny(organism: str | int = 'human', top: int = 100) -> pd.DataFrame:
         p = translate_net(
             p,
             columns = 'target',
-            source_tax_id = 9606,
-            target_tax_id = organism,
+            source_organism = 9606,
+            target_organism = organism,
         )
 
     return p
