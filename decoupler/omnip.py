@@ -36,10 +36,6 @@ def get_progeny(organism='human', top=100):
         Dataframe in long format containing target genes for each pathway with their associated weights and p-values.
     """
 
-    organism = organism.lower()
-    if organism not in ['human', 'mouse']:
-        raise ValueError('organism can only be human or mouse.')
-
     op = check_if_omnipath()
 
     p = op.requests.Annotations.get(resources='PROGENy')
