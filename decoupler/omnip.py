@@ -3,12 +3,20 @@ Utility functions to query OmniPath.
 Functions to retrieve resources from the meta-database OmniPath.
 """
 
+__all__ = [
+    'get_progeny',
+    'show_resources',
+    'get_resource',
+    'get_dorothea',
+    'translate_net',
+]
+
 import numpy as np
 
 PYPATH_MIN_VERSION = '0.14.26'
 
 
-def check_if_omnipath():
+def _check_if_omnipath():
     try:
         import omnipath as op
     except Exception:
@@ -26,17 +34,19 @@ def get_progeny(organism='human', top=100):
     Parameters
     ----------
     organism : str
-        Which organism to use. Only human and mouse are available.
+        Name or NCBI Taxonomy ID of the desired organism. Non-human organisms
+        will be translated from human by orthology.
     top : int
         Number of genes per pathway to return.
 
     Returns
     -------
     p : DataFrame
-        Dataframe in long format containing target genes for each pathway with their associated weights and p-values.
+        Dataframe in long format containing target genes for each pathway with
+        their associated weights and p-values.
     """
 
-    op = check_if_omnipath()
+    op = _check_if_omnipath()
 
     p = op.requests.Annotations.get(resources='PROGENy')
     p = p.set_index(['record_id', 'uniprot', 'genesymbol', 'entity_type', 'source', 'label'])
@@ -66,7 +76,7 @@ def get_progeny(organism='human', top=100):
     return p
 
 
-def get_resource(name):
+def get_resource(name, organism = 'human'):
     """
     Wrapper to access resources inside Omnipath.
 
@@ -77,6 +87,10 @@ def get_resource(name):
     ----------
     name : str
         Name of the resource to query.
+    organism : int | str
+        The organism of interest: either NCBI Taxonomy ID, common name,
+        latin name or Ensembl name. Organisms other than human will be
+        translated from human data by orthology.
 
     Returns
     -------
@@ -88,7 +102,7 @@ def get_resource(name):
     msg = '{0} is not a valid resource. Please, run decoupler.show_resources to see the list of available resources.'
     assert name in resources, msg.format(name)
 
-    op = check_if_omnipath()
+    op = _check_if_omnipath()
 
     df = op.requests.Annotations.get(resources=name, entity_type="protein")
     df = df.set_index(['record_id', 'uniprot', 'genesymbol', 'entity_type', 'source', 'label'])
@@ -97,7 +111,8 @@ def get_resource(name):
     df.columns = list(df.columns)
     df = df.reset_index()
     df = df.drop(columns=['record_id', 'uniprot', 'entity_type', 'source'])
-    return df
+
+    if organism
 
 
 def show_resources():
@@ -111,12 +126,12 @@ def show_resources():
         List of available resources to query with `dc.get_resource`.
     """
 
-    op = check_if_omnipath()
+    op = _check_if_omnipath()
 
     return list(op.requests.Annotations.resources())
 
 
-def get_dorothea(organism='human', levels=['A', 'B', 'C'], weight_dict={'A': 1, 'B': 2, 'C': 3, 'D': 4}):
+def get_dorothea(organism='human', levels=('A', 'B', 'C'), weight_dict=None):
     """
     DoRothEA gene regulatory network.
 
@@ -140,18 +155,22 @@ def get_dorothea(organism='human', levels=['A', 'B', 'C'], weight_dict={'A': 1, 
         Dataframe in long format containing target genes for each TF with their associated weights and confidence level.
     """
 
+    weights = {'A': 1, 'B': 2, 'C': 3, 'D': 4}
+    weights.update(weight_dict or {})
+    levels = list(levels)
+
     organism = organism.lower()
     if organism not in ['human', 'mouse']:
         raise ValueError('organism can only be human or mouse.')
 
-    op = check_if_omnipath()
+    op = _check_if_omnipath()
 
     # Load Dorothea
     do = op.interactions.Dorothea.get(
         fields=['dorothea_level', 'extra_attrs'],
         dorothea_levels=['A', 'B', 'C', 'D'],
         genesymbols=True,
-        organism=organism
+        organism=organism,
     )
 
     # Filter extra columns
@@ -182,7 +201,7 @@ def get_dorothea(organism='human', levels=['A', 'B', 'C'], weight_dict={'A': 1, 
     do['mor'] = mor
 
     # Compute weight based on confidence: mor/confidence
-    do['weight'] = [(i.mor)/weight_dict[i.dorothea_level] for i in do.itertuples()]
+    do['weight'] = [(i.mor)/weights[i.dorothea_level] for i in do.itertuples()]
 
     # Filter and rename
     do = do[['source_genesymbol', 'dorothea_level', 'target_genesymbol', 'weight']]
@@ -200,8 +219,8 @@ def get_dorothea(organism='human', levels=['A', 'B', 'C'], weight_dict={'A': 1, 
 def translate_net(
         net,
         columns=('source', 'target', 'genesymbol'),
-        source_tax_id=9606,
-        target_tax_id=10090,
+        source_organism='human',
+        target_organism='mouse',
         id_type='genesymbol',
         unique_by=('source', 'target'),
         **kwargs
@@ -231,10 +250,10 @@ def translate_net(
         identifiers of the source organism. It can be a single column name,
         a list of column names, or a dict with column names as keys and the
         type of identifiers in these columns as values.
-    source_tax_id : int
-        NCBI Taxonomy ID of the organism to translate from.
-    target_tax_id : int
-        NCBI Taxonomy ID of the organism to translate to.
+    source_organism: int | str
+        Name or NCBI Taxonomy ID of the organism to translate from.
+    target_organism : int | str
+        Name or NCBI Taxonomy ID of the organism to translate to.
     id_type: str | tuple[str, str]
         Shortcut to provide a single identifier type if all columns
         should be translated from and to the same ID type. If a tuple of two
@@ -259,6 +278,7 @@ def translate_net(
         import pypath
         from pypath.utils import homology
         from pypath.share import common
+        from pypath.utils import taxonomy
 
         if (
             getattr(pypath, '__version__', None) and
@@ -277,6 +297,13 @@ def translate_net(
             'pip install git+https://github.com/saezlab/pypath.git'
         )
 
+    source_organism = taxonomy.ensure_ncbi_tax_id(source_organism)
+    target_organism = taxonomy.ensure_ncbi_tax_id(target_organism)
+
+    if source_organism == target_organism:
+
+        return net
+
     if not isinstance(columns, dict):
 
         columns = common.to_list(columns)
@@ -291,9 +318,9 @@ def translate_net(
     # Translate
     hom_net = homology.translate_df(
         df = hom_net,
-        target = target_tax_id,
+        target = target_organism,
         cols = columns,
-        source = source_tax_id,
+        source = source_organism,
     )
 
     unique_by = common.to_list(unique_by)
