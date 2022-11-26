@@ -1,27 +1,12 @@
 from setuptools import setup
 import os
 
-
-def read(rel_path: str) -> str:
-    here = os.path.abspath(os.path.dirname(__file__))
-    with open(os.path.join(here, rel_path)) as fp:
-        return fp.read()
-
-
-def get_version(rel_path: str) -> str:
-    for line in read(rel_path).splitlines():
-        if line.startswith("__version__"):
-            delim = '"' if '"' in line else "'"
-            return line.split(delim)[1]
-    raise RuntimeError("Unable to find version string.")
-
-
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setup(
     name="decoupler",
-    version=get_version("decoupler/__init__.py"),
+    version="1.3.0",
     author="Pau Badia i Mompel",
     author_email="pau.badia@uni-heidelberg.de",
     description="Ensemble of methods to infer biological activities from omics data",
