@@ -18,7 +18,8 @@ setup(
     },
     install_requires=["numba",
                       "tqdm",
-                      "anndata"],
+                      "anndata",
+                      "typing_extensions"],
     packages=["decoupler"],
     python_requires=">=3.6",
     classifiers=[

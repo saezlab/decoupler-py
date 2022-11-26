@@ -16,7 +16,8 @@ __all__ = [
 import os
 import builtins
 from types import ModuleType
-from typing import Iterable, Literal
+from typing import Iterable
+from typing_extensions import Literal
 import numpy as np
 import pandas as pd
 
