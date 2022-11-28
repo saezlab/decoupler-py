@@ -22,8 +22,8 @@ def get_version(rel_path: str) -> str:
 # -- Project information
 
 project = 'decoupler'
-copyright = """2022, Badia-i-Mompel P., Vélez Santiago J., Braunger J., Geiss C., Dimitrov D., Müller-Dott S., Taus P., Dugourd A.,
-Holland C.H., Ramirez Flores R.O. and Saez-Rodriguez J."""
+copyright = """2022, Badia-i-Mompel P., Vélez Santiago J., Braunger J., Geiss C., Dimitrov D., Müller-Dott S.,
+Taus P., Dugourd A., Holland C.H., Ramirez Flores R.O. and Saez-Rodriguez J."""
 author = 'Pau Badia i Mompel'
 release = get_version("../../decoupler/__init__.py")
 version = get_version("../../decoupler/__init__.py")

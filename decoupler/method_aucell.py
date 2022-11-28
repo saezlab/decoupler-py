@@ -70,7 +70,8 @@ def aucell(mat, net, n_up):
     net = np.concatenate(net.values)
 
     # Compute AUC per fset
-    acts = nb_aucell(mat.shape[0], mat.shape[1], mat.data, mat.indptr.astype(np.int64), mat.indices.astype(np.int64), net, offsets, n_up)
+    acts = nb_aucell(mat.shape[0], mat.shape[1], mat.data, mat.indptr.astype(np.int64),
+                     mat.indices.astype(np.int64), net, offsets, n_up)
 
     return acts
 
