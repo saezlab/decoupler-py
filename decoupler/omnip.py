@@ -27,6 +27,7 @@ ORGANISMS = {
     'human': ('human', 'h. sapiens', 'hsapiens', '9606', 9606),
     'mouse': ('mouse', 'm. musculus', 'mmusculus', '10090', 10090),
     'rat': ('rat', 'r. norvegicus', 'rnorvegicus', '10116', 10116),
+    'fly': ('fly', 'd. melanogaster', 'dmelanogaster', '7227', 7227)
 }
 DOROTHEA_LEVELS = Literal['A', 'B', 'C', 'D']
 
@@ -49,10 +50,10 @@ def _check_if_omnipath() -> ModuleType:
 
 def _is_organism(
         name: str | int,
-        organism: Literal['human', 'mouse', 'rat'],
-    ) -> bool:
+        organism: Literal['human', 'mouse', 'rat', 'fly'],
+        ) -> bool:
     """
-    Tells if `name` means one of human, mouse or rat.
+    Tells if `name` means one of human, mouse, rat or fly.
     """
 
     return str(name).lower() in ORGANISMS.get(organism.lower(), ())
@@ -82,6 +83,14 @@ def _is_rat(name: str) -> bool:
     return _is_organism(name, 'rat')
 
 
+def _is_fly(name: str) -> bool:
+    """
+    Does the organism name or ID mean fly?
+    """
+
+    return _is_organism(name, 'fly')
+
+
 def get_progeny(organism: str | int = 'human', top: int = 100) -> pd.DataFrame:
     """
     Pathway RespOnsive GENes for activity inference (PROGENy).
@@ -93,8 +102,9 @@ def get_progeny(organism: str | int = 'human', top: int = 100) -> pd.DataFrame:
     Parameters
     ----------
     organism : str
-        Name or NCBI Taxonomy ID of the desired organism. Non-human organisms
-        will be translated from human by orthology.
+        The organism of interest: either NCBI Taxonomy ID, common name,
+        latin name or Ensembl name. Organisms other than human will be
+        translated from human data by orthology.
     top : int
         Number of genes per pathway to return.
 
@@ -107,12 +117,12 @@ def get_progeny(organism: str | int = 'human', top: int = 100) -> pd.DataFrame:
 
     op = _check_if_omnipath()
 
-    p = op.requests.Annotations.get(resources = 'PROGENy')
+    p = op.requests.Annotations.get(resources='PROGENy')
     p = p.set_index([
         'record_id', 'uniprot', 'genesymbol',
         'entity_type', 'source', 'label',
     ])
-    p = p.unstack('label').droplevel(axis = 1, level = 0)
+    p = p.unstack('label').droplevel(axis=1, level=0)
     p.columns = np.array(p.columns)
     p = p.reset_index()
     p.columns.name = None
@@ -137,9 +147,9 @@ def get_progeny(organism: str | int = 'human', top: int = 100) -> pd.DataFrame:
 
         p = translate_net(
             p,
-            columns = 'target',
-            source_organism = 9606,
-            target_organism = organism,
+            columns='target',
+            source_organism=9606,
+            target_organism=organism,
         )
 
     return p
@@ -178,15 +188,15 @@ def get_resource(name: str, organism: str | int = 'human') -> pd.DataFrame:
 
     op = _check_if_omnipath()
 
-    df = op.requests.Annotations.get(resources = name, entity_type = 'protein')
+    df = op.requests.Annotations.get(resources=name, entity_type='protein')
     df = df.set_index([
         'record_id', 'uniprot',
         'genesymbol', 'entity_type',
         'source', 'label',
     ])
-    df = df.unstack('label').droplevel(axis = 1, level = 0)
+    df = df.unstack('label').droplevel(axis=1, level=0)
     df = df.drop(
-        columns = [name for name in df.index.names if name in df.columns]
+        columns=[name for name in df.index.names if name in df.columns]
     )
     df.columns = list(df.columns)
     df = df.reset_index()
@@ -196,9 +206,9 @@ def get_resource(name: str, organism: str | int = 'human') -> pd.DataFrame:
 
         df = translate_net(
             df,
-            target_organism = organism,
-            columns = 'genesymbol',
-            unique_by = None,
+            target_organism=organism,
+            columns='genesymbol',
+            unique_by=None,
         )
 
     return df
@@ -224,7 +234,7 @@ def get_dorothea(
         organism: str | int = 'human',
         levels: DOROTHEA_LEVELS | Iterable[DOROTHEA_LEVELS] = ('A', 'B', 'C'),
         weight_dict: dict[str, int] | None = None,
-    ) -> pd.DataFrame:
+        ) -> pd.DataFrame:
     """
     DoRothEA gene regulatory network.
 
@@ -237,7 +247,9 @@ def get_dorothea(
     Parameters
     ----------
     organism : str
-        Which organism to use. Only human and mouse are available.
+        The organism of interest: either NCBI Taxonomy ID, common name,
+        latin name or Ensembl name. Organisms other than human will be
+        translated from human data by orthology.
     levels : list
         List of confidence levels to return. Goes from A to D, A being the
         most confident and D being the less.
@@ -258,10 +270,9 @@ def get_dorothea(
     weights.update(weight_dict or {})
 
     _organism = (
-        'mouse'
-            if _is_mouse(organism) else
-        'rat'
-            if _is_rat(organism) else
+        'mouse' if _is_mouse(organism) else
+        'rat' if _is_rat(organism) else
+        'fly' if _is_fly(organism) else
         'human'
     )
 
@@ -269,10 +280,10 @@ def get_dorothea(
 
     # Load Dorothea
     do = op.interactions.Dorothea.get(
-        fields = ['dorothea_level', 'extra_attrs'],
-        dorothea_levels = ['A', 'B', 'C', 'D'],
-        genesymbols = True,
-        organism = _organism,
+        fields=['dorothea_level', 'extra_attrs'],
+        dorothea_levels=['A', 'B', 'C', 'D'],
+        genesymbols=True,
+        organism=_organism,
     )
 
     # Filter extra columns
@@ -329,22 +340,17 @@ def get_dorothea(
     do = (
         do[np.isin(do['confidence'], levels)].
         sort_values('confidence').
-        reset_index(drop = True)
+        reset_index(drop=True)
     )
-
-    # I disabled this, not sure why would it be useful -- Denes
-    if False and _is_mouse(organism):
-
-        do['target'] = [t.lower().capitalize() for t in do['target']]
 
     if _organism not in ('mouse', 'rat') and not _is_human(organism):
 
         do = translate_net(
-            net = do,
-            target_organism = organism,
-            columns = ('source', 'target'),
-            unique_by = ('source', 'target'),
-            id_type = 'genesymbol',
+            net=do,
+            target_organism=organism,
+            columns=('source', 'target'),
+            unique_by=('source', 'target'),
+            id_type='genesymbol',
         )
 
     return do
@@ -358,7 +364,7 @@ def translate_net(
         id_type: str | tuple[str, str] = 'genesymbol',
         unique_by: Iterable[str] | None = ('source', 'target'),
         **kwargs: dict[str, str]
-    ) -> pd.DataFrame:
+        ) -> pd.DataFrame:
     """
     Translate networks between species by orthology.
 
@@ -407,7 +413,8 @@ def translate_net(
     # Check if pypath is installed
     try:
 
-        ver = lambda v: tuple(map(int, v.split('.')))
+        def ver(v):
+            return tuple(map(int, v.split('.')))
 
         import pypath
         from pypath.utils import homology
@@ -454,10 +461,10 @@ def translate_net(
 
     # Translate
     hom_net = homology.translate_df(
-        df = hom_net,
-        target = _target_organism,
-        cols = columns,
-        source = _source_organism,
+        df=hom_net,
+        target=_target_organism,
+        cols=columns,
+        source=_source_organism,
     )
 
     unique_by = common.to_list(unique_by)

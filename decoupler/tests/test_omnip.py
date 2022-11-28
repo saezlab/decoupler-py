@@ -6,7 +6,6 @@ from ..omnip import (
     get_resource,
     show_resources,
     get_dorothea,
-    translate_net,
 )
 
 
