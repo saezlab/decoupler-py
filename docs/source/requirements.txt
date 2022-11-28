@@ -3,3 +3,4 @@ nbsphinx
 IPython
 sklearn
 skranger
+ipython3
