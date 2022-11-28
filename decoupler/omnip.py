@@ -22,7 +22,7 @@ import numpy as np
 import pandas as pd
 
 builtins.PYPATH_LOG = os.devnull
-PYPATH_MIN_VERSION = '0.14.27'
+PYPATH_MIN_VERSION = '0.14.28'
 ORGANISMS = {
     'human': ('human', 'h. sapiens', 'hsapiens', '9606', 9606),
     'mouse': ('mouse', 'm. musculus', 'mmusculus', '10090', 10090),
