@@ -1,6 +1,13 @@
 Release notes
 =============
 
+1.3.1
+-----
+
+Changes
+~~~~~~~
+- Omnipath wrappers (``get_resource``, ``get_dorothea`` and ``get_progeny``) now accept any organism name.
+
 1.3.0
 -----
 
@@ -26,7 +33,7 @@ Bug fixes
 - ``plot_volcano`` now correctly can plot networks with different source names.
 
 Changes
-~~~~~~~~
+~~~~~~~
 - ``extract`` now removes empty samples and features.
 - ``run_consensus`` now follows the same format as other methods, old function is now called ``cons``.
 - ``get_pseudobulk`` now checks if input are raw integer counts.
@@ -66,7 +73,7 @@ Bug fixes
 - Fixed ``run_ora`` to correctly deal with random ties.
 
 Changes
-~~~~~~~~
+~~~~~~~
 - ``get_dorothea`` now returns an ordered dataframe.
 - ``get_contrast`` now prints warnings instead of returning an empty dataframe.
 
