@@ -1,6 +1,5 @@
 numpydoc
 nbsphinx
-IPython
+ipython
 sklearn
 skranger
-ipython3
