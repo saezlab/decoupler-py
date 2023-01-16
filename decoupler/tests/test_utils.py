@@ -62,7 +62,7 @@ def test_summarize_acts():
     estimate = pd.DataFrame([[3.5, -0.5, 0.3], [3.6, -0.6, 0.04], [-1, 2, -1.8]],
                             columns=['T1', 'T2', 'T3'], index=['S01', 'S02', 'S03'])
     obs = pd.DataFrame([['C01', 'C01', 'C02']], columns=estimate.index, index=['celltype']).T
-    adata = AnnData(estimate, obs=obs)
+    adata = AnnData(estimate, obs=obs, dtype=np.float32)
     acts = summarize_acts(estimate, obs=obs, groupby='celltype', mode='median', min_std=0)
     acts = summarize_acts(adata, obs=None, groupby='celltype', mode='mean', min_std=0)
     assert np.unique(acts.values).size > 2
@@ -93,7 +93,7 @@ def test_denserun():
     assert not np.all(np.isnan(acts.values[0]))
     assert np.all(np.isnan(acts.values[1]))
 
-    mat = AnnData(mat)
+    mat = AnnData(mat, dtype=np.float32)
     dense_run(run_ora, mat, net, min_n=2, verbose=True, use_raw=False)
     acts = mat.obsm['ora_estimate']
     assert acts.shape[1] == 2

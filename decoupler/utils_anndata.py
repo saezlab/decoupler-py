@@ -14,7 +14,7 @@ from .utils import melt, p_adjust_fdr
 from .pre import rename_net
 
 
-def get_acts(adata, obsm_key):
+def get_acts(adata, obsm_key, dtype=np.float32):
     """
     Extracts activities as AnnData object.
 
@@ -27,6 +27,8 @@ def get_acts(adata, obsm_key):
         Annotated data matrix with activities stored in ``.obsm``.
     obsm_key : str
         ``.osbm`` key to extract.
+    dtype : type
+        Type of float used.
 
     Returns
     -------
@@ -39,7 +41,7 @@ def get_acts(adata, obsm_key):
     uns = adata.uns
     obsm = adata.obsm
 
-    return AnnData(np.array(adata.obsm[obsm_key]), obs=obs, var=var, uns=uns, obsm=obsm)
+    return AnnData(np.array(adata.obsm[obsm_key]), obs=obs, var=var, uns=uns, obsm=obsm, dtype=dtype)
 
 
 def swap_layer(adata, layer_key, inplace=False):
@@ -217,7 +219,7 @@ def compute_psbulk(psbulk, props, X, sample_col, groups_col, smples, groups, obs
 
 
 def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=False, min_prop=0.2, min_cells=10,
-                   min_counts=1000, min_smpls=2):
+                   min_counts=1000, min_smpls=2, dtype=np.float32):
     """
     Generates an unormalized pseudo-bulk profile per sample and group.
 
@@ -246,6 +248,8 @@ def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=
         Minimum number of counts per sample.
     min_smpls : int
         Minimum number of samples per feature.
+    dtype : type
+        Type of float used.
 
     Returns
     -------
@@ -299,7 +303,7 @@ def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=
             offset += len(smples)
 
     # Create new AnnData
-    psbulk = AnnData(psbulk, obs=new_obs, var=new_var)
+    psbulk = AnnData(psbulk, obs=new_obs, var=new_var, dtype=dtype)
 
     # Remove empty samples
     psbulk = psbulk[~np.all(psbulk.X == 0, axis=1), ~np.all(psbulk.X == 0, axis=0)]

@@ -15,7 +15,7 @@ def test_get_acts():
     df = pd.DataFrame(m, index=r, columns=c)
     estimate = pd.DataFrame([[3.5, -0.5], [3.6, -0.6], [-1, 2]],
                             columns=['T1', 'T2'], index=r)
-    adata = AnnData(df)
+    adata = AnnData(df, dtype=np.float32)
     adata.obsm['estimate'] = estimate
     acts = get_acts(adata, 'estimate')
     assert acts.shape[0] == adata.shape[0]
@@ -29,7 +29,7 @@ def test_swap_layer():
     r = np.array(['S1', 'S2', 'S3'])
     c = np.array(['G1', 'G2', 'G3'])
     df = pd.DataFrame(m, index=r, columns=c)
-    adata = AnnData(df)
+    adata = AnnData(df, dtype=np.float32)
     adata.layers['norm'] = adata.X / np.sum(adata.X, axis=1).reshape(-1, 1)
     sdata = swap_layer(adata, 'norm')
     assert not np.all(np.mod(sdata.X, 1) == 0)
@@ -44,7 +44,7 @@ def test_extract_psbulk_inputs():
     c = np.array(['G1', 'G2', 'G3'])
     df = pd.DataFrame(m, index=r, columns=c)
     obs = pd.DataFrame([['C01', 'C01', 'C02']], columns=r, index=['celltype']).T
-    adata = AnnData(df, obs=obs)
+    adata = AnnData(df, obs=obs, dtype=np.float32)
     adata.layers['counts'] = adata.X
     adata_raw = adata.copy()
     adata_raw.raw = adata_raw
@@ -106,7 +106,7 @@ def test_get_pseudobulk():
     smples = np.array(['S1', 'S2', 'S3'])
     groups = np.array(['C1', 'C1', 'C2'])
     obs = pd.DataFrame([smples, groups], columns=smples, index=[sample_col, groups_col]).T
-    adata = AnnData(df, obs=obs)
+    adata = AnnData(df, obs=obs, dtype=np.float32)
     get_pseudobulk(adata, sample_col, sample_col, min_prop=0, min_cells=0, min_counts=0, min_smpls=0)
     get_pseudobulk(adata, sample_col, groups_col, min_prop=0, min_cells=0, min_counts=0, min_smpls=0)
 
@@ -144,7 +144,7 @@ def test_get_contrast():
     reference = 'Ht'
     obs = pd.DataFrame([['C1', 'C1', 'C1', 'C1'], [condition, condition, reference, reference]],
                        columns=r, index=[groups_col, condition_col]).T
-    adata = AnnData(df, obs=obs)
+    adata = AnnData(df, obs=obs, dtype=np.float32)
     get_contrast(adata, groups_col, condition_col, condition, None)
     get_contrast(adata, groups_col, condition_col, condition, reference)
     get_contrast(adata, None, condition_col, condition, reference)
