@@ -3,9 +3,9 @@ import numpy as np
 import pandas as pd
 from scipy.sparse import csr_matrix
 from anndata import AnnData
-from ..utils_anndata import get_acts, extract_psbulk_inputs, check_for_raw_counts, format_psbulk_inputs
-from ..utils_anndata import compute_psbulk, get_unq_dict, get_pseudobulk, check_if_skip, get_contrast
-from ..utils_anndata import get_top_targets, format_contrast_results
+from ..utils_anndata import get_acts, swap_layer, extract_psbulk_inputs, check_for_raw_counts
+from ..utils_anndata import format_psbulk_inputs, compute_psbulk, get_unq_dict, get_pseudobulk
+from ..utils_anndata import check_if_skip, get_contrast, get_top_targets, format_contrast_results
 
 
 def test_get_acts():
@@ -13,11 +13,29 @@ def test_get_acts():
     r = np.array(['S1', 'S2', 'S3'])
     c = np.array(['G1', 'G2', 'G3'])
     df = pd.DataFrame(m, index=r, columns=c)
-    estimate = pd.DataFrame([[3.5, -0.5, 0.3], [3.6, -0.6, 0.04], [-1, 2, -1.8]],
-                            columns=['T1', 'T2', 'T3'], index=r)
+    estimate = pd.DataFrame([[3.5, -0.5], [3.6, -0.6], [-1, 2]],
+                            columns=['T1', 'T2'], index=r)
     adata = AnnData(df)
     adata.obsm['estimate'] = estimate
-    get_acts(adata, 'estimate')
+    acts = get_acts(adata, 'estimate')
+    assert acts.shape[0] == adata.shape[0]
+    assert acts.shape[1] != adata.shape[1]
+    assert np.any(acts.X < 0)
+    assert not np.any(adata.X < 0)
+
+
+def test_swap_layer():
+    m = np.array([[1, 0, 2], [1, 0, 3], [0, 0, 1]])
+    r = np.array(['S1', 'S2', 'S3'])
+    c = np.array(['G1', 'G2', 'G3'])
+    df = pd.DataFrame(m, index=r, columns=c)
+    adata = AnnData(df)
+    adata.layers['norm'] = adata.X / np.sum(adata.X, axis=1).reshape(-1, 1)
+    sdata = swap_layer(adata, 'norm')
+    assert not np.all(np.mod(sdata.X, 1) == 0)
+    swap_layer(adata=adata, layer_key='norm', inplace=True)
+    assert not np.all(np.mod(adata.X, 1) == 0)
+    assert adata.layers['X'] is not None
 
 
 def test_extract_psbulk_inputs():

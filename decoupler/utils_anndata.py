@@ -18,20 +18,20 @@ def get_acts(adata, obsm_key):
     """
     Extracts activities as AnnData object.
 
-    From an AnnData object with source activities stored in `.obsm`, generates a new AnnData object with activities in `X`.
+    From an AnnData object with source activities stored in ``.obsm``, generates a new AnnData object with activities in ``X``.
     This allows to reuse many scanpy processing and visualization functions.
 
     Parameters
     ----------
     adata : AnnData
-        Annotated data matrix with activities stored in .obsm.
-    obsm_key
-        `.osbm` key to extract.
+        Annotated data matrix with activities stored in ``.obsm``.
+    obsm_key : str
+        ``.osbm`` key to extract.
 
     Returns
     -------
     acts : AnnData
-        New AnnData object with activities in X.
+        New AnnData object with activities in ``X``.
     """
 
     obs = adata.obs
@@ -40,6 +40,40 @@ def get_acts(adata, obsm_key):
     obsm = adata.obsm
 
     return AnnData(np.array(adata.obsm[obsm_key]), obs=obs, var=var, uns=uns, obsm=obsm)
+
+
+def swap_layer(adata, layer_key, inplace=False):
+    """
+    Swaps an ``adata.X`` for a given layer.
+
+    Swaps an AnnData ``X`` matrix with a given layer. Generates a new object by default.
+
+    Parameters
+    ----------
+    adata : AnnData
+        Annotated data matrix.
+    layer_key : str
+        ``.layers`` key to swap.
+    inplace : bool
+        If ``False``, return a copy. Otherwise, do operation inplace and return ``None``.
+
+    Returns
+    -------
+    layer : AnnData, None
+        If ``inplace=False``, new AnnData object with the given layer in ``X`` and
+        the original ``X`` stored in ``.layers``.
+    """
+
+    if inplace:
+        adata.layers['X'] = adata.X
+        adata.X = adata.layers[layer_key]
+        cdata = None
+    else:
+        cdata = adata.copy()
+        cdata.layers['X'] = cdata.X
+        cdata.X = cdata.layers[layer_key]
+
+    return cdata
 
 
 def extract_psbulk_inputs(adata, obs, layer, use_raw):
