@@ -1,9 +1,10 @@
 import pytest
 import numpy as np
 import pandas as pd
+import os
 from anndata import AnnData
 from ..utils import m_rename, melt, show_methods, check_corr, get_toy_data, summarize_acts
-from ..utils import assign_groups, p_adjust_fdr, dense_run, shuffle_net
+from ..utils import assign_groups, p_adjust_fdr, dense_run, shuffle_net, read_gmt
 from ..method_mlm import run_mlm
 from ..method_ora import run_ora
 
@@ -122,3 +123,30 @@ def test_shuffle_net():
     net_dict = {k: v for k, v in zip(net.target, net.weight)}
     rnet_dict = {k: v for k, v in zip(rnet.target, rnet.weight)}
     assert net_dict != rnet_dict
+
+
+def test_read_gmt():
+    gmt = """gset_1 link A B C
+    gset_2 link C D
+    gset_3 link A B C E
+    """.rstrip().split('\n')
+
+    # Write line per line
+    path = 'tmp.gmt'
+    with open(path, 'w') as f:
+        for line in gmt:
+            f.write(line + '\n')
+
+    # Read gmt
+    df = read_gmt(path)
+
+    # Check
+    assert df['source'].unique().size == 3
+    assert df['target'].unique().size == 5
+    counts = df.groupby('source', group_keys=False)['target'].apply(lambda x: np.array(x))
+    assert counts['gset_1'].size == 3
+    assert counts['gset_2'].size == 2
+    assert counts['gset_3'].size == 4
+
+    # Remove tmp file
+    os.remove(path)

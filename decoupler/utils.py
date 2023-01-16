@@ -486,6 +486,11 @@ def shuffle_net(net, target=None, weight=None, seed=42, same_seed=True):
         Random seed to use.
     same_seed : bool
         Whether to share seed between targets and weights if both are not None.
+
+    Returns
+    -------
+    rnet : DataFrame
+        Shuffled network.
     """
 
     # Make copy of net
@@ -512,3 +517,40 @@ def shuffle_net(net, target=None, weight=None, seed=42, same_seed=True):
             rng.shuffle(rnet[weight].values)
 
     return rnet
+
+
+def read_gmt(path):
+    """
+    Read a GMT file and return a ``pd.DataFrame``.
+
+    Parameters
+    ----------
+    path : str
+        Path to GMT file containing gene sets.
+
+    Returns
+    -------
+    df : DataFrame
+        Gene sets as `pd.DataFrame`.
+    """
+
+    # Init empty df
+    df = []
+
+    # Read line per line
+    with open(path, 'r') as f:
+        for line in f.readlines():
+            line = line.rstrip().split()
+
+            # Extract gene set name
+            set_name = line[0]
+
+            # For each gene add an entry (skip link in [1])
+            genes = line[2:]
+            for gene in genes:
+                df.append([set_name, gene])
+
+    # Transform to df
+    df = pd.DataFrame(df, columns=['source', 'target'])
+
+    return df
