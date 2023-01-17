@@ -1,6 +1,13 @@
 Release notes
 =============
 
+1.3.3
+-----
+
+Bug fixes
+~~~~~~~~~
+- ``read_gmt`` is now properly exported.
+
 1.3.2
 -----
 
