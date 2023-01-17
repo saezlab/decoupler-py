@@ -1,6 +1,23 @@
 Release notes
 =============
 
+1.3.2
+-----
+
+Bug fixes
+~~~~~~~~~
+- ``plot_metrics_scatter_cols`` now deals with missing sources when comparing nets.
+
+Changes
+~~~~~~~
+- ``get_pseudobulk`` and ``get_acts`` now have a ``dtype`` argument due to future ``AnnData`` changes.
+- ``plot_metrics_scatter`` and ``plot_metrics_boxplot`` now use ``GroupBy.mean(numeric_only=True)``.
+
+Additions
+~~~~~~~~~
+- Added ``swap_layer`` function to easily move ``adata`` layers to ``.X``.
+- Added ``read_gmt`` function to read GMT files containing gene sets.
+
 1.3.1
 -----
 

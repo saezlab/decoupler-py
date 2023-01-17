@@ -161,7 +161,7 @@ def plot_volcano(logFCs, pvals, contrast, name=None, net=None, top=5, source='so
         df['weight'] = 'gray'
         df.loc[(df['logFCs'] >= lFCs_thr) & (df['pvals'] >= sign_thr), 'weight'] = '#D62728'
         df.loc[(df['logFCs'] <= -lFCs_thr) & (df['pvals'] >= sign_thr), 'weight'] = '#1F77B4'
-        df.plot.scatter(x='logFCs', y='pvals', c='weight', cmap='coolwarm', sharex=False, ax=ax)
+        df.plot.scatter(x='logFCs', y='pvals', c='weight', sharex=False, ax=ax)
         ax.set_title('{0}'.format(contrast))
 
     # Draw sign lines
@@ -481,7 +481,7 @@ def plot_metrics_scatter(df, x='auroc', y='auprc', groupby=None, show_text=True,
         sub = (
             df[msk]
             .groupby(['method', 'metric'])
-            .mean().reset_index()
+            .mean(numeric_only=True).reset_index()
             .pivot(index='method', columns='metric', values='score').reset_index()
         )
 
@@ -562,6 +562,22 @@ def plot_metrics_scatter_cols(df, col, x='auroc', y='auprc', groupby=None, n_col
     # Get unique cats
     cats = np.unique(df[col].values)
     n_rows = int(np.ceil(cats.size / n_cols))
+
+    # Fill missing combinations
+    groupbys = np.unique(df[groupby].values)
+    metrics = np.unique(df['metric'].values)
+
+    for cat in cats:
+        for grpby in groupbys:
+            is_empty = df[(df[col] == cat) & (df[groupby] == grpby)].shape[0] == 0
+            if is_empty:
+                for m in metrics:
+                    if col == 'method' or groupby == 'method':
+                        tmp = pd.DataFrame([[cat, grpby, m, np.nan, np.nan]], columns=[col, groupby, 'metric', 'score', 'ci'])
+                    else:
+                        tmp = pd.DataFrame([[cat, grpby, '', m, np.nan, np.nan]],
+                                           columns=[col, groupby, 'method', 'metric', 'score', 'ci'])
+                    df = pd.concat([df, tmp])
 
     # Start figure
     fig, axes = plt.subplots(n_rows, n_cols, figsize=figsize, dpi=dpi, tight_layout=True, sharex=True, sharey=True)
@@ -648,7 +664,7 @@ def plot_metrics_boxplot(df, metric, groupby=None, figsize=(5, 5), dpi=100, ax=N
         order = (
             df
             .groupby(['method', groupby])
-            .mean()
+            .mean(numeric_only=True)
             .reset_index()
             .groupby('method')
             .max()
@@ -665,7 +681,7 @@ def plot_metrics_boxplot(df, metric, groupby=None, figsize=(5, 5), dpi=100, ax=N
         order = (
             df
             .groupby(['method'])
-            .mean()
+            .mean(numeric_only=True)
             .sort_values('score')
             .index
         )
