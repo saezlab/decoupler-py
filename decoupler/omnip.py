@@ -24,10 +24,22 @@ import pandas as pd
 builtins.PYPATH_LOG = os.devnull
 PYPATH_MIN_VERSION = '0.14.28'
 ORGANISMS = {
-    'human': ('human', 'h. sapiens', 'hsapiens', '9606', 9606),
-    'mouse': ('mouse', 'm. musculus', 'mmusculus', '10090', 10090),
-    'rat': ('rat', 'r. norvegicus', 'rnorvegicus', '10116', 10116),
-    'fly': ('fly', 'd. melanogaster', 'dmelanogaster', '7227', 7227)
+    'human': (
+        'human', 'h. sapiens', 'hsapiens',
+        '9606', 9606, 'homo sapiens',
+    ),
+    'mouse': (
+        'mouse', 'm. musculus', 'mmusculus',
+        '10090', 10090, 'mus musculus',
+    ),
+    'rat': (
+        'rat', 'r. norvegicus', 'rnorvegicus',
+        '10116', 10116, 'rattus norvegicus',
+    ),
+    'fly': (
+        'fly', 'd. melanogaster', 'dmelanogaster',
+        '7227', 7227, 'drosphila melanogaster',
+    ),
 }
 DOROTHEA_LEVELS = Literal['A', 'B', 'C', 'D']
 
