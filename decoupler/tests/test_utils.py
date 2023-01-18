@@ -1,9 +1,10 @@
 import pytest
 import numpy as np
 import pandas as pd
+import os
 from anndata import AnnData
 from ..utils import m_rename, melt, show_methods, check_corr, get_toy_data, summarize_acts
-from ..utils import assign_groups, p_adjust_fdr, dense_run, shuffle_net
+from ..utils import assign_groups, p_adjust_fdr, dense_run, shuffle_net, read_gmt
 from ..method_mlm import run_mlm
 from ..method_ora import run_ora
 
@@ -61,7 +62,7 @@ def test_summarize_acts():
     estimate = pd.DataFrame([[3.5, -0.5, 0.3], [3.6, -0.6, 0.04], [-1, 2, -1.8]],
                             columns=['T1', 'T2', 'T3'], index=['S01', 'S02', 'S03'])
     obs = pd.DataFrame([['C01', 'C01', 'C02']], columns=estimate.index, index=['celltype']).T
-    adata = AnnData(estimate, obs=obs)
+    adata = AnnData(estimate, obs=obs, dtype=np.float32)
     acts = summarize_acts(estimate, obs=obs, groupby='celltype', mode='median', min_std=0)
     acts = summarize_acts(adata, obs=None, groupby='celltype', mode='mean', min_std=0)
     assert np.unique(acts.values).size > 2
@@ -92,7 +93,7 @@ def test_denserun():
     assert not np.all(np.isnan(acts.values[0]))
     assert np.all(np.isnan(acts.values[1]))
 
-    mat = AnnData(mat)
+    mat = AnnData(mat, dtype=np.float32)
     dense_run(run_ora, mat, net, min_n=2, verbose=True, use_raw=False)
     acts = mat.obsm['ora_estimate']
     assert acts.shape[1] == 2
@@ -122,3 +123,30 @@ def test_shuffle_net():
     net_dict = {k: v for k, v in zip(net.target, net.weight)}
     rnet_dict = {k: v for k, v in zip(rnet.target, rnet.weight)}
     assert net_dict != rnet_dict
+
+
+def test_read_gmt():
+    gmt = """gset_1 link A B C
+    gset_2 link C D
+    gset_3 link A B C E
+    """.rstrip().split('\n')
+
+    # Write line per line
+    path = 'tmp.gmt'
+    with open(path, 'w') as f:
+        for line in gmt:
+            f.write(line + '\n')
+
+    # Read gmt
+    df = read_gmt(path)
+
+    # Check
+    assert df['source'].unique().size == 3
+    assert df['target'].unique().size == 5
+    counts = df.groupby('source', group_keys=False)['target'].apply(lambda x: np.array(x))
+    assert counts['gset_1'].size == 3
+    assert counts['gset_2'].size == 2
+    assert counts['gset_3'].size == 4
+
+    # Remove tmp file
+    os.remove(path)

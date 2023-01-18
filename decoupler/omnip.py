@@ -62,10 +62,10 @@ def _check_if_omnipath() -> ModuleType:
 
 def _is_organism(
         name: str | int,
-        organism: Literal['human', 'mouse', 'rat', 'fly'],
+        organism: Literal['human', 'mouse', 'rat'],
         ) -> bool:
     """
-    Tells if `name` means one of human, mouse, rat or fly.
+    Tells if `name` means one of human, mouse, rat.
     """
 
     return str(name).lower() in ORGANISMS.get(organism.lower(), ())
@@ -93,14 +93,6 @@ def _is_rat(name: str) -> bool:
     """
 
     return _is_organism(name, 'rat')
-
-
-def _is_fly(name: str) -> bool:
-    """
-    Does the organism name or ID mean fly?
-    """
-
-    return _is_organism(name, 'fly')
 
 
 def get_progeny(organism: str | int = 'human', top: int = 100) -> pd.DataFrame:
@@ -284,7 +276,6 @@ def get_dorothea(
     _organism = (
         'mouse' if _is_mouse(organism) else
         'rat' if _is_rat(organism) else
-        'fly' if _is_fly(organism) else
         'human'
     )
 

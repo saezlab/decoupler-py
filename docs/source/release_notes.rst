@@ -1,6 +1,37 @@
 Release notes
 =============
 
+1.3.3
+-----
+
+Bug fixes
+~~~~~~~~~
+- ``read_gmt`` is now properly exported.
+
+1.3.2
+-----
+
+Bug fixes
+~~~~~~~~~
+- ``plot_metrics_scatter_cols`` now deals with missing sources when comparing nets.
+
+Changes
+~~~~~~~
+- ``get_pseudobulk`` and ``get_acts`` now have a ``dtype`` argument due to future ``AnnData`` changes.
+- ``plot_metrics_scatter`` and ``plot_metrics_boxplot`` now use ``GroupBy.mean(numeric_only=True)``.
+
+Additions
+~~~~~~~~~
+- Added ``swap_layer`` function to easily move ``adata`` layers to ``.X``.
+- Added ``read_gmt`` function to read GMT files containing gene sets.
+
+1.3.1
+-----
+
+Changes
+~~~~~~~
+- Omnipath wrappers (``get_resource``, ``get_dorothea`` and ``get_progeny``) now accept any organism name.
+
 1.3.0
 -----
 
@@ -26,7 +57,7 @@ Bug fixes
 - ``plot_volcano`` now correctly can plot networks with different source names.
 
 Changes
-~~~~~~~~
+~~~~~~~
 - ``extract`` now removes empty samples and features.
 - ``run_consensus`` now follows the same format as other methods, old function is now called ``cons``.
 - ``get_pseudobulk`` now checks if input are raw integer counts.
@@ -66,7 +97,7 @@ Bug fixes
 - Fixed ``run_ora`` to correctly deal with random ties.
 
 Changes
-~~~~~~~~
+~~~~~~~
 - ``get_dorothea`` now returns an ordered dataframe.
 - ``get_contrast`` now prints warnings instead of returning an empty dataframe.
 

@@ -120,6 +120,20 @@ def test_plot_metrics_scatter_cols():
 
     plot_metrics_scatter_cols(df, col='net', x='mcauroc', y='mcauprc', groupby='method', return_fig=True)
 
+    df = pd.DataFrame([
+        ['mlm_estimate', 'mcauroc', 0.7, 'A', 'TF1'],
+        ['mlm_estimate', 'mcauprc', 0.7, 'A', 'TF1'],
+        ['ulm_estimate', 'mcauroc', 0.6, 'A', 'TF2'],
+        ['ulm_estimate', 'mcauprc', 0.6, 'A', 'TF2'],
+        ['mlm_estimate', 'mcauroc', 0.5, 'B', 'TF1'],
+        ['mlm_estimate', 'mcauprc', 0.5, 'B', 'TF1'],
+        ['ulm_estimate', 'mcauroc', 0.4, 'B', 'TF1'],
+        ['ulm_estimate', 'mcauprc', 0.4, 'B', 'TF1'],
+    ], columns=['method', 'metric', 'score', 'net', 'source'])
+
+    plot_metrics_scatter_cols(df, col='source', x='mcauroc', y='mcauprc', groupby='net', return_fig=True)
+    plot_metrics_scatter_cols(df, col='method', x='mcauroc', y='mcauprc', groupby='net', return_fig=True)
+
 
 def test_plot_metrics_boxplot():
     df = pd.DataFrame([

@@ -3,9 +3,9 @@ import numpy as np
 import pandas as pd
 from scipy.sparse import csr_matrix
 from anndata import AnnData
-from ..utils_anndata import get_acts, extract_psbulk_inputs, check_for_raw_counts, format_psbulk_inputs
-from ..utils_anndata import compute_psbulk, get_unq_dict, get_pseudobulk, check_if_skip, get_contrast
-from ..utils_anndata import get_top_targets, format_contrast_results
+from ..utils_anndata import get_acts, swap_layer, extract_psbulk_inputs, check_for_raw_counts
+from ..utils_anndata import format_psbulk_inputs, compute_psbulk, get_unq_dict, get_pseudobulk
+from ..utils_anndata import check_if_skip, get_contrast, get_top_targets, format_contrast_results
 
 
 def test_get_acts():
@@ -13,11 +13,29 @@ def test_get_acts():
     r = np.array(['S1', 'S2', 'S3'])
     c = np.array(['G1', 'G2', 'G3'])
     df = pd.DataFrame(m, index=r, columns=c)
-    estimate = pd.DataFrame([[3.5, -0.5, 0.3], [3.6, -0.6, 0.04], [-1, 2, -1.8]],
-                            columns=['T1', 'T2', 'T3'], index=r)
-    adata = AnnData(df)
+    estimate = pd.DataFrame([[3.5, -0.5], [3.6, -0.6], [-1, 2]],
+                            columns=['T1', 'T2'], index=r)
+    adata = AnnData(df, dtype=np.float32)
     adata.obsm['estimate'] = estimate
-    get_acts(adata, 'estimate')
+    acts = get_acts(adata, 'estimate')
+    assert acts.shape[0] == adata.shape[0]
+    assert acts.shape[1] != adata.shape[1]
+    assert np.any(acts.X < 0)
+    assert not np.any(adata.X < 0)
+
+
+def test_swap_layer():
+    m = np.array([[1, 0, 2], [1, 0, 3], [0, 0, 1]])
+    r = np.array(['S1', 'S2', 'S3'])
+    c = np.array(['G1', 'G2', 'G3'])
+    df = pd.DataFrame(m, index=r, columns=c)
+    adata = AnnData(df, dtype=np.float32)
+    adata.layers['norm'] = adata.X / np.sum(adata.X, axis=1).reshape(-1, 1)
+    sdata = swap_layer(adata, 'norm')
+    assert not np.all(np.mod(sdata.X, 1) == 0)
+    swap_layer(adata=adata, layer_key='norm', inplace=True)
+    assert not np.all(np.mod(adata.X, 1) == 0)
+    assert adata.layers['X'] is not None
 
 
 def test_extract_psbulk_inputs():
@@ -26,7 +44,7 @@ def test_extract_psbulk_inputs():
     c = np.array(['G1', 'G2', 'G3'])
     df = pd.DataFrame(m, index=r, columns=c)
     obs = pd.DataFrame([['C01', 'C01', 'C02']], columns=r, index=['celltype']).T
-    adata = AnnData(df, obs=obs)
+    adata = AnnData(df, obs=obs, dtype=np.float32)
     adata.layers['counts'] = adata.X
     adata_raw = adata.copy()
     adata_raw.raw = adata_raw
@@ -88,7 +106,7 @@ def test_get_pseudobulk():
     smples = np.array(['S1', 'S2', 'S3'])
     groups = np.array(['C1', 'C1', 'C2'])
     obs = pd.DataFrame([smples, groups], columns=smples, index=[sample_col, groups_col]).T
-    adata = AnnData(df, obs=obs)
+    adata = AnnData(df, obs=obs, dtype=np.float32)
     get_pseudobulk(adata, sample_col, sample_col, min_prop=0, min_cells=0, min_counts=0, min_smpls=0)
     get_pseudobulk(adata, sample_col, groups_col, min_prop=0, min_cells=0, min_counts=0, min_smpls=0)
 
@@ -126,7 +144,7 @@ def test_get_contrast():
     reference = 'Ht'
     obs = pd.DataFrame([['C1', 'C1', 'C1', 'C1'], [condition, condition, reference, reference]],
                        columns=r, index=[groups_col, condition_col]).T
-    adata = AnnData(df, obs=obs)
+    adata = AnnData(df, obs=obs, dtype=np.float32)
     get_contrast(adata, groups_col, condition_col, condition, None)
     get_contrast(adata, groups_col, condition_col, condition, reference)
     get_contrast(adata, None, condition_col, condition, reference)

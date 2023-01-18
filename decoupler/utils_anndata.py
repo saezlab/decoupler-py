@@ -14,24 +14,26 @@ from .utils import melt, p_adjust_fdr
 from .pre import rename_net
 
 
-def get_acts(adata, obsm_key):
+def get_acts(adata, obsm_key, dtype=np.float32):
     """
     Extracts activities as AnnData object.
 
-    From an AnnData object with source activities stored in `.obsm`, generates a new AnnData object with activities in `X`.
+    From an AnnData object with source activities stored in ``.obsm``, generates a new AnnData object with activities in ``X``.
     This allows to reuse many scanpy processing and visualization functions.
 
     Parameters
     ----------
     adata : AnnData
-        Annotated data matrix with activities stored in .obsm.
-    obsm_key
-        `.osbm` key to extract.
+        Annotated data matrix with activities stored in ``.obsm``.
+    obsm_key : str
+        ``.osbm`` key to extract.
+    dtype : type
+        Type of float used.
 
     Returns
     -------
     acts : AnnData
-        New AnnData object with activities in X.
+        New AnnData object with activities in ``X``.
     """
 
     obs = adata.obs
@@ -39,7 +41,41 @@ def get_acts(adata, obsm_key):
     uns = adata.uns
     obsm = adata.obsm
 
-    return AnnData(np.array(adata.obsm[obsm_key]), obs=obs, var=var, uns=uns, obsm=obsm)
+    return AnnData(np.array(adata.obsm[obsm_key]), obs=obs, var=var, uns=uns, obsm=obsm, dtype=dtype)
+
+
+def swap_layer(adata, layer_key, inplace=False):
+    """
+    Swaps an ``adata.X`` for a given layer.
+
+    Swaps an AnnData ``X`` matrix with a given layer. Generates a new object by default.
+
+    Parameters
+    ----------
+    adata : AnnData
+        Annotated data matrix.
+    layer_key : str
+        ``.layers`` key to swap.
+    inplace : bool
+        If ``False``, return a copy. Otherwise, do operation inplace and return ``None``.
+
+    Returns
+    -------
+    layer : AnnData, None
+        If ``inplace=False``, new AnnData object with the given layer in ``X`` and
+        the original ``X`` stored in ``.layers``.
+    """
+
+    if inplace:
+        adata.layers['X'] = adata.X
+        adata.X = adata.layers[layer_key]
+        cdata = None
+    else:
+        cdata = adata.copy()
+        cdata.layers['X'] = cdata.X
+        cdata.X = cdata.layers[layer_key]
+
+    return cdata
 
 
 def extract_psbulk_inputs(adata, obs, layer, use_raw):
@@ -183,7 +219,7 @@ def compute_psbulk(psbulk, props, X, sample_col, groups_col, smples, groups, obs
 
 
 def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=False, min_prop=0.2, min_cells=10,
-                   min_counts=1000, min_smpls=2):
+                   min_counts=1000, min_smpls=2, dtype=np.float32):
     """
     Generates an unormalized pseudo-bulk profile per sample and group.
 
@@ -212,6 +248,8 @@ def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=
         Minimum number of counts per sample.
     min_smpls : int
         Minimum number of samples per feature.
+    dtype : type
+        Type of float used.
 
     Returns
     -------
@@ -265,7 +303,7 @@ def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=
             offset += len(smples)
 
     # Create new AnnData
-    psbulk = AnnData(psbulk, obs=new_obs, var=new_var)
+    psbulk = AnnData(psbulk, obs=new_obs, var=new_var, dtype=dtype)
 
     # Remove empty samples
     psbulk = psbulk[~np.all(psbulk.X == 0, axis=1), ~np.all(psbulk.X == 0, axis=0)]

@@ -61,6 +61,7 @@ General utils:
    dense_run
    p_adjust_fdr
    shuffle_net
+   read_gmt
 
 AnnData utils:
 --------------
@@ -68,6 +69,7 @@ AnnData utils:
    :toctree: generated
    
    get_acts
+   swap_layer
    get_pseudobulk
    get_contrast
    get_top_targets
