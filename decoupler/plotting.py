@@ -178,7 +178,8 @@ def plot_volcano(logFCs, pvals, contrast, name=None, net=None, top=5, source='so
     texts = []
     for x, y, s in zip(signs['logFCs'], signs['pvals'], signs.index):
         texts.append(ax.text(x, y, s))
-    at.adjust_text(texts, arrowprops=dict(arrowstyle='-', color='black'), ax=ax)
+    if len(texts) > 0:
+        at.adjust_text(texts, arrowprops=dict(arrowstyle='-', color='black'), ax=ax)
 
     save_plot(fig, ax, save)
 
