@@ -118,18 +118,19 @@ def extract_psbulk_inputs(adata, obs, layer, use_raw):
     return X[:, msk], obs, var.iloc[msk]
 
 
-def check_for_raw_counts(X):
+def check_for_raw_counts(X, mode='sum'):
     is_finite = np.all(np.isfinite(X.data))
     if not is_finite:
         raise ValueError('Data contains non finite values (nan or inf), please set them to 0 or remove them.')
     is_positive = np.all(X.data > 0)
     if not is_positive:
         raise ValueError("""Data contains negative values. Check the parameters use_raw and layers to
-        determine if you are selecting the correct data, which should be positive integer counts.""")
-    is_integer = float(np.sum(X.data)).is_integer()
-    if not is_integer:
-        raise ValueError("""Data contains float (decimal) values. Check the parameters use_raw and layers to
-        determine if you are selecting the correct data, which should be positive integer counts.""")
+        determine if you are selecting the correct data.""")
+    if mode == 'sum':
+        is_integer = float(np.sum(X.data)).is_integer()
+        if not is_integer:
+            raise ValueError("""Data contains float (decimal) values. Check the parameters use_raw and layers to
+            determine if you are selecting the correct data, which should be positive integer counts when mode='sum'.""")
 
 
 def format_psbulk_inputs(sample_col, groups_col, obs):
@@ -159,7 +160,20 @@ def format_psbulk_inputs(sample_col, groups_col, obs):
     return obs, smples, groups, n_rows
 
 
-def compute_psbulk(psbulk, props, X, sample_col, groups_col, smples, groups, obs, new_obs, min_cells, min_counts, min_prop):
+def psbulk_profile(profile, mode='sum'):
+    if mode == 'sum':
+        profile = np.sum(profile, axis=0)
+    elif mode == 'mean':
+        profile = np.mean(profile, axis=0)
+    elif mode == 'median':
+        profile = np.median(profile, axis=0)
+    else:
+        raise ValueError("""mode={0} can only be 'sum', 'mean' or 'median'.""".format(mode))
+    return profile
+
+
+def compute_psbulk(psbulk, props, X, sample_col, groups_col, smples, groups, obs,
+                   new_obs, min_cells, min_counts, min_prop, mode):
 
     # Iterate for each group and sample
     i = 0
@@ -170,7 +184,7 @@ def compute_psbulk(psbulk, props, X, sample_col, groups_col, smples, groups, obs
             new_obs.loc[smp, :] = tmp
 
             # Get cells from specific sample
-            profile = X[obs[sample_col] == smp]
+            profile = X[obs[sample_col] == smp].A
 
             # Skip if few cells or not enough counts
             if profile.shape[0] <= min_cells or np.sum(profile) <= min_counts:
@@ -181,7 +195,7 @@ def compute_psbulk(psbulk, props, X, sample_col, groups_col, smples, groups, obs
             prop = np.sum(profile != 0, axis=0) / profile.shape[0]
 
             # Pseudo-bulk
-            profile = np.sum(profile, axis=0)
+            profile = psbulk_profile(profile, mode=mode)
 
             # Append
             props[i] = prop > min_prop
@@ -199,7 +213,7 @@ def compute_psbulk(psbulk, props, X, sample_col, groups_col, smples, groups, obs
                 new_obs.loc[index, :] = tmp
 
                 # Get cells from specific sample and group
-                profile = X[(obs[sample_col] == smp) & (obs[groups_col] == grp)]
+                profile = X[(obs[sample_col] == smp) & (obs[groups_col] == grp)].A
 
                 # Skip if few cells or not enough counts
                 if profile.shape[0] <= min_cells or np.sum(profile) <= min_counts:
@@ -210,7 +224,7 @@ def compute_psbulk(psbulk, props, X, sample_col, groups_col, smples, groups, obs
                 prop = np.sum(profile != 0, axis=0) / profile.shape[0]
 
                 # Pseudo-bulk
-                profile = np.sum(profile, axis=0)
+                profile = psbulk_profile(profile, mode=mode)
 
                 # Append
                 props[i] = prop > min_prop
@@ -218,13 +232,18 @@ def compute_psbulk(psbulk, props, X, sample_col, groups_col, smples, groups, obs
                 i += 1
 
 
-def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=False, min_prop=0.2, min_cells=10,
+def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=False, mode='sum', min_prop=0.2, min_cells=10,
                    min_counts=1000, min_smpls=2, dtype=np.float32):
     """
-    Generates an unormalized pseudo-bulk profile per sample and group.
+    Summarizes expression profiles across cells per sample and group.
 
-    Sums the counts of the cells belonging the the same sample and group. Genes that are not expressed in at least a proportion
-    of cells (`min_prop`) and a number of samples (`min_smpls`) are ignored. This is done to remove noisy genes.
+    Generates summarized expression profiles across cells per sample (e.g. sample id) and group (e.g. cell type) based on the
+    metadata found in ``.obs``. To ensure a minumum quality control, this function removes genes that are not expressed enough
+    across cells (``min_prop``) or samples (``min_smpls``), and samples with not enough cells (``min_cells``) or gene counts
+    (``min_counts``).
+
+    By default this function expects raw integer counts as input and sums them per sample and group (``mode='sum'``), but other
+    modes are available.
 
     Parameters
     ----------
@@ -240,6 +259,8 @@ def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=
         If provided, which element of layers to use.
     use_raw : bool
         Use `raw` attribute of `adata` if present.
+    mode : str
+        How to perform the pseudobulk. Available options are ``sum``, ``mean`` or ``median``.
     min_prop : float
         Minimum proportion of cells with non-zero values.
     min_cells : int
@@ -265,7 +286,7 @@ def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=
     X, obs, var = extract_psbulk_inputs(adata, obs, layer, use_raw)
 
     # Test if raw counts are present
-    check_for_raw_counts(X)
+    check_for_raw_counts(X, mode=mode)
 
     # Format inputs
     obs, smples, groups, n_rows = format_psbulk_inputs(sample_col, groups_col, obs)
@@ -278,7 +299,8 @@ def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=
     props = np.full((n_rows, n_cols), False)
 
     # Compute psbulk
-    compute_psbulk(psbulk, props, X, sample_col, groups_col, smples, groups, obs, new_obs, min_cells, min_counts, min_prop)
+    compute_psbulk(psbulk, props, X, sample_col, groups_col, smples, groups, obs,
+                   new_obs, min_cells, min_counts, min_prop, mode)
 
     offset = 0
     if groups_col is None:

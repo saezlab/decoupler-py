@@ -4,7 +4,7 @@ import pandas as pd
 from scipy.sparse import csr_matrix
 from anndata import AnnData
 from ..utils_anndata import get_acts, swap_layer, extract_psbulk_inputs, check_for_raw_counts
-from ..utils_anndata import format_psbulk_inputs, compute_psbulk, get_unq_dict, get_pseudobulk
+from ..utils_anndata import format_psbulk_inputs, psbulk_profile, compute_psbulk, get_unq_dict, get_pseudobulk
 from ..utils_anndata import check_if_skip, get_contrast, get_top_targets, format_contrast_results
 
 
@@ -79,6 +79,22 @@ def test_format_psbulk_inputs():
     format_psbulk_inputs(sample_col, None, obs)
 
 
+def test_psbulk_profile():
+    profile = np.array([
+        [1, 2, 3],
+        [4, 5, 6],
+        [7, 8, 9],
+    ])
+    p = psbulk_profile(profile, mode='sum')
+    assert np.all(p == np.array([12, 15, 18]))
+    p = psbulk_profile(profile, mode='mean')
+    assert np.all(p == np.array([4, 5, 6]))
+    p = psbulk_profile(profile, mode='median')
+    assert np.all(p == np.array([4, 5, 6]))
+    with pytest.raises(ValueError):
+        psbulk_profile(profile, mode='mode')
+
+
 def test_compute_psbulk():
     sample_col, groups_col = 'sample_id', 'celltype'
     min_cells, min_counts, min_prop = 0., 0., 0.
@@ -92,23 +108,32 @@ def test_compute_psbulk():
     obs = pd.DataFrame([smples, groups], columns=smples, index=[sample_col, groups_col]).T
     new_obs = pd.DataFrame(columns=obs.columns)
     compute_psbulk(psbulk, props, X, sample_col, groups_col, np.unique(smples),
-                   np.unique(groups), obs, new_obs, min_cells, min_counts, min_prop)
+                   np.unique(groups), obs, new_obs, min_cells, min_counts, min_prop, 'sum')
     compute_psbulk(psbulk, props, X, sample_col, None, np.unique(smples),
-                   np.unique(groups), obs, new_obs, min_cells, min_counts, min_prop)
+                   np.unique(groups), obs, new_obs, min_cells, min_counts, min_prop, 'sum')
 
 
 def test_get_pseudobulk():
     sample_col, groups_col = 'sample_id', 'celltype'
-    m = np.array([[1, 0, 2], [1, 0, 3], [0, 0, 0]])
-    r = np.array(['S1', 'S2', 'S3'])
+    m = np.array([[6, 0, 1], [2, 0, 2], [1, 3, 3], [0, 1, 1], [1, 0, 1]])
+    r = np.array(['B1', 'B2', 'B3', 'B4', 'B5'])
     c = np.array(['G1', 'G2', 'G3'])
     df = pd.DataFrame(m, index=r, columns=c)
-    smples = np.array(['S1', 'S2', 'S3'])
-    groups = np.array(['C1', 'C1', 'C2'])
-    obs = pd.DataFrame([smples, groups], columns=smples, index=[sample_col, groups_col]).T
+    smples = np.array(['S1', 'S1', 'S1', 'S2', 'S2'])
+    groups = np.array(['C1', 'C1', 'C1', 'C1', 'C2'])
+    obs = pd.DataFrame([smples, groups], columns=r, index=[sample_col, groups_col]).T
     adata = AnnData(df, obs=obs, dtype=np.float32)
-    get_pseudobulk(adata, sample_col, sample_col, min_prop=0, min_cells=0, min_counts=0, min_smpls=0)
-    get_pseudobulk(adata, sample_col, groups_col, min_prop=0, min_cells=0, min_counts=0, min_smpls=0)
+    pdata = get_pseudobulk(adata, sample_col, sample_col, min_prop=0, min_cells=0, min_counts=0, min_smpls=0)
+    assert pdata.shape[0] == 2
+    pdata = get_pseudobulk(adata, sample_col, groups_col, min_prop=0, min_cells=0, min_counts=0, min_smpls=0, mode='sum')
+    assert pdata.shape[0] == 3
+    assert np.all(pdata.X[0] == np.array([9., 3., 6.]))
+    pdata = get_pseudobulk(adata, sample_col, groups_col, min_prop=0, min_cells=0, min_counts=0, min_smpls=0, mode='mean')
+    assert pdata.shape[0] == 3
+    assert np.all(pdata.X[0] == np.array([3., 1., 2.]))
+    pdata = get_pseudobulk(adata, sample_col, groups_col, min_prop=0, min_cells=0, min_counts=0, min_smpls=0, mode='median')
+    assert pdata.shape[0] == 3
+    assert np.all(pdata.X[0] == np.array([2., 0., 2.]))
 
 
 def test_get_unq_dict():
