@@ -70,6 +70,10 @@ def test_check_for_raw_counts():
         check_for_raw_counts(X_neg)
     with pytest.raises(ValueError):
         check_for_raw_counts(X_inf)
+    check_for_raw_counts(X_float, skip_checks=True)
+    check_for_raw_counts(X_neg, skip_checks=True)
+    with pytest.raises(ValueError):
+        check_for_raw_counts(X_inf, skip_checks=True)
 
 
 def test_format_psbulk_inputs():

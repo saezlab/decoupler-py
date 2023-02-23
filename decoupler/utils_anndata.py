@@ -118,19 +118,23 @@ def extract_psbulk_inputs(adata, obs, layer, use_raw):
     return X[:, msk], obs, var.iloc[msk]
 
 
-def check_for_raw_counts(X, mode='sum'):
+def check_for_raw_counts(X, mode='sum', skip_checks=False):
     is_finite = np.all(np.isfinite(X.data))
     if not is_finite:
         raise ValueError('Data contains non finite values (nan or inf), please set them to 0 or remove them.')
-    is_positive = np.all(X.data > 0)
-    if not is_positive:
-        raise ValueError("""Data contains negative values. Check the parameters use_raw and layers to
-        determine if you are selecting the correct data.""")
-    if mode == 'sum':
-        is_integer = float(np.sum(X.data)).is_integer()
-        if not is_integer:
-            raise ValueError("""Data contains float (decimal) values. Check the parameters use_raw and layers to
-            determine if you are selecting the correct data, which should be positive integer counts when mode='sum'.""")
+    if not skip_checks:
+        is_positive = np.all(X.data > 0)
+        if not is_positive:
+            raise ValueError("""Data contains negative values. Check the parameters use_raw and layers to
+            determine if you are selecting the correct data. To override this, set skip_checks=True.
+            """)
+        if mode == 'sum':
+            is_integer = float(np.sum(X.data)).is_integer()
+            if not is_integer:
+                raise ValueError("""Data contains float (decimal) values. Check the parameters use_raw and layers to
+                determine if you are selecting the correct data, which should be positive integer counts when mode='sum'.
+                To override this, set skip_checks=True.
+                """)
 
 
 def format_psbulk_inputs(sample_col, groups_col, obs):
@@ -233,7 +237,7 @@ def compute_psbulk(psbulk, props, X, sample_col, groups_col, smples, groups, obs
 
 
 def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=False, mode='sum', min_prop=0.2, min_cells=10,
-                   min_counts=1000, min_smpls=2, dtype=np.float32):
+                   min_counts=1000, min_smpls=2, dtype=np.float32, skip_checks=False):
     """
     Summarizes expression profiles across cells per sample and group.
 
@@ -271,6 +275,9 @@ def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=
         Minimum number of samples per feature.
     dtype : type
         Type of float used.
+    skip_checks : bool
+        Whether to skip input checks. Set to ``True`` when working with positive and negative data, or when counts are not
+        integers.
 
     Returns
     -------
@@ -286,7 +293,7 @@ def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=
     X, obs, var = extract_psbulk_inputs(adata, obs, layer, use_raw)
 
     # Test if raw counts are present
-    check_for_raw_counts(X, mode=mode)
+    check_for_raw_counts(X, mode=mode, skip_checks=skip_checks)
 
     # Format inputs
     obs, smples, groups, n_rows = format_psbulk_inputs(sample_col, groups_col, obs)
