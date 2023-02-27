@@ -1,6 +1,19 @@
 Release notes
 =============
 
+1.3.4
+-----
+
+Changes
+~~~~~~~
+- ``get_pseudobulk`` now has new arguments: ``mode`` to change how to summarize profiles and ``skip_checks`` to bypass checks.
+- OmniPath functions now accept more organism synonyms.
+
+Bug fixes
+~~~~~~~~~
+- Fixed empty text labels bug for ``adjustText==0.8``.
+
+
 1.3.3
 -----
 

@@ -23,7 +23,7 @@ jobs:
         sudo apt-get install -y libcurl4-openssl-dev
         python -m pip install --upgrade pip
         pip install wheel
-        pip install pytest flake8 sklearn skranger omnipath scanpy adjustText pypath-omnipath .
+        pip install pytest flake8 scikit-learn skranger omnipath scanpy adjustText pypath-omnipath .
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
@@ -52,7 +52,7 @@ jobs:
         export PKG_CONFIG_PATH="/usr/local/opt/openssl@3/lib/pkgconfig"
         python -m pip install --upgrade pip
         pip install wheel
-        pip install pytest flake8 sklearn skranger omnipath scanpy adjustText pypath-omnipath .
+        pip install pytest flake8 scikit-learn skranger omnipath scanpy adjustText pypath-omnipath .
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
