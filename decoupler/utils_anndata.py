@@ -242,7 +242,7 @@ def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=
     Summarizes expression profiles across cells per sample and group.
 
     Generates summarized expression profiles across cells per sample (e.g. sample id) and group (e.g. cell type) based on the
-    metadata found in ``.obs``. To ensure a minumum quality control, this function removes genes that are not expressed enough
+    metadata found in ``.obs``. To ensure a minimum quality control, this function removes genes that are not expressed enough
     across cells (``min_prop``) or samples (``min_smpls``), and samples with not enough cells (``min_cells``) or gene counts
     (``min_counts``).
 
@@ -266,13 +266,13 @@ def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=
     mode : str
         How to perform the pseudobulk. Available options are ``sum``, ``mean`` or ``median``.
     min_prop : float
-        Minimum proportion of cells with non-zero values.
+        Filter to remove genes by a minimum proportion of cells with non-zero values.
     min_cells : int
-        Minimum number of cells per sample.
+        Filter to remove samples by a minimum number of cells.
     min_counts : int
-        Minimum number of counts per sample.
+        Filter to remove samples by a minimum number of summed counts.
     min_smpls : int
-        Minimum number of samples per feature.
+        Filter to remove genes by a minimum number of samples with non-zero values.
     dtype : type
         Type of float used.
     skip_checks : bool
@@ -313,7 +313,7 @@ def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=
     if groups_col is None:
 
         # Remove features
-        msk = np.sum(props, axis=0) > min_smpls
+        msk = np.sum(props, axis=0) >= min_smpls
         psbulk[:, ~msk] = 0
 
     else:
