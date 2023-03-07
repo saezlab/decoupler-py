@@ -122,6 +122,7 @@ def check_for_raw_counts(X, mode='sum', skip_checks=False):
     is_finite = np.all(np.isfinite(X.data))
     if not is_finite:
         raise ValueError('Data contains non finite values (nan or inf), please set them to 0 or remove them.')
+    skip_checks = type(mode) is dict or callable(mode) or skip_checks
     if not skip_checks:
         is_positive = np.all(X.data > 0)
         if not is_positive:
@@ -171,13 +172,58 @@ def psbulk_profile(profile, mode='sum'):
         profile = np.mean(profile, axis=0)
     elif mode == 'median':
         profile = np.median(profile, axis=0)
+    elif callable(mode):
+        profile = np.apply_along_axis(mode, 0, profile)
     else:
-        raise ValueError("""mode={0} can only be 'sum', 'mean' or 'median'.""".format(mode))
+        raise ValueError("""mode={0} can be 'sum', 'mean', 'median' or a callable function.""".format(mode))
     return profile
 
 
-def compute_psbulk(psbulk, props, X, sample_col, groups_col, smples, groups, obs,
-                   new_obs, min_cells, min_counts, min_prop, mode):
+def filter_by_min_smpls(psbulk, props, groups_col, smples, groups, min_prop, min_smpls):
+
+    # Filter by min_smpl
+    offset = 0
+    if groups_col is None:
+
+        # Compute n_smpl
+        nsmpls = np.sum(props >= min_prop, axis=0)
+
+        # Set features to 0
+        msk = nsmpls >= min_smpls
+        psbulk[:, ~msk] = 0.
+
+    else:
+
+        nsmpls = np.zeros((len(groups), psbulk.shape[1]))
+        for i in range(len(groups)):
+
+            # Get profiles and proportions per group
+            prop = props[offset:offset + len(smples)]
+            profile = psbulk[offset:offset + len(smples)]
+
+            # Compute nsmpl
+            nsmpl = np.sum(prop >= min_prop, axis=0)
+            nsmpls[i] = nsmpl
+
+            # Set features to 0
+            msk = nsmpl >= min_smpls
+            profile[:, ~msk] = 0.
+
+            # Update main mat
+            psbulk[offset:offset + len(smples)] = profile
+            offset += len(smples)
+
+    return nsmpls
+
+
+def compute_psbulk(n_rows, n_cols, X, sample_col, groups_col, smples, groups, obs,
+                   new_obs, min_cells, min_counts, min_prop, min_smpls, mode):
+
+    # Init empty variables
+    psbulk = np.zeros((n_rows, n_cols))
+    props = np.zeros((n_rows, n_cols))
+    ncells = np.zeros(n_rows)
+    counts = np.zeros(n_rows)
 
     # Iterate for each group and sample
     i = 0
@@ -191,7 +237,11 @@ def compute_psbulk(psbulk, props, X, sample_col, groups_col, smples, groups, obs
             profile = X[obs[sample_col] == smp].A
 
             # Skip if few cells or not enough counts
-            if profile.shape[0] <= min_cells or np.sum(profile) <= min_counts:
+            ncell = profile.shape[0]
+            count = np.sum(profile)
+            ncells[i] = ncell
+            counts[i] = count
+            if ncell <= min_cells or count <= min_counts:
                 i += 1
                 continue
 
@@ -202,7 +252,7 @@ def compute_psbulk(psbulk, props, X, sample_col, groups_col, smples, groups, obs
             profile = psbulk_profile(profile, mode=mode)
 
             # Append
-            props[i] = prop > min_prop
+            props[i] = prop
             psbulk[i] = profile
             i += 1
     else:
@@ -220,7 +270,11 @@ def compute_psbulk(psbulk, props, X, sample_col, groups_col, smples, groups, obs
                 profile = X[(obs[sample_col] == smp) & (obs[groups_col] == grp)].A
 
                 # Skip if few cells or not enough counts
-                if profile.shape[0] <= min_cells or np.sum(profile) <= min_counts:
+                ncell = profile.shape[0]
+                count = np.sum(profile)
+                ncells[i] = ncell
+                counts[i] = count
+                if ncell <= min_cells or count <= min_counts:
                     i += 1
                     continue
 
@@ -231,9 +285,14 @@ def compute_psbulk(psbulk, props, X, sample_col, groups_col, smples, groups, obs
                 profile = psbulk_profile(profile, mode=mode)
 
                 # Append
-                props[i] = prop > min_prop
+                props[i] = prop
                 psbulk[i] = profile
                 i += 1
+
+    # Filter by min_smpls
+    nsmpls = filter_by_min_smpls(psbulk, props, groups_col, smples, groups, min_prop, min_smpls)
+
+    return psbulk, ncells, counts, props, nsmpls
 
 
 def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=False, mode='sum', min_prop=0.2, min_cells=10,
@@ -256,7 +315,7 @@ def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=
     sample_col : str
         Column of `obs` where to extract the samples names.
     groups_col : str
-        Column of `obs` where to extract the groups names.
+        Column of `obs` where to extract the groups names. Can be set to ``None`` to ignore groups.
     obs : DataFrame, None
         If provided, metadata dataframe.
     layer : str
@@ -264,15 +323,17 @@ def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=
     use_raw : bool
         Use `raw` attribute of `adata` if present.
     mode : str
-        How to perform the pseudobulk. Available options are ``sum``, ``mean`` or ``median``.
+        How to perform the pseudobulk. Available options are ``sum``, ``mean`` or ``median``. It also accepts callback
+        functions, like lambda, to perform custom aggregations. Additionally, it is also possible to provide a dictionary of
+        different callback functions, each one stored in a different resulting `.layer`.
     min_prop : float
-        Filter to remove genes by a minimum proportion of cells with non-zero values.
+        Filter to remove genes by a minimum proportion of cells with non-zero values in a sample-group pair.
     min_cells : int
-        Filter to remove samples by a minimum number of cells.
+        Filter to remove samples by a minimum number of cells in a sample-group pair.
     min_counts : int
-        Filter to remove samples by a minimum number of summed counts.
+        Filter to remove samples by a minimum number of summed counts in a sample-group pair.
     min_smpls : int
-        Filter to remove genes by a minimum number of samples with non-zero values.
+        Filter to remove genes by a minimum number of samples with enough ``min_prop`` in a group.
     dtype : type
         Type of float used.
     skip_checks : bool
@@ -301,40 +362,24 @@ def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=
     new_obs = pd.DataFrame(columns=obs.columns)
     new_var = pd.DataFrame(index=var.index)
 
-    # Init empty variables
-    psbulk = np.zeros((n_rows, n_cols))
-    props = np.full((n_rows, n_cols), False)
-
     # Compute psbulk
-    compute_psbulk(psbulk, props, X, sample_col, groups_col, smples, groups, obs,
-                   new_obs, min_cells, min_counts, min_prop, mode)
+    psbulk, ncells, counts, props, nsmpls = compute_psbulk(n_rows, n_cols, X, sample_col, groups_col, smples, groups, obs,
+                                                           new_obs, min_cells, min_counts, min_prop, min_smpls, mode)
 
-    offset = 0
-    if groups_col is None:
-
-        # Remove features
-        msk = np.sum(props, axis=0) >= min_smpls
-        psbulk[:, ~msk] = 0
-
+    # Add QC metrics
+    new_obs['psbulk_n_cells'] = ncells
+    new_obs['psbulk_counts'] = counts
+    if groups_col == None:
+        new_var['psbulk_n_smpls'] = nsmpls
     else:
-        for i in range(len(groups)):
-
-            # Get profiles and proportions per group
-            prop = props[offset:offset + len(smples)]
-            profile = psbulk[offset:offset + len(smples)]
-
-            # Remove features
-            msk = np.sum(prop, axis=0) >= min_smpls
-            profile[:, ~msk] = 0
-
-            # Append
-            psbulk[offset:offset + len(smples)] = profile
-            offset += len(smples)
+        for i, group in enumerate(groups):
+            new_var['psbulk_{0}_n_smpls'.format(group)] = nsmpls[i]
+    layers = layers={'psbulk_nonzero_props': props}
 
     # Create new AnnData
-    psbulk = AnnData(psbulk, obs=new_obs, var=new_var, dtype=dtype)
+    psbulk = AnnData(psbulk, obs=new_obs, var=new_var, layers=layers, dtype=dtype)
 
-    # Remove empty samples
+    # Remove empty samples and features
     psbulk = psbulk[~np.all(psbulk.X == 0, axis=1), ~np.all(psbulk.X == 0, axis=0)]
 
     return psbulk
