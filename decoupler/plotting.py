@@ -1,7 +1,9 @@
 import numpy as np
 import pandas as pd
+from anndata import AnnData
 
 from .pre import extract, rename_net
+from .utils_anndata import get_filterbyexpr_inputs, get_min_sample_size, get_cpm_cutoff, get_cpm
 
 
 def check_if_matplotlib(return_mpl=False):
@@ -183,7 +185,184 @@ def plot_volcano(logFCs, pvals, contrast, name=None, net=None, top=5, source='so
 
     save_plot(fig, ax, save)
 
-    if return_fig and ax is None:
+    if return_fig:
+        return fig
+
+
+def plot_volcano_df(data, x, y, top=5, sign_thr=0.05, lFCs_thr=0.5, sign_limit=None, lFCs_limit=None,
+                    figsize=(7, 5), dpi=100, ax=None, return_fig=False, save=None):
+    """
+    Plot logFC and p-values from a long formated data-frame.
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        Results of DEA in long format.
+    x : str
+        Column name of data storing the logFCs.
+    y : str
+        Columns name of data storing the p-values.
+    top : int
+        Number of top differentially expressed features to show.
+    sign_thr : float
+        Significance threshold for p-values.
+    lFCs_thr : float
+        Significance threshold for logFCs.
+    sign_limit : float
+        Limit of p-values to plot in -log10.
+    lFCs_limit : float
+        Limit of logFCs to plot in absolute value.
+    figsize : tuple
+        Figure size.
+    dpi : int
+        DPI resolution of figure.
+    ax : Axes, None
+        A matplotlib axes object. If None returns new figure.
+    return_fig : bool
+        Whether to return a Figure object or not.
+    save : str, None
+        Path to where to save the plot. Infer the filetype if ending on {`.pdf`, `.png`, `.svg`}.
+
+    Returns
+    -------
+    fig : Figure, None
+        If return_fig, returns Figure object.
+    """
+
+    # Load plotting packages
+    plt = check_if_matplotlib()
+    at = check_if_adjustText()
+
+    # Transform sign_thr
+    sign_thr = -np.log10(sign_thr)
+
+    # Extract df
+    df = data.copy()
+    df['logFCs'] = df[x]
+    df['pvals'] = -np.log10(df[y])
+
+    # Filter by limits
+    df = filter_limits(df, sign_limit=sign_limit, lFCs_limit=lFCs_limit)
+
+    # Define color by up or down regulation and significance
+    df['weight'] = 'gray'
+    up_msk = (df['logFCs'] >= lFCs_thr) & (df['pvals'] >= sign_thr)
+    dw_msk = (df['logFCs'] <= -lFCs_thr) & (df['pvals'] >= sign_thr)
+    df.loc[up_msk, 'weight'] = '#D62728'
+    df.loc[dw_msk, 'weight'] = '#1F77B4'
+
+    # Plot
+    fig = None
+    if ax is None:
+        fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=dpi)
+    df.plot.scatter(x='logFCs', y='pvals', c='weight', sharex=False, ax=ax)
+
+    # Draw sign lines
+    ax.axhline(y=sign_thr, linestyle='--', color="black")
+    ax.axvline(x=lFCs_thr, linestyle='--', color="black")
+    ax.axvline(x=-lFCs_thr, linestyle='--', color="black")
+
+    # Plot top sign features
+    signs = df[up_msk | dw_msk].sort_values('pvals', ascending=False)
+    signs = signs.iloc[:top]
+
+    # Add labels
+    ax.set_ylabel('-log10(pvals)')
+    texts = []
+    for x, y, s in zip(signs['logFCs'], signs['pvals'], signs.index):
+        texts.append(ax.text(x, y, s))
+    if len(texts) > 0:
+        at.adjust_text(texts, arrowprops=dict(arrowstyle='-', color='black'), ax=ax)
+
+    save_plot(fig, ax, save)
+
+    if return_fig:
+        return fig
+
+
+def plot_targets(data, stat, source_name, net, source='source', target='target', weight='weight', top=10, figsize=(5, 5),
+                 dpi=100, ax=None, return_fig=False, save=None):
+    """
+    Plot the weight and statistic of the target genes of a given source.
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        Results of DEA in long format.
+    stat : str
+        Column name of data storing feature statistics.
+    source_name : str
+        Name of source to plot.
+    net : DataFrame
+        Network dataframe..
+    source : str
+        Column name in net with source nodes.
+    target : str
+        Column name in net with target nodes.
+    weight : str, None
+        Column name in net with weights.
+    top : int
+        Number of features to show labels.
+    figsize : tuple
+        Figure size.
+    dpi : int
+        DPI resolution of figure.
+    ax : Axes, None
+        A matplotlib axes object. If None returns new figure.
+    return_fig : bool
+        Whether to return a Figure object or not.
+    save : str, None
+        Path to where to save the plot. Infer the filetype if ending on {`.pdf`, `.png`, `.svg`}.
+
+    Returns
+    -------
+    fig : Figure, None
+        If return_fig, returns Figure object.
+    """
+
+    # Load plotting packages
+    plt = check_if_matplotlib()
+    at = check_if_adjustText()
+
+    # Extract data
+    data = data[stat].copy()
+    net = net.copy()
+
+    # Extract weights of given source from net
+    w = net[net[source] == source_name].set_index(target)[[weight]]
+
+    # Join
+    data = pd.concat([data, w], axis=1, join='inner')
+
+    # Define activation/inhibition color
+    pos = ((data[weight] >= 0) & (data[stat] >= 0)) | ((data[weight] < 0) & (data[stat] < 0))
+    data['color'] = '#1F77B4'
+    data.loc[pos, 'color'] = '#D62728'
+
+    # Plot
+    fig = None
+    if ax is None:
+        fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=dpi)
+    data.plot.scatter(x=weight, y=stat, c='color', ax=ax)
+    ax.grid()
+
+    # Draw sign lines
+    ax.axhline(y=0, linestyle='--', color="black")
+    ax.axvline(x=0, linestyle='--', color="black")
+    ax.set_title(source_name)
+
+    # Add labels for top features
+    top_names = np.abs((data[weight] * data[stat])).sort_values().tail(top).index
+    data = data.loc[top_names, :]
+    texts = []
+    for x, y, s in zip(data[weight], data[stat], data.index):
+        texts.append(ax.text(x, y, s))
+    if len(texts) > 0:
+        at.adjust_text(texts, arrowprops=dict(arrowstyle='-', color='black'), ax=ax)
+
+    save_plot(fig, ax, save)
+
+    if return_fig:
         return fig
 
 
@@ -258,7 +437,7 @@ def plot_violins(mat, thr=None, log=False, use_raw=False, figsize=(7, 5), dpi=10
 
     save_plot(fig, ax, save)
 
-    if return_fig and ax is None:
+    if return_fig:
         return fig
 
 
@@ -383,7 +562,7 @@ def plot_barplot(acts, contrast, top=25, vertical=False, cmap='coolwarm', vmin=N
 
     save_plot(fig, ax, save)
 
-    if return_fig and ax is None:
+    if return_fig:
         return fig
 
 
@@ -519,7 +698,7 @@ def plot_metrics_scatter(df, x='auroc', y='auprc', groupby=None, show_text=True,
 
     save_plot(fig, ax, save)
 
-    if return_fig and ax is None:
+    if return_fig:
         return fig
 
 
@@ -600,7 +779,7 @@ def plot_metrics_scatter_cols(df, col, x='auroc', y='auprc', groupby=None, n_col
 
     save_plot(fig, ax, save)
 
-    if return_fig and ax is None:
+    if return_fig:
         return fig
 
 
@@ -707,5 +886,235 @@ def plot_metrics_boxplot(df, metric, groupby=None, figsize=(5, 5), dpi=100, ax=N
 
     save_plot(fig, ax, save)
 
-    if return_fig and ax is None:
+    if return_fig:
         return fig
+
+
+def plot_psbulk_samples(adata, groupby, figsize=(5, 5), dpi=100, ax=None, return_fig=False, save=None, **kwargs):
+    """
+    Quality Control plot to assess the quality of the obtained pseudobulk samples.
+
+    Parameters
+    ----------
+    adata : AnnData
+        AnnData obtained after running ``decoupler.get_pseudobulk``.
+    groupby : str, list
+        Name of the ``.obs`` column to group by. Can also be a list of columns.
+
+    Returns
+    -------
+    genes : ndarray
+        List of genes to be kept.
+
+    figsize : tuple
+        Figure size.
+    dpi : int
+        DPI resolution of figure.
+    ax : Axes, None
+        A matplotlib axes object. If None returns new figure.
+    return_fig : bool
+        Whether to return a Figure object or not.
+    save : str, None
+        Path to where to save the plot. Infer the filetype if ending on {`.pdf`, `.png`, `.svg`}.
+    kwargs : dict
+        Other keyword arguments are passed through to seaborn.scatterplot().
+
+    Returns
+    -------
+    fig : Figure, None
+        If return_fig, returns Figure object.
+    """
+    # Load plotting packages
+    sns = check_if_seaborn()
+    plt = check_if_matplotlib()
+
+    # Extract obs
+    df = adata.obs.copy()
+
+    # Transform to log10
+    df['psbulk_n_cells'] = np.log10(df['psbulk_n_cells'])
+    df['psbulk_counts'] = np.log10(df['psbulk_counts'])
+
+    if type(groupby) is list and ax is not None:
+        raise ValueError("""If a grupby is a list of columns ax must be None.""")
+    elif type(groupby) is list:
+        fig, axes = plt.subplots(1, len(groupby), figsize=figsize, dpi=dpi, tight_layout=True)
+        axes = axes.ravel()
+        for ax, grp in zip(axes, groupby):
+            ax.grid(zorder=0)
+            sns.scatterplot(x='psbulk_n_cells', y='psbulk_counts', hue=grp, ax=ax, data=df, zorder=1, **kwargs)
+            ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), frameon=False, title=grp)
+            ax.set_xlabel('Log10 number of cells')
+            ax.set_ylabel('Log10 total sum of counts')
+    else:
+        # Plot
+        if ax is None:
+            fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=dpi)
+        ax.grid(zorder=0)
+        sns.scatterplot(x='psbulk_n_cells', y='psbulk_counts', hue=groupby, ax=ax, data=df, zorder=1, **kwargs)
+        ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), frameon=False, title=groupby)
+        ax.set_xlabel('Log10 number of cells')
+        ax.set_ylabel('Log10 total sum of counts')
+
+    save_plot(fig, ax, save)
+
+    if return_fig:
+        return fig
+
+
+def plot_filter_by_expr(adata, obs=None, group=None, lib_size=None, min_count=10, min_total_count=15, large_n=10,
+                        min_prop=0.7, cmap='viridis', figsize=(5, 4), dpi=100, ax=None, return_fig=False, save=None, **kwargs):
+    """
+    Plot to help determining the thresholds of the ``decoupler.filter_by_expr`` function.
+
+    Parameters
+    ----------
+    adata : AnnData
+        AnnData obtained after running ``decoupler.get_pseudobulk``.
+    obs : DataFrame, None
+        If provided, metadata dataframe, only needed if ``adata`` is not an ``AnnData``.
+    group : str, None
+        Name of the ``.obs`` column to group by. If None, it assumes that all samples belong to one group.
+    lib_size : int, float, None
+        Library size. If None, default to the sum of reads per sample.
+    min_count : int
+        Minimum count requiered per gene for at least some samples.
+    min_total_count : int
+        Minimum total count required per gene across all samples.
+    large_n : int
+        Number of samples per group that is considered to be "large".
+    min_prop : float
+        Minimum proportion of samples in the smallest group that express the gene.
+    cmap : str
+        Colormap to use.
+    figsize : tuple
+        Figure size.
+    dpi : int
+        DPI resolution of figure.
+    ax : Axes, None
+        A matplotlib axes object. If None returns new figure.
+    return_fig : bool
+        Whether to return a Figure object or not.
+    save : str, None
+        Path to where to save the plot. Infer the filetype if ending on {`.pdf`, `.png`, `.svg`}.
+    kwargs : dict
+        Other keyword arguments are passed through to ``sns.histplot``.
+
+    Returns
+    -------
+    fig : Figure, None
+        If return_fig, returns Figure object.
+    """
+    # Load plotting packages
+    sns = check_if_seaborn()
+    plt = check_if_matplotlib()
+
+    # Extract inputs
+    y, obs, var_names = get_filterbyexpr_inputs(adata, obs)
+
+    # Compute lib_size if needed
+    if lib_size is None:
+        lib_size = np.sum(y, axis=1)
+
+    # Minimum sample size cutoff
+    min_sample_size = get_min_sample_size(group, obs, large_n, min_prop)
+    min_sample_size -= 1e-14
+
+    # Total count cutoff
+    min_total_count -= 1e-14
+
+    # CPM cutoff
+    cpm_cutoff = get_cpm_cutoff(lib_size, min_count)
+
+    # CPM thr
+    cpm = get_cpm(y, lib_size)
+    sample_size = np.sum(cpm >= cpm_cutoff, axis=0)
+
+    # Total counts
+    total_counts = np.sum(y, axis=0)
+    total_counts[total_counts < 1.] = np.nan #  Handle 0s
+
+    # Plot
+    fig = None
+    if ax is None:
+        fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=dpi)
+    sns.histplot(x=np.log10(total_counts), y=sample_size, cmap=cmap, cbar=True, cbar_kws=dict(shrink=.75),
+                 discrete=(False, True), ax=ax, **kwargs)
+    ax.axhline(y=min_sample_size - 0.5, c='gray', ls='--')
+    ax.axvline(x=np.log10(min_total_count), c='gray', ls='--')
+    ax.set_xlabel('Log10 total sum of counts')
+    ax.set_ylabel('Number of samples')
+
+    save_plot(fig, ax, save)
+
+    if return_fig:
+        return fig
+
+
+def plot_filter_by_prop(adata, min_prop=0.2, min_smpls=2, cmap='viridis', figsize=(5, 4),
+                        dpi=100, ax=None, return_fig=False, save=None, **kwargs):
+    """
+    Plot to help determining the thresholds of the ``decoupler.filter_by_expr`` function.
+
+    Parameters
+    ----------
+    adata : AnnData
+        AnnData obtained after running ``decoupler.get_pseudobulk``. It requieres ``.layer['psbulk_props']``.
+    min_prop : float
+        Minimum proportion of cells that express a gene in a sample.
+    min_smpls : int
+        Minimum number of samples with bigger or equal proportion of cells with expression than ``min_prop``.
+    cmap : str
+        Colormap to use.
+    figsize : tuple
+        Figure size.
+    dpi : int
+        DPI resolution of figure.
+    ax : Axes, None
+        A matplotlib axes object. If None returns new figure.
+    return_fig : bool
+        Whether to return a Figure object or not.
+    save : str, None
+        Path to where to save the plot. Infer the filetype if ending on {`.pdf`, `.png`, `.svg`}.
+    kwargs : dict
+        Other keyword arguments are passed through to ``matplotlib.pyplot.hist``.
+
+    Returns
+    -------
+    fig : Figure, None
+        If return_fig, returns Figure object.
+    """
+    # Load plotting packages
+    sns = check_if_seaborn()
+    plt = check_if_matplotlib()
+    msg = """adata must be an AnnData object that contains the layer 'psbulk_props'. Please check the
+            function decoupler.get_pseudobulk."""
+
+    if isinstance(adata, AnnData):
+        layer_keys = adata.layers.keys()
+        if 'psbulk_props' in list(layer_keys):
+            var_names = adata.var_names.values.astype('U')
+            props = adata.layers['psbulk_props']
+            if isinstance(props, pd.DataFrame):
+                props = props.values
+        else:
+            raise ValueError(msg)
+
+        # Compute nsamples by minprop
+        nsmpls = np.sum(props >= min_prop, axis=0)
+
+        # Plot
+        fig = None
+        if ax is None:
+            fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=dpi)
+        _ = ax.hist(nsmpls, log=True, color='gray', **kwargs)
+        ax.axvline(x=min_smpls, c='black', ls='--')
+        ax.set_xlabel('Number of samples where >= min_prop')
+        ax.set_ylabel('Number of genes')
+
+        save_plot(fig, ax, save)
+
+        if return_fig:
+            return fig
+    else:
+        raise ValueError(msg)

@@ -2,9 +2,11 @@ import pytest
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+from anndata import AnnData
 from ..plotting import check_if_matplotlib, check_if_seaborn, save_plot, set_limits, plot_volcano, plot_violins
 from ..plotting import plot_barplot, build_msks, write_labels, plot_metrics_scatter, plot_metrics_scatter_cols
-from ..plotting import plot_metrics_boxplot
+from ..plotting import plot_metrics_boxplot, plot_psbulk_samples, plot_filter_by_expr, plot_filter_by_prop, plot_volcano_df
+from ..plotting import plot_targets
 
 
 def test_check_if_matplotlib():
@@ -38,6 +40,46 @@ def test_plot_volcano():
     plot_volcano(logFCs, pvals, 'C1', name=None, net=None, ax=None, return_fig=True)
     plot_volcano(logFCs, pvals, 'C1', name=None, net=None, ax=ax, return_fig=False)
     plot_volcano(logFCs, pvals, 'C1', name='T1', net=net, ax=None, return_fig=True)
+
+
+def test_plot_volcano_df():
+    data = pd.DataFrame([
+        ['G1', 3, 0.04],
+        ['G2', -2, 0.03],
+        ['G3', 4, 0.01],
+        ['G4', 0.5, 0.09],
+        ['G5', -0.25, 0.20],
+        ['G6', -0.20, 0.27],
+    ], columns=['names', 'logFCs', 'pvals']).set_index('names')
+
+    fig, ax = plt.subplots(1, 1)
+    plot_volcano_df(data, x='logFCs', y='pvals', ax=None, return_fig=True)
+    plot_volcano_df(data, x='logFCs', y='pvals', ax=ax, return_fig=False)
+
+
+def test_plot_targets():
+    data = pd.DataFrame([
+        ['G1', 3],
+        ['G2', -2],
+        ['G3', 4],
+        ['G4', 0.5],
+        ['G5', -0.25],
+        ['G6', -0.20],
+    ], columns=['names', 'stat']).set_index('names')
+
+    net = pd.DataFrame([
+        ['S1', 'G1', 0.7],
+        ['S1', 'G3', 1.5],
+        ['S1', 'G4', 1.2],
+        ['S1', 'G5', 0.9],
+        ['S1', 'G2', -4],
+        ['S2', 'G1', 8],
+        ['S2', 'G2', -8],
+    ], columns=['source', 'target', 'weight'])
+
+    fig, ax = plt.subplots(1, 1)
+    plot_targets(data, stat='stat', source_name='S1', net=net, ax=None, return_fig=True)
+    plot_targets(data, stat='stat', source_name='S1', net=net, ax=ax, return_fig=False)
 
 
 def test_plot_violins():
@@ -153,3 +195,93 @@ def test_plot_metrics_boxplot():
     plot_metrics_boxplot(df, 'mcauroc', groupby=None)
     with pytest.raises(ValueError):
         plot_metrics_boxplot(df, 'mcauroc', groupby='method')
+
+
+def test_plot_psbulk_samples():
+    obs = pd.DataFrame([
+        ['S1', 'C1', 10, 1023],
+        ['S1', 'C2', 12,  956],
+        ['S2', 'C1',  7, 1374],
+        ['S2', 'C2', 16,  977],
+    ], columns=['sample_id', 'cell_type', 'psbulk_n_cells', 'psbulk_counts'], index=['1', '2', '3', '4'])
+    var = pd.DataFrame(index=['G1', 'G2'])
+    X = np.zeros((4, 2))
+    adata = AnnData(X, obs=obs, var=var, dtype=np.float32)
+
+    with pytest.raises(ValueError):
+        plot_psbulk_samples(adata, groupby=['cell_type', 'sample_id'], ax='ax')
+    plot_psbulk_samples(adata, groupby=['cell_type', 'sample_id'])
+    plot_psbulk_samples(adata, groupby='sample_id')
+
+
+def test_plot_filter_by_expr():
+    index = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7']
+    columns = ['G1', 'G2', 'G3', 'G4', 'G5']
+    # empty, BG, SG
+    df = pd.DataFrame([
+        [0, 0, 8, 4, 1],
+        [0, 0, 8, 2, 1],
+        [0, 0, 8, 4, 1],
+        [0, 0, 2, 4, 1],
+        [0, 8, 0, 2, 1],
+        [0, 4, 0, 8, 1],
+        [0, 4, 0, 8, 1],
+    ], index=index, columns=columns)
+    obs = pd.DataFrame([
+        ['A'],
+        ['A'],
+        ['A'],
+        ['A'],
+        ['B'],
+        ['B'],
+        ['B'],
+    ], index=index, columns=['group'])
+    adata = AnnData(df, obs=obs, dtype=np.float32)
+
+    plot_filter_by_expr(adata, obs=None, group=None, lib_size=None, min_count=10,
+                        min_total_count=15, large_n=10, min_prop=0.7)
+    plot_filter_by_expr(adata, obs=None, group=None, lib_size=40, min_count=1,
+                        min_total_count=15, large_n=10, min_prop=0.7)
+    plot_filter_by_expr(adata, obs=None, group=None, lib_size=40, min_count=1,
+                        min_total_count=15, large_n=10, min_prop=0.7, return_fig=True)
+
+def test_plot_filter_by_prop():
+    index = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7']
+    columns = ['G1', 'G2', 'G3', 'G4', 'G5']
+    # empty, BG, SG
+    df = pd.DataFrame([
+        [0, 0, 8, 4, 1],
+        [0, 0, 8, 2, 1],
+        [0, 0, 8, 4, 1],
+        [0, 0, 2, 4, 1],
+        [0, 8, 0, 2, 1],
+        [0, 4, 0, 8, 1],
+        [0, 4, 0, 8, 1],
+    ], index=index, columns=columns)
+    props = pd.DataFrame([
+        [0, .0, .8, .4, .1],
+        [0, .0, .8, .2, .1],
+        [0, .0, .8, .4, .1],
+        [0, .0, .2, .4, .1],
+        [0, .8, .0, .2, .1],
+        [0, .4, .0, .8, .1],
+        [0, .4, .0, .8, .1],
+    ], index=index, columns=columns, dtype=np.float32)
+    obs = pd.DataFrame([
+        ['A'],
+        ['A'],
+        ['A'],
+        ['A'],
+        ['B'],
+        ['B'],
+        ['B'],
+    ], index=index, columns=['group'])
+    adata = AnnData(df, obs=obs, layers={'psbulk_props': props}, dtype=np.float32)
+
+    plot_filter_by_prop(adata, min_prop=0.2, min_smpls=2)
+    plot_filter_by_prop(adata, min_prop=0.2, min_smpls=2, return_fig=True)
+    with pytest.raises(ValueError):
+        plot_filter_by_prop(df, min_prop=0.2, min_smpls=2)
+    del adata.layers['psbulk_props']
+    with pytest.raises(ValueError):
+        plot_filter_by_prop(adata, min_prop=0.2, min_smpls=2)
