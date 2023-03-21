@@ -3,9 +3,11 @@ import numpy as np
 import pandas as pd
 from scipy.sparse import csr_matrix
 from anndata import AnnData
-from ..utils_anndata import get_acts, swap_layer, extract_psbulk_inputs, check_for_raw_counts
+from ..utils_anndata import get_acts, swap_layer, extract_psbulk_inputs, check_X
 from ..utils_anndata import format_psbulk_inputs, psbulk_profile, compute_psbulk, get_unq_dict, get_pseudobulk
 from ..utils_anndata import check_if_skip, get_contrast, get_top_targets, format_contrast_results
+from ..utils_anndata import get_filterbyexpr_inputs, get_min_sample_size, get_cpm_cutoff, get_cpm, filter_by_expr
+from ..utils_anndata import filter_by_prop
 
 
 def test_get_acts():
@@ -31,11 +33,21 @@ def test_swap_layer():
     df = pd.DataFrame(m, index=r, columns=c)
     adata = AnnData(df, dtype=np.float32)
     adata.layers['norm'] = adata.X / np.sum(adata.X, axis=1).reshape(-1, 1)
-    sdata = swap_layer(adata, 'norm')
+    sdata = swap_layer(adata, layer_key='norm', X_layer_key='x', inplace=False)
     assert not np.all(np.mod(sdata.X, 1) == 0)
-    swap_layer(adata=adata, layer_key='norm', inplace=True)
+    assert 'x' in list(sdata.layers.keys())
+    assert np.all(sdata.layers['x'] == adata.X)
+    sdata = swap_layer(adata, layer_key='norm', X_layer_key=None, inplace=False)
+    assert np.all(sdata.X == sdata.layers['norm'])
+    assert 'x' not in list(sdata.layers.keys())
+    swap_layer(adata, layer_key='norm', X_layer_key='x', inplace=True)
     assert not np.all(np.mod(adata.X, 1) == 0)
-    assert adata.layers['X'] is not None
+    assert 'x' in list(adata.layers.keys())
+    adata = AnnData(df, dtype=np.float32)
+    adata.layers['norm'] = adata.X / np.sum(adata.X, axis=1).reshape(-1, 1)
+    swap_layer(adata, layer_key='norm', X_layer_key=None, inplace=True)
+    assert np.all(adata.X == adata.layers['norm'])
+    assert 'x' not in list(adata.layers.keys())
 
 
 def test_extract_psbulk_inputs():
@@ -57,30 +69,68 @@ def test_extract_psbulk_inputs():
     with pytest.raises(ValueError):
         extract_psbulk_inputs(df, obs=None, layer=None, use_raw=False)
 
-
-def test_check_for_raw_counts():
+                
+def test_check_X():
     X = csr_matrix(np.array([[1, 0, 2], [1, 0, 3], [0, 0, 0]]))
     X_float = csr_matrix(np.array([[1.3, 0, 2.1], [1.48, 0.123, 3.33], [0, 0, 0]]))
     X_neg = csr_matrix(np.array([[1, 0, -2], [1, 0, -3], [0, 0, 0]]))
     X_inf = csr_matrix(np.array([[1, 0, np.nan], [1, 0, 3], [0, 0, 0]]))
-    check_for_raw_counts(X)
+    check_X(X, mode='sum', skip_checks=False)
     with pytest.raises(ValueError):
-        check_for_raw_counts(X_float)
+        check_X(X_inf, mode='sum', skip_checks=False)
     with pytest.raises(ValueError):
-        check_for_raw_counts(X_neg)
+        check_X(X_inf, mode='sum', skip_checks=True)
     with pytest.raises(ValueError):
-        check_for_raw_counts(X_inf)
-    check_for_raw_counts(X_float, skip_checks=True)
-    check_for_raw_counts(X_neg, skip_checks=True)
+        check_X(X_neg, mode='sum', skip_checks=False)
     with pytest.raises(ValueError):
-        check_for_raw_counts(X_inf, skip_checks=True)
+        check_X(X_float, mode='sum', skip_checks=False)
+    check_X(X_neg, mode='sum', skip_checks=True)
+    check_X(X_float, mode='sum', skip_checks=True)
+    check_X(X_neg, mode=sum, skip_checks=False)
+    check_X(X_neg, mode={'sum': sum}, skip_checks=False)
 
 
 def test_format_psbulk_inputs():
     sample_col, groups_col = 'sample_id', 'celltype'
-    obs = pd.DataFrame([['S1', 'S2', 'S3'], ['C1', 'C1', 'C2']], columns=['S1', 'S2', 'S3'], index=[sample_col, groups_col]).T
-    format_psbulk_inputs(sample_col, groups_col, obs)
-    format_psbulk_inputs(sample_col, None, obs)
+    obs = pd.DataFrame([
+        ['P1', 'S1', 'C1'],
+        ['P1', 'S1', 'C1'],
+        ['P1', 'S1', 'C2'],
+        ['P1', 'S1', 'C2'],
+        ['P1', 'S2', 'C1'],
+        ['P1', 'S2', 'C1'],
+        ['P1', 'S2', 'C2'],
+        ['P1', 'S2', 'C2'],
+        ['P2', 'S1', 'C1'],
+        ['P2', 'S1', 'C1'],
+        ['P2', 'S1', 'C2'],
+        ['P2', 'S1', 'C2'],
+        ['P2', 'S2', 'C1'],
+        ['P2', 'S2', 'C1'],
+        ['P2', 'S2', 'C2'],
+        ['P2', 'S2', 'C2'],
+
+    ], columns=['patient_id', 'sample_id', 'celltype'])
+
+    new_obs, groups_col, smples, groups, n_rows = format_psbulk_inputs('patient_id', groups_col='patient_id', obs=obs)
+    assert new_obs.shape[1] != obs.shape[1]
+    assert groups_col is None
+    assert smples.size == 2
+    assert groups is None
+    assert n_rows == 2
+    new_obs, groups_col, smples, groups, n_rows = format_psbulk_inputs('patient_id', groups_col='celltype', obs=obs)
+    assert new_obs.shape[1] != obs.shape[1]
+    assert groups_col == 'celltype'
+    assert smples.size == 2
+    assert groups.size == 2
+    assert n_rows == 4
+    new_obs, groups_col, smples, groups, n_rows = format_psbulk_inputs('patient_id', groups_col=['sample_id', 'celltype'], obs=obs)
+    new_obs, groups_col, smples, groups, n_rows
+    assert new_obs.shape[1] != obs.shape[1]
+    assert groups_col == 'sample_id_celltype'
+    assert smples.size == 2
+    assert groups.size == 4
+    assert n_rows == 8
 
 
 def test_psbulk_profile():
@@ -95,26 +145,67 @@ def test_psbulk_profile():
     assert np.all(p == np.array([4, 5, 6]))
     p = psbulk_profile(profile, mode='median')
     assert np.all(p == np.array([4, 5, 6]))
+    p = psbulk_profile(profile, mode=sum)
+    assert np.all(p == np.array([12, 15, 18]))
     with pytest.raises(ValueError):
         psbulk_profile(profile, mode='mode')
 
 
 def test_compute_psbulk():
     sample_col, groups_col = 'sample_id', 'celltype'
-    min_cells, min_counts, min_prop = 0., 0., 0.
-    X = csr_matrix(np.array([[1, 0, 2], [1, 0, 3], [0, 0, 0]]))
-    smples = np.array(['S1', 'S1', 'S2'])
-    groups = np.array(['C1', 'C1', 'C1'])
-    n_rows = len(smples)
+    obs = pd.DataFrame([
+        ['S1', 'C1'],
+        ['S1', 'C1'],
+        ['S1', 'C2'],
+        ['S1', 'C2'],
+        ['S2', 'C1'],
+        ['S2', 'C1'],
+        ['S2', 'C2'],
+        ['S2', 'C2'],
+
+    ], columns=[sample_col, groups_col])
+    X = csr_matrix(np.array([
+        [1, 0, 8],
+        [1, 0, 3],
+        [0, 2, 1],
+        [0, 4, 0],
+        [2, 0, 4],
+        [2, 0, 1],
+        [0, 6, 0],
+        [1, 3, 2],
+    ]))
+
+    smples = np.array(['S1', 'S2'])
+    groups = np.array(['C1', 'C2'])
+    n_rows = len(smples) * len(groups)
     n_cols = X.shape[1]
-    psbulk = np.zeros((n_rows, n_cols))
-    props = np.full((n_rows, n_cols), False)
-    obs = pd.DataFrame([smples, groups], columns=smples, index=[sample_col, groups_col]).T
     new_obs = pd.DataFrame(columns=obs.columns)
-    compute_psbulk(psbulk, props, X, sample_col, groups_col, np.unique(smples),
-                   np.unique(groups), obs, new_obs, min_cells, min_counts, min_prop, 'sum')
-    compute_psbulk(psbulk, props, X, sample_col, None, np.unique(smples),
-                   np.unique(groups), obs, new_obs, min_cells, min_counts, min_prop, 'sum')
+    min_cells, min_counts = 0., 0.
+    mode = 'sum'
+    dtype = np.float32
+
+    psbulk, ncells, counts, props = compute_psbulk(n_rows, n_cols, X, sample_col, groups_col, smples, groups, obs,
+                                                   new_obs, min_cells, min_counts, mode, dtype)
+    assert np.all(np.sum(psbulk, axis=1) == counts)
+    assert np.all(np.array(psbulk.shape) == np.array(props.shape))
+    psbulk, ncells, counts, props = compute_psbulk(n_rows, n_cols, X, sample_col, groups_col, smples, groups, obs,
+                                                   new_obs, min_cells, 9, mode, dtype)
+    assert np.sum(psbulk, axis=1)[2] == 0.
+    assert np.all(psbulk[2] == props[2])
+    groups = smples
+    n_rows = len(smples)
+    obs = obs[['sample_id']].copy()
+    new_obs = pd.DataFrame(columns=obs.columns)
+
+    psbulk, ncells, counts, props = compute_psbulk(n_rows, n_cols, X, sample_col, None, smples, groups, obs,
+                                                   new_obs, min_cells, min_counts, mode, dtype)
+    assert np.all(np.sum(psbulk, axis=1) == counts)
+    assert np.all(np.array(psbulk.shape) == np.array(props.shape))
+    assert psbulk.shape[0] == 2
+    psbulk, ncells, counts, props = compute_psbulk(n_rows, n_cols, X, sample_col, None, smples, groups, obs,
+                                                   new_obs, min_cells, 21, mode, dtype)
+    assert np.sum(psbulk, axis=1)[0] == 0.
+    assert np.all(psbulk[0] == props[0])
 
 
 def test_get_pseudobulk():
@@ -127,17 +218,31 @@ def test_get_pseudobulk():
     groups = np.array(['C1', 'C1', 'C1', 'C1', 'C2'])
     obs = pd.DataFrame([smples, groups], columns=r, index=[sample_col, groups_col]).T
     adata = AnnData(df, obs=obs, dtype=np.float32)
-    pdata = get_pseudobulk(adata, sample_col, sample_col, min_prop=0, min_cells=0, min_counts=0, min_smpls=0)
+
+    pdata = get_pseudobulk(adata, groups_col, groups_col, min_cells=0, min_counts=0, min_prop=None, min_smpls=None)
+    assert np.all(pdata.shape == np.array([2, 3]))
+    pdata = get_pseudobulk(adata, groups_col, groups_col, min_cells=0, min_counts=0, min_prop=1, min_smpls=1)
+    assert np.all(pdata.var_names == np.array(['G1', 'G3']))
+    pdata = get_pseudobulk(adata, sample_col, groups_col, min_cells=0, min_counts=0, min_prop=0, min_smpls=0)
+    assert np.all(pdata.shape == np.array([3, 3]))
+    pdata = get_pseudobulk(adata, sample_col, groups_col, min_cells=0, min_counts=0, min_prop=1, min_smpls=2)
+    assert np.all(pdata.var_names == np.array(['G1', 'G3']))
+    pdata = get_pseudobulk(adata, sample_col, sample_col, min_cells=0, min_counts=0)
     assert pdata.shape[0] == 2
-    pdata = get_pseudobulk(adata, sample_col, groups_col, min_prop=0, min_cells=0, min_counts=0, min_smpls=0, mode='sum')
+    pdata = get_pseudobulk(adata, sample_col, groups_col, min_cells=0, min_counts=0, mode='sum')
     assert pdata.shape[0] == 3
     assert np.all(pdata.X[0] == np.array([9., 3., 6.]))
-    pdata = get_pseudobulk(adata, sample_col, groups_col, min_prop=0, min_cells=0, min_counts=0, min_smpls=0, mode='mean')
+    pdata = get_pseudobulk(adata, sample_col, groups_col, min_cells=0, min_counts=0, mode='mean')
     assert pdata.shape[0] == 3
     assert np.all(pdata.X[0] == np.array([3., 1., 2.]))
-    pdata = get_pseudobulk(adata, sample_col, groups_col, min_prop=0, min_cells=0, min_counts=0, min_smpls=0, mode='median')
+    pdata = get_pseudobulk(adata, sample_col, groups_col, min_cells=0, min_counts=0, mode='median')
     assert pdata.shape[0] == 3
     assert np.all(pdata.X[0] == np.array([2., 0., 2.]))
+    pdata = get_pseudobulk(adata, sample_col, groups_col, min_cells=0, min_counts=0, mode={'sum': sum, 'median': np.median, 'mean': np.mean})
+    assert np.all(pdata.X == pdata.layers['sum'])
+    assert pdata.layers['sum'] is not None
+    assert pdata.layers['median'] is not None
+    assert pdata.layers['mean'] is not None
 
 
 def test_get_unq_dict():
@@ -204,3 +309,160 @@ def test_format_contrast_results():
     pvals = pd.DataFrame([[.3, .02, .01], [.9, .1, .003]], index=['C1', 'C2'], columns=['G1', 'G2', 'G3'])
     pvals.name = 'contrast_pvals'
     format_contrast_results(logFCs, pvals)
+
+
+def test_get_filterbyexpr_inputs():
+    samples = ['S1', 'S2']
+    genes = ['G1', 'G2', 'G3']
+    df = pd.DataFrame([
+        [2, 2, 4],
+        [4, 4, 0]
+    ], index=samples, columns=genes)
+    obs = pd.DataFrame([['S1'], ['S2']], index=samples, columns=['group'])
+    aobs = pd.DataFrame([['C1'], ['C2']], index=samples, columns=['group'])
+    adata = AnnData(df, obs=obs, dtype=np.float32)
+
+    y, nobs, var_names = get_filterbyexpr_inputs(adata=adata, obs=None)
+    assert np.all(y == adata.X)
+    assert np.all(nobs['group'].values == obs['group'].values)
+    assert np.all(nobs['group'].values != aobs['group'].values)
+    assert np.all(var_names == adata.var_names)
+    y, nobs, var_names = get_filterbyexpr_inputs(adata=adata, obs=aobs)
+    assert np.all(nobs['group'].values != aobs['group'].values)
+    y, nobs, var_names = get_filterbyexpr_inputs(adata=df, obs=None)
+    assert np.all(y == df.values)
+    assert 'group' not in nobs.columns
+    assert np.all(var_names == df.columns)
+    y, nobs, var_names = get_filterbyexpr_inputs(adata=df, obs=obs)
+    assert np.all(nobs['group'].values == obs['group'].values)
+    with pytest.raises(ValueError):
+        y, nobs, var_names = get_filterbyexpr_inputs(adata=[''], obs=None)
+    with pytest.raises(ValueError):
+        y, nobs, var_names = get_filterbyexpr_inputs(adata=[''], obs=obs)
+
+
+def test_get_min_sample_size():
+    obs = pd.DataFrame([['S1'], ['S1'], ['S1'], ['S2'], ['S2']], columns=['group'])
+    min_sample_size = get_min_sample_size(group=None, obs=obs, large_n=10, min_prop=0.7)
+    assert min_sample_size == 5
+    min_sample_size = get_min_sample_size(group=None, obs=obs, large_n=4, min_prop=0.5)
+    assert min_sample_size == 4.5
+    min_sample_size = get_min_sample_size(group='group', obs=obs, large_n=10, min_prop=0.7)
+    assert min_sample_size == 2
+    min_sample_size = get_min_sample_size(group=obs['group'], obs=obs, large_n=10, min_prop=0.7)
+    assert min_sample_size == 2
+    min_sample_size = get_min_sample_size(group=obs['group'].values, obs=obs, large_n=10, min_prop=0.7)
+    assert min_sample_size == 2
+    min_sample_size = get_min_sample_size(group=list(obs['group'].values), obs=obs, large_n=10, min_prop=0.7)
+    assert min_sample_size == 2
+
+
+def test_get_cpm_cutoff():
+    cut = get_cpm_cutoff(lib_size=1e6, min_count=1)
+    assert cut == 1.0
+    cut = get_cpm_cutoff(lib_size=1e5, min_count=1)
+    assert cut == 10.
+    cut = get_cpm_cutoff(lib_size=[1e5, 1e5, 1e6], min_count=1)
+    assert cut == 10.
+
+
+def test_get_cpm():
+    y = np.array([
+        [2, 2, 4, 4, 8],
+        [4, 4, 0, 2, 6]
+    ])
+    lib_size = np.sum(y, axis=1)
+
+    cpm = get_cpm(y, lib_size=lib_size)
+    assert np.all(cpm.ravel() == np.array([1e5, 1e5, 2e5, 2e5, 4e5, 25e4, 25e4, 0, 125e3, 375e3]))
+    cpm = get_cpm(y, lib_size=1e6)
+    assert np.all(cpm.ravel() == y.ravel())
+
+
+def test_filter_by_expr():
+    index = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7']
+    columns = ['G1', 'G2', 'G3', 'G4', 'G5']
+    # empty, BG, SG
+    df = pd.DataFrame([
+        [0, 0, 8, 4, 1],
+        [0, 0, 8, 2, 1],
+        [0, 0, 8, 4, 1],
+        [0, 0, 2, 4, 1],
+        [0, 8, 0, 2, 1],
+        [0, 4, 0, 8, 1],
+        [0, 4, 0, 8, 1],
+    ], index=index, columns=columns)
+    obs = pd.DataFrame([
+        ['A'],
+        ['A'],
+        ['A'],
+        ['A'],
+        ['B'],
+        ['B'],
+        ['B'],
+    ], index=index, columns=['group'])
+    adata = AnnData(df, obs=obs, dtype=np.float32)
+
+    genes = filter_by_expr(adata, obs=None, group=None, lib_size=None, min_count=10, min_total_count=15, large_n=10, min_prop=0.7)
+    assert genes.size == 0.
+    genes = filter_by_expr(adata, obs=None, group=None, lib_size=None, min_count=1, min_total_count=15, large_n=10, min_prop=0.7)
+    assert np.all(genes == np.array(['G4']))
+    genes = filter_by_expr(adata, obs=None, group=None, lib_size=None, min_count=1, min_total_count=7, large_n=10, min_prop=0.7)
+    assert np.all(genes == np.array(['G4', 'G5']))
+    genes = filter_by_expr(adata, obs=None, group='group', lib_size=None, min_count=3, min_total_count=10, large_n=10, min_prop=0.7)
+    assert np.all(genes == np.array(['G2', 'G3', 'G4']))
+    genes = filter_by_expr(adata, obs=None, group='group', lib_size=7, min_count=3, min_total_count=10, large_n=10, min_prop=0.7)
+    assert np.all(genes == np.array(['G2', 'G3', 'G4']))
+    genes = filter_by_expr(adata, obs=None, group='group', lib_size=None, min_count=1, min_total_count=0, large_n=0, min_prop=0.1)
+    assert np.all(genes == np.array(['G2', 'G3', 'G4', 'G5']))
+    genes = filter_by_expr(adata, obs=None, group=None, lib_size=None, min_count=1, min_total_count=0, large_n=0, min_prop=0.55)
+    assert np.all(genes == np.array(['G3', 'G4', 'G5']))
+    genes = filter_by_expr(adata, obs=None, group=None, lib_size=None, min_count=1, min_total_count=15, large_n=0, min_prop=0.55)
+    assert np.all(genes == np.array(['G3', 'G4']))
+
+
+def test_filter_by_prop():
+    index = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7']
+    columns = ['G1', 'G2', 'G3', 'G4', 'G5']
+    # empty, BG, SG
+    df = pd.DataFrame([
+        [0, 0, 8, 4, 1],
+        [0, 0, 8, 2, 1],
+        [0, 0, 8, 4, 1],
+        [0, 0, 2, 4, 1],
+        [0, 8, 0, 2, 1],
+        [0, 4, 0, 8, 1],
+        [0, 4, 0, 8, 1],
+    ], index=index, columns=columns)
+    props = pd.DataFrame([
+        [0, .0, .8, .4, .1],
+        [0, .0, .8, .2, .1],
+        [0, .0, .8, .4, .1],
+        [0, .0, .2, .4, .1],
+        [0, .8, .0, .2, .1],
+        [0, .4, .0, .8, .1],
+        [0, .4, .0, .8, .1],
+    ], index=index, columns=columns).values
+    obs = pd.DataFrame([
+        ['A'],
+        ['A'],
+        ['A'],
+        ['A'],
+        ['B'],
+        ['B'],
+        ['B'],
+    ], index=index, columns=['group'])
+    adata = AnnData(df, obs=obs, layers={'psbulk_props': props}, dtype=np.float32)
+
+    g = filter_by_prop(adata, min_prop=0.2, min_smpls=2)
+    assert np.all(g == np.array(['G2', 'G3', 'G4']))
+    g = filter_by_prop(adata, min_prop=0.2, min_smpls=5)
+    assert np.all(g == np.array(['G4']))
+    g = filter_by_prop(adata, min_prop=0.1, min_smpls=7)
+    assert np.all(g == np.array(['G4', 'G5']))
+    g = filter_by_prop(adata, min_prop=0.4, min_smpls=2)
+    assert np.all(g == np.array(['G2', 'G3', 'G4']))
+    g = filter_by_prop(adata, min_prop=0.1, min_smpls=1)
+    assert np.all(g == np.array(['G2', 'G3', 'G4', 'G5']))
+    g = filter_by_prop(adata, min_prop=0.8, min_smpls=2)
+    assert np.all(g == np.array(['G3', 'G4']))

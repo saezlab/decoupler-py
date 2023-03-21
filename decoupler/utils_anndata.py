@@ -44,7 +44,7 @@ def get_acts(adata, obsm_key, dtype=np.float32):
     return AnnData(np.array(adata.obsm[obsm_key]), obs=obs, var=var, uns=uns, obsm=obsm, dtype=dtype)
 
 
-def swap_layer(adata, layer_key, inplace=False):
+def swap_layer(adata, layer_key, X_layer_key='X', inplace=False):
     """
     Swaps an ``adata.X`` for a given layer.
 
@@ -55,24 +55,27 @@ def swap_layer(adata, layer_key, inplace=False):
     adata : AnnData
         Annotated data matrix.
     layer_key : str
-        ``.layers`` key to swap.
+        ``.layers`` key to place in ``.X``.
+    X_layer_key : str, None
+        ``.layers`` key where to move and store the original ``.X``. If None, the original ``.X`` is discarded.
     inplace : bool
         If ``False``, return a copy. Otherwise, do operation inplace and return ``None``.
 
     Returns
     -------
     layer : AnnData, None
-        If ``inplace=False``, new AnnData object with the given layer in ``X`` and
-        the original ``X`` stored in ``.layers``.
+        If ``inplace=False``, new AnnData object.
     """
 
+    cdata = None
     if inplace:
-        adata.layers['X'] = adata.X
+        if X_layer_key is not None:
+            adata.layers[X_layer_key] = adata.X
         adata.X = adata.layers[layer_key]
-        cdata = None
     else:
         cdata = adata.copy()
-        cdata.layers['X'] = cdata.X
+        if X_layer_key is not None:
+            cdata.layers[X_layer_key] = cdata.X
         cdata.X = cdata.layers[layer_key]
 
     return cdata
@@ -118,16 +121,16 @@ def extract_psbulk_inputs(adata, obs, layer, use_raw):
     return X[:, msk], obs, var.iloc[msk]
 
 
-def check_for_raw_counts(X, mode='sum', skip_checks=False):
+def check_X(X, mode='sum', skip_checks=False):
     is_finite = np.all(np.isfinite(X.data))
     if not is_finite:
         raise ValueError('Data contains non finite values (nan or inf), please set them to 0 or remove them.')
     skip_checks = type(mode) is dict or callable(mode) or skip_checks
     if not skip_checks:
-        is_positive = np.all(X.data > 0)
+        is_positive = np.all(X.data >= 0)
         if not is_positive:
             raise ValueError("""Data contains negative values. Check the parameters use_raw and layers to
-            determine if you are selecting the correct data. To override this, set skip_checks=True.
+            determine if you are selecting the correct matrix. To override this, set skip_checks=True.
             """)
         if mode == 'sum':
             is_integer = float(np.sum(X.data)).is_integer()
@@ -139,6 +142,10 @@ def check_for_raw_counts(X, mode='sum', skip_checks=False):
 
 
 def format_psbulk_inputs(sample_col, groups_col, obs):
+    # Use one column if the same
+    if sample_col == groups_col:
+        groups_col = None
+
     if groups_col is None:
         # Filter extra columns in obs
         cols = obs.groupby(sample_col).apply(lambda x: x.apply(lambda y: len(y.unique()) == 1)).all(0)
@@ -151,6 +158,13 @@ def format_psbulk_inputs(sample_col, groups_col, obs):
         # Get number of samples and features
         n_rows = len(smples)
     else:
+        # Check if extra grouping is needed
+        if type(groups_col) is list:
+            obs = obs.copy()
+            joined_cols = '_'.join(groups_col)
+            obs[joined_cols] = obs[groups_col[0]].str.cat(obs[groups_col[1:]], sep='_')
+            groups_col = joined_cols
+
         # Filter extra columns in obs
         cols = obs.groupby([sample_col, groups_col]).apply(lambda x: x.apply(lambda y: len(y.unique()) == 1)).all(0)
         obs = obs.loc[:, cols]
@@ -162,7 +176,7 @@ def format_psbulk_inputs(sample_col, groups_col, obs):
         # Get number of samples and features
         n_rows = len(smples) * len(groups)
 
-    return obs, smples, groups, n_rows
+    return obs, groups_col, smples, groups, n_rows
 
 
 def psbulk_profile(profile, mode='sum'):
@@ -179,45 +193,8 @@ def psbulk_profile(profile, mode='sum'):
     return profile
 
 
-def filter_by_min_smpls(psbulk, props, groups_col, smples, groups, min_prop, min_smpls):
-
-    # Filter by min_smpl
-    offset = 0
-    if groups_col is None:
-
-        # Compute n_smpl
-        nsmpls = np.sum(props >= min_prop, axis=0)
-
-        # Set features to 0
-        msk = nsmpls >= min_smpls
-        psbulk[:, ~msk] = 0.
-
-    else:
-
-        nsmpls = np.zeros((len(groups), psbulk.shape[1]))
-        for i in range(len(groups)):
-
-            # Get profiles and proportions per group
-            prop = props[offset:offset + len(smples)]
-            profile = psbulk[offset:offset + len(smples)]
-
-            # Compute nsmpl
-            nsmpl = np.sum(prop >= min_prop, axis=0)
-            nsmpls[i] = nsmpl
-
-            # Set features to 0
-            msk = nsmpl >= min_smpls
-            profile[:, ~msk] = 0.
-
-            # Update main mat
-            psbulk[offset:offset + len(smples)] = profile
-            offset += len(smples)
-
-    return nsmpls
-
-
 def compute_psbulk(n_rows, n_cols, X, sample_col, groups_col, smples, groups, obs,
-                   new_obs, min_cells, min_counts, min_prop, min_smpls, mode):
+                   new_obs, min_cells, min_counts, mode, dtype):
 
     # Init empty variables
     psbulk = np.zeros((n_rows, n_cols))
@@ -241,7 +218,7 @@ def compute_psbulk(n_rows, n_cols, X, sample_col, groups_col, smples, groups, ob
             count = np.sum(profile)
             ncells[i] = ncell
             counts[i] = count
-            if ncell <= min_cells or count <= min_counts:
+            if ncell < min_cells or count < min_counts:
                 i += 1
                 continue
 
@@ -274,7 +251,7 @@ def compute_psbulk(n_rows, n_cols, X, sample_col, groups_col, smples, groups, ob
                 count = np.sum(profile)
                 ncells[i] = ncell
                 counts[i] = count
-                if ncell <= min_cells or count <= min_counts:
+                if ncell < min_cells or count < min_counts:
                     i += 1
                     continue
 
@@ -289,14 +266,11 @@ def compute_psbulk(n_rows, n_cols, X, sample_col, groups_col, smples, groups, ob
                 psbulk[i] = profile
                 i += 1
 
-    # Filter by min_smpls
-    nsmpls = filter_by_min_smpls(psbulk, props, groups_col, smples, groups, min_prop, min_smpls)
-
-    return psbulk, ncells, counts, props, nsmpls
+    return psbulk, ncells, counts, props
 
 
-def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=False, mode='sum', min_prop=0.2, min_cells=10,
-                   min_counts=1000, min_smpls=2, dtype=np.float32, skip_checks=False):
+def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=False, mode='sum', min_cells=10,
+                   min_counts=1000, dtype=np.float32, skip_checks=False, min_prop=None, min_smpls=None):
     """
     Summarizes expression profiles across cells per sample and group.
 
@@ -307,6 +281,10 @@ def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=
 
     By default this function expects raw integer counts as input and sums them per sample and group (``mode='sum'``), but other
     modes are available.
+    
+    This function produces some quality control metrics to assess if is necessary to filter some samples. The number of cells
+    that belong to each sample is stored in ``.obs['psbulk_n_cells']``, the total sum of counts per sample in
+    ``.obs['psbulk_counts']``, and the proportion of cells that express a given gene in ``.layers['psbulk_props'].
 
     Parameters
     ----------
@@ -325,62 +303,92 @@ def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=
     mode : str
         How to perform the pseudobulk. Available options are ``sum``, ``mean`` or ``median``. It also accepts callback
         functions, like lambda, to perform custom aggregations. Additionally, it is also possible to provide a dictionary of
-        different callback functions, each one stored in a different resulting `.layer`.
-    min_prop : float
-        Filter to remove genes by a minimum proportion of cells with non-zero values in a sample-group pair.
+        different callback functions, each one stored in a different resulting `.layer`. In this case, the result of the first
+        callback function of the dictionary is stored in ``.X`` by default. To switch between layers check
+        ``decoupler.swap_layer``.
     min_cells : int
         Filter to remove samples by a minimum number of cells in a sample-group pair.
     min_counts : int
         Filter to remove samples by a minimum number of summed counts in a sample-group pair.
-    min_smpls : int
-        Filter to remove genes by a minimum number of samples with enough ``min_prop`` in a group.
     dtype : type
         Type of float used.
     skip_checks : bool
         Whether to skip input checks. Set to ``True`` when working with positive and negative data, or when counts are not
         integers.
+    min_prop : float
+        Filter to remove features by a minimum proportion of cells with non-zero values. Deprecated parameter,
+        check ``decoupler.filter_by_prop``.
+    min_smpls : int
+        Filter to remove genes by a minimum number of samples with non-zero values. Deprecated parameter,
+        check ``decoupler.filter_by_prop``.
 
     Returns
     -------
     psbulk : AnnData
-        Returns new AnnData object with unormalized pseudobulk profiles per sample and group.
+        Returns new AnnData object with unormalized pseudobulk profiles per sample and group. It also returns quality control
+        metrics that start with the prefix ``psbulk_``.
     """
 
-    # Use one column if the same
-    if sample_col == groups_col:
-        groups_col = None
+    min_cells, min_counts = np.clip(min_cells, 1, None), np.clip(min_counts, 1, None)
 
     # Extract inputs
     X, obs, var = extract_psbulk_inputs(adata, obs, layer, use_raw)
 
-    # Test if raw counts are present
-    check_for_raw_counts(X, mode=mode, skip_checks=skip_checks)
+    # Test if X is correct
+    check_X(X, mode=mode, skip_checks=skip_checks)
 
     # Format inputs
-    obs, smples, groups, n_rows = format_psbulk_inputs(sample_col, groups_col, obs)
+    obs, groups_col, smples, groups, n_rows = format_psbulk_inputs(sample_col, groups_col, obs)
     n_cols = adata.shape[1]
     new_obs = pd.DataFrame(columns=obs.columns)
     new_var = pd.DataFrame(index=var.index)
 
-    # Compute psbulk
-    psbulk, ncells, counts, props, nsmpls = compute_psbulk(n_rows, n_cols, X, sample_col, groups_col, smples, groups, obs,
-                                                           new_obs, min_cells, min_counts, min_prop, min_smpls, mode)
+    if type(mode) is dict:
+        psbulks = []
+        for l_name in mode:
+            func = mode[l_name]
+            if not callable(func):
+                raise ValueError("""mode requieres a dictionary of layer names and callable functions. The layer {0} does not
+                contain one.""".format(l_name))
+            else:
+                # Compute psbulk
+                psbulk, ncells, counts, props = compute_psbulk(n_rows, n_cols, X, sample_col, groups_col, smples, groups, obs,
+                                                               new_obs, min_cells, min_counts, func, dtype)
+                psbulks.append(psbulk)
+        layers = {k: v for k, v in zip(mode.keys(), psbulks)}
+        layers['psbulk_props'] = props
+    elif type(mode) is str:
+        # Compute psbulk
+        psbulk, ncells, counts, props = compute_psbulk(n_rows, n_cols, X, sample_col, groups_col, smples, groups, obs,
+                                                       new_obs, min_cells, min_counts, mode, dtype)
+        layers = {'psbulk_props': props}
 
     # Add QC metrics
     new_obs['psbulk_n_cells'] = ncells
     new_obs['psbulk_counts'] = counts
-    if groups_col == None:
-        new_var['psbulk_n_smpls'] = nsmpls
-    else:
-        for i, group in enumerate(groups):
-            new_var['psbulk_{0}_n_smpls'.format(group)] = nsmpls[i]
-    layers = layers={'psbulk_nonzero_props': props}
 
     # Create new AnnData
     psbulk = AnnData(psbulk, obs=new_obs, var=new_var, layers=layers, dtype=dtype)
 
     # Remove empty samples and features
-    psbulk = psbulk[~np.all(psbulk.X == 0, axis=1), ~np.all(psbulk.X == 0, axis=0)]
+    msk = psbulk.X == 0
+    psbulk = psbulk[~np.all(msk, axis=1), ~np.all(msk, axis=0)].copy()
+
+    # Place first element of mode dict as X
+    if type(mode) is dict:
+        swap_layer(psbulk, layer_key=list(mode.keys())[0], X_layer_key=None, inplace=True)
+
+    # Filter by genes if not None.
+    if min_prop is not None and min_smpls is not None:
+        if groups_col is None:
+            genes = filter_by_prop(psbulk, min_prop=min_prop, min_smpls=min_smpls)
+        else:
+            genes = []
+            for group in groups:
+                g = filter_by_prop(psbulk[psbulk.obs[groups_col] == group], min_prop=min_prop, min_smpls=min_smpls)
+                genes.extend(g)
+            genes = np.unique(genes)
+        psbulk = psbulk[:, genes]
 
     return psbulk
 
@@ -616,3 +624,165 @@ def format_contrast_results(logFCs, pvals):
     df = df.sort_values(['contrast', 'pvals']).reset_index(drop=True)
 
     return df
+
+
+def get_filterbyexpr_inputs(adata, obs):
+    # Extract inputs
+    if type(adata) is AnnData:
+        y, obs, var_names = adata.X, adata.obs, adata.var_names.values.astype('U')
+    elif type(adata) is pd.DataFrame:
+        y, var_names = adata.values, adata.columns.values.astype('U')
+        if obs is None:
+            obs = pd.DataFrame(index=adata.index)
+    else:
+        raise ValueError("""adata must be either an AnnData object or a df.""")
+    return y, obs, var_names
+
+
+def get_min_sample_size(group, obs, large_n, min_prop):
+    # Minimum effect sample sample size for any of the coefficients
+    if group is None:
+        min_sample_size = obs.shape[0]
+    elif isinstance(group, (str, list, np.ndarray, pd.Series)):
+        if isinstance(group, str):
+            group = obs[group].values
+        elif isinstance(group, pd.Series):
+            group = obs.values
+        else:
+            group = np.array(group)
+        _, n = np.unique(group, return_counts=True)
+        min_sample_size = np.min(n[n > 0])
+    else:
+        raise ValueError('group needs to be a column name, or a list/series/array of values.')
+
+    if min_sample_size > large_n:
+        min_sample_size = large_n + (min_sample_size - large_n) * min_prop
+
+    return min_sample_size
+
+
+def get_cpm_cutoff(lib_size, min_count):
+    median_lib_size = np.median(lib_size)
+    cpm_cutoff = min_count / median_lib_size * 1e6
+    return cpm_cutoff
+
+
+def get_cpm(y, lib_size):
+    if type(lib_size) is float or type(lib_size) is int:
+        return y / lib_size * 1e6
+    else:
+        return y / lib_size.reshape(-1, 1) * 1e6
+
+
+def filter_by_expr(adata, obs=None, group=None, lib_size=None, min_count=10, min_total_count=15, large_n=10, min_prop=0.7):
+    """
+    Determine which genes have sufficiently large counts to be retained in a statistical analysis.
+
+    Adapted from the function ``filterByExpr`` of edgeR (https://rdrr.io/bioc/edgeR/man/filterByExpr.html).
+
+    Parameters
+    ----------
+    adata : AnnData
+        AnnData obtained after running ``decoupler.get_pseudobulk``.
+    obs : DataFrame, None
+        If provided, metadata dataframe, only needed if ``adata`` is not an ``AnnData``.
+    group : str, None
+        Name of the ``.obs`` column to group by. If None, it assumes that all samples belong to one group.
+    lib_size : int, float, None
+        Library size. If None, default to the sum of reads per sample.
+    min_count : int
+        Minimum count requiered per gene for at least some samples.
+    min_total_count : int
+        Minimum total count required per gene across all samples.
+    large_n : int
+        Number of samples per group that is considered to be "large".
+    min_prop : float
+        Minimum proportion of samples in the smallest group that express the gene.
+
+    Returns
+    -------
+    genes : ndarray
+        List of genes to be kept.
+    """
+
+    # Define limits
+    min_count = np.clip(min_count, 0, None)
+    min_total_count = np.clip(min_total_count, 0, None)
+    large_n = np.clip(large_n, 0, None)
+    min_prop = np.clip(min_prop, 0, 1)
+
+    # Extract inputs
+    y, obs, var_names = get_filterbyexpr_inputs(adata, obs)
+
+    # Compute lib_size if needed
+    if lib_size is None:
+        lib_size = np.sum(y, axis=1)
+
+    # Minimum sample size cutoff
+    min_sample_size = get_min_sample_size(group, obs, large_n, min_prop)
+    min_sample_size -= 1e-14
+
+    # Total count cutoff
+    min_total_count -= 1e-14
+
+    # CPM cutoff
+    cpm_cutoff = get_cpm_cutoff(lib_size, min_count)
+
+    # CPM mask
+    cpm = get_cpm(y, lib_size)
+    sample_size = np.sum(cpm >= cpm_cutoff, axis=0)
+    keep_cpm = sample_size >= min_sample_size
+
+    # Total counts msk
+    keep_total_count = np.sum(y, axis=0) >= min_total_count
+
+    # Merge msks
+    msk = keep_cpm & keep_total_count
+    genes = var_names[msk]
+
+    return genes
+
+
+def filter_by_prop(adata, min_prop=0.2, min_smpls=2):
+    """
+    Determine which genes are expressed in a sufficient proportion of cells across samples.
+
+    This function selects genes that are sufficiently expressed across cells in each sample and that this condition is
+    met across a minimum number of samples.
+
+    Parameters
+    ----------
+    adata : AnnData
+        AnnData obtained after running ``decoupler.get_pseudobulk``. It requieres ``.layer['psbulk_props']``.
+    min_prop : float
+        Minimum proportion of cells that express a gene in a sample.
+    min_smpls : int
+        Minimum number of samples with bigger or equal proportion of cells with expression than ``min_prop``.
+
+    Returns
+    -------
+    genes : ndarray
+        List of genes to be kept.
+    """
+
+    # Define limits
+    min_prop = np.clip(min_prop, 0, 1)
+    min_smpls = np.clip(min_smpls, 0, adata.shape[0])
+
+    if isinstance(adata, AnnData):
+        layer_keys = adata.layers.keys()
+        if 'psbulk_props' in list(layer_keys):
+            var_names = adata.var_names.values.astype('U')
+            props = adata.layers['psbulk_props']
+            if isinstance(props, pd.DataFrame):
+                props = props.values
+
+            # Compute n_smpl
+            nsmpls = np.sum(props >= min_prop, axis=0)
+
+            # Set features to 0
+            msk = nsmpls >= min_smpls
+            genes = var_names[msk]
+            return genes
+    raise ValueError("""adata must be an AnnData object that contains the layer 'psbulk_props'. Please check the function
+                     decoupler.get_pseudobulk.""")
