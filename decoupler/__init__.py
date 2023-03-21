@@ -1,4 +1,4 @@
-__version__ = '1.3.5'  # noqa: F401
+__version__ = '1.4.0'  # noqa: F401
 __version_info__ = tuple([int(num) for num in __version__.split('.')])  # noqa: F401
 
 from .pre import extract, match, rename_net, get_net_mat, filt_min_n, mask_features  # noqa: F401
