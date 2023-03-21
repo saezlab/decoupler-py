@@ -74,6 +74,8 @@ AnnData utils:
    get_contrast
    get_top_targets
    format_contrast_results
+   filter_by_expr
+   filter_by_prop
    
 Omnipath wrappers:
 ------------------
@@ -97,6 +99,11 @@ Plotting
    plot_metrics_scatter
    plot_metrics_scatter_cols
    plot_metrics_boxplot
+   plot_psbulk_samples
+   plot_filter_by_expr
+   plot_filter_by_prop
+   plot_volcano_df
+   plot_targets
 
 Metrics
 -------
@@ -124,3 +131,10 @@ Benchmark
    benchmark
    format_benchmark_inputs
    get_performances
+
+Other
+-----
+.. autosummary::
+   :toctree: generated
+   
+   get_ora_df

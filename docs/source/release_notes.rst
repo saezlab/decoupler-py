@@ -1,6 +1,31 @@
 Release notes
 =============
 
+1.4.0
+-----
+
+Bug fixes
+~~~~~~~~~
+
+Changes
+~~~~~~~
+- ``get_pseudobulk`` changes:
+   - Default values now do not filter features. For feature filtering check the new functions ``filter_by_expr`` or ``filter_by_prop``.
+   - Now it returns quality control metrics such as ``psbulk_n_cells``, ``psbulk_counts`` and ``psbulk_props``.
+   - Now ``groups_col`` accepts take multiple keys.
+   - Now ``mode`` accepts a dictionary of callable functions. The resulting profiles will be stored in ``.layers``.
+- ``swap_layer`` now has a new argument ``X_layer_key``, a ``.layers`` key where to move and store the original ``.X``.
+
+Additions
+~~~~~~~~~
+- Added ``filter_by_expr`` feature filtering function from edgeR.
+- Added ``filter_by_prop`` feature filtering function. In previous versions it was incorporated inside ``get_pseudobulk``.
+- Added ``plot_psbulk_samples`` to assess the quality of pseudobulk samples.
+- Added ``plot_filter_by_expr`` to assess which filtering thresholds to use in ``filter_by_expr``.
+- Added ``plot_filter_by_prop`` to assess which filtering thresholds to use in ``filter_by_prop``.
+- Added ``plot_volcano_df`` to plot volcano plots from long format dataframes.
+- Added ``plot_targets`` to plot downstream target genes of a source by their change and weight.
+
 1.3.4
 -----
 
