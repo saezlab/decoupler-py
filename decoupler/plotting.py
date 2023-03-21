@@ -900,12 +900,6 @@ def plot_psbulk_samples(adata, groupby, figsize=(5, 5), dpi=100, ax=None, return
         AnnData obtained after running ``decoupler.get_pseudobulk``.
     groupby : str, list
         Name of the ``.obs`` column to group by. Can also be a list of columns.
-
-    Returns
-    -------
-    genes : ndarray
-        List of genes to be kept.
-
     figsize : tuple
         Figure size.
     dpi : int
