@@ -69,7 +69,7 @@ def test_extract_psbulk_inputs():
     with pytest.raises(ValueError):
         extract_psbulk_inputs(df, obs=None, layer=None, use_raw=False)
 
-                
+
 def test_check_X():
     X = csr_matrix(np.array([[1, 0, 2], [1, 0, 3], [0, 0, 0]]))
     X_float = csr_matrix(np.array([[1.3, 0, 2.1], [1.48, 0.123, 3.33], [0, 0, 0]]))
@@ -91,7 +91,6 @@ def test_check_X():
 
 
 def test_format_psbulk_inputs():
-    sample_col, groups_col = 'sample_id', 'celltype'
     obs = pd.DataFrame([
         ['P1', 'S1', 'C1'],
         ['P1', 'S1', 'C1'],
@@ -124,8 +123,8 @@ def test_format_psbulk_inputs():
     assert smples.size == 2
     assert groups.size == 2
     assert n_rows == 4
-    new_obs, groups_col, smples, groups, n_rows = format_psbulk_inputs('patient_id', groups_col=['sample_id', 'celltype'], obs=obs)
-    new_obs, groups_col, smples, groups, n_rows
+    new_obs, groups_col, smples, groups, n_rows = format_psbulk_inputs('patient_id', groups_col=['sample_id', 'celltype'],
+                                                                       obs=obs)
     assert new_obs.shape[1] != obs.shape[1]
     assert groups_col == 'sample_id_celltype'
     assert smples.size == 2
@@ -238,7 +237,8 @@ def test_get_pseudobulk():
     pdata = get_pseudobulk(adata, sample_col, groups_col, min_cells=0, min_counts=0, mode='median')
     assert pdata.shape[0] == 3
     assert np.all(pdata.X[0] == np.array([2., 0., 2.]))
-    pdata = get_pseudobulk(adata, sample_col, groups_col, min_cells=0, min_counts=0, mode={'sum': sum, 'median': np.median, 'mean': np.mean})
+    pdata = get_pseudobulk(adata, sample_col, groups_col, min_cells=0, min_counts=0,
+                           mode={'sum': sum, 'median': np.median, 'mean': np.mean})
     assert np.all(pdata.X == pdata.layers['sum'])
     assert pdata.layers['sum'] is not None
     assert pdata.layers['median'] is not None
@@ -403,21 +403,29 @@ def test_filter_by_expr():
     ], index=index, columns=['group'])
     adata = AnnData(df, obs=obs, dtype=np.float32)
 
-    genes = filter_by_expr(adata, obs=None, group=None, lib_size=None, min_count=10, min_total_count=15, large_n=10, min_prop=0.7)
+    genes = filter_by_expr(adata, obs=None, group=None, lib_size=None, min_count=10,
+                           min_total_count=15, large_n=10, min_prop=0.7)
     assert genes.size == 0.
-    genes = filter_by_expr(adata, obs=None, group=None, lib_size=None, min_count=1, min_total_count=15, large_n=10, min_prop=0.7)
+    genes = filter_by_expr(adata, obs=None, group=None, lib_size=None, min_count=1,
+                           min_total_count=15, large_n=10, min_prop=0.7)
     assert np.all(genes == np.array(['G4']))
-    genes = filter_by_expr(adata, obs=None, group=None, lib_size=None, min_count=1, min_total_count=7, large_n=10, min_prop=0.7)
+    genes = filter_by_expr(adata, obs=None, group=None, lib_size=None, min_count=1,
+                           min_total_count=7, large_n=10, min_prop=0.7)
     assert np.all(genes == np.array(['G4', 'G5']))
-    genes = filter_by_expr(adata, obs=None, group='group', lib_size=None, min_count=3, min_total_count=10, large_n=10, min_prop=0.7)
+    genes = filter_by_expr(adata, obs=None, group='group', lib_size=None, min_count=3,
+                           min_total_count=10, large_n=10, min_prop=0.7)
     assert np.all(genes == np.array(['G2', 'G3', 'G4']))
-    genes = filter_by_expr(adata, obs=None, group='group', lib_size=7, min_count=3, min_total_count=10, large_n=10, min_prop=0.7)
+    genes = filter_by_expr(adata, obs=None, group='group', lib_size=7, min_count=3,
+                           min_total_count=10, large_n=10, min_prop=0.7)
     assert np.all(genes == np.array(['G2', 'G3', 'G4']))
-    genes = filter_by_expr(adata, obs=None, group='group', lib_size=None, min_count=1, min_total_count=0, large_n=0, min_prop=0.1)
+    genes = filter_by_expr(adata, obs=None, group='group', lib_size=None, min_count=1,
+                           min_total_count=0, large_n=0, min_prop=0.1)
     assert np.all(genes == np.array(['G2', 'G3', 'G4', 'G5']))
-    genes = filter_by_expr(adata, obs=None, group=None, lib_size=None, min_count=1, min_total_count=0, large_n=0, min_prop=0.55)
+    genes = filter_by_expr(adata, obs=None, group=None, lib_size=None, min_count=1,
+                           min_total_count=0, large_n=0, min_prop=0.55)
     assert np.all(genes == np.array(['G3', 'G4', 'G5']))
-    genes = filter_by_expr(adata, obs=None, group=None, lib_size=None, min_count=1, min_total_count=15, large_n=0, min_prop=0.55)
+    genes = filter_by_expr(adata, obs=None, group=None, lib_size=None, min_count=1,
+                           min_total_count=15, large_n=0, min_prop=0.55)
     assert np.all(genes == np.array(['G3', 'G4']))
 
 

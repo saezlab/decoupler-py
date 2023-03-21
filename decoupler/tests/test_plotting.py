@@ -245,6 +245,7 @@ def test_plot_filter_by_expr():
     plot_filter_by_expr(adata, obs=None, group=None, lib_size=40, min_count=1,
                         min_total_count=15, large_n=10, min_prop=0.7, return_fig=True)
 
+
 def test_plot_filter_by_prop():
     index = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7']
     columns = ['G1', 'G2', 'G3', 'G4', 'G5']

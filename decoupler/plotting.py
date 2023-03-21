@@ -1032,7 +1032,7 @@ def plot_filter_by_expr(adata, obs=None, group=None, lib_size=None, min_count=10
 
     # Total counts
     total_counts = np.sum(y, axis=0)
-    total_counts[total_counts < 1.] = np.nan #  Handle 0s
+    total_counts[total_counts < 1.] = np.nan  # Handle 0s
 
     # Plot
     fig = None
@@ -1085,7 +1085,6 @@ def plot_filter_by_prop(adata, min_prop=0.2, min_smpls=2, cmap='viridis', figsiz
         If return_fig, returns Figure object.
     """
     # Load plotting packages
-    sns = check_if_seaborn()
     plt = check_if_matplotlib()
     msg = """adata must be an AnnData object that contains the layer 'psbulk_props'. Please check the
             function decoupler.get_pseudobulk."""
@@ -1093,7 +1092,6 @@ def plot_filter_by_prop(adata, min_prop=0.2, min_smpls=2, cmap='viridis', figsiz
     if isinstance(adata, AnnData):
         layer_keys = adata.layers.keys()
         if 'psbulk_props' in list(layer_keys):
-            var_names = adata.var_names.values.astype('U')
             props = adata.layers['psbulk_props']
             if isinstance(props, pd.DataFrame):
                 props = props.values
