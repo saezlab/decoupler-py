@@ -15,6 +15,7 @@ Changes
    - Now ``groups_col`` accepts take multiple keys.
    - Now ``mode`` accepts a dictionary of callable functions. The resulting profiles will be stored in ``.layers``.
 - ``swap_layer`` now has a new argument ``X_layer_key``, a ``.layers`` key where to move and store the original ``.X``.
+- Pseudobulk and bulk vignettes have been updated to use the PyDESeq2 package.
 
 Additions
 ~~~~~~~~~
