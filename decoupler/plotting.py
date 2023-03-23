@@ -1032,7 +1032,8 @@ def plot_filter_by_expr(adata, obs=None, group=None, lib_size=None, min_count=10
     fig = None
     if ax is None:
         fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=dpi)
-    sns.histplot(x=np.log10(total_counts), y=sample_size, cmap=cmap, cbar=True, cbar_kws=dict(shrink=.75),
+    sns.histplot(x=np.log10(total_counts), y=sample_size, cmap=cmap, cbar=True,
+                 cbar_kws=dict(shrink=.75, label='Number of features'),
                  discrete=(False, True), ax=ax, **kwargs)
     ax.axhline(y=min_sample_size - 0.5, c='gray', ls='--')
     ax.axvline(x=np.log10(min_total_count), c='gray', ls='--')

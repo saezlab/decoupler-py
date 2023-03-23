@@ -4,13 +4,11 @@ Release notes
 1.4.0
 -----
 
-Bug fixes
-~~~~~~~~~
-
 Changes
 ~~~~~~~
 - ``get_pseudobulk`` changes:
    - Default values now do not filter features. For feature filtering check the new functions ``filter_by_expr`` or ``filter_by_prop``.
+   - If feature filters are used, it may return more genes than before due to a change of ``> min_props`` to ``>= min_props``.
    - Now it returns quality control metrics such as ``psbulk_n_cells``, ``psbulk_counts`` and ``psbulk_props``.
    - Now ``groups_col`` accepts take multiple keys.
    - Now ``mode`` accepts a dictionary of callable functions. The resulting profiles will be stored in ``.layers``.
