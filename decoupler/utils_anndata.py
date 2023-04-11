@@ -341,7 +341,6 @@ def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=
     obs, groups_col, smples, groups, n_rows = format_psbulk_inputs(sample_col, groups_col, obs)
     n_cols = adata.shape[1]
     new_obs = pd.DataFrame(columns=obs.columns)
-    new_var = pd.DataFrame(index=var.index)
 
     if type(mode) is dict:
         psbulks = []
@@ -368,7 +367,7 @@ def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=
     new_obs['psbulk_counts'] = counts
 
     # Create new AnnData
-    psbulk = AnnData(psbulk, obs=new_obs, var=new_var, layers=layers, dtype=dtype)
+    psbulk = AnnData(psbulk, obs=new_obs, var=var, layers=layers, dtype=dtype)
 
     # Remove empty samples and features
     msk = psbulk.X == 0
