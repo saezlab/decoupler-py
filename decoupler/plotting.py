@@ -40,9 +40,12 @@ def check_if_adjustText():
 def save_plot(fig, ax, save):
     if save is not None:
         if ax is not None:
-            fig.savefig(save, bbox_inches='tight')
+            if fig is not None:
+                fig.savefig(save, bbox_inches='tight')
+            else:
+                raise ValueError("fig is None, cannot save figure.")
         else:
-            raise ValueError("ax is not None, cannot save figure.")
+            raise ValueError("ax is None, cannot save figure.")
 
 
 def filter_limits(df, sign_limit=None, lFCs_limit=None):
@@ -942,6 +945,7 @@ def plot_psbulk_samples(adata, groupby, figsize=(5, 5), dpi=100, ax=None, return
             ax.set_ylabel('Log10 total sum of counts')
     else:
         # Plot
+        fig = None
         if ax is None:
             fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=dpi)
         ax.grid(zorder=0)

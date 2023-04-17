@@ -21,7 +21,11 @@ def test_check_if_seaborn():
 def test_save_plot():
     fig, ax = plt.subplots(1, 1)
     with pytest.raises(AttributeError):
-        save_plot(fig, ax, True)
+        save_plot(fig=fig, ax=ax, save=True)
+    with pytest.raises(ValueError):
+        save_plot(fig=None, ax=ax, save='tmp.png')
+    with pytest.raises(ValueError):
+        save_plot(fig=fig, ax=None, save='tmp.png')
 
 
 def test_set_limits():
@@ -212,6 +216,8 @@ def test_plot_psbulk_samples():
         plot_psbulk_samples(adata, groupby=['cell_type', 'sample_id'], ax='ax')
     plot_psbulk_samples(adata, groupby=['cell_type', 'sample_id'])
     plot_psbulk_samples(adata, groupby='sample_id')
+    fig, ax = plt.subplots(1, 1)
+    plot_psbulk_samples(adata, groupby='cell_type', ax=ax)
 
 
 def test_plot_filter_by_expr():
