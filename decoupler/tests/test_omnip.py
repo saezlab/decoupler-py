@@ -6,6 +6,7 @@ from ..omnip import (
     get_resource,
     show_resources,
     get_dorothea,
+    get_collectri
 )
 
 
@@ -32,6 +33,17 @@ def test_get_dorothea():
     with pytest.raises(AssertionError):
         get_dorothea(organism='asdfgh')
     get_dorothea(organism='mouse')
+
+
+def test_get_collectri():
+    df = get_collectri(organism='human', split_complexes=False)
+    assert type(df) is pd.DataFrame
+    assert df.shape[0] > 0
+    with pytest.raises(AssertionError):
+        get_collectri(organism='asdfgh', split_complexes=False)
+    get_collectri(organism='mouse', split_complexes=False)
+    subunits_df = get_collectri(organism='human', split_complexes=True)
+    assert df.shape[0] < subunits_df.shape[0]
 
 
 def test_get_progeny():

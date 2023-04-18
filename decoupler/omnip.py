@@ -359,6 +359,89 @@ def get_dorothea(
     return do
 
 
+def get_collectri(
+        organism: str | int = 'human',
+        split_complexes = False,
+        ) -> pd.DataFrame:
+    """
+    CollecTRI gene regulatory network.
+
+    Wrapper to access CollecTRI gene regulatory network. CollecTRI is a
+    comprehensive resource containing a curated collection of transcription
+    factors (TFs) and their target genes. It is an expansion of DoRothEA.
+    Each interaction is weighted by its mode of regulation (either positive or negative).
+
+    Parameters
+    ----------
+    organism : str
+        The organism of interest: either NCBI Taxonomy ID, common name,
+        latin name or Ensembl name. Organisms other than human will be
+        translated from human data by orthology.
+    split_complexes : bool
+        Whether to split complexes into subunits. By default complexes are kept as they are.
+
+    Returns
+    -------
+    ct : DataFrame
+        Dataframe in long format containing target genes for each TF with
+        their associated weights.
+    """
+
+    _organism = (
+        'mouse' if _is_mouse(organism) else
+        'rat' if _is_rat(organism) else
+        'human'
+    )
+
+    op = _check_if_omnipath()
+
+    # Load collectri
+    ct = op.interactions.CollecTRI.get(genesymbols=True, organism=_organism)
+
+    # Separate gene_pairs from normal interactions
+    msk = np.array([s.startswith('COMPLEX') for s in ct['source']])
+    cols = ['source_genesymbol', 'target_genesymbol', 'is_stimulation', 'is_inhibition']
+    ct_inter = ct.loc[~msk, cols]
+    ct_cmplx = ct.loc[msk, cols].copy()
+
+    # Merge gene_pairs into complexes
+    if not split_complexes:
+        cmpl_gsym = []
+        for s in ct_cmplx['source_genesymbol']:
+            if s.startswith('JUN') or s.startswith('FOS'):
+                cmpl_gsym.append('AP1')
+            elif s.startswith('REL') or s.startswith('NFKB'):
+                cmpl_gsym.append('NFKB')
+            else:
+                cmpl_gsym.append(s)
+        ct_cmplx.loc[:, 'source_genesymbol'] = cmpl_gsym
+
+    # Merge
+    ct = pd.concat([ct_inter, ct_cmplx])
+
+    # Drop duplicates
+    ct = ct.drop_duplicates(['source_genesymbol', 'target_genesymbol'])
+
+    # Add weight
+    ct['weight'] = [+1 if is_stim else -1 for is_stim in ct['is_stimulation']]
+
+    # Select and rename columns
+    ct = ct.rename(columns={'source_genesymbol': 'source', 'target_genesymbol': 'target'})
+    ct = ct[['source', 'target', 'weight']]
+
+    if _organism not in ('mouse', 'rat') and not _is_human(organism):
+
+        ct = translate_net(
+            net=ct,
+            target_organism=organism,
+            columns=('source', 'target'),
+            unique_by=('source', 'target'),
+            id_type='genesymbol',
+        )
+
+    return ct
+
+
 def translate_net(
         net: pd.DataFrame,
         columns: str | Iterable[str] = ('source', 'target', 'genesymbol'),
