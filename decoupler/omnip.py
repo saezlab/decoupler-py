@@ -561,3 +561,64 @@ def translate_net(
         hom_net = hom_net[~hom_net.duplicated(unique_by)]
 
     return hom_net
+
+
+def get_ksn_omnipath(
+        organism: str | int = 'human',
+        ) -> pd.DataFrame:
+    """
+    OmniPath kinase-substrate network
+
+    Wrapper to access the OmniPath kinase-substrate network. It contains a collection of
+    kinases and their target phosphosites. Each interaction is is weighted by its mode of
+    regulation (either positive for phosphorylation or negative for dephosphorylation).
+
+    Parameters
+    ----------
+    organism : str
+        The organism of interest: either NCBI Taxonomy ID, common name,
+        latin name or Ensembl name. Organisms other than human will be
+        translated from human data by orthology. Only human, mouse and rat
+        are available for this network.
+
+    Returns
+    -------
+    ksn : DataFrame
+        Dataframe in long format containing target phosphosites for each kinase with
+        their associated weights.
+    """
+
+    _organism = (
+        'mouse' if _is_mouse(organism) else
+        'rat' if _is_rat(organism) else
+        'human'
+    )
+
+    if _organism not in ('mouse', 'rat') and not _is_human(organism):
+        raise ValueError('Organism not supported. Only human, mouse and rat are available for this network.')
+
+    op = _check_if_omnipath()
+
+    # Load Kinase-Substrate Network
+    ksn = op.requests.Enzsub.get(genesymbols=True, organism=_organism)
+
+    # Filter by phosphorilation
+    cols = ['enzyme_genesymbol', 'substrate_genesymbol', 'residue_type', 'residue_offset', 'modification']
+    msk = np.isin(ksn['modification'], ['phosphorylation', 'dephosphorylation'])
+    ksn = ksn.loc[msk, cols]
+
+    # Build target gene substrate column
+    ksn['target'] = ['{0}_{1}{2}'.format(sub, res, off) for sub, res, off in
+                     zip(ksn['substrate_genesymbol'], ksn['residue_type'], ksn['residue_offset'])]
+
+    # Assigns mode of regulation
+    ksn['weight'] = [+1 if mod == 'phosphorylation' else -1 for mod in ksn['modification']]
+
+    # Remove duplicates
+    ksn = ksn.rename(columns={'enzyme_genesymbol': 'source'})[['source', 'target', 'weight']]
+    ksn = ksn.drop_duplicates(['source', 'target', 'weight'])
+
+    # If duplicates remain, keep dephosphorylation
+    ksn = ksn.groupby(['source', 'target']).min().reset_index()
+
+    return ksn

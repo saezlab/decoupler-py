@@ -6,7 +6,8 @@ from ..omnip import (
     get_resource,
     show_resources,
     get_dorothea,
-    get_collectri
+    get_collectri,
+    get_ksn_omnipath
 )
 
 
@@ -54,3 +55,11 @@ def test_get_progeny():
     assert df.shape[0] == n_rows
     with pytest.raises(AssertionError):
         get_progeny(organism='asdfgh')
+
+
+def test_get_ksn_omnipath():
+    df = get_ksn_omnipath(organism='human')
+    assert type(df) is pd.DataFrame
+    assert df.shape[0] > 0
+    with pytest.raises(ValueError):
+        get_ksn_omnipath(organism='asdfgh')
