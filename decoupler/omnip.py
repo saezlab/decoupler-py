@@ -361,7 +361,7 @@ def get_dorothea(
 
 def get_collectri(
         organism: str | int = 'human',
-        split_complexes = False,
+        split_complexes=False,
         ) -> pd.DataFrame:
     """
     CollecTRI gene regulatory network.
