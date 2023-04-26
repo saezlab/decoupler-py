@@ -7,7 +7,7 @@ from ..utils_anndata import get_acts, swap_layer, extract_psbulk_inputs, check_X
 from ..utils_anndata import format_psbulk_inputs, psbulk_profile, compute_psbulk, get_unq_dict, get_pseudobulk
 from ..utils_anndata import check_if_skip, get_contrast, get_top_targets, format_contrast_results
 from ..utils_anndata import get_filterbyexpr_inputs, get_min_sample_size, get_cpm_cutoff, get_cpm, filter_by_expr
-from ..utils_anndata import filter_by_prop
+from ..utils_anndata import filter_by_prop, rank_sources_groups
 
 
 def test_get_acts():
@@ -474,3 +474,64 @@ def test_filter_by_prop():
     assert np.all(g == np.array(['G2', 'G3', 'G4', 'G5']))
     g = filter_by_prop(adata, min_prop=0.8, min_smpls=2)
     assert np.all(g == np.array(['G3', 'G4']))
+
+
+def test_rank_sources_groups():
+    var = pd.DataFrame(index=['T1', 'T2', 'T3'])
+    X = pd.DataFrame(
+        [[3., 1., -3.],
+         [5., 0., -1.],
+         [-1., 1., 4.],
+         [-4., 1., 6.],
+         [-3., 0., 3.],
+         [0., 5., 1.],
+         [1., 4., 0.]],
+        columns=var.index
+    )
+    obs = pd.DataFrame(
+        [['A'],
+         ['A'],
+         ['B'],
+         ['B'],
+         ['B'],
+         ['C'],
+         ['C']], columns=['group'], index=['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7']
+        )
+    acts = AnnData(X, obs=obs, var=var, dtype=np.float32)
+    gt_up = np.array([True, False, False, True, False, False, True, False, False])
+    gt_dw = np.array([False, False, True, False, False, True, False, False, False])
+
+    df = rank_sources_groups(acts, groupby='group', reference='rest',
+                             method='wilcoxon')
+    assert df.shape[0] == 9
+    assert np.all((df['statistic'].values > 1.7) == gt_up)
+    assert np.all((df['statistic'].values < -1.7) == gt_dw)
+    df = rank_sources_groups(acts, groupby='group', reference='rest',
+                             method='t-test')
+    assert df.shape[0] == 9
+    assert np.all((df['statistic'].values > 1.7) == gt_up)
+    assert np.all((df['statistic'].values < -1.7) == gt_dw)
+    df = rank_sources_groups(acts, groupby='group', reference='rest',
+                             method='t-test_overestim_var')
+    assert df.shape[0] == 9
+    assert np.all((df['statistic'].values > 1.7) == gt_up)
+    assert np.all((df['statistic'].values < -1.7) == gt_dw)
+
+    df = rank_sources_groups(acts, groupby='group', reference='A',
+                             method='t-test')
+    assert df.shape[0] == 9
+    assert np.all(df['statistic'][:3] == 0.)
+    assert np.all(df['statistic'][3:] != 0.)
+
+    df = rank_sources_groups(acts, groupby='group', reference=['A', 'B', 'C'],
+                             method='t-test')
+    assert df.shape[0] == 9
+    assert np.all((df['statistic'].values > 1.7) == gt_up)
+    assert np.all((df['statistic'].values < -1.7) == gt_dw)
+
+    with pytest.raises(ValueError):
+        rank_sources_groups(acts, groupby='group', reference=['A', 'B', 'C'],
+                            method='asdadssad')
+    with pytest.raises(AssertionError):
+        rank_sources_groups(acts, groupby='group', reference='asdadssad',
+                            method='t-test')

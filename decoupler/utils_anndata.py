@@ -785,3 +785,103 @@ def filter_by_prop(adata, min_prop=0.2, min_smpls=2):
             return genes
     raise ValueError("""adata must be an AnnData object that contains the layer 'psbulk_props'. Please check the function
                      decoupler.get_pseudobulk.""")
+
+
+def rank_sources_groups(adata, groupby, reference='rest', method='t-test_overestim_var'):
+    """
+    Rank sources for characterizing groups.
+
+    Parameters
+    ----------
+    adata : AnnData
+        AnnData obtained after running ``decoupler.get_acts``.
+    groupby: str
+        The key of the observations grouping to consider.
+    reference: str, list
+        Reference group or list of reference groups to use as reference.
+    method: str
+        Statistical method to use for computing differences between groups. Avaliable methods
+        include: ``{'wilcoxon', 't-test', 't-test_overestim_var'}``.
+
+    Returns
+    -------
+    results: DataFrame with changes in source activity between groups.
+    """
+
+    from scipy.stats import ranksums, ttest_ind_from_stats
+
+    # Get tf names
+    features = adata.var.index.values
+
+    # Generate mask for group samples
+    groups = np.unique(adata.obs[groupby].values)
+    results = []
+    for group in groups:
+
+        # Extract group mask
+        g_msk = (adata.obs[groupby] == group).values
+
+        # Generate mask for reference samples
+        if reference == 'rest':
+            ref_msk = ~g_msk
+            ref = reference
+        elif isinstance(reference, str):
+            ref_msk = (adata.obs[groupby] == reference).values
+            ref = reference
+        else:
+            cond_lst = np.array([(adata.obs[groupby] == r).values for r in reference])
+            ref_msk = np.sum(cond_lst, axis=0).astype(bool)
+            ref = ', '.join(reference)
+
+        assert np.sum(ref_msk) > 0, 'No reference samples found for {0}'.format(reference)
+
+        # Test differences
+        result = []
+        for i in np.arange(len(features)):
+            v_group = adata.X[g_msk, i]
+            v_rest = adata.X[ref_msk, i]
+            if method == 'wilcoxon':
+                stat, pval = ranksums(v_group, v_rest)
+            elif method == 't-test':
+                stat, pval = ttest_ind_from_stats(
+                    mean1=np.mean(v_group),
+                    std1=np.std(v_group, ddof=1),
+                    nobs1=v_group.size,
+                    mean2=np.mean(v_rest),
+                    std2=np.std(v_rest, ddof=1),
+                    nobs2=v_rest.size,
+                    equal_var=False,  # Welch's
+                )
+            elif method == 't-test_overestim_var':
+                stat, pval = ttest_ind_from_stats(
+                    mean1=np.mean(v_group),
+                    std1=np.std(v_group, ddof=1),
+                    nobs1=v_group.size,
+                    mean2=np.mean(v_rest),
+                    std2=np.std(v_rest, ddof=1),
+                    nobs2=v_group.size,
+                    equal_var=False,  # Welch's
+                )
+            else:
+                raise ValueError("Method must be one of {'wilcoxon', 't-test', 't-test_overestim_var'}.")
+            mc = np.mean(v_group) - np.mean(v_rest)
+            result.append([group, ref, features[i], stat, mc, pval])
+
+        # Tranform to df
+        result = pd.DataFrame(
+            result,
+            columns=['group', 'reference', 'names', 'statistic', 'meanchange', 'pvals']
+        )
+
+        # Correct pvalues by FDR
+        result[np.isnan(result['pvals'])] = 1
+        result['pvals_adj'] = p_adjust_fdr(result['pvals'].values)
+
+        # Sort and save
+        result = result.sort_values('statistic', ascending=False)
+        results.append(result)
+
+    # Merge
+    results = pd.concat(results)
+
+    return results.reset_index(drop=True)
