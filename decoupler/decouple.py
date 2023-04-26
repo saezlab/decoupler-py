@@ -161,7 +161,7 @@ def decouple(mat, net, source='source', target='target', weight='weight', method
         return results
 
 
-def run_consensus(mat, net, source='source', target='target', weight='weight', min_n=5, verbose=False, use_raw=True):
+def run_consensus(mat, net, source='source', target='target', weight='weight', min_n=5, verbose=False, use_raw=True, args={}):
     """
     Consensus score from top methods.
 
@@ -192,6 +192,8 @@ def run_consensus(mat, net, source='source', target='target', weight='weight', m
         Whether to show progress.
     use_raw : bool
         Use raw attribute of mat if present.
+    args : dict
+        Parameters for the ``decoupler.decouple`` function.
 
     Returns
     -------
@@ -209,7 +211,7 @@ def run_consensus(mat, net, source='source', target='target', weight='weight', m
 
     # Run top methods
     res = decouple(mat=[m, r, c], net=net, source=source, target=target, weight=weight,
-                   min_n=min_n, verbose=verbose, use_raw=use_raw)
+                   min_n=min_n, verbose=verbose, use_raw=use_raw, args=args)
 
     # Exctract
     estimate, pvals = res['consensus_estimate'], res['consensus_pvals']
