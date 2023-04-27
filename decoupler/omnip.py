@@ -156,7 +156,7 @@ def get_progeny(organism: str | int = 'human', top: int = 100) -> pd.DataFrame:
             target_organism=organism,
         )
 
-    return p
+    return p.reset_index(drop=True)
 
 
 def get_resource(name: str, organism: str | int = 'human') -> pd.DataFrame:
@@ -215,7 +215,7 @@ def get_resource(name: str, organism: str | int = 'human') -> pd.DataFrame:
             unique_by=None,
         )
 
-    return df
+    return df.reset_index(drop=True)
 
 
 def show_resources() -> list:
@@ -356,7 +356,7 @@ def get_dorothea(
             id_type='genesymbol',
         )
 
-    return do
+    return do.reset_index(drop=True)
 
 
 def get_collectri(
@@ -439,7 +439,7 @@ def get_collectri(
             id_type='genesymbol',
         )
 
-    return ct
+    return ct.reset_index(drop=True)
 
 
 def translate_net(
