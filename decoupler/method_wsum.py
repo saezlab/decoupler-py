@@ -43,7 +43,16 @@ def run_perm(estimate, mat, net, idxs, times, seed):
     norm = np.zeros((mat.shape[0], net.shape[1]), dtype=nb.f4)
     for i in nb.prange(mat.shape[0]):
         for j in range(net.shape[1]):
-            norm[i, j] = (estimate[i, j] - np.mean(null_dst[i, j, :])) / std(null_dst[i, j, :], 1)
+            e = estimate[i, j]
+            d = std(null_dst[i, j, :], 1)
+            if d != 0.:
+                n = (e - np.mean(null_dst[i, j, :])) / d
+            else:
+                if e != 0.:
+                    n = np.inf
+                else:
+                    n = 0.
+            norm[i, j] = n
 
     # Compute corr score
     corr = (estimate * -np.log10(pvals)).astype(nb.f4)
