@@ -535,3 +535,8 @@ def test_rank_sources_groups():
     with pytest.raises(AssertionError):
         rank_sources_groups(acts, groupby='group', reference='asdadssad',
                             method='t-test')
+    acts.X[0, 0] = np.nan
+    acts.X[1, 1] = np.inf
+    with pytest.raises(AssertionError):
+        rank_sources_groups(acts, groupby='group', reference='A',
+                             method='t-test')

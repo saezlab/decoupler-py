@@ -840,6 +840,8 @@ def rank_sources_groups(adata, groupby, reference='rest', method='t-test_overest
         for i in np.arange(len(features)):
             v_group = adata.X[g_msk, i]
             v_rest = adata.X[ref_msk, i]
+            assert np.all(np.isfinite(v_group)) and np.all(np.isfinite(v_rest)), \
+                "adata contains not finite values, please remove them."
             if method == 'wilcoxon':
                 stat, pval = ranksums(v_group, v_rest)
             elif method == 't-test':
