@@ -554,3 +554,39 @@ def read_gmt(path):
     df = pd.DataFrame(df, columns=['source', 'target'])
 
     return df
+
+def annotate_enrichment(enrichment, net, queried_gene_list):
+    """
+    Adds n_genes, lead_genes and lead_genes_count
+    to an enrichment result, provided it includes a geneset field.
+    
+    Parameters
+    ----------
+    queried_gene_list : list of genes originally queried
+    
+    enrichment : data.frame
+        Pandas data frame produced by one of the enrichment methods
+        
+    net : data.frame
+        Pandas data frame with the net used for the above enrichment. 
+        It should contain geneset and genesymbol fields
+        
+    Returns
+    -------
+    df : DataFrame
+        Melted data frame based on enrichment, with additional fields
+        `n_genes`, `lead_genes`, `lead_genes_count`.
+        
+    """
+    qgl = queried_gene_list
+    # melt the enrichment dataframe
+    enrichment_melted = pd.melt(enrichment, value_vars=enrichment.columns, var_name='geneset', value_name='p-value')
+    # add a column with the number of genes in each geneset
+    enrichment_melted['n_genes'] = enrichment_melted['geneset'].map(net.groupby('geneset')['genesymbol'].count())
+    # add a column with the number of lead genes in high_exp that belong to that msigdb geneset
+    enrichment_melted['lead_genes'] = enrichment_melted['geneset'].map(lambda x: ", ".join(set(net[net['geneset'] == x].genesymbol.unique().tolist()).intersection(set(qgl))) )
+    # add a column with the lead genes in high_exp that belong to that msigdb geneset
+    enrichment_melted['lead_genes_count'] = enrichment_melted['geneset'].map(lambda x: len(set(net[net['geneset'] == x].genesymbol.unique().tolist()).intersection(set(qgl))))
+    return enrichment_melted
+    
+    
