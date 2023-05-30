@@ -18,6 +18,7 @@ import builtins
 from types import ModuleType
 from typing import Iterable
 from typing_extensions import Literal
+import warnings
 import numpy as np
 import pandas as pd
 
@@ -53,8 +54,8 @@ def _check_if_omnipath() -> ModuleType:
     except Exception:
 
         raise ImportError(
-            'omnipath is not installed. Please install it with: '
-            'pip install omnipath'
+            'omnipath is not installed. Please install it by: '
+            '`pip install omnipath`.'
         )
 
     return op
@@ -279,6 +280,7 @@ def get_dorothea(
         'human'
     )
 
+    _omnipath_check_version()
     op = _check_if_omnipath()
 
     # Load Dorothea
@@ -622,3 +624,23 @@ def get_ksn_omnipath(
     ksn = ksn.groupby(['source', 'target']).min().reset_index()
 
     return ksn
+
+
+def _omnipath_check_version() -> None:
+
+    import omnipath
+
+    version = tuple(map(int, omnipath.__version__.split('.')))
+
+    if version < (1, 0, 7):
+
+        day = omnipath.__full_version__.split('.')[-1]
+
+        if day < 'd20230530':
+
+            warnings.warn(
+                'The installed version of `omnipath` is older than 1.0.7 or '
+                '2023-05-30. To make sure CollecTRI and DoRothEA data is '
+                'processed correctly, please update to the latest version by '
+                '`pip install git+https://github.com/saezlab/omnipath.git`.'
+            )
