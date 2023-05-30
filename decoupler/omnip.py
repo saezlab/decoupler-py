@@ -96,7 +96,11 @@ def _is_rat(name: str) -> bool:
     return _is_organism(name, 'rat')
 
 
-def get_progeny(organism: str | int = 'human', top: int = 100) -> pd.DataFrame:
+def get_progeny(
+        organism: str | int = 'human',
+        top: int = 100,
+        **kwargs
+    ) -> pd.DataFrame:
     """
     Pathway RespOnsive GENes for activity inference (PROGENy).
 
@@ -112,6 +116,8 @@ def get_progeny(organism: str | int = 'human', top: int = 100) -> pd.DataFrame:
         translated from human data by orthology.
     top : int
         Number of genes per pathway to return.
+    kwargs
+        Passed to `omnipath.requests.Annotations.get`.
 
     Returns
     -------
@@ -122,7 +128,7 @@ def get_progeny(organism: str | int = 'human', top: int = 100) -> pd.DataFrame:
 
     op = _check_if_omnipath()
 
-    p = op.requests.Annotations.get(resources='PROGENy')
+    p = op.requests.Annotations.get(resources='PROGENy', **kwargs)
     p = p.set_index([
         'record_id', 'uniprot', 'genesymbol',
         'entity_type', 'source', 'label',
@@ -160,7 +166,11 @@ def get_progeny(organism: str | int = 'human', top: int = 100) -> pd.DataFrame:
     return p.reset_index(drop=True)
 
 
-def get_resource(name: str, organism: str | int = 'human') -> pd.DataFrame:
+def get_resource(
+        name: str,
+        organism: str | int = 'human',
+        **kwargs
+    ) -> pd.DataFrame:
     """
     Wrapper to access resources inside Omnipath.
 
@@ -177,6 +187,8 @@ def get_resource(name: str, organism: str | int = 'human') -> pd.DataFrame:
         The organism of interest: either NCBI Taxonomy ID, common name,
         latin name or Ensembl name. Organisms other than human will be
         translated from human data by orthology.
+    kwargs
+        Passed to `omnipath.requests.Annotations.get`.
 
     Returns
     -------
@@ -193,7 +205,11 @@ def get_resource(name: str, organism: str | int = 'human') -> pd.DataFrame:
 
     op = _check_if_omnipath()
 
-    df = op.requests.Annotations.get(resources=name, entity_type='protein')
+    df = op.requests.Annotations.get(
+        resources=name,
+        entity_type='protein',
+        **kwargs
+    )
     df = df.set_index([
         'record_id', 'uniprot',
         'genesymbol', 'entity_type',
@@ -239,6 +255,7 @@ def get_dorothea(
         organism: str | int = 'human',
         levels: DOROTHEA_LEVELS | Iterable[DOROTHEA_LEVELS] = ('A', 'B', 'C'),
         weight_dict: dict[str, int] | None = None,
+        **kwargs
         ) -> pd.DataFrame:
     """
     DoRothEA gene regulatory network.
@@ -262,6 +279,8 @@ def get_dorothea(
         Dictionary of values to divide the mode of regulation (-1 or 1),
         one for each confidence level. Bigger values will generate weights
         close to zero.
+    kwargs
+        Passed to `omnipath.interactions.Dorothea.get`.
 
     Returns
     -------
@@ -364,7 +383,8 @@ def get_dorothea(
 def get_collectri(
         organism: str | int = 'human',
         split_complexes=False,
-        ) -> pd.DataFrame:
+        **kwargs
+    ) -> pd.DataFrame:
     """
     CollecTRI gene regulatory network.
 
@@ -381,6 +401,8 @@ def get_collectri(
         translated from human data by orthology.
     split_complexes : bool
         Whether to split complexes into subunits. By default complexes are kept as they are.
+    kwargs
+        Passed to `omnipath.interactions.CollecTRI.get`.
 
     Returns
     -------
@@ -395,10 +417,15 @@ def get_collectri(
         'human'
     )
 
+    _omnipath_check_version()
     op = _check_if_omnipath()
 
     # Load collectri
-    ct = op.interactions.CollecTRI.get(genesymbols=True, organism=_organism)
+    ct = op.interactions.CollecTRI.get(
+        genesymbols=True,
+        organism=_organism,
+        **kwargs
+    )
 
     # Separate gene_pairs from normal interactions
     msk = np.array([s.startswith('COMPLEX') for s in ct['source']])
