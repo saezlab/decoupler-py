@@ -19,6 +19,7 @@ from types import ModuleType
 from typing import Iterable
 from typing_extensions import Literal
 import warnings
+from datetime import datetime
 import numpy as np
 import pandas as pd
 
@@ -661,9 +662,9 @@ def _omnipath_check_version() -> None:
 
     if version < (1, 0, 7):
 
-        day = omnipath.__full_version__.split('.')[-1]
+        op_updated = datetime.fromtimestamp(os.stat(omnipath.__file__).st_mtime)
 
-        if day < 'd20230530':
+        if op_updated < datetime(2023, 5, 30):
 
             warnings.warn(
                 'The installed version of `omnipath` is older than 1.0.7 or '
