@@ -539,4 +539,4 @@ def test_rank_sources_groups():
     acts.X[1, 1] = np.inf
     with pytest.raises(AssertionError):
         rank_sources_groups(acts, groupby='group', reference='A',
-                             method='t-test')
+                            method='t-test')

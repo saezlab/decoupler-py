@@ -101,7 +101,7 @@ def get_progeny(
         organism: str | int = 'human',
         top: int = 100,
         **kwargs
-    ) -> pd.DataFrame:
+        ) -> pd.DataFrame:
     """
     Pathway RespOnsive GENes for activity inference (PROGENy).
 
@@ -171,7 +171,7 @@ def get_resource(
         name: str,
         organism: str | int = 'human',
         **kwargs
-    ) -> pd.DataFrame:
+        ) -> pd.DataFrame:
     """
     Wrapper to access resources inside Omnipath.
 
@@ -385,7 +385,7 @@ def get_collectri(
         organism: str | int = 'human',
         split_complexes=False,
         **kwargs
-    ) -> pd.DataFrame:
+        ) -> pd.DataFrame:
     """
     CollecTRI gene regulatory network.
 
@@ -422,11 +422,10 @@ def get_collectri(
     op = _check_if_omnipath()
 
     # Load collectri
-    ct = op.interactions.CollecTRI.get(
-        genesymbols=True,
-        organism=_organism,
-        **kwargs
-    )
+    ct = op.interactions.CollecTRI.get(genesymbols=True, organism=_organism, loops=True, **kwargs)
+    if _organism == 'human':
+        mirna = op.interactions.TFmiRNA.get(genesymbols=True, databases=['CollecTRI'], strict_evidences=True)
+        ct = pd.concat([ct, mirna], ignore_index=True)
 
     # Separate gene_pairs from normal interactions
     msk = np.array([s.startswith('COMPLEX') for s in ct['source']])
@@ -453,7 +452,15 @@ def get_collectri(
     ct = ct.drop_duplicates(['source_genesymbol', 'target_genesymbol'])
 
     # Add weight
-    ct['weight'] = [+1 if is_stim else -1 for is_stim in ct['is_stimulation']]
+    weights = []
+    for is_stimulation, is_inhibition in zip(ct['is_stimulation'], ct['is_inhibition']):
+        if is_stimulation:
+            weights.append(1)
+        elif is_inhibition:
+            weights.append(-1)
+        else:
+            weights.append(1)
+    ct['weight'] = weights
 
     # Select and rename columns
     ct = ct.rename(columns={'source_genesymbol': 'source', 'target_genesymbol': 'target'})
@@ -594,7 +601,6 @@ def translate_net(
 
 
 def get_ksn_omnipath(
-        organism: str | int = 'human',
         ) -> pd.DataFrame:
     """
     OmniPath kinase-substrate network
@@ -603,14 +609,6 @@ def get_ksn_omnipath(
     kinases and their target phosphosites. Each interaction is is weighted by its mode of
     regulation (either positive for phosphorylation or negative for dephosphorylation).
 
-    Parameters
-    ----------
-    organism : str
-        The organism of interest: either NCBI Taxonomy ID, common name,
-        latin name or Ensembl name. Organisms other than human will be
-        translated from human data by orthology. Only human, mouse and rat
-        are available for this network.
-
     Returns
     -------
     ksn : DataFrame
@@ -618,24 +616,28 @@ def get_ksn_omnipath(
         their associated weights.
     """
 
-    _organism = (
-        'mouse' if _is_mouse(organism) else
-        'rat' if _is_rat(organism) else
-        'human'
-    )
-
-    if _organism not in ('mouse', 'rat') and not _is_human(organism):
-        raise ValueError('Organism not supported. Only human, mouse and rat are available for this network.')
-
     op = _check_if_omnipath()
 
     # Load Kinase-Substrate Network
-    ksn = op.requests.Enzsub.get(genesymbols=True, organism=_organism)
+    ksn = op.requests.Enzsub.get(genesymbols=True)
 
     # Filter by phosphorilation
-    cols = ['enzyme_genesymbol', 'substrate_genesymbol', 'residue_type', 'residue_offset', 'modification']
+    cols = ['enzyme_genesymbol', 'substrate_genesymbol', 'residue_type',
+            'residue_offset', 'modification', 'references', 'n_references']
     msk = np.isin(ksn['modification'], ['phosphorylation', 'dephosphorylation'])
     ksn = ksn.loc[msk, cols]
+
+    # Remove inters that are only Protmap, keep nans
+    msk = []
+    for r, l in zip(ksn['references'], ksn['n_references']):
+        if type(r) is str:
+            n = r.count('ProtMapper')
+            b = n < l
+        else:
+            b = True
+        msk.append(b)
+    msk = np.array(msk)
+    ksn = ksn.loc[msk, :]
 
     # Build target gene substrate column
     ksn['target'] = ['{0}_{1}{2}'.format(sub, res, off) for sub, res, off in

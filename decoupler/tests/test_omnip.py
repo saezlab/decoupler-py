@@ -58,8 +58,6 @@ def test_get_progeny():
 
 
 def test_get_ksn_omnipath():
-    df = get_ksn_omnipath(organism='human')
+    df = get_ksn_omnipath()
     assert type(df) is pd.DataFrame
     assert df.shape[0] > 0
-    with pytest.raises(ValueError):
-        get_ksn_omnipath(organism='asdfgh')
