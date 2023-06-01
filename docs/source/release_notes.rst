@@ -13,7 +13,10 @@ Changes
    - Now ``groups_col`` accepts take multiple keys.
    - Now ``mode`` accepts a dictionary of callable functions. The resulting profiles will be stored in ``.layers``.
 - ``swap_layer`` now has a new argument ``X_layer_key``, a ``.layers`` key where to move and store the original ``.X``.
-- Pseudobulk and bulk vignettes have been updated to use the PyDESeq2 package.
+- Pseudobulk and bulk vignettes have been updated to use the PyDESeq2 package
+- ``run_consensus`` now accepts extra arguments with the new parametter ``args`` that are passed down to ``decouple``.
+- Omnipath functions now return resources with sorted indexes and throw a warning if the version is too old.
+- ``run_wsum`` and ``run_wmean`` now correctly accept empty null distributions.
 
 Additions
 ~~~~~~~~~
@@ -24,6 +27,9 @@ Additions
 - Added ``plot_filter_by_prop`` to assess which filtering thresholds to use in ``filter_by_prop``.
 - Added ``plot_volcano_df`` to plot volcano plots from long format dataframes.
 - Added ``plot_targets`` to plot downstream target genes of a source by their change and weight.
+- Added ``get_collectri`` to retrieve the CollecTRI gene regulatory network.
+- Added ``get_ksn_omnipath`` to retrieve the Kinase-Substrate network from omnipath.
+- Added ``rank_sources_groups`` to identify marker sources (TFs, pathways, etc.) per group of samples/cells.
 
 1.3.4
 -----
