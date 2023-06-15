@@ -11,59 +11,48 @@ from scipy.stats import t
 from .pre import extract, match, rename_net, get_net_mat, filt_min_n
 
 from anndata import AnnData
-
-import numba as nb
-
-
-@nb.njit(nb.f4[:, :](nb.i8, nb.i8, nb.f4[:], nb.i8[:], nb.i8[:], nb.f4[:, :]), parallel=True, cache=True)
-def nb_ulm(n_samples, n_features, data, indptr, indices, net):
-
-    df, n_fsets = net.shape
-    df = df - 2
-
-    es = np.zeros((n_samples, n_fsets), dtype=nb.f4)
-
-    for i in nb.prange(n_samples):
-
-        # Extract sample from sparse matrix
-        row = np.zeros(n_features, dtype=nb.f4)
-        s, e = indptr[i], indptr[i+1]
-        row[indices[s:e]] = data[s:e]
-
-        for j in range(n_fsets):
-
-            # Get fset column
-            x = net[:, j]
-
-            # Compute lm
-            ssxm, ssxym, _, ssym = np.cov(x, row, bias=1).flat
-
-            # Compute R value
-            r = ssxym / np.sqrt(ssxm * ssym)
-
-            # Compute t-value
-            es[i, j] = r * np.sqrt(df / ((1.0 - r + 1.0e-20)*(1.0 + r + 1.0e-20)))
-
-    return es
+from tqdm import tqdm
 
 
-def ulm(mat, net):
-
-    # Get df
-    df = net.shape[0]
-    df = df - 2
-
-    # Compute ulm
-    n_samples, n_features = mat.shape
-    es = nb_ulm(n_samples, n_features, mat.data, mat.indptr.astype(np.int64), mat.indices.astype(np.int64), net)
-
-    # Get p-values
-    pvals = t.sf(abs(es), df) * 2
-
-    return es, pvals
+def mat_cov(A, b):
+    return np.dot(b.T - b.mean(), A - A.mean(axis=0)) / (b.shape[0]-1)
 
 
-def run_ulm(mat, net, source='source', target='target', weight='weight', min_n=5, verbose=False, use_raw=True):
+def mat_cor(A, b):
+    cov = mat_cov(A, b)
+    ssd = np.std(A, axis=0, ddof=1) * np.std(b, axis=0, ddof=1).reshape(-1, 1)
+    return cov / ssd
+
+
+def ulm(mat, net, batch_size=10000, verbose=False):
+
+    # Get number of batches
+    n_samples = mat.shape[0]
+    n_features, n_fsets = net.shape
+    n_batches = int(np.ceil(n_samples / batch_size))
+
+    df = net.shape[0] - 2
+    es = np.zeros((n_samples, n_fsets), dtype=np.float32)
+    for i in tqdm(range(n_batches), disable=not verbose):
+
+        # Subset batch
+        srt, end = i*batch_size, i*batch_size+batch_size
+        batch = mat[srt:end].A.T
+
+        # Compute R for batch
+        r = mat_cor(net, batch)
+
+        # Compute t-value
+        es[srt:end] = r * np.sqrt(df / ((1.0 - r + 1.0e-16)*(1.0 + r + 1.0e-16)))
+
+    # Compute p-value
+    pv = t.sf(abs(es), df) * 2
+
+    return es, pv
+
+
+def run_ulm(mat, net, source='source', target='target', weight='weight', batch_size=10000,
+            min_n=5, verbose=False, use_raw=True):
     """
     Univariate Linear Model (ULM).
 
@@ -83,6 +72,8 @@ def run_ulm(mat, net, source='source', target='target', weight='weight', min_n=5
         Column name in net with target nodes.
     weight : str
         Column name in net with weights.
+    batch_size : int
+        Size of the samples to use for each batch. Increasing this will consume more memmory but it will run faster.
     min_n : int
         Minimum of targets per source. If less, sources are removed.
     verbose : bool
@@ -113,7 +104,7 @@ def run_ulm(mat, net, source='source', target='target', weight='weight', min_n=5
         print('Running ulm on mat with {0} samples and {1} targets for {2} sources.'.format(m.shape[0], len(c), net.shape[1]))
 
     # Run ULM
-    estimate, pvals = ulm(m, net)
+    estimate, pvals = ulm(m, net, verbose=verbose)
 
     # Transform to df
     estimate = pd.DataFrame(estimate, index=r, columns=sources)
