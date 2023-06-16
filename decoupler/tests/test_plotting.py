@@ -2,11 +2,12 @@ import pytest
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+from numpy.testing import assert_almost_equal
 from anndata import AnnData
 from ..plotting import check_if_matplotlib, check_if_seaborn, save_plot, set_limits, plot_volcano, plot_violins
 from ..plotting import plot_barplot, build_msks, write_labels, plot_metrics_scatter, plot_metrics_scatter_cols
 from ..plotting import plot_metrics_boxplot, plot_psbulk_samples, plot_filter_by_expr, plot_filter_by_prop, plot_volcano_df
-from ..plotting import plot_targets
+from ..plotting import plot_targets, compute_es_per_rank, plot_running_score
 
 
 def test_check_if_matplotlib():
@@ -292,3 +293,31 @@ def test_plot_filter_by_prop():
     del adata.layers['psbulk_props']
     with pytest.raises(ValueError):
         plot_filter_by_prop(adata, min_prop=0.2, min_smpls=2)
+
+
+def test_compute_es_per_rank():
+    m = np.array([9, 6, 5, 2, 1, 0])
+    snet = np.zeros((3, 1))
+    rnks = np.arange(m.size)
+    set_msk = np.array([True, True, True, False, False, False])
+
+    es = compute_es_per_rank(m, snet, rnks, set_msk)
+    exp_es = np.array([0.45, 0.75, 1.  , 6.66666667e-01, 3.33333333e-01, 0.])
+    assert_almost_equal(es, exp_es)
+
+
+def test_plot_running_score():
+    df = pd.DataFrame([
+        ['G1', 7.],
+        ['G2', 1.],
+        ['G3', 1.],
+        ['G4', 1.]
+    ], columns=['genes', 'values'])
+    net = pd.DataFrame([['T1', 'G1', 1], ['T1', 'G2', 2], ['T2', 'G3', -3], ['T2', 'G4', 4]],
+                       columns=['source', 'target', 'weight'])
+    fig, le = plot_running_score(df, names='genes', values='values', net=net, set_name='T1', source='source', target='target', figsize=(5, 5), dpi=100)
+    assert np.all(np.isin(le, np.array(['G1', 'G2'])))
+
+    df['values'] = -df['values']
+    fig, le = plot_running_score(df, names='genes', values='values', net=net, set_name='T1', source='source', target='target', figsize=(5, 5), dpi=100)
+    assert np.all(np.isin(le, np.array(['G1', 'G2'])))
