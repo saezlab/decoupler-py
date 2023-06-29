@@ -16,10 +16,10 @@ def test_get_gsea_df():
     net = pd.DataFrame([['T1', 'G1'], ['T1', 'G2'], ['T2', 'G3'], ['T2', 'G4']],
                        columns=['source', 'target'])
     res = get_gsea_df(df, 'stat', net, min_n=0, times=10)
-    assert res.loc[0, 'nes'] > 0
-    assert res.loc[1, 'nes'] < 0
-    assert res.loc[0, 'leading_edge'] == 'G2;G1'
-    assert res.loc[1, 'leading_edge'] == 'G3;G4'
+    assert res.loc[0, 'NES'] > 0
+    assert res.loc[1, 'NES'] < 0
+    assert res.loc[0, 'Leading edge'] == 'G2;G1'
+    assert res.loc[1, 'Leading edge'] == 'G3;G4'
 
 
 def test_gsea():
