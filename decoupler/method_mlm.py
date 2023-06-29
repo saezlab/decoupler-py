@@ -5,6 +5,7 @@ Code to run the Multivariate Linear Model (MLM) method.
 
 import numpy as np
 import pandas as pd
+from scipy.sparse import csr_matrix
 
 from .pre import extract, match, rename_net, get_net_mat, filt_min_n
 
@@ -36,28 +37,32 @@ def fit_mlm(X, y, inv, df):
 
 def mlm(mat, net, batch_size=10000, verbose=False):
 
-    # Get number of batches
+    # Get dims
     n_samples = mat.shape[0]
     n_features, n_fsets = net.shape
-    n_batches = int(np.ceil(n_samples / batch_size))
 
     # Add intercept to network
     net = np.column_stack((np.ones((n_features, ), dtype=np.float32), net))
 
     # Compute inv and df for lm
     inv = np.linalg.inv(np.dot(net.T, net))
-    df = n_features - n_fsets
+    df = n_features - n_fsets - 1
 
-    # Init empty acts
-    es = np.zeros((n_samples, n_fsets), dtype=np.float32)
-    for i in tqdm(range(n_batches), disable=not verbose):
+    if isinstance(mat, csr_matrix):
+        # Init empty acts
+        n_batches = int(np.ceil(n_samples / batch_size))
+        es = np.zeros((n_samples, n_fsets), dtype=np.float32)
+        for i in tqdm(range(n_batches), disable=not verbose):
 
-        # Subset batch
-        srt, end = i*batch_size, i*batch_size+batch_size
-        y = mat[srt:end].A.T
+            # Subset batch
+            srt, end = i * batch_size, i * batch_size + batch_size
+            y = mat[srt:end].A.T
 
-        # Compute MLM for batch
-        es[srt:end] = fit_mlm(net, y, inv, df)[:, 1:]
+            # Compute MLM for batch
+            es[srt:end] = fit_mlm(net, y, inv, df)[:, 1:]
+    else:
+        # Compute MLM for all
+        es = fit_mlm(net, mat.T, inv, df)[:, 1:]
 
     # Get p-values
     pvals = 2 * (1 - stats.t.cdf(np.abs(es), df))
