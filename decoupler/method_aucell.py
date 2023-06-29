@@ -5,8 +5,10 @@ Code to run the AUCell method.
 
 import numpy as np
 import pandas as pd
+from scipy.sparse import csr_matrix
 
 from numpy.random import default_rng
+from tqdm import tqdm
 
 from .pre import extract, rename_net, filt_min_n
 
@@ -14,66 +16,66 @@ from anndata import AnnData
 import numba as nb
 
 
-@nb.njit(nb.f4[:, :](nb.i8, nb.i8, nb.f4[:], nb.i8[:], nb.i8[:], nb.i8[:], nb.i8[:], nb.i8), parallel=True, cache=True)
-def nb_aucell(n_samples, n_features, data, indptr, indices, net, offsets, n_up):
+@nb.njit(nb.f4[:](nb.f4[:], nb.i8[:], nb.i8[:], nb.i8[:], nb.i8, nb.i8), parallel=True, cache=True)
+def nb_aucell(row, net, starts, offsets, n_up, n_fsets):
 
-    # Number of feature sets
-    n_fsets = offsets.shape[0]
-
-    # Define starts to subset offsets
-    starts = np.zeros(n_fsets, dtype=nb.i8)
-    starts[1:] = np.cumsum(offsets)[:-1]
+    # Rank row
+    row = np.argsort(np.argsort(-row)) + 1
 
     # Empty acts
-    acts = np.zeros((n_samples, n_fsets), dtype=nb.f4)
+    es = np.zeros(n_fsets, dtype=nb.f4)
 
-    # For each sample
-    for i in nb.prange(n_samples):
+    # For each feature set
+    for j in nb.prange(n_fsets):
 
-        # Extract sample from sparse matrix
-        row = np.zeros(n_features, dtype=nb.f4)
-        s, e = indptr[i], indptr[i+1]
-        row[indices[s:e]] = data[s:e]
+        # Extract feature set
+        srt = starts[j]
+        off = offsets[j] + srt
+        fset = net[srt:off]
 
-        # Rank row
-        row = np.argsort(np.argsort(-row)) + 1
+        # Compute max AUC for fset
+        x_th = np.arange(start=1, stop=fset.shape[0]+1, dtype=nb.i8)
+        x_th = x_th[x_th < n_up]
+        max_auc = np.sum(np.diff(np.append(x_th, n_up)) * x_th)
 
-        # For each feature set
-        for j in range(n_fsets):
+        # Compute AUC
+        x = row[fset]
+        x = np.sort(x[x < n_up])
+        y = np.arange(x.shape[0]) + 1
+        x = np.append(x, n_up)
 
-            # Extract feature set
-            srt = starts[j]
-            off = offsets[j] + srt
-            fset = net[srt:off]
+        # Update acts matrix
+        es[j] = np.sum(np.diff(x) * y) / max_auc
 
-            # Compute max AUC for fset
-            x_th = np.arange(start=1, stop=fset.shape[0]+1, dtype=nb.i8)
-            x_th = x_th[x_th < n_up]
-            max_auc = np.sum(np.diff(np.append(x_th, n_up)) * x_th)
-
-            # Compute AUC
-            x = row[fset]
-            x = np.sort(x[x < n_up])
-            y = np.arange(x.shape[0]) + 1
-            x = np.append(x, n_up)
-
-            # Update acts matrix
-            acts[i, j] = np.sum(np.diff(x) * y)/max_auc
-
-    return acts
+    return es
 
 
-def aucell(mat, net, n_up):
+def aucell(mat, net, n_up, verbose):
+
+    # Get dims
+    n_samples = mat.shape[0]
+    n_fsets = net.shape[0]
 
     # Flatten net and get offsets
     offsets = net.apply(lambda x: len(x)).values.astype(np.int64)
     net = np.concatenate(net.values)
 
-    # Compute AUC per fset
-    acts = nb_aucell(mat.shape[0], mat.shape[1], mat.data, mat.indptr.astype(np.int64),
-                     mat.indices.astype(np.int64), net, offsets, n_up)
+    # Define starts to subset offsets
+    starts = np.zeros(n_fsets, dtype=np.int64)
+    starts[1:] = np.cumsum(offsets)[:-1]
 
-    return acts
+    es = np.zeros((n_samples, n_fsets), dtype=np.float32)
+    for i in tqdm(range(mat.shape[0]), disable=not verbose):
+
+        if isinstance(mat, csr_matrix):
+            row = mat[i].A[0]
+        else:
+            row = mat[i]
+
+        # Compute AUC per row
+        es[i] = nb_aucell(row, net, starts, offsets, n_up, n_fsets)
+
+    return es
 
 
 def run_aucell(mat, net, source='source', target='target', n_up=None, min_n=5, seed=42, verbose=False, use_raw=True):
@@ -119,9 +121,10 @@ def run_aucell(mat, net, source='source', target='target', n_up=None, min_n=5, s
 
     # Set n_up
     if n_up is None:
-        n_up = np.ceil(0.05*len(c))
+        n_up = int(np.ceil(0.05*len(c)))
     else:
-        n_up = np.ceil(n_up)
+        n_up = int(np.ceil(n_up))
+        n_up = np.min([n_up, c.size])  # Limit n_up to max features
     if not 0 < n_up:
         raise ValueError('n_up needs to be a value higher than 0.')
 
@@ -144,7 +147,7 @@ def run_aucell(mat, net, source='source', target='target', n_up=None, min_n=5, s
         print('Running aucell on mat with {0} samples and {1} targets for {2} sources.'.format(m.shape[0], len(c), len(net)))
 
     # Run AUCell
-    estimate = aucell(m, net, n_up)
+    estimate = aucell(m, net, n_up, verbose)
     estimate = pd.DataFrame(estimate, index=r, columns=net.index)
     estimate.name = 'aucell_estimate'
 
