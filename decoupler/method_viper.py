@@ -4,6 +4,7 @@ Code to run the Virtual Inference of Protein-activity by Enriched Regulon (VIPER
 """
 
 import numpy as np
+from scipy.sparse import csr_matrix
 import pandas as pd
 
 from scipy.stats import rankdata
@@ -187,16 +188,21 @@ def viper(mat, net, pleiotropy=True, reg_sign=0.05, n_targets=10, penalty=20, ba
     if verbose:
         print('Infering activities on {0} batches.'.format(n_batches))
 
-    # Init empty acts
-    nes = np.zeros((n_samples, n_fsets), dtype=np.float32)
-    for i in tqdm(range(n_batches), disable=not verbose):
+    if isinstance(mat, csr_matrix):
+        # Init empty acts
+        n_batches = int(np.ceil(n_samples / batch_size))
+        nes = np.zeros((n_samples, n_fsets), dtype=np.float32)
+        for i in tqdm(range(n_batches), disable=not verbose):
 
-        # Subset batch
-        srt, end = i*batch_size, i*batch_size+batch_size
-        tmp = mat[srt:end].A
+            # Subset batch
+            srt, end = i*batch_size, i*batch_size+batch_size
+            tmp = mat[srt:end].A
 
-        # Compute VIPER for batch
-        nes[srt:end] = aREA(tmp, net)
+            # Compute VIPER for batch
+            nes[srt:end] = aREA(tmp, net)
+    else:
+        # Compute VIPER for all
+        nes = aREA(mat, net)
 
     if pleiotropy:
         if verbose:
@@ -205,7 +211,10 @@ def viper(mat, net, pleiotropy=True, reg_sign=0.05, n_targets=10, penalty=20, ba
         for i in tqdm(range(nes.shape[0]), disable=not verbose):
 
             # Extract per sample
-            ss_i = mat[i].A[0]
+            if isinstance(mat, csr_matrix):
+                ss_i = mat[i].A[0]
+            else:
+                ss_i = mat[i]
             nes_i = nes[i]
 
             # Shadow regulons
