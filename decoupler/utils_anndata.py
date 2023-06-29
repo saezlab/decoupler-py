@@ -112,9 +112,6 @@ def extract_psbulk_inputs(adata, obs, layer, use_raw):
         except KeyError:
             raise KeyError('Indices in obs do not match with mat\'s.')
 
-    if type(X) is not csr_matrix:
-        X = csr_matrix(X)
-
     # Sort genes
     msk = np.argsort(var.index)
 
@@ -122,18 +119,27 @@ def extract_psbulk_inputs(adata, obs, layer, use_raw):
 
 
 def check_X(X, mode='sum', skip_checks=False):
-    is_finite = np.all(np.isfinite(X.data))
+    if isinstance(X, csr_matrix):
+        is_finite = np.all(np.isfinite(X.data))
+    else:
+        is_finite = np.all(np.isfinite(X))
     if not is_finite:
         raise ValueError('Data contains non finite values (nan or inf), please set them to 0 or remove them.')
     skip_checks = type(mode) is dict or callable(mode) or skip_checks
     if not skip_checks:
-        is_positive = np.all(X.data >= 0)
+        if isinstance(X, csr_matrix):
+            is_positive = np.all(X.data >= 0)
+        else:
+            is_positive = np.all(X >= 0)
         if not is_positive:
             raise ValueError("""Data contains negative values. Check the parameters use_raw and layers to
             determine if you are selecting the correct matrix. To override this, set skip_checks=True.
             """)
         if mode == 'sum':
-            is_integer = float(np.sum(X.data)).is_integer()
+            if isinstance(X, csr_matrix):
+                is_integer = float(np.sum(X.data)).is_integer()
+            else:
+                is_integer = float(np.sum(X)).is_integer()
             if not is_integer:
                 raise ValueError("""Data contains float (decimal) values. Check the parameters use_raw and layers to
                 determine if you are selecting the correct data, which should be positive integer counts when mode='sum'.
@@ -211,7 +217,9 @@ def compute_psbulk(n_rows, n_cols, X, sample_col, groups_col, smples, groups, ob
             new_obs.loc[smp, :] = tmp
 
             # Get cells from specific sample
-            profile = X[obs[sample_col] == smp].A
+            profile = X[obs[sample_col] == smp]
+            if isinstance(X, csr_matrix):
+                profile = profile.A
 
             # Skip if few cells or not enough counts
             ncell = profile.shape[0]
@@ -244,7 +252,9 @@ def compute_psbulk(n_rows, n_cols, X, sample_col, groups_col, smples, groups, ob
                 new_obs.loc[index, :] = tmp
 
                 # Get cells from specific sample and group
-                profile = X[(obs[sample_col] == smp) & (obs[groups_col] == grp)].A
+                profile = X[(obs[sample_col] == smp) & (obs[groups_col] == grp)]
+                if isinstance(X, csr_matrix):
+                    profile = profile.A
 
                 # Skip if few cells or not enough counts
                 ncell = profile.shape[0]

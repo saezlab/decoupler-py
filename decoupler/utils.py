@@ -5,6 +5,7 @@ Functions of general utility used in multiple places.
 
 import numpy as np
 from numpy.random import default_rng
+from scipy.sparse import csr_matrix
 import pandas as pd
 
 from .pre import extract, rename_net, get_net_mat, filt_min_n
@@ -400,14 +401,19 @@ def dense_run(func, mat, net, source='source', target='target', weight='weight',
     acts, pvals = [], []
     for i in tqdm(range(m.shape[0]), disable=not verbose):
 
-        # Extract single sample
-        sample = m[i]
         i_r = r[[i]]
 
+        # Extract single sample
+        if isinstance(m, csr_matrix):
+            sample = m[i].A[0]
+            idx = sample.indices
+        else:
+            sample = m[i]
+            idx = sample != 0.
+
         # Remove zeros
-        idx = sample.indices
         i_c = c[idx]
-        sample = sample[:, idx]
+        sample = sample[idx][np.newaxis, :]
 
         # Run activity
         row = [sample, i_r, i_c]
