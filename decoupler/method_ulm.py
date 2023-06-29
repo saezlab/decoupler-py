@@ -5,6 +5,7 @@ Code to run the Univariate Linear Model (ULM) method.
 
 import numpy as np
 import pandas as pd
+from scipy.sparse import csr_matrix
 
 from scipy.stats import t
 
@@ -24,26 +25,37 @@ def mat_cor(A, b):
     return cov / ssd
 
 
+def t_val(r, df):
+    return r * np.sqrt(df / ((1.0 - r + 1.0e-16)*(1.0 + r + 1.0e-16)))
+
+
 def ulm(mat, net, batch_size=10000, verbose=False):
 
-    # Get number of batches
+    # Get dims
     n_samples = mat.shape[0]
     n_features, n_fsets = net.shape
-    n_batches = int(np.ceil(n_samples / batch_size))
+    df = n_features - 2
 
-    df = net.shape[0] - 2
-    es = np.zeros((n_samples, n_fsets), dtype=np.float32)
-    for i in tqdm(range(n_batches), disable=not verbose):
+    if isinstance(mat, csr_matrix):
+        n_batches = int(np.ceil(n_samples / batch_size))
+        es = np.zeros((n_samples, n_fsets), dtype=np.float32)
+        for i in tqdm(range(n_batches), disable=not verbose):
 
-        # Subset batch
-        srt, end = i*batch_size, i*batch_size+batch_size
-        batch = mat[srt:end].A.T
+            # Subset batch
+            srt, end = i * batch_size, i * batch_size + batch_size
+            batch = mat[srt:end].A.T
 
-        # Compute R for batch
-        r = mat_cor(net, batch)
+            # Compute R for batch
+            r = mat_cor(net, batch)
+
+            # Compute t-value
+            es[srt:end] = t_val(r, df)
+    else:
+        # Compute R value for all
+        r = mat_cor(net, mat.T)
 
         # Compute t-value
-        es[srt:end] = r * np.sqrt(df / ((1.0 - r + 1.0e-16)*(1.0 + r + 1.0e-16)))
+        es = t_val(r, df)
 
     # Compute p-value
     pv = t.sf(abs(es), df) * 2
@@ -104,7 +116,7 @@ def run_ulm(mat, net, source='source', target='target', weight='weight', batch_s
         print('Running ulm on mat with {0} samples and {1} targets for {2} sources.'.format(m.shape[0], len(c), net.shape[1]))
 
     # Run ULM
-    estimate, pvals = ulm(m, net, verbose=verbose)
+    estimate, pvals = ulm(m, net, batch_size=batch_size, verbose=verbose)
 
     # Transform to df
     estimate = pd.DataFrame(estimate, index=r, columns=sources)
