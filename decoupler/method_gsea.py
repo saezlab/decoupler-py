@@ -278,8 +278,8 @@ def get_gsea_df(df, stat, net, source='source', target='target', times=1000, min
     res = []
     for i in range(es.size):
         res.append([terms[i], es[i], nes[i], pvals[i], sizes[i], hits_r[i], rnks_r[i], ';'.join(c[le_msk[i]])])
-    res = pd.DataFrame(res, columns=['term', 'es', 'nes', 'nom_pval', 'set_size', 'tag_perc', 'rank_perc', 'leading_edge'])
-    res.insert(4, 'fdr_pval', p_adjust_fdr(res['nom_pval'].values))
+    res = pd.DataFrame(res, columns=['Term', 'ES', 'NES', 'NOM p-value', 'Set size', 'Tag %', 'Rank %', 'Leading edge'])
+    res.insert(4, 'FDR p-value', p_adjust_fdr(res['NOM p-value'].values))
 
     return res
 
