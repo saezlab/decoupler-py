@@ -6,6 +6,7 @@ Functions to benchmark methods and nets using perturbation experiments.
 import numpy as np
 from numpy.random import default_rng
 import pandas as pd
+from scipy.sparse import csr_matrix
 
 from .utils import get_toy_data
 from .pre import match
@@ -176,21 +177,13 @@ def append_metrics_scores(df, grpby_i, grp, act, grt, srcs, mthds, metrics, by, 
                          n_iter=n_iter, seed=seed)
 
 
-def mirror_acts(acts, grts):
-
-    for i in range(acts.shape[0]):
-        grt_i = grts[i]
-
-        # Check that exps don't have both signs of perturbations
-        sign = np.unique(grt_i[grt_i != 0])
-        if sign.size > 1:
-            raise ValueError('Experiments with sources perturbed in both signs (-1 and +1) are not supported.')
-
-        # Mirror acts
-        acts[i] = acts[i] * sign
-
-    # Set grts to 1
-    grts[grts != 0.] = 1.
+def adjust_sign(mat, v_sign):
+    v_sign = v_sign.reshape(-1, 1)
+    if isinstance(mat, csr_matrix):
+        mat = mat.multiply(v_sign).tocsr()
+    else:
+        mat = mat * v_sign
+    return mat
 
 
 def build_acts_tensor(res):
@@ -307,9 +300,6 @@ def format_acts_grts(res, obs, groupby):
 
     # Match to same srcs between acts and grts
     grts = match(srcs, grts.columns, grts.T).T
-
-    # Mirror acts
-    mirror_acts(acts, grts)
 
     # Build msks tensor
     msks, grpbys, grps = build_msks_tensor(obs, groupby)

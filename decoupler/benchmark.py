@@ -9,7 +9,7 @@ import pandas as pd
 from .decouple import decouple
 from .utils_anndata import extract_psbulk_inputs
 from .pre import rename_net, filt_min_n
-from .utils_benchmark import format_acts_grts, append_metrics_scores
+from .utils_benchmark import format_acts_grts, append_metrics_scores, adjust_sign
 from .utils_benchmark import validate_metrics, check_groupby, rename_obs
 
 
@@ -113,6 +113,10 @@ def _benchmark(mat, obs, net, perturb, sign, metrics=['auroc', 'auprc'], groupby
     mat, obs, var, net, groupby = format_benchmark_inputs(mat, obs, perturb, sign, net, groupby, by, f_expr=f_expr,
                                                           f_srcs=f_srcs, verbose=verbose, use_raw=use_raw,
                                                           decouple_kws=decouple_kws)
+
+    # Adjust sign
+    mat = adjust_sign(mat, obs['sign'].values)
+    obs['sign'] = 1
 
     # Reset net names args
     decouple_kws['source'] = 'source'
