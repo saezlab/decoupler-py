@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 from scipy.stats import norm
+from scipy.sparse import csr_matrix
 from numpy.random import default_rng
 
 from .pre import extract, rename_net, filt_min_n
@@ -223,7 +224,9 @@ def run_gsva(mat, net, source='source', target='target', kcdf=False, mx_diff=Tru
         print('Running gsva on mat with {0} samples and {1} targets for {2} sources.'.format(m.shape[0], len(c), len(net)))
 
     # Run GSVA
-    estimate = gsva(m.A, net, kcdf=kcdf, verbose=verbose)
+    if isinstance(mat, csr_matrix):
+        m = m.A
+    estimate = gsva(m, net, kcdf=kcdf, verbose=verbose)
 
     # Transform to df
     estimate = pd.DataFrame(estimate, index=r, columns=net.index)
