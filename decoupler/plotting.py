@@ -261,6 +261,7 @@ def plot_volcano_df(data, x, y, top=5, sign_thr=0.05, lFCs_thr=0.5, sign_limit=N
     if ax is None:
         fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=dpi)
     df.plot.scatter(x='logFCs', y='pvals', c='weight', sharex=False, ax=ax)
+    ax.set_axisbelow(True)
 
     # Draw sign lines
     ax.axhline(y=sign_thr, linestyle='--', color="black")
@@ -350,6 +351,7 @@ def plot_targets(data, stat, source_name, net, source='source', target='target',
         fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=dpi)
     data.plot.scatter(x=weight, y=stat, c='color', ax=ax)
     ax.grid()
+    ax.set_axisbelow(True)
 
     # Draw sign lines
     ax.axhline(y=0, linestyle='--', color="black")
@@ -944,6 +946,7 @@ def plot_psbulk_samples(adata, groupby, figsize=(5, 5), dpi=100, ax=None, return
         axes = axes.ravel()
         for ax, grp in zip(axes, groupby):
             ax.grid(zorder=0)
+            ax.set_axisbelow(True)
             sns.scatterplot(x='psbulk_n_cells', y='psbulk_counts', hue=grp, ax=ax, data=df, zorder=1, **kwargs)
             ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), frameon=False, title=grp)
             ax.set_xlabel('Log10 number of cells')
@@ -954,6 +957,7 @@ def plot_psbulk_samples(adata, groupby, figsize=(5, 5), dpi=100, ax=None, return
         if ax is None:
             fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=dpi)
         ax.grid(zorder=0)
+        ax.set_axisbelow(True)
         sns.scatterplot(x='psbulk_n_cells', y='psbulk_counts', hue=groupby, ax=ax, data=df, zorder=1, **kwargs)
         ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), frameon=False, title=groupby)
         ax.set_xlabel('Log10 number of cells')
@@ -1218,7 +1222,7 @@ def plot_running_score(df, stat, net, set_name, source='source', target='target'
         le_c = c[set_rnks[set_rnks >= j]]
 
     # Plot
-    fig, axes = plt.subplots(4, 1, gridspec_kw={'height_ratios': [4, 0.5, 0.5, 2]}, figsize=(3, 3), sharex=True, dpi=150)
+    fig, axes = plt.subplots(4, 1, gridspec_kw={'height_ratios': [4, 0.5, 0.5, 2]}, figsize=figsize, sharex=True, dpi=dpi)
     axes = axes.ravel()
 
     # Plot random walk
@@ -1407,7 +1411,7 @@ def plot_dotplot(df, x, y, c, s, scale=5, cmap='viridis_r', title=None, figsize=
 
     fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=dpi)
     ns = (s_vals * scale * plt.rcParams["lines.markersize"]) ** 2
-    ax.grid(axis='y')
+    ax.grid(axis='x')
     scatter = ax.scatter(
         x=x_vals,
         y=y_vals,
