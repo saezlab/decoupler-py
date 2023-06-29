@@ -29,11 +29,11 @@ def test_get_performances():
     res = {mthds[0]: m_a, mthds[1]: m_b}
     obs = pd.DataFrame([
             ['A1', 'B1', 'C1', ['T3', 'T2'], 1],
-            ['A1', 'B2', 'C1', ['T3', 'T2'], -1],
+            ['A1', 'B2', 'C1', ['T3', 'T2'], 1],
             ['A1', 'B2', 'C2', ['T3', 'T2'], 1],
-            ['A2', 'B1', 'C1', 'T1', -1],
+            ['A2', 'B1', 'C1', 'T1', 1],
             ['A2', 'B1', 'C2', 'T2', 1],
-            ['A2', 'B2', 'C2', 'T3', -1],
+            ['A2', 'B2', 'C2', 'T3', 1],
         ], columns=['col_A', 'col_B', 'col_C', 'perturb', 'sign'], index=exps)
 
     get_performances(res, obs, groupby=['col_B'], by='experiment', metrics=['auroc'], min_exp=1)

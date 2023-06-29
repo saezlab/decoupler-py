@@ -1,12 +1,12 @@
 import pytest
 import numpy as np
-from numpy.random import default_rng
+from scipy.sparse import csr_matrix
 import pandas as pd
 from ..utils_benchmark import get_toy_benchmark_data, show_metrics, validate_metrics
-from ..utils_benchmark import compute_metric, mirror_acts, build_acts_tensor, build_grts_mat
+from ..utils_benchmark import compute_metric, build_acts_tensor, build_grts_mat
 from ..utils_benchmark import unique_obs, build_msks_tensor, append_by_experiment
 from ..utils_benchmark import append_by_source, append_metrics_scores, check_groupby
-from ..utils_benchmark import rename_obs, format_acts_grts
+from ..utils_benchmark import rename_obs, format_acts_grts, adjust_sign
 
 
 def test_get_toy_benchmark_data():
@@ -58,25 +58,22 @@ def test_compute_metric():
     assert type(res) is np.ndarray
 
 
-def test_mirror_acts():
-    rng = default_rng(seed=42)
-    acts = rng.normal(size=(3, 5, 2))
-    grts = np.array([
-        [-1., 0., 0., 0., -1.],
-        [0., 0., 0., 0., 1.],
-        [1., 1., 0., 0., 0.]
-    ])
-    m_acts = acts.copy()
-    m_grts = grts.copy()
+def test_adjust_sign():
+    mat = np.array([
+        [1, 2, -3],
+        [-1, 0, 4],
+        [-5, 0, 6]
+        ])
+    v_sign = np.array([1, -1, 1])
 
-    mirror_acts(m_acts, m_grts)
-    assert np.all(np.isin(m_grts, [0., 1.]))
-    assert np.all(acts[0] == m_acts[0] * -1)
-    assert np.all(acts[1] == m_acts[1])
-    assert np.all(acts[2] == m_acts[2])
-    grts[0, 0] = 1.
-    with pytest.raises(ValueError):
-        mirror_acts(acts, grts)
+    adj_m = adjust_sign(mat, v_sign)
+    assert np.all(adj_m[1] == (mat[1] * -1))
+    assert np.all(adj_m[0] == mat[0])
+
+    adj_m = adjust_sign(csr_matrix(mat), v_sign)
+    assert np.all(adj_m[1] == (mat[1] * -1))
+    assert np.all(adj_m[0] == mat[0])
+    assert isinstance(adj_m, csr_matrix)
 
 
 def test_build_acts_tensor():

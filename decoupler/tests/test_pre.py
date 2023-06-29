@@ -10,7 +10,18 @@ def test_check_mat():
     m = csr_matrix(np.array([[1, 0, 2], [1, 0, 3], [0, 0, 0]]))
     r = np.array(['S1', 'S2', 'S3'])
     c = np.array(['G1', 'G2', 'G3'])
-    check_mat(m, r, c, verbose=True)
+    nm, nr, nc = check_mat(m, r, c, verbose=True)
+    assert nm.shape[0] == 2
+    assert nm.shape[1] == 2
+    assert nr.size == 2
+    assert nc.size == 2
+    assert type(nm) is csr_matrix
+    nm, nr, nc = check_mat(m.A, r, c, verbose=True)
+    assert nm.shape[0] == 2
+    assert nm.shape[1] == 2
+    assert nr.size == 2
+    assert nc.size == 2
+    assert type(nm) is not csr_matrix and isinstance(nm, np.ndarray)
     m = csr_matrix(np.array([[1, 0, 2], [np.nan, 0, 3], [0, 0, 0]]))
     with pytest.raises(ValueError):
         check_mat(m, r, c)
@@ -21,7 +32,7 @@ def test_extract():
     r = np.array(['S1', 'S2', 'S3'])
     c = np.array(['G1', 'G2', 'G3'])
     df = pd.DataFrame(m, index=r, columns=c)
-    adata = AnnData(df)
+    adata = AnnData(df, dtype=np.float32)
     adata_raw = adata.copy()
     adata_raw.raw = adata_raw
     extract([m, r, c])
@@ -72,7 +83,7 @@ def test_mask_features():
     r = np.array(['S1', 'S2', 'S3'])
     c = np.array(['G1', 'G2', 'G3'])
     df = pd.DataFrame(m, index=r, columns=c)
-    adata = AnnData(df)
+    adata = AnnData(df, dtype=np.float32)
     adata_raw = adata.copy()
     adata_raw.raw = adata_raw
     mask_features([m, r, c])

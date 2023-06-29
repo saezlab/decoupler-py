@@ -3,7 +3,7 @@ import pandas as pd
 from scipy.sparse import csr_matrix
 from anndata import AnnData
 from numpy.testing import assert_almost_equal
-from ..method_ulm import ulm, run_ulm, mat_cov, mat_cor
+from ..method_ulm import ulm, run_ulm, mat_cov, mat_cor, t_val
 
 
 def test_mat_cov():
@@ -45,10 +45,32 @@ def test_mat_cor():
     assert np.all((dc_cor <= 1) * (dc_cor >= -1))
 
 
+def test_t_val():
+    t = t_val(r=0.4, df=28)
+    assert_almost_equal(2.30940108, t)
+
+    t = t_val(r=0.99, df=3)
+    assert_almost_equal(12.15540081, t)
+
+    t = t_val(r=-0.05, df=99)
+    assert_almost_equal(-0.49811675, t)
+
+
 def test_ulm():
     m = csr_matrix(np.array([[7., 1., 1., 1.], [4., 2., 1., 2.], [1., 2., 5., 1.], [1., 1., 6., 2.]], dtype=np.float32))
     net = np.array([[1., 0.], [2, 0.], [0., -3.], [0., 4.]], dtype=np.float32)
-    ulm(m, net)
+    act, pvl = ulm(m, net)
+    assert act[0, 0] > 0
+    assert act[1, 0] > 0
+    assert act[2, 0] < 0
+    assert act[3, 0] < 0
+    assert np.all((0. <= pvl) * (pvl <= 1.))
+    act, pvl = ulm(m.A, net)
+    assert act[0, 0] > 0
+    assert act[1, 0] > 0
+    assert act[2, 0] < 0
+    assert act[3, 0] < 0
+    assert np.all((0. <= pvl) * (pvl <= 1.))
 
 
 def test_run_ulm():

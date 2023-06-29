@@ -2,12 +2,11 @@ import pytest
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-from numpy.testing import assert_almost_equal
 from anndata import AnnData
 from ..plotting import check_if_matplotlib, check_if_seaborn, save_plot, set_limits, plot_volcano, plot_violins
 from ..plotting import plot_barplot, build_msks, write_labels, plot_metrics_scatter, plot_metrics_scatter_cols
 from ..plotting import plot_metrics_boxplot, plot_psbulk_samples, plot_filter_by_expr, plot_filter_by_prop, plot_volcano_df
-from ..plotting import plot_targets, compute_es_per_rank, plot_running_score
+from ..plotting import plot_targets, plot_running_score, plot_barplot_df, plot_dotplot
 
 
 def test_check_if_matplotlib():
@@ -295,29 +294,48 @@ def test_plot_filter_by_prop():
         plot_filter_by_prop(adata, min_prop=0.2, min_smpls=2)
 
 
-def test_compute_es_per_rank():
-    m = np.array([9, 6, 5, 2, 1, 0])
-    snet = np.zeros((3, 1))
-    rnks = np.arange(m.size)
-    set_msk = np.array([True, True, True, False, False, False])
-
-    es = compute_es_per_rank(m, snet, rnks, set_msk)
-    exp_es = np.array([0.45, 0.75, 1.  , 6.66666667e-01, 3.33333333e-01, 0.])
-    assert_almost_equal(es, exp_es)
-
-
 def test_plot_running_score():
     df = pd.DataFrame([
         ['G1', 7.],
         ['G2', 1.],
         ['G3', 1.],
         ['G4', 1.]
-    ], columns=['genes', 'values'])
+    ], columns=['genes', 'values']).set_index('genes')
     net = pd.DataFrame([['T1', 'G1', 1], ['T1', 'G2', 2], ['T2', 'G3', -3], ['T2', 'G4', 4]],
                        columns=['source', 'target', 'weight'])
-    fig, le = plot_running_score(df, names='genes', values='values', net=net, set_name='T1', source='source', target='target', figsize=(5, 5), dpi=100)
-    assert np.all(np.isin(le, np.array(['G1', 'G2'])))
+    plot_running_score(df, stat='values', net=net, set_name='T1', source='source', target='target', figsize=(5, 5), dpi=100)
 
     df['values'] = -df['values']
-    fig, le = plot_running_score(df, names='genes', values='values', net=net, set_name='T1', source='source', target='target', figsize=(5, 5), dpi=100)
+    plot_running_score(df, stat='values', net=net, set_name='T1', source='source', target='target', figsize=(5, 5), dpi=100)
+    fig, le = plot_running_score(df, stat='values', net=net, set_name='T1', source='source', target='target', return_fig=True)
     assert np.all(np.isin(le, np.array(['G1', 'G2'])))
+
+
+def test_plot_barplot_df():
+    df = pd.DataFrame([
+        ['Set 1', 8],
+        ['Set 2', 5],
+        ['Set 3', 4],
+        ['Set 4', 1],
+        ['Set 5', 1],
+    ], columns=['Term', '-log10 FDR p-value'])
+
+    plot_barplot_df(df=df, x='-log10 FDR p-value', y='Term')
+    plot_barplot_df(df=df, x='-log10 FDR p-value', y='Term', title='Something', thr=5)
+    fig, ax = plt.subplots(1, 1)
+    plot_barplot_df(df=df, x='-log10 FDR p-value', y='Term', ax=ax)
+
+
+def test_plot_dotplot():
+    df = pd.DataFrame([
+        ['Set 1', 8, 75, 0.9],
+        ['Set 2', 5, 89, 0.6],
+        ['Set 3', 4, 57, 0.3],
+        ['Set 4', 1, 21, 0.4],
+        ['Set 5', 1, 15, 0.1],
+    ], columns=['Term', '-log10 FDR p-value', 'Combined score', 'Overlap ratio'])
+
+    plot_dotplot(df=df, x='Combined score', y='Term', c='-log10 FDR p-value',
+                 s='Overlap ratio', cmap='viridis', title='Title')
+    plot_dotplot(df=df.set_index('Term'), x='Combined score', y=None,
+                 c='-log10 FDR p-value', s='Overlap ratio', cmap='viridis')
