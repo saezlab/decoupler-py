@@ -5,6 +5,7 @@ Code to run the Multivariate Decision Tree (MDT) method.
 
 import numpy as np
 import pandas as pd
+from scipy.sparse import csr_matrix
 
 from .pre import extract, match, rename_net, get_net_mat, filt_min_n
 
@@ -31,7 +32,7 @@ def fit_rf(sr, net, sample, trees=100, min_leaf=5, n_jobs=-1, seed=42):
     return regr.feature_importances_
 
 
-def mdt(mat, net, trees=10, min_leaf=5, n_jobs=4, seed=42, verbose=False):
+def mdt(mat, net, trees=100, min_leaf=5, n_jobs=4, seed=42, verbose=False):
 
     # Check if skranger is installed
     sr = check_if_skranger()
@@ -41,7 +42,10 @@ def mdt(mat, net, trees=10, min_leaf=5, n_jobs=4, seed=42, verbose=False):
 
     # For each sample
     for i in tqdm(range(mat.shape[0]), disable=not verbose):
-        sample = mat[i].A[0]
+        if isinstance(mat, csr_matrix):
+            sample = mat[i].A[0]
+        else:
+            sample = mat[i]
         acts[i] = fit_rf(sr, net, sample, trees=trees, min_leaf=min_leaf, n_jobs=n_jobs, seed=seed)
 
     return acts
