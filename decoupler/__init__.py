@@ -14,7 +14,7 @@ from .method_mlm import run_mlm  # noqa: F401
 from .method_udt import run_udt  # noqa: F401
 from .method_ora import run_ora, test1r, get_ora_df  # noqa: F401
 from .method_gsva import run_gsva  # noqa: F401
-from .method_gsea import run_gsea  # noqa: F401
+from .method_gsea import run_gsea, get_gsea_df  # noqa: F401
 from .method_viper import run_viper  # noqa: F401
 from .method_aucell import run_aucell  # noqa: F401
 from .decouple import decouple, run_consensus  # noqa: F401
@@ -24,6 +24,7 @@ from .omnip import get_ksn_omnipath  # noqa: F401
 from .plotting import plot_volcano, plot_violins, plot_barplot, plot_metrics_scatter, plot_metrics_boxplot  # noqa: F401
 from .plotting import plot_metrics_scatter_cols, plot_psbulk_samples, plot_filter_by_expr, plot_filter_by_prop  # noqa: F401
 from .plotting import plot_volcano_df, plot_targets, plot_running_score  # noqa: F401
+from .plotting import plot_dotplot, plot_barplot_df  # noqa: F401
 from .benchmark import benchmark, format_benchmark_inputs, get_performances  # noqa: F401
 from .utils_benchmark import get_toy_benchmark_data, show_metrics  # noqa: F401
 from .metrics import metric_auroc, metric_auprc, metric_mcauroc, metric_mcauprc  # noqa: F401
