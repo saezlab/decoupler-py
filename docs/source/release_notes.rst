@@ -1,6 +1,28 @@
 Release notes
 =============
 
+1.5.0
+-----
+
+Bug fixes
+~~~~~~~~~
+- ``run_mlm`` now uses the correct number of degrees of freedom to compute the t-value (one less than before), scores might change slightly.
+
+Changes
+~~~~~~~
+- All functions that deal with ``mat`` now do not enforce ``csr_matrix`` format automatically.
+- The benchmark pipeline now properly handles methods that provide only positive enrichment scores.
+- Modified ``get_ora_df`` to make it easier to use results of differential expression analysis, now returns different statistics.
+- ``gsea`` normalized score now is computed as in the original publication ``(ES+/mean(null+) and ES-/mean(null-))`` instead of ``(ES - mean(null)) / sd(null)``.
+- ``run_ulm`` now runs faster.
+
+Additions
+~~~~~~~~~
+- Added ``get_gsea_df`` function to run ``gsea`` directly on results of differential expression analysis, returns different statistics and the leading edge.
+- Added ``plot_dotplot`` function to plot results of ``get_ora_df``.
+- Added ``plot_barplot_df`` function to plot results of ``get_ora_df``.
+- Added ``plot_running_score`` function to plot results of ``get_gsea_df``.
+
 1.4.0
 -----
 
