@@ -4,6 +4,7 @@ Code to run the Univariate Decision Tree (UDT) method.
 """
 
 import numpy as np
+from scipy.sparse import csr_matrix
 import pandas as pd
 
 from .pre import extract, match, rename_net, get_net_mat, filt_min_n
@@ -41,8 +42,12 @@ def udt(mat, net, min_leaf=5, seed=42, verbose=False):
 
     # For each sample and regulator fit dt
     for i in tqdm(range(mat.shape[0]), disable=not verbose):
+        if isinstance(mat, csr_matrix):
+            sample = mat[i].A[0]
+        else:
+            sample = mat[i]
         for j in range(net.shape[1]):
-            acts[i, j] = fit_dt(sk, net[:, j], mat[i], min_leaf=min_leaf, seed=seed)
+            acts[i, j] = fit_dt(sk, net[:, j], sample, min_leaf=min_leaf, seed=seed)
 
     return acts
 
@@ -103,7 +108,7 @@ def run_udt(mat, net, source='source', target='target', weight='weight', min_lea
         print('Running udt on mat with {0} samples and {1} targets for {2} sources.'.format(m.shape[0], len(c), net.shape[1]))
 
     # Run UDT
-    estimate = udt(m.A, net, min_leaf=min_leaf, seed=seed, verbose=verbose)
+    estimate = udt(m, net, min_leaf=min_leaf, seed=seed, verbose=verbose)
 
     # Transform to df
     estimate = pd.DataFrame(estimate, index=r, columns=sources)
