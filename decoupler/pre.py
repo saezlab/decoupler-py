@@ -13,7 +13,10 @@ from anndata import AnnData
 def check_mat(m, r, c, verbose=False):
 
     # Check for empty features
-    msk_features = np.sum(m != 0, axis=0).A1 == 0
+    if type(m) is csr_matrix:
+        msk_features = np.sum(m != 0, axis=0).A1 == 0
+    else:
+        msk_features = np.count_nonzero(m, axis=0) == 0
     n_empty_features = np.sum(msk_features)
     if n_empty_features > 0:
         if verbose:
@@ -22,7 +25,10 @@ def check_mat(m, r, c, verbose=False):
         m = m[:, ~msk_features]
 
     # Check for empty samples
-    msk_samples = np.sum(m != 0, axis=1).A1 == 0
+    if type(m) is csr_matrix:
+        msk_samples = np.sum(m != 0, axis=1).A1 == 0
+    else:
+        msk_samples = np.count_nonzero(m, axis=1) == 0
     n_empty_samples = np.sum(msk_samples)
     if n_empty_samples > 0:
         if verbose:
@@ -34,7 +40,7 @@ def check_mat(m, r, c, verbose=False):
     if np.any(~np.isfinite(m.data)):
         raise ValueError("""mat contains non finite values (nan or inf), please set them to 0 or remove them.""")
 
-    return m, r, c.astype('U')
+    return m, r, c
 
 
 def extract(mat, use_raw=True, verbose=False, dtype=np.float32):
@@ -62,23 +68,23 @@ def extract(mat, use_raw=True, verbose=False, dtype=np.float32):
 
     if type(mat) is list:
         m, r, c = mat
-        m = csr_matrix(m)
-        r = np.array(r)
-        c = np.array(c)
+        m = np.array(m, dtype=dtype)
+        r = np.array(r, dtype='U')
+        c = np.array(c, dtype='U')
     elif type(mat) is pd.DataFrame:
-        m = csr_matrix(mat.values)
-        r = mat.index.values
-        c = mat.columns.values
+        m = mat.values.astype(dtype)
+        r = mat.index.values.astype('U')
+        c = mat.columns.values.astype('U')
     elif type(mat) is AnnData:
         if use_raw:
             if mat.raw is None:
                 raise ValueError("Received `use_raw=True`, but `mat.raw` is empty.")
-            m = csr_matrix(mat.raw.X)
-            c = mat.raw.var.index.values
+            m = mat.raw.X.astype(dtype)
+            c = mat.raw.var.index.values.astype('U')
         else:
-            m = csr_matrix(mat.X)
-            c = mat.var.index.values
-        r = mat.obs.index.values
+            m = mat.X.astype(dtype)
+            c = mat.var.index.values.astype('U')
+        r = mat.obs.index.values.astype('U')
 
     else:
         raise ValueError("""mat must be a list of [matrix, samples, features], dataframe (samples x features) or an AnnData
