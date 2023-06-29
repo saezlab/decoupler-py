@@ -1,9 +1,11 @@
 import numpy as np
+from scipy.sparse import csr_matrix
 import pandas as pd
 from anndata import AnnData
 
 from .pre import extract, rename_net, filt_min_n
 from .utils_anndata import get_filterbyexpr_inputs, get_min_sample_size, get_cpm_cutoff, get_cpm
+from .method_gsea import compute_es_per_rank
 
 
 def check_if_matplotlib(return_mpl=False):
@@ -416,7 +418,10 @@ def plot_violins(mat, thr=None, log=False, use_raw=False, figsize=(7, 5), dpi=10
 
     # Format
     x = np.repeat(r, m.shape[1])
-    y = m.A.flatten()
+    if isinstance(m, csr_matrix):
+        y = m.A.flatten()
+    else:
+        y = m.flatten()
 
     # Plot
     fig = None
@@ -1117,42 +1122,17 @@ def plot_filter_by_prop(adata, min_prop=0.2, min_smpls=2, cmap='viridis', figsiz
         raise ValueError(msg)
 
 
-def compute_es_per_rank(m, snet, rnks, set_msk):
-
-    # Get decending penalty
-    n_c = rnks.size
-    n_set = snet.shape[0]
-    dec = 1.0 / (n_c - n_set)
-
-    # Compute norm
-    sum_set = np.sum(np.abs(m[set_msk]))
-
-    # Compute ES
-    cum_sum = 0.0
-    es = np.zeros(n_c)
-    for i in rnks:
-        if set_msk[i]:
-            cum_sum += np.abs(m[i]) / sum_set
-            es[i] = cum_sum
-        else:
-            cum_sum -= dec
-            es[i] = cum_sum
-
-    return es
-
-
-def plot_running_score(df, names, values, net, set_name, source='source', target='target', cmap='RdBu_r', figsize=(5, 5), dpi=100):
+def plot_running_score(df, stat, net, set_name, source='source', target='target', cmap='RdBu_r',
+                       figsize=(5, 5), dpi=100, return_fig=False, save=None):
     """
     Plot the running score of GSEA.
 
     Parameters
     ----------
     df : DataFrame
-        Dataframe containing feature names and feature values.
-    names : str
-        Column name in df with feature names
-    values : str
-        Column name in df with feature values
+        Long format DataFrame with features to be ranked. Assumes features are indexes.
+    stat : str
+        Name of the column containing the ranking metric.
     net : DataFrame
         Network in long format.
     set_name : str
@@ -1167,6 +1147,10 @@ def plot_running_score(df, names, values, net, set_name, source='source', target
         Figure size.
     dpi : int
         DPI resolution of figure.
+    return_fig : bool
+        Whether to return a Figure object or not.
+    save : str, None
+        Path to where to save the plot. Infer the filetype if ending on {`.pdf`, `.png`, `.svg`}.
 
     Returns
     -------
@@ -1193,11 +1177,11 @@ def plot_running_score(df, names, values, net, set_name, source='source', target
             return np.ma.masked_array(np.interp(value, x, y))
 
     # Extract feature level stats and names from df
-    c = df[names].values.astype('U')
-    m = df[values].values
+    c = df.index.values.astype('U')
+    m = df[stat].values
 
     # Remove empty values
-    msk = np.isfinite(m) * (m != 0.)
+    msk = np.isfinite(m)
     c = c[msk]
     m = m[msk]
 
@@ -1217,28 +1201,31 @@ def plot_running_score(df, names, values, net, set_name, source='source', target
     # Get msk
     set_msk = np.isin(c, snet['target'])
 
+    # Get decending penalty
+    n_features = set_msk.size
+    nf_in_set = set_msk.sum()
+    dec = 1.0 / (n_features - nf_in_set)
+
     # Compute es
-    es = compute_es_per_rank(m, snet, rnks, set_msk)
+    mx_value, j, es = compute_es_per_rank(m.astype(np.float32), rnks.astype(np.int64), set_msk.astype(bool), dec)
 
     # Get leading edge features
-    abs_max_idx = np.argmax(np.abs(es))
-    es_max = es[abs_max_idx]
-    sign = np.sign(es_max)
+    sign = np.sign(mx_value)
     set_rnks = rnks[set_msk]
     if sign > 0:
-        le_c = c[set_rnks[set_rnks <= abs_max_idx]]
+        le_c = c[set_rnks[set_rnks <= j]]
     else:
-        le_c = c[set_rnks[set_rnks >= abs_max_idx]]
+        le_c = c[set_rnks[set_rnks >= j]]
 
     # Plot
-    fig, axes = plt.subplots(4, 1, gridspec_kw={'height_ratios': [4, 0.5, 0.5, 2]}, figsize=(3,3), sharex=True, dpi=150)
+    fig, axes = plt.subplots(4, 1, gridspec_kw={'height_ratios': [4, 0.5, 0.5, 2]}, figsize=(3, 3), sharex=True, dpi=150)
     axes = axes.ravel()
 
     # Plot random walk
     ax = axes[0]
     ax.margins(0.)
     ax.plot(rnks, es, color='#88c544', linewidth=2)
-    ax.axvline(rnks[abs_max_idx], linestyle='--', color='#88c544')
+    ax.axvline(rnks[j], linestyle='--', color='#88c544')
     ax.axhline(0, linestyle='--', color='#88c544')
     ax.set_ylabel('Enrichment Score')
     ax.set_title(set_name)
@@ -1264,7 +1251,7 @@ def plot_running_score(df, names, values, net, set_name, source='source', target
         norm=midnorm,
         cmap=cmap,
     )
-    ax.set_xlim(0, rnks.size-1) # Remove extreme to the right
+    ax.set_xlim(0, rnks.size-1)  # Remove extreme to the right
 
     # Plot ranks
     ax = axes[3]
@@ -1282,4 +1269,188 @@ def plot_running_score(df, names, values, net, set_name, source='source', target
     # Remove spaces
     fig.subplots_adjust(wspace=0, hspace=0)
 
-    return fig, le_c
+    save_plot(fig, ax, save)
+
+    if return_fig:
+        return fig, le_c
+
+
+def plot_barplot_df(df, x, y, color='gray', thr=None, thr_color='black', title=None, figsize=(3, 3),
+                    dpi=100, ax=None, return_fig=False, save=None, **kwargs):
+    """
+    Plot results of enrichment analysis as bars.
+
+    Parameters
+    ----------
+    df : DataFrame
+        Results of enrichment analysis.
+    x : str
+        Column name of ``df`` to use as continous value.
+    y : str
+        Column name of ``df`` to use as labels.
+    color : str
+        Color to plot the bars.
+    thr : float, None
+        If specified, x value where to draw a vertical dashed line.
+    thr_color : str
+        Color of the vertical dashed line.
+    title : str, None
+        Text to write as title of the plot.
+    figsize : tuple
+        Figure size.
+    dpi : int
+        DPI resolution of figure.
+    ax : Axes, None
+        A matplotlib axes object. If None returns new figure.
+    return_fig : bool
+        Whether to return a Figure object or not.
+    save : str, None
+        Path to where to save the plot. Infer the filetype if ending on {`.pdf`, `.png`, `.svg`}.
+    kwargs : dict
+        Other keyword arguments are passed through to ``matplotlib.pyplot.barh``.
+
+    Returns
+    -------
+    fig : Figure, None
+        If return_fig, returns Figure object.
+    """
+
+    # Load plotting packages
+    plt = check_if_matplotlib()
+
+    # Extract
+    x_val = df[x].values.copy()
+    y_val = df[y].values
+
+    # Sort
+    idx = np.argsort(x_val)
+    x_val = x_val[idx]
+    y_val = y_val[idx]
+
+    # Plot
+    fig = None
+    if ax is None:
+        fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=dpi)
+    ax.barh(y=y_val, width=x_val, color=color, **kwargs)
+    ax.set_xlabel(x)
+    ax.set_ylabel(y)
+    ax.margins(y=0.025)
+    if thr is not None:
+        ax.axvline(thr, linestyle='--', color=thr_color)
+    if title is not None:
+        ax.set_title(title)
+
+    save_plot(fig, ax, save)
+
+    if return_fig:
+        return fig
+
+
+def plot_dotplot(df, x, y, c, s, scale=5, cmap='viridis_r', title=None, figsize=(3, 5),
+                 dpi=100, ax=None, return_fig=False, save=None):
+    """
+    Plot results of enrichment analysis as dots.
+
+    Parameters
+    ----------
+    df : DataFrame
+        Results of enrichment analysis.
+    x : str
+        Column name of ``df`` to use as continous value.
+    y : str
+        Column name of ``df`` to use as labels.
+    c : str
+        Column name of ``df`` to use for coloring.
+    s : str
+        Column name of ``df`` to use for dot size.
+    scale : int
+        Parameter to control the size of the dots.
+    cmap : str
+        Colormap to use.
+    title : str, None
+        Text to write as title of the plot.
+    figsize : tuple
+        Figure size.
+    dpi : int
+        DPI resolution of figure.
+    ax : Axes, None
+        A matplotlib axes object. If None returns new figure.
+    return_fig : bool
+        Whether to return a Figure object or not.
+    save : str, None
+        Path to where to save the plot. Infer the filetype if ending on {`.pdf`, `.png`, `.svg`}.
+
+    Returns
+    -------
+    fig : Figure, None
+        If return_fig, returns Figure object.
+    """
+
+    # Load plotting packages
+    plt = check_if_matplotlib()
+
+    # Extract from df
+    x_vals = df[x].values
+    if y is not None:
+        y_vals = df[y].values
+    else:
+        y_vals = df.index.values
+    c_vals = df[c].values
+    s_vals = df[s].values
+
+    # Sort by x
+    idxs = np.argsort(x_vals)
+    x_vals = x_vals[idxs]
+    y_vals = y_vals[idxs]
+    c_vals = c_vals[idxs]
+    s_vals = s_vals[idxs]
+
+    fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=dpi)
+    ns = (s_vals * scale * plt.rcParams["lines.markersize"]) ** 2
+    ax.grid(axis='y')
+    scatter = ax.scatter(
+        x=x_vals,
+        y=y_vals,
+        c=c_vals,
+        s=ns,
+        cmap=cmap
+    )
+    ax.set_axisbelow(True)
+    ax.set_xlabel(x)
+
+    # Add legend
+    handles, labels = scatter.legend_elements(
+        prop="sizes",
+        num=3,
+        fmt="{x:.2f}",
+        func=lambda s: np.sqrt(s) / plt.rcParams["lines.markersize"] / scale
+    )
+    ax.legend(
+        handles,
+        labels,
+        title=s,
+        frameon=False,
+        bbox_to_anchor=(1.0, 0.9),
+        loc="upper left",
+        labelspacing=1.
+    )
+
+    # Add colorbar
+    clb = fig.colorbar(
+        scatter,
+        shrink=0.25,
+        aspect=10,
+        orientation='vertical',
+        anchor=(1., 0.2),
+        location="right"
+    )
+    clb.ax.set_title(c, loc="left",)
+    ax.margins(x=0.25, y=0.1)
+
+    if title is not None:
+        ax.set_title(title)
+
+    save_plot(fig, ax, save)
+
+    if return_fig:
+        return fig
