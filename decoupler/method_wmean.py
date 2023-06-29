@@ -5,6 +5,7 @@ Code to run the Weighted sum (WMEAN) method.
 
 import numpy as np
 import pandas as pd
+from scipy.sparse import csr_matrix
 
 from .pre import extract, match, rename_net, get_net_mat, filt_min_n
 from .method_gsea import std
@@ -63,13 +64,9 @@ def run_perm(estimate, mat, net, idxs, div, times, seed):
 
 def wmean(mat, net, times, batch_size, seed, verbose):
 
-    # Get number of batches
+    # Get dims
     n_samples = mat.shape[0]
     n_features, n_fsets = net.shape
-    n_batches = int(np.ceil(n_samples / batch_size))
-
-    if verbose:
-        print('Infering activities on {0} batches.'.format(n_batches))
 
     # Init empty acts
     estimate = np.zeros((n_samples, n_fsets), dtype=np.float32)
@@ -78,21 +75,27 @@ def wmean(mat, net, times, batch_size, seed, verbose):
         norm = np.zeros((n_samples, n_fsets), dtype=np.float32)
         corr = np.zeros((n_samples, n_fsets), dtype=np.float32)
         pvals = np.zeros((n_samples, n_fsets), dtype=np.float32)
+        idxs = np.arange(n_features, dtype=np.int64)
     else:
         norm, corr, pvals = None, None, None
 
-    for i in tqdm(range(n_batches), disable=not verbose):
+    if isinstance(mat, csr_matrix):
+        n_batches = int(np.ceil(n_samples / batch_size))
+        for i in tqdm(range(n_batches), disable=not verbose):
 
-        # Subset batch
-        srt, end = i*batch_size, i*batch_size+batch_size
-        tmp = mat[srt:end].A
+            # Subset batch
+            srt, end = i * batch_size, i * batch_size + batch_size
+            tmp = mat[srt:end].A
 
-        # Run WMEAN
-        estimate[srt:end] = tmp.dot(net) / div
+            # Run WMEAN
+            estimate[srt:end] = tmp.dot(net) / div
 
+            if times > 1:
+                norm[srt:end], corr[srt:end], pvals[srt:end] = run_perm(estimate[srt:end], tmp, net, idxs, div, times, seed)
+    else:
+        estimate = mat.dot(net) / div
         if times > 1:
-            idxs = np.arange(n_features, dtype=np.int64)
-            norm[srt:end], corr[srt:end], pvals[srt:end] = run_perm(estimate[srt:end], tmp, net, idxs, div, times, seed)
+            norm, corr, pvals = run_perm(estimate, mat, net, idxs, div, times, seed)
 
     return estimate, norm, corr, pvals
 
