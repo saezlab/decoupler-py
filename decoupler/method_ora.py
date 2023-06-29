@@ -7,11 +7,13 @@ import numpy as np
 import pandas as pd
 
 from numpy.random import default_rng
+from scipy.sparse import csr_matrix
 
 from scipy.stats import rankdata
 from math import log, exp, lgamma
 
 from .pre import extract, rename_net, filt_min_n
+from .utils import p_adjust_fdr
 
 from anndata import AnnData
 from tqdm import tqdm
@@ -19,7 +21,7 @@ from tqdm import tqdm
 import numba as nb
 
 
-@nb.njit(nb.f4(nb.i8, nb.i8, nb.i8, nb.i8), cache=True)
+@nb.njit(nb.f8(nb.i8, nb.i8, nb.i8, nb.i8), cache=True)
 def mlnTest2r(a, ab, ac, abcd):
     if 0 > a or a > ab or a > ac or ab + ac > abcd + a:
         raise ValueError('invalid contingency table')
@@ -47,7 +49,7 @@ def mlnTest2r(a, ab, ac, abcd):
         return max(0, pa - p0 - log(sr))
 
 
-@nb.njit(nb.f4(nb.i8, nb.i8, nb.i8, nb.i8), cache=True)
+@nb.njit(nb.f8(nb.i8, nb.i8, nb.i8, nb.i8), cache=True)
 def test1r(a, b, c, d):
     """
     Code adapted from:
@@ -57,13 +59,19 @@ def test1r(a, b, c, d):
     return exp(-mlnTest2r(a, a + b, a + c, a + b + c + d))
 
 
-@nb.njit(nb.f4[:](nb.i8[:], nb.i8[:], nb.i8[:], nb.i8[:], nb.i8), parallel=True, cache=True)
-def get_pvals(sample, net, starts, offsets, n_background):
+@nb.njit(nb.types.Tuple((nb.i8[:], nb.f8[:], nb.f8[:], nb.f8[:], nb.b1[:, :]))
+         (nb.i8[:], nb.i8[:], nb.i8[:], nb.i8[:], nb.i8, nb.i8), parallel=True, cache=True)
+def get_pvals(sample, net, starts, offsets, n_background, n_table):
 
     # Init vals
+    nfeatures = sample.size
     sample = set(sample)
     n_fsets = offsets.shape[0]
-    pvals = np.zeros(n_fsets, dtype=nb.f4)
+    sizes = np.zeros(n_fsets, dtype=nb.i8)
+    overlap_r = np.zeros(n_fsets, dtype=nb.f8)
+    odds_r = np.zeros(n_fsets, dtype=nb.f8)
+    pvals = np.zeros(n_fsets, dtype=nb.f8)
+    overlaps = np.zeros((n_fsets, n_table), dtype=nb.b1)
     for i in nb.prange(n_fsets):
 
         # Extract feature set
@@ -72,15 +80,22 @@ def get_pvals(sample, net, starts, offsets, n_background):
         fset = set(net[srt:off])
 
         # Build table
-        a = len(sample.intersection(fset))
+        overlap = np.array(list(sample.intersection(fset)), dtype=nb.i8)
+        a = len(overlap)
         b = len(fset.difference(sample))
         c = len(sample.difference(fset))
         d = n_background - a - b - c
 
         # Store
+        size = len(fset)
+        sizes[i] = size
+        overlaps[i][overlap] = True
+        overlap_r[i] = a / size
+        # Haldane-Anscombe correction
+        odds_r[i] = ((a + 0.5) * (n_background - size + 0.5)) / ((size + 0.5) * (nfeatures - a + 0.5))
         pvals[i] = test1r(a, b, c, d)
 
-    return pvals
+    return sizes, overlap_r, odds_r, pvals, overlaps
 
 
 def ora(mat, net, n_up_msk, n_bt_msk, n_background=20000, verbose=False):
@@ -92,101 +107,124 @@ def ora(mat, net, n_up_msk, n_bt_msk, n_background=20000, verbose=False):
     # Define starts to subset offsets
     starts = np.zeros(offsets.shape[0], dtype=np.int64)
     starts[1:] = np.cumsum(offsets)[:-1]
+    n_samples, n_features = mat.shape
 
     # Init empty
-    pvls = np.zeros((mat.shape[0], offsets.shape[0]), dtype=np.float32)
-    ranks = np.arange(mat.shape[1], dtype=np.int64)
-    for i in tqdm(range(mat.shape[0]), disable=not verbose):
+    pvls = np.zeros((n_samples, offsets.shape[0]), dtype=np.float64)
+    ranks = np.arange(n_features, dtype=np.int64)
+    for i in tqdm(range(n_samples), disable=not verbose):
+
+        if isinstance(mat, csr_matrix):
+            row = mat[i].A[0]
+        else:
+            row = mat[i]
 
         # Find ranks
-        sample = rankdata(mat[i].A, method='ordinal').astype(np.int64)
+        sample = rankdata(row, method='ordinal').astype(np.int64)
         sample = ranks[(sample > n_up_msk) | (sample < n_bt_msk)]
 
         # Estimate pvals
-        pvls[i] = get_pvals(sample, net, starts, offsets, n_background)
+        _, _, _, pvls[i], _ = get_pvals(sample, net, starts, offsets, n_background, n_features)
 
     return pvls
 
 
-def get_ora_df(df, net, groupby, features, source='source', target='target', n_background=20000, min_n=5, verbose=False):
+def extract_c(df):
+    if isinstance(df, pd.DataFrame):
+        c = np.unique(df.index.values.astype('U'))
+    elif isinstance(df, list):
+        c = np.array(df, dtype='U')
+    elif isinstance(df, np.ndarray):
+        c = df.astype('U')
+    elif isinstance(df, pd.Index):
+        c = df.values.astype('U')
+    else:
+        raise ValueError("df must be a dataframe with significant features as indexes, or a list/array of features.")
+    return c
+
+
+def get_ora_df(df, net, source='source', target='target', n_background=20000, verbose=False):
     """
-    Wrapper to run ORA without an input matrix, instead it uses an input DataFrame in long format with one group columns
-    and the significant features in another. Useful for results of differential analysis where no mat is available.
+    Wrapper to run ORA for results of differential analysis (long format dataframe).
 
     Parameters
     ----------
-    df : DataFrame
-        Long format DataFrame with groups and significant features.
+    df : DataFrame, list, ndarray
+        Long format DataFrame with significant features to be tested as indexes, or a list/ndarray with significant features.
     net : DataFrame
         Network in long format.
-    groupby : str
-        Column name in df with groups.
-    features : str
-        Column name in df with significant features.
     source : str
         Column name in net with source nodes.
     target : str
         Column name in net with target nodes.
     n_background : int
-        Integer indicating the background size.
-    min_n : int
-        Minimum of targets per source. If less, sources are removed.
+        Integer indicating the background size. If not specified the background is the targets of ``net``.
     verbose : bool
         Whether to show progress.
 
     Returns
     -------
-    pvals : DataFrame
-        Obtained p-values per group and source.
+    results : DataFrame
+        Results of ORA.
     """
 
-    # Extract
+    # Extract feature names
     df = df.copy()
-    cols = df.columns
-    if groupby not in cols:
-        raise ValueError('Column name "{0}" for groupby not found in df. Please specify a valid column.'.format(groupby))
-    if features not in cols:
-        raise ValueError('Column name "{0}" for features not found in df. Please specify a valid column.'.format(features))
-    c = np.unique(df[features].values)
+    c = extract_c(df)
 
     # Transform net
     net = rename_net(net, source=source, target=target, weight=None)
-    net = filt_min_n(c, net, min_n=min_n)
+
+    # Generate background
+    unq_net = np.unique(net['target'].values.astype('U'))
+    if n_background is None:
+        n_background = unq_net.size
+        # Filter
+        msk = np.isin(c, unq_net)
+        c = c[msk]
+        if c.size == 0:
+            raise ValueError("""No features in df match with the target features of net. Check that df contains enough
+            features or that you have specified the correct 'target' column in net.""")
+    elif not isinstance(n_background, int):
+        raise ValueError("n_background must be a positive integer or None.")
 
     # Transform targets to indxs
-    table = {name: i for i, name in enumerate(c)}
+    all_f = np.unique(np.hstack([unq_net, c]))
+    table = {name: i for i, name in enumerate(all_f)}
     net['target'] = [table[target] for target in net['target']]
-    df[features] = [table[target] for target in df[features]]
-
-    # Transform to groups
+    idxs = np.array([table[name] for name in c], dtype=np.int64)
     net = net.groupby('source')['target'].apply(lambda x: np.array(x, dtype=np.int64))
-    df = df.groupby(groupby)[features].apply(lambda x: np.array(x, dtype=np.int64))
-    srcs = net.index.values
-    grps = df.index.values
-
+    if verbose:
+        print('Running ora on df with {0} targets for {1} sources with {2} background features.'.format(len(c), len(net),
+                                                                                                        n_background))
     # Flatten net and get offsets
     offsets = net.apply(lambda x: len(x)).values.astype(np.int64)
+    terms = net.index.values.astype('U')
     net = np.concatenate(net.values)
 
     # Define starts to subset offsets
     starts = np.zeros(offsets.shape[0], dtype=np.int64)
     starts[1:] = np.cumsum(offsets)[:-1]
+    n_features = all_f.size
 
-    # Init empty
-    pvals = np.zeros((grps.size, srcs.size), dtype=np.float32)
-    for i in tqdm(range(grps.size), disable=not verbose):
+    # Estimate pvals
+    sizes, overlap_r, odds_r, pvls, overlap = get_pvals(idxs, net, starts, offsets, n_background, n_features)
 
-        # Extract idxs per group
-        idxs = df.iloc[i]
-
-        # Estimate pvals
-        pvals[i] = get_pvals(idxs, net, starts, offsets, n_background)
+    # Cover limit float
+    msk = pvls != 0.
+    min_p = np.min(pvls[msk])
+    pvls[~msk] = min_p
 
     # Transform to df
-    pvals = pd.DataFrame(pvals, index=grps, columns=srcs)
-    pvals.name = 'ora_pvals'
+    res = []
+    for i in range(terms.size):
+        if overlap_r[i] > 0:
+            res.append([terms[i], sizes[i], overlap_r[i], pvls[i], odds_r[i], ';'.join(all_f[overlap[i]])])
+    res = pd.DataFrame(res, columns=['Term', 'Set size', 'Overlap ratio', 'p-value', 'Odds ratio', 'Features'])
+    res.insert(4, 'FDR p-value', p_adjust_fdr(res['p-value'].values))
+    res.insert(6, 'Combined score', -np.log(res['p-value'].values) * res['Odds ratio'].values)
 
-    return pvals
+    return res
 
 
 def run_ora(mat, net, source='source', target='target', n_up=None, n_bottom=0, n_background=20000, min_n=5, seed=42,
