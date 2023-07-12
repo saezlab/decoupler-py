@@ -226,7 +226,7 @@ def compute_psbulk(n_rows, n_cols, X, sample_col, groups_col, smples, groups, ob
             count = np.sum(profile)
             ncells[i] = ncell
             counts[i] = count
-            if ncell < min_cells or count < min_counts:
+            if ncell < min_cells or np.abs(count) < min_counts:
                 i += 1
                 continue
 
@@ -261,7 +261,7 @@ def compute_psbulk(n_rows, n_cols, X, sample_col, groups_col, smples, groups, ob
                 count = np.sum(profile)
                 ncells[i] = ncell
                 counts[i] = count
-                if ncell < min_cells or count < min_counts:
+                if ncell < min_cells or np.abs(count) < min_counts:
                     i += 1
                     continue
 
