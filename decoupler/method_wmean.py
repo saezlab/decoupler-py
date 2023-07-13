@@ -103,7 +103,7 @@ def wmean(mat, net, times, batch_size, seed, verbose):
 def run_wmean(mat, net, source='source', target='target', weight='weight', times=1000, batch_size=10000, min_n=5, seed=42,
               verbose=False, use_raw=True):
     """
-    Weighted sum (WMEAN).
+    Weighted mean (WMEAN).
 
     WMEAN infers regulator activities by performing the weighted sum of the targets and weights, divided by the
     absolute sum of the weights to obtain an enrichment score (`wmean_estimate`). Furthermore, permutations of random
