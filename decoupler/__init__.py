@@ -6,6 +6,7 @@ from .utils import melt, show_methods, check_corr, get_toy_data, summarize_acts,
 from .utils import dense_run, p_adjust_fdr, shuffle_net, read_gmt  # noqa: F401
 from .utils_anndata import get_acts, swap_layer, get_pseudobulk, get_contrast, rank_sources_groups  # noqa: F401
 from .utils_anndata import get_top_targets, format_contrast_results, filter_by_expr, filter_by_prop  # noqa: F401
+from .utils_anndata import get_metadata_associations # noqa: F401
 from .method_wmean import run_wmean  # noqa: F401
 from .method_wsum import run_wsum  # noqa: F401
 from .method_ulm import run_ulm  # noqa: F401
@@ -25,6 +26,7 @@ from .plotting import plot_volcano, plot_violins, plot_barplot, plot_metrics_sca
 from .plotting import plot_metrics_scatter_cols, plot_psbulk_samples, plot_filter_by_expr, plot_filter_by_prop  # noqa: F401
 from .plotting import plot_volcano_df, plot_targets, plot_running_score  # noqa: F401
 from .plotting import plot_dotplot, plot_barplot_df  # noqa: F401
+from .plotting import plot_associations # noqa: F401
 from .benchmark import benchmark, format_benchmark_inputs, get_performances  # noqa: F401
 from .utils_benchmark import get_toy_benchmark_data, show_metrics  # noqa: F401
 from .metrics import metric_auroc, metric_auprc, metric_mcauroc, metric_mcauprc  # noqa: F401
