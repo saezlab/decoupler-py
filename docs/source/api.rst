@@ -76,6 +76,7 @@ AnnData utils:
    format_contrast_results
    filter_by_expr
    filter_by_prop
+   get_metadata_associations
    
 Omnipath wrappers:
 ------------------
@@ -104,6 +105,10 @@ Plotting
    plot_filter_by_prop
    plot_volcano_df
    plot_targets
+   plot_running_score
+   plot_barplot_df
+   plot_dotplot
+   plot_associations
 
 Metrics
 -------

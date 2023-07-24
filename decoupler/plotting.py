@@ -1505,6 +1505,7 @@ def _check_assoc_plot_intputs(data, associations, cols, uns_key, obsm_key, use_X
 def plot_associations(data, uns_key, associations = None, cols = None, obs_annotation_cols = None, obsm_key=None, use_X = False, layer= None, stat_col = 'p_adj', titles = ['Scores', 'Stats'], scores_kwargs = {}, stats_kwargs = {}):
     """
     Create a composite plot displaying association results between scores (bottom) and summary statistics (top) using a ClusterMap.
+    
     Requires PyComplexHeatmap to be installed.
     
     Parameters:
