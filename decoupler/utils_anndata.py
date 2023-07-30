@@ -972,9 +972,9 @@ def _check_anova_inputs(data, obs_keys = None, obsm_key=None, use_X = False, lay
 def get_metadata_associations(data, obs_keys = None, obsm_key=None, use_X = False, layer = None,  uns_key = None, inplace = False, alpha = 0.05, method = 'fdr_bh'):
     
     """
-    Associate the data to sample metadata using ANOVA.
+    Associate the data to sample metadata using ANOVA. The data can be any kind of embedding stored in a layer, obsm or X matrix.
     
-    Requires statsmodels to be installed
+    Requires statsmodels to be installed.
 
     Parameters
     ----------
