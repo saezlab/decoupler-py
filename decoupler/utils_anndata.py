@@ -4,7 +4,7 @@ Functions to process AnnData objects.
 """
 
 import numpy as np
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_matrix, issparse
 import pandas as pd
 import sys
 
@@ -115,8 +115,13 @@ def extract_psbulk_inputs(adata, obs, layer, use_raw):
 
     # Sort genes
     msk = np.argsort(var.index)
+    X = X[:, msk]
+    var = var.iloc[msk]
 
-    return X[:, msk], obs, var.iloc[msk]
+    if issparse(X) and not isinstance(X, csr_matrix):
+        X = csr_matrix(X)
+
+    return X, obs, var
 
 
 def check_X(X, mode='sum', skip_checks=False):

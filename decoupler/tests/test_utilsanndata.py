@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 import pandas as pd
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_matrix, csc_matrix
 from anndata import AnnData
 from ..utils_anndata import get_acts, swap_layer, extract_psbulk_inputs, check_X
 from ..utils_anndata import format_psbulk_inputs, psbulk_profile, compute_psbulk, get_unq_dict, get_pseudobulk
@@ -68,6 +68,9 @@ def test_extract_psbulk_inputs():
         extract_psbulk_inputs(adata, obs=None, layer=None, use_raw=True)
     with pytest.raises(ValueError):
         extract_psbulk_inputs(df, obs=None, layer=None, use_raw=False)
+    csc_adata = adata.copy()
+    csc_adata.X = csc_matrix(csc_adata.X).copy()
+    extract_psbulk_inputs(csc_adata, obs=None, layer=None, use_raw=False)
 
 
 def test_check_X():
