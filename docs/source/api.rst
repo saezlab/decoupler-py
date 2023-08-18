@@ -87,6 +87,7 @@ Omnipath wrappers:
    get_resource
    get_progeny
    get_dorothea
+   get_collectri
    translate_net
    
 Plotting
