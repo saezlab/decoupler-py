@@ -2,7 +2,7 @@
 <!-- badges: start -->
 [![main](https://github.com/saezlab/decoupler-py/actions/workflows/main.yml/badge.svg)](https://github.com/saezlab/decoupler-py/actions)
 [![GitHub issues](https://img.shields.io/github/issues/saezlab/decoupler-py.svg)](https://github.com/saezlab/decoupler-py/issues/)
-[![Downloads](https://pepy.tech/badge/decoupler)](https://pepy.tech/project/decoupler)
+[![Downloads](https://static.pepy.tech/badge/decoupler)](https://pepy.tech/project/decoupler)
 [![Documentation Status](https://readthedocs.org/projects/decoupler-py/badge/?version=latest)](https://decoupler-py.readthedocs.io/en/latest/?badge=latest)
 [![codecov](https://codecov.io/gh/saezlab/decoupler-py/branch/main/graph/badge.svg?token=TM0P29KKN5)](https://codecov.io/gh/saezlab/decoupler-py)
 <!-- badges: end -->
