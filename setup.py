@@ -18,6 +18,7 @@ setup(
     install_requires=["numba",
                       "tqdm",
                       "anndata",
+                      "seaborn",
                       "typing_extensions"],
     packages=["decoupler"],
     python_requires=">=3.6",
