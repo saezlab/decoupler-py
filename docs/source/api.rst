@@ -77,6 +77,7 @@ AnnData utils:
    filter_by_expr
    filter_by_prop
    get_metadata_associations
+   rank_sources_groups
    
 Omnipath wrappers:
 ------------------
@@ -144,3 +145,4 @@ Other
    :toctree: generated
    
    get_ora_df
+   get_gsea_df

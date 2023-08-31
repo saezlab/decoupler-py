@@ -7,14 +7,18 @@ Release notes
 Bug fixes
 ~~~~~~~~~
 - ``run_mlm`` now uses the correct number of degrees of freedom to compute the t-value (one less than before), scores might change slightly.
+- ``rank_sources_groups`` now handles ``nan`` p-value results and skips whenever the group is equal to the reference.
+- ``get_pseudobulk`` now handles any sparse matrix format, can use individual ``lambda`` functions as ``mode`` and handles negative values when filtering for ``min_counts`` and ``min_cells``.
+- Plotting functions with a grid now show it below dots instead of above.
 
 Changes
 ~~~~~~~
 - All functions that deal with ``mat`` now do not enforce ``csr_matrix`` format automatically.
-- The benchmark pipeline now properly handles methods that provide only positive enrichment scores.
+- The benchmark pipeline now handles methods that provide only positive enrichment scores. Also added support for ``nan`` scores.
 - Modified ``get_ora_df`` to make it easier to use results of differential expression analysis, now returns different statistics.
 - ``gsea`` normalized score now is computed as in the original publication ``(ES+/mean(null+) and ES-/mean(null-))`` instead of ``(ES - mean(null)) / sd(null)``.
 - ``run_ulm`` now runs faster.
+- ``get_collectri`` now returns the PMIDs supporting each interaction when available.
 
 Additions
 ~~~~~~~~~
@@ -22,6 +26,7 @@ Additions
 - Added ``plot_dotplot`` function to plot results of ``get_ora_df``.
 - Added ``plot_barplot_df`` function to plot results of ``get_ora_df``.
 - Added ``plot_running_score`` function to plot results of ``get_gsea_df``.
+- Added ``plot_associations`` function to check for significant covariates in the metadata.
 
 1.4.0
 -----
