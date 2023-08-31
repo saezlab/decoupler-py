@@ -372,7 +372,7 @@ def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=
                 psbulks.append(psbulk)
         layers = {k: v for k, v in zip(mode.keys(), psbulks)}
         layers['psbulk_props'] = props
-    elif type(mode) is str:
+    elif type(mode) is str or callable(mode):
         # Compute psbulk
         psbulk, ncells, counts, props = compute_psbulk(n_rows, n_cols, X, sample_col, groups_col, smples, groups, obs,
                                                        new_obs, min_cells, min_counts, mode, dtype)
@@ -821,7 +821,7 @@ def rank_sources_groups(adata, groupby, reference='rest', method='t-test_overest
 
     Returns
     -------
-    results: DataFrame with changes in source activity between groups.
+    results: DataFrame with changes in source activity score between groups.
     """
 
     from scipy.stats import ranksums, ttest_ind_from_stats
@@ -850,6 +850,10 @@ def rank_sources_groups(adata, groupby, reference='rest', method='t-test_overest
             ref = ', '.join(reference)
 
         assert np.sum(ref_msk) > 0, 'No reference samples found for {0}'.format(reference)
+
+        # Skip if same than ref
+        if group == ref:
+            continue
 
         # Test differences
         result = []
@@ -892,7 +896,7 @@ def rank_sources_groups(adata, groupby, reference='rest', method='t-test_overest
         )
 
         # Correct pvalues by FDR
-        result[np.isnan(result['pvals'])] = 1
+        result.loc[np.isnan(result['pvals']), 'pvals'] = 1
         result['pvals_adj'] = p_adjust_fdr(result['pvals'].values)
 
         # Sort and save
@@ -904,9 +908,10 @@ def rank_sources_groups(adata, groupby, reference='rest', method='t-test_overest
 
     return results.reset_index(drop=True)
 
+
 def _check_anova_inputs(data, obs_keys = None, obsm_key=None, use_X = False, layer = None):
 
-# check that data is not None
+    # check that data is not None
     assert data is not None, 'data cannot be None'
 
     # check whether data is a list, of size 2
@@ -917,12 +922,12 @@ def _check_anova_inputs(data, obs_keys = None, obsm_key=None, use_X = False, lay
         assert isinstance(data[1], pd.DataFrame), 'data[1] must be a pd.DataFrame instance'
         #both data[0] and data[1] must have the same index
         assert data[0].index.equals(data[1].index), 'data[0] and data[1] must have the same index'
-        
+
         dependent_variables = data[0].columns
         explanatory_variables = data[1].columns
         scores = data[0]
         obs = data[1]
-    
+
     elif hasattr(data, 'obs'):
         assert isinstance(data.obs, pd.DataFrame), 'data.obs must be a pd.DataFrame instance'
         obs = data.obs
@@ -942,7 +947,7 @@ def _check_anova_inputs(data, obs_keys = None, obsm_key=None, use_X = False, lay
             assert hasattr(data, 'layers'), 'data must have a .layers attribute'
             assert layer in data.layers.keys(), 'layer must be a key in data.layers'
             scores = pd.DataFrame(data.layers[layer], index=data.obs.index, columns=data.var.index)
-            
+
         assert scores.index.equals(obs.index), 'scores and obs must have the same index'
         dependent_variables = scores.columns
         explanatory_variables = obs.columns
@@ -964,14 +969,8 @@ def _check_anova_inputs(data, obs_keys = None, obsm_key=None, use_X = False, lay
 
     # merge scores and obs
     scores = pd.merge(scores, obs, left_index=True, right_index=True)
-    
+
     return scores, list(dependent_variables), list(explanatory_variables)
-
-
-
-
-
-
 
 
 def get_metadata_associations(data, obs_keys = None, obsm_key=None, use_X = False, layer = None,  uns_key = None, inplace = False, alpha = 0.05, method = 'fdr_bh'):
