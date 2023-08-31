@@ -409,7 +409,8 @@ def get_collectri(
     -------
     ct : DataFrame
         Dataframe in long format containing target genes for each TF with
-        their associated weights.
+        their associated weights, and if available, the PMIDs supporting
+        each interaction.
     """
 
     _organism = (
@@ -429,7 +430,7 @@ def get_collectri(
 
     # Separate gene_pairs from normal interactions
     msk = np.array([s.startswith('COMPLEX') for s in ct['source']])
-    cols = ['source_genesymbol', 'target_genesymbol', 'is_stimulation', 'is_inhibition']
+    cols = ['source_genesymbol', 'target_genesymbol', 'is_stimulation', 'is_inhibition', 'references_stripped']
     ct_inter = ct.loc[~msk, cols]
     ct_cmplx = ct.loc[msk, cols].copy()
 
@@ -463,8 +464,8 @@ def get_collectri(
     ct['weight'] = weights
 
     # Select and rename columns
-    ct = ct.rename(columns={'source_genesymbol': 'source', 'target_genesymbol': 'target'})
-    ct = ct[['source', 'target', 'weight']]
+    ct = ct.rename(columns={'source_genesymbol': 'source', 'target_genesymbol': 'target', 'references_stripped': 'PMID'})
+    ct = ct[['source', 'target', 'weight', 'PMID']]
 
     if _organism not in ('mouse', 'rat') and not _is_human(organism):
 
