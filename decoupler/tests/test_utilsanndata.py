@@ -544,15 +544,19 @@ def test_rank_sources_groups():
 
     df = rank_sources_groups(acts, groupby='group', reference='A',
                              method='t-test')
-    assert df.shape[0] == 9
-    assert np.all(df['statistic'][:3] == 0.)
-    assert np.all(df['statistic'][3:] != 0.)
+    assert df.shape[0] == 6
 
     df = rank_sources_groups(acts, groupby='group', reference=['A', 'B', 'C'],
                              method='t-test')
     assert df.shape[0] == 9
     assert np.all((df['statistic'].values > 1.7) == gt_up)
     assert np.all((df['statistic'].values < -1.7) == gt_dw)
+
+    df = rank_sources_groups(acts, groupby='group', reference='C',
+                             method='wilcoxon')
+
+    assert df.shape[0] == 6
+    assert np.all(df['group'].values != 'C')
 
     with pytest.raises(ValueError):
         rank_sources_groups(acts, groupby='group', reference=['A', 'B', 'C'],
