@@ -909,7 +909,7 @@ def rank_sources_groups(adata, groupby, reference='rest', method='t-test_overest
     return results.reset_index(drop=True)
 
 
-def _check_anova_inputs(data, obs_keys = None, obsm_key=None, use_X = False, layer = None):
+def _check_anova_inputs(data, obs_keys=None, obsm_key=None, use_X=False, layer=None):
 
     # check that data is not None
     assert data is not None, 'data cannot be None'
@@ -917,10 +917,10 @@ def _check_anova_inputs(data, obs_keys = None, obsm_key=None, use_X = False, lay
     # check whether data is a list, of size 2
     if isinstance(data, list):
         assert len(data) == 2, 'data must be a list of size 2'
-        #both elements in data must be pd.Dataframe instances
+        # both elements in data must be pd.Dataframe instances
         assert isinstance(data[0], pd.DataFrame), 'data[0] must be a pd.DataFrame instance'
         assert isinstance(data[1], pd.DataFrame), 'data[1] must be a pd.DataFrame instance'
-        #both data[0] and data[1] must have the same index
+        # both data[0] and data[1] must have the same index
         assert data[0].index.equals(data[1].index), 'data[0] and data[1] must have the same index'
 
         dependent_variables = data[0].columns
@@ -934,12 +934,14 @@ def _check_anova_inputs(data, obs_keys = None, obsm_key=None, use_X = False, lay
         if obsm_key is None and not use_X and layer is None:
             raise ValueError('When providing an AnnData or MuData object, either obsm_key, use_X or layer must be specified')
         elif (obsm_key is not None and use_X) or (obsm_key is not None and layer is not None) or (use_X and layer is not None):
-            raise ValueError('When providing an AnnData or MuData object, only one of obsm_key, use_X or layer must be specified')
+            raise ValueError('When providing an AnnData or MuData object, only one of obsm_key, \
+                             use_X or layer must be specified')
         elif obsm_key is not None:
             assert hasattr(data, 'obsm'), 'data must have an .obsm attribute'
             assert obsm_key in data.obsm.keys(), 'obsm_key must be a key in data.obsm'
             column_name = obsm_key.replace('X_', '').replace('pca', 'PC').replace('mofa', 'Factor').replace('umap', 'UMAP')
-            scores = pd.DataFrame(data.obsm[obsm_key], index=data.obs.index, columns=['{0}{1}'.format(column_name, 1 + x) for x in range(data.obsm[obsm_key].shape[1])])
+            scores = pd.DataFrame(data.obsm[obsm_key], index=data.obs.index,
+                                  columns=['{0}{1}'.format(column_name, 1 + x) for x in range(data.obsm[obsm_key].shape[1])])
         elif use_X:
             assert hasattr(data, 'X'), 'data must have a .X attribute'
             scores = pd.DataFrame(data.X, index=data.obs.index, columns=data.var.index)
@@ -961,11 +963,13 @@ def _check_anova_inputs(data, obs_keys = None, obsm_key=None, use_X = False, lay
     obs = obs.filter(obs_keys, axis=1)
     explanatory_variables = obs_keys
 
-    #check that there are no . in the dependent and explanatory variables
+    # check that there are no . in the dependent and explanatory variables
     assert all(['.' not in var for var in dependent_variables]), 'column names of dependent variables cannot contain .'
-    assert all(['.' not in var for var in explanatory_variables]), 'column names of explanatory variables (obs) cannot contain .'
+    assert all(['.' not in var for var in explanatory_variables]), 'column names of explanatory variables \
+    (obs) cannot contain .'
     # check there is no overlap of column names between dependent and explanatory variables
-    assert len([value for value in dependent_variables if value in explanatory_variables]) == 0, 'dependent and explanatory variables cannot have the same column names'
+    assert len([value for value in dependent_variables if value in explanatory_variables]) == 0, 'dependent and explanatory \
+    variables cannot have the same column names'
 
     # merge scores and obs
     scores = pd.merge(scores, obs, left_index=True, right_index=True)
@@ -973,94 +977,17 @@ def _check_anova_inputs(data, obs_keys = None, obsm_key=None, use_X = False, lay
     return scores, list(dependent_variables), list(explanatory_variables)
 
 
-def get_metadata_associations(data, obs_keys = None, obsm_key=None, use_X = False, layer = None,  uns_key = None, inplace = False, alpha = 0.05, method = 'fdr_bh'):
-    
-    """
-    Associate the data to sample metadata using ANOVA. The data can be any kind of embedding stored in a layer, obsm or X matrix.
-    
-    Requires statsmodels to be installed.
-
-    Parameters
-    ----------
-    
-        data : list, AnnData or MuData
-            The input data for ANOVA testing. It can be either a list of two pandas DataFrames [data, obs], an AnnData or MuData object.
-        obs_keys: list, optional
-            Column names of obs (sample metadata) which should be tested. If not provided, all columns in obs will be used.
-        obsm_key : str, optional
-            A key specifying where in obsm the data is located when providing an AnnData/MuData object. Either `obsm_key`, `use_X`, or `layer` must be specified.
-        use_X : bool, optional
-            A boolean flag indicating whether to use the data in `.X` from the AnnData/MuData object when providing the `data`. Either `obsm_key`, `use_X`, or `layer` must be specified.
-        layer : str, optional
-            Which layer to use when providing an AnnData/MuData object. Either `obsm_key`, `use_X`, or `layer` must be specified.
-        uns_key : str, optional 
-            Where results will be stored the AnnData/MuData object.
-        inplace : bool, optional
-            Whether to store the results in the AnnData or MuData object. If `False`, the function returns a pandas DataFrame with the results.
-        alpha : float, optional
-            The significance level for multiple testing correction (default is 0.05).
-        method : (str, optional): 
-            The method used for multiple testing correction. It can be one of the methods supported by `statsmodels.stats.multitest.multipletests` (default is `'fdr_bh'`, i.e., Benjamini-Hochberg method).
-
-    Returns:
-        results: pd.DataFrame
-            DataFrame with ANOVA results. If `data` is an AnnData or MuData object and `inplace` is `True`, the results are stored in `data.uns[uns_key]`.
-
-    """
-    
+def check_if_statsmodels():
     try:
         import statsmodels.api as sm
         from statsmodels.formula.api import ols
         from statsmodels.stats.multitest import multipletests
+        return sm, ols, multipletests
     except Exception:
-        raise ImportError(
-            'statsmodels is not installed. Please install it.'
-        )
+        raise ImportError('statsmodels is not installed. Please install it.')
 
-    scores, dependent_variables, explanatory_variables = _check_anova_inputs(data, obs_keys = obs_keys, obsm_key=obsm_key, use_X = use_X, layer = layer)
 
-    # for each dependent variable, test the association with the other columns in scores using an ANOVA, collect p-values and eta_sq in a dataframe
-    for dependent in tqdm(dependent_variables):
-        stats = []
-        for explainer in explanatory_variables:
-            # check the data type of the column
-            if scores[explainer].dtype == 'object' or scores[explainer].dtype == 'category':
-                # if it is a string, the explanatory variable is a categorical variable
-                var_name = 'C({0})'.format(explainer)
-            # if it is a float or integer, the explanatory variable is a continuous variable
-            elif scores[explainer].dtype == 'float' or scores[explainer].dtype == 'int':
-                var_name = '{0}'.format(explainer)
-            # else raise an error
-            else:
-                raise ValueError('Column {0} has an unknown data type. Make sure it is either categorical/object or float/int'.format(explainer))
-
-            # create the formula
-            formula = '{0} ~ {1}'.format(dependent, var_name)
-
-            # fit the model
-            mod = ols(formula , data = scores.filter([dependent, explainer], axis=1)).fit()
-            # get the ANOVA table
-            try:
-                aov_table = sm.stats.anova_lm(mod, typ=2)
-            except ValueError:
-                print('WARNING: could not compute ANOVA for {0} and {1}'.format(dependent, explainer))
-                row = [explainer, np.nan, np.nan]
-            else:
-                # compute eta squared from anova table
-                eta_sq = aov_table.loc[var_name, 'sum_sq']/aov_table.sum(axis=0)['sum_sq'] # eta squared = SS from explanatory variable / SStotal (i.e. sum of all SS from variables plus residual SS)
-                row = [explainer, aov_table['PR(>F)'][0], eta_sq]
-            stats.append(row)
-
-        stats = pd.DataFrame(stats, columns=['variable', 'pval', 'eta_sq']).set_index('variable')
-        stats['factor'] = dependent
-        if dependent_variables.index(dependent) == 0:
-            stats_df = stats.copy()
-        else:
-            stats_df = pd.concat([stats_df, stats], axis=0, join='outer', sort=False)
-
-    stats_df = stats_df.reset_index()
-    stats_df['p_adj'] = np.stack(stats_df.groupby('factor').apply(lambda df: multipletests(df['pval'], alpha = alpha, method = method, returnsorted=False)[1]).values).flatten()
-
+def format_assoc_results(data, stats_df, inplace, obsm_key, uns_key, use_X, layer):
     if isinstance(data, list):
         return stats_df
     elif inplace:
@@ -1077,3 +1004,108 @@ def get_metadata_associations(data, obs_keys = None, obsm_key=None, use_X = Fals
             data.uns[key] = stats_df
     else:
         return stats_df
+
+
+def get_metadata_associations(data, obs_keys=None, obsm_key=None, use_X=False, layer=None, uns_key=None, inplace=False,
+                              alpha=0.05, method='fdr_bh'):
+    """
+    Associate the data to sample metadata using ANOVA. The data can be any kind of embedding stored in a layer,
+    obsm or X matrix.
+
+    Requires statsmodels to be installed.
+
+    Parameters
+    ----------
+    data : list, AnnData or MuData
+        The input data for ANOVA testing. It can be either a list of two pandas DataFrames [data, obs],
+        an AnnData or MuData object.
+    obs_keys: list, optional
+        Column names of obs (sample metadata) which should be tested. If not provided, all columns in obs will be used.
+    obsm_key : str, optional
+        A key specifying where in obsm the data is located when providing an AnnData/MuData object. Either
+        ``obsm_key``, ``use_X``, or ``layer`` must be specified.
+    use_X : bool, optional
+        A boolean flag indicating whether to use the data in ``.X`` from the AnnData/MuData object when providing
+        the ``data``. Either ``obsm_key``, ``use_X``, or ``layer`` must be specified.
+    layer : str, optional
+        Which layer to use when providing an AnnData/MuData object. Either ``obsm_key``,
+        ``use_X``, or ``layer`` must be specified.
+    uns_key : str, optional
+        Where results will be stored the AnnData/MuData object.
+    inplace : bool, optional
+        Whether to store the results in the AnnData or MuData object. If ``False``, the function returns a pandas
+        DataFrame with the results.
+    alpha : float, optional
+        The significance level for multiple testing correction (default is 0.05).
+    method : (str, optional):
+        The method used for multiple testing correction. It can be one of the methods supported by
+        ``statsmodels.stats.multitest.multipletests`` (default is ``fdr_bh``, i.e., Benjamini-Hochberg method).
+
+    Returns
+    -------
+    results: pd.DataFrame
+        DataFrame with ANOVA results. If ``data`` is an AnnData or MuData object and ``inplace`` is ``True``,
+        the results are stored in ``data.uns[uns_key]``.
+    """
+
+    sm, ols, multipletests = check_if_statsmodels()
+
+    scores, dependent_variables, explanatory_variables = _check_anova_inputs(
+        data,
+        obs_keys=obs_keys,
+        obsm_key=obsm_key,
+        use_X=use_X,
+        layer=layer
+    )
+
+    # for each dependent variable, test the association with the other columns in scores using an ANOVA
+    # collect p-values and eta_sq in a dataframe
+    for dependent in tqdm(dependent_variables):
+        stats = []
+        for explainer in explanatory_variables:
+            # check the data type of the column
+            if scores[explainer].dtype == 'object' or scores[explainer].dtype == 'category':
+                # if it is a string, the explanatory variable is a categorical variable
+                var_name = 'C({0})'.format(explainer)
+            # if it is a float or integer, the explanatory variable is a continuous variable
+            elif scores[explainer].dtype == 'float' or scores[explainer].dtype == 'int':
+                var_name = '{0}'.format(explainer)
+            # else raise an error
+            else:
+                raise ValueError('Column {0} has an unknown data type. Make sure it is either \
+                categorical/object or float/int'.format(explainer))
+
+            # create the formula
+            formula = '{0} ~ {1}'.format(dependent, var_name)
+
+            # fit the model
+            mod = ols(formula, data=scores.filter([dependent, explainer], axis=1)).fit()
+            # get the ANOVA table
+            try:
+                aov_table = sm.stats.anova_lm(mod, typ=2)
+            except ValueError:
+                print('WARNING: could not compute ANOVA for {0} and {1}'.format(dependent, explainer))
+                row = [explainer, np.nan, np.nan]
+            else:
+                # compute eta squared from anova table
+                eta_sq = aov_table.loc[var_name, 'sum_sq'] / aov_table.sum(axis=0)['sum_sq']
+                # eta squared = SS from explanatory variable / SStotal (i.e. sum of all SS from variables plus residual SS)
+                row = [explainer, aov_table['PR(>F)'][0], eta_sq]
+            stats.append(row)
+
+        stats = pd.DataFrame(stats, columns=['variable', 'pval', 'eta_sq']).set_index('variable')
+        stats['factor'] = dependent
+        if dependent_variables.index(dependent) == 0:
+            stats_df = stats.copy()
+        else:
+            stats_df = pd.concat([stats_df, stats], axis=0, join='outer', sort=False)
+
+    stats_df = stats_df.reset_index()
+    stats_df['p_adj'] = np.stack(
+        stats_df
+        .groupby('factor')
+        .apply(lambda df: multipletests(df['pval'], alpha=alpha, method=method, returnsorted=False)[1])
+        .values
+    ).flatten()
+
+    return format_assoc_results(data, stats_df, inplace, obsm_key, uns_key, use_X, layer)

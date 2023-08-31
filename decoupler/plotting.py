@@ -1459,21 +1459,23 @@ def plot_dotplot(df, x, y, c, s, scale=5, cmap='viridis_r', title=None, figsize=
     if return_fig:
         return fig
 
+
 def _check_assoc_plot_intputs(data, associations, cols, uns_key, obsm_key, use_X, layer, stat_col):
     # check that the data is a panda frame or has an .uns attribute
-    assert hasattr(data, 'uns') and (hasattr(data, 'obsm') or hasattr(data, 'X') or hasattr(data, 'layers')), 'data sould be an AnnData/MuData object with an .uns, and .obsm, .X, or .layers attribute'
+    msg = 'data sould be an AnnData/MuData object with an .uns, and .obsm, .X, or .layers attribute'
+    assert hasattr(data, 'uns') and (hasattr(data, 'obsm') or hasattr(data, 'X') or hasattr(data, 'layers')), msg
     assert uns_key is not None, 'uns_key must be specified'
     assert uns_key in data.uns.keys(), 'uns_key not found in data.uns'
-        
+
     stats = data.uns[uns_key]
     assert stat_col in stats.columns, 'stat_col must be one of the columns in the anova results'
-    
+
     if associations is not None:
         stats = stats[stats.variable.isin(associations)]
     if cols is not None:
         stats = stats[stats.factor.isin(cols)]
-    
-    #specify at least but only one of obsm_key, use_X, or layer
+
+    # specify at least but only one of obsm_key, use_X, or layer
     assert obsm_key is not None or use_X is True or layer is not None, 'one of obsm_key, use_X, or layer must be specified'
     if (obsm_key is not None and use_X) or (obsm_key is not None and layer is not None) or (use_X and layer is not None):
         raise ValueError('only one of obsm_key, use_X, or layer should be specified')
@@ -1488,50 +1490,57 @@ def _check_assoc_plot_intputs(data, associations, cols, uns_key, obsm_key, use_X
             column_name = obsm_key.replace('X_', '').replace('pca', 'PC').replace('mofa', 'Factor').replace('umap', 'UMAP')
             columns = ['{0}{1}'.format(column_name, 1 + x) for x in range(data.obsm[obsm_key].shape[1])]
             acts = pd.DataFrame(data.obsm[obsm_key],
-                                index = data.obs.index,
+                                index=data.obs.index,
                                 columns=columns)
     elif layer is not None:
         assert hasattr(data, 'layers'), 'the data does not have a .layers attribute'
         assert layer in data.layers.keys(), 'layer not found in data.layers'
-        acts = pd.DataFrame(data.layers[layer], index = data.obs.index, columns=data.var.index)
+        acts = pd.DataFrame(data.layers[layer], index=data.obs.index, columns=data.var.index)
     elif use_X:
         assert hasattr(data, 'X'), 'the data does not have a .X attribute'
-        acts = pd.DataFrame(data.X, index = data.obs.index, columns=data.var.index)
-    
+        acts = pd.DataFrame(data.X, index=data.obs.index, columns=data.var.index)
+
     return stats, acts
 
 
-
-def plot_associations(data, uns_key, associations = None, cols = None, obs_annotation_cols = None, obsm_key=None, use_X = False, layer= None, stat_col = 'p_adj', titles = ['Scores', 'Stats'], scores_kwargs = {}, stats_kwargs = {}):
+def plot_associations(data, uns_key, associations=None, cols=None, obs_annotation_cols=None, obsm_key=None, use_X=False,
+                      layer=None, stat_col='p_adj', titles=['Scores', 'Stats'], scores_kwargs={}, stats_kwargs={}):
     """
-    Create a composite plot displaying association results between scores (bottom) and summary statistics (top) using a ClusterMap.
-    
+    Create a composite plot displaying association results between scores (bottom) and summary statistics
+    (top) using a ClusterMap.
+
     Requires PyComplexHeatmap to be installed.
-    
+
     Parameters:
     ------------
         data : AnnData or MuData
-            The input data containing the association results in .uns[uns_key] and the underlying data in .obsm[obsm_key], .X or .layers[layer].
+            The input data containing the association results in .uns[uns_key] and the underlying data in
+            .obsm[obsm_key], .X or .layers[layer].
         uns_key : str, optional
             Key in `data.uns` where the association statistics are stored.
         associations : list, optional
             List of association names to be plotted. If None, all associations will be plotted (default is None).
         cols : list, optional
-            List of columns to be plotted (i.e. columns of .obsm/rows of .var). If None, all columns will be plotted (default is None).
+            List of columns to be plotted (i.e. columns of .obsm/rows of .var). If None, all columns will be
+            plotted (default is None).
         obsm_key : str, optional
             Key of `data.obsm` used to plot the bottom clustermap. Either `obsm_key`, `use_X`, or `layer` must be specified.
         use_X : bool, optional
-            Boolean indicating whether to use the data in `.X` for the bottom clustermap. Either `obsm_key`, `use_X`, or `layer` must be specified.
+            Boolean indicating whether to use the data in `.X` for the bottom clustermap. Either `obsm_key`, `use_X`,
+            or `layer` must be specified.
         layer : str, optional
             Key of `data.layers` used to plot the bottom clustermap. Either `obsm_key`, `use_X`, or `layer` must be specified.
         stat_col : str, optional
             Name of the summary statistic column in `data.uns[uns_key]` to be shown in the top clustermap (default is 'p_adj').
         titles : list, optional
-            A list of two strings representing the titles for the ClusterMap for scores and statistics, respectively (default is ['Scores', 'Stats']).
+            A list of two strings representing the titles for the ClusterMap for scores and statistics,
+            respectively (default is ['Scores', 'Stats']).
         scores_kwargs : dict, optional
-            A dictionary of additional keyword arguments for customizing the ClusterMap for scores. See PyComplexHeatmap.ClusterMapPlotter for available options.
+            A dictionary of additional keyword arguments for customizing the ClusterMap for scores.
+            See PyComplexHeatmap.ClusterMapPlotter for available options.
         stats_kwargs : dict, optional
-            A dictionary of additional keyword arguments for customizing the ClusterMap for statistics. See PyComplexHeatmap.ClusterMapPlotter for available options.
+            A dictionary of additional keyword arguments for customizing the ClusterMap for statistics.
+            See PyComplexHeatmap.ClusterMapPlotter for available options.
 
     Returns:
         ax : matplotlib.Axes
@@ -1539,7 +1548,7 @@ def plot_associations(data, uns_key, associations = None, cols = None, obs_annot
         legend_axes : list
             A list of matplotlib.Axes containing the legend(s) associated with the ClusterMap(s).
     """
-    
+
     try:
         import PyComplexHeatmap as pch
     except ImportError:
@@ -1547,50 +1556,78 @@ def plot_associations(data, uns_key, associations = None, cols = None, obs_annot
 
     stats, acts = _check_assoc_plot_intputs(data, associations, cols, uns_key, obsm_key, use_X, layer, stat_col)
 
-    #subset acts columns with those in stats['factor']
+    # subset acts columns with those in stats['factor']
     acts = acts[stats.factor.unique()]
 
     # go from long to wide format using only the selected summary statistic
     stats = stats.pivot(index='factor', columns='variable', values=stat_col).T
     stats.index.name = None
     stats.columns.name = None
-    if stat_col in ['pval', 'p_adj']: #do log transform for pvalues
+    if stat_col in ['pval', 'p_adj']:  # do log transform for pvalues
         stats = -np.log10(stats)
 
-    #defining defaults for clustermaps
-    score_defaults = {'col_cluster': False, 'row_cluster': True, 'label': '{0}scores'.format('' if obsm_key is None else obsm_key.replace('X_', '') + ' '),
-                      'row_dendrogram': True, 'col_dendrogram' :  False, 'show_rownames': False, 'show_colnames': True, 
-                      'verbose': 0, 'legend_gap': 5, 'cmap' :  'RdBu_r', 'center' :  0}
+    # defining defaults for clustermaps
+    score_defaults = {'col_cluster': False,
+                      'row_cluster': True,
+                      'label': '{0}scores'.format('' if obsm_key is None else obsm_key.replace('X_', '') + ' '),
+                      'row_dendrogram': True,
+                      'col_dendrogram': False,
+                      'show_rownames': False,
+                      'show_colnames': True,
+                      'verbose': 0,
+                      'legend_gap': 5,
+                      'cmap': 'RdBu_r',
+                      'center': 0}
     score_defaults.update(scores_kwargs)
 
     stats_label = '-log10({0})'.format(stat_col) if stat_col in ['pval', 'p_adj'] else stat_col
-    stats_defaults = {'col_cluster': False, 'row_cluster' :  True, 'label' :  stats_label,
-                      'row_dendrogram' :  True, 'col_dendrogram' :  False, 'show_rownames' :  True, 'show_colnames' :  False,
-                      'verbose': 0, 'legend_gap': 5, 'cmap' :  'Reds' if stat_col in ['pval', 'p_adj'] else 'Greens'}
+    stats_defaults = {'col_cluster': False,
+                      'row_cluster': True,
+                      'label': stats_label,
+                      'row_dendrogram': True,
+                      'col_dendrogram': False,
+                      'show_rownames': True,
+                      'show_colnames': False,
+                      'verbose': 0,
+                      'legend_gap': 5,
+                      'cmap': 'Reds' if stat_col in ['pval', 'p_adj'] else 'Greens'}
     stats_defaults.update(stats_kwargs)
-    
+
     if obs_annotation_cols is not None:
         simples = {}
         for col in obs_annotation_cols:
             if data.obs[col].dtype == 'object' or data.obs[col].dtype == 'category':
                 annot = data.obs[col].astype('object')
-                simples[col]=pch.annotations.anno_simple(annot,label= True)
+                simples[col] = pch.annotations.anno_simple(annot, label=True)
             else:
-                raise ValueError('Column {0} is not of object or category dtype. These are the only formats supported for now. If you want more complex types annotations, please build your own HeatMapAnnotation object from PyComplexHeatmap and pass it to `score_defaults` under right_annotation'.format(col))
-        score_defaults['right_annotation'] = pch.HeatmapAnnotation(**simples, wgap = 2,
-                            legend_width=10,
-                            label_side= 'bottom',
-                            legend = False,
-                            axis = 0)
+                raise ValueError("""Column {0} is not of object or category dtype.
+                These are the only formats supported for now. If you want more complex types annotations, please build your
+                own HeatMapAnnotation object from PyComplexHeatmap and pass it to
+                `score_defaults` under right_annotation""".format(col))
+        score_defaults['right_annotation'] = pch.HeatmapAnnotation(
+            **simples,
+            wgap=2,
+            legend_width=10,
+            label_side='bottom',
+            legend=False,
+            axis=0
+        )
 
-    #making both clustermaps
+    # making both clustermaps
     cm_scores = pch.ClusterMapPlotter(data=acts, plot=False, **score_defaults)
     cm_stats = pch.ClusterMapPlotter(data=stats, plot=False, **stats_defaults)
-    
-    #combine clustermaps vertically
-    ax, legend_axes = pch.composite(cmlist = [cm_stats, cm_scores], main = 1, axis = 0, height_ratios=[1,3], row_gap=7, legend_gap=15)
-    
-    #add titles
+
+    # combine clustermaps vertically
+    ax, legend_axes = pch.composite(
+        cmlist=[cm_stats, cm_scores],
+        main=1,
+        axis=0,
+        height_ratios=[1, 3],
+        row_gap=7,
+        legend_gap=15
+    )
+
+    # add titles
     if titles is not None:
         cm_scores.ax.set_title(titles[0])
         cm_stats.ax.set_title(titles[1])

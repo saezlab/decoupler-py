@@ -144,14 +144,14 @@ def append_by_experiment(df, grpby_i, grp, act, grt, srcs, mthds, metrics, min_e
 
 def append_by_source(df, grpby_i, grp, act, grt, srcs, mthds, metrics, min_exp=5, pi0=0.5,
                      n_iter=1000, seed=42):
-    
+
     for m in range(len(mthds)):
         mth = mthds[m]
-        act_i = act[:,:,m]
+        act_i = act[:, :, m]
         nan_mask = np.isnan(act_i)
-        
+
         grt_i = grt.copy()
-        grt_i[nan_mask]=np.nan
+        grt_i[nan_mask] = np.nan
 
         # Remove sources with less than min_exp
         src_msk = np.sum(grt_i > 0., axis=0) >= min_exp
@@ -163,8 +163,8 @@ def append_by_source(df, grpby_i, grp, act, grt, srcs, mthds, metrics, min_exp=5
             src = srcs_method[s]
             tmp_grt = grt_i[:, s]
             nan_mask = np.isnan(tmp_grt)
-    
-            grt_source = tmp_grt[~nan_mask] 
+
+            grt_source = tmp_grt[~nan_mask]
             act_source = act_i[:, s, m][~nan_mask]
 
             # Compute Class Imbalance

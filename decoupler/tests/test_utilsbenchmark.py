@@ -182,11 +182,11 @@ def test_append_by_experiment():
 
     append_by_experiment(df, grpby_i=None, grp=None, act=act, grt=grt, srcs=srcs,
                          mthds=mthds, metrics=metrics, min_exp=1)
-    
+
     act_na = act.astype(float)
-    act_na[1,0,0] = np.nan
-    act_na[1,1,0] = np.nan
-    act_na[1,2,0] = np.nan
+    act_na[1, 0, 0] = np.nan
+    act_na[1, 1, 0] = np.nan
+    act_na[1, 2, 0] = np.nan
 
     df_na = []
 
@@ -195,8 +195,8 @@ def test_append_by_experiment():
 
     assert len(df) == 2
     assert df[0][5] < df[1][5]
-    assert df[0][5] < df_na[0][5] #check improvement of performance due to removal of NAs
-    assert df[0][6] < df_na[0][6] #check change of class imbalance due to removal of NAs
+    assert df[0][5] < df_na[0][5]  # check improvement of performance due to removal of NAs
+    assert df[0][6] < df_na[0][6]  # check change of class imbalance due to removal of NAs
 
 
 def test_append_by_source():
@@ -230,38 +230,36 @@ def test_append_by_source():
                      mthds=mthds, metrics=metrics, min_exp=1)
     assert len(df) == 4
     assert df[0][5] < df[2][5]
-    
+
     act_na = act.astype(float)
-    act_na[1,4,0] = np.nan
+    act_na[1, 4, 0] = np.nan
 
     df_na = []
 
     append_by_source(df_na, grpby_i=None, grp=None, act=act_na, grt=grt, srcs=srcs,
                      mthds=mthds, metrics=metrics, min_exp=1)
-    
+
     assert len(df_na) == 3
     assert df_na[0][2] == 'T1'
-    
-    act_na[1,0,0] = np.nan 
-    
+
+    act_na[1, 0, 0] = np.nan
+
     df_na_2 = []
     append_by_source(df_na_2, grpby_i=None, grp=None, act=act_na, grt=grt, srcs=srcs,
                      mthds=mthds, metrics=metrics, min_exp=1)
-    
+
     assert len(df_na_2) == 2
 
     act_na_3 = act.astype(float)
-    act_na_3[1,0,0] = np.nan
+    act_na_3[1, 0, 0] = np.nan
 
     df_na_3 = []
 
     append_by_source(df_na_3, grpby_i=None, grp=None, act=act_na_3, grt=grt, srcs=srcs,
                      mthds=mthds, metrics=metrics, min_exp=1)
-    
+
     assert len(df_na_3) == 3
     assert df_na_3[0][2] == 'T5'
-    
-    
 
 
 def test_append_metrics_scores():
