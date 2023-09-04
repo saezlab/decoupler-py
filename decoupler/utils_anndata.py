@@ -345,7 +345,7 @@ def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=
         metrics that start with the prefix ``psbulk_``.
     """
 
-    min_cells, min_counts = np.clip(min_cells, 1, None), np.clip(min_counts, 1, None)
+    min_cells, min_counts = np.clip(min_cells, 1, None), np.clip(min_counts, 0, None)
 
     # Extract inputs
     X, obs, var = extract_psbulk_inputs(adata, obs, layer, use_raw)
