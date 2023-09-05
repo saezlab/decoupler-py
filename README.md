@@ -16,12 +16,17 @@ If you have any question or problem do not hesitate to open an [issue](https://g
 
 ## Installation
 
-To install the latest stable version run:
+`decoupler` can be installed from `pip` (lightweight installation)::
 ```
 pip install decoupler
 ```
 
-Alternatively, to stay up-to-date with the newest version, run: 
+It can also be installed from `conda` and `mamba` (this includes extra dependencies):
+```
+mamba create -n=decoupler -c conda-forge -c bioconda decoupler
+```
+
+Alternatively, to stay up-to-date with the newest unreleased version, install from source: 
 ```
 pip install git+https://github.com/saezlab/decoupler-py.git
 ```
