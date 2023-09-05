@@ -3,6 +3,8 @@ decoupler - Ensemble of methods to infer biological activities
 
 |MainBuild| |Issues| |PyPIDownloads| |Docs| |Codecov|
 
+|Conda| |CondaDownloads|
+
 .. |MainBuild| image:: https://github.com/saezlab/decoupler-py/actions/workflows/main.yml/badge.svg
    :target: https://github.com/saezlab/decoupler-py/actions
    
@@ -18,7 +20,13 @@ decoupler - Ensemble of methods to infer biological activities
 .. |Codecov| image:: https://codecov.io/gh/saezlab/decoupler-py/branch/main/graph/badge.svg?token=TM0P29KKN5
    :target: https://codecov.io/gh/saezlab/decoupler-py
 
-**decoupler** is a package containing different statistical methods to extract biological activities from omics data within a unified framework. It allows to flexibly test any method with any prior knowledge resource and incorporates methods that take into account the sign and weight. It can be used with any omic, as long as its features can be linked to a biological process based on prior knowledge. For example, in transcriptomics gene sets regulated by a transcription factor, or in phospho-proteomics phosphosites that are targeted by a kinase.
+.. |Conda| image:: https://anaconda.org/bioconda/decoupler/badges/version.svg
+   :target: https://anaconda.org/bioconda/decoupler
+
+.. |CondaDownloads| image:: https://anaconda.org/bioconda/decoupler/badges/downloads.svg
+   :target: https://anaconda.org/bioconda/decoupler
+
+``decoupler`` is a package containing different statistical methods to extract biological activities from omics data within a unified framework. It allows to flexibly test any method with any prior knowledge resource and incorporates methods that take into account the sign and weight. It can be used with any omic, as long as its features can be linked to a biological process based on prior knowledge. For example, in transcriptomics gene sets regulated by a transcription factor, or in phospho-proteomics phosphosites that are targeted by a kinase.
 
 This is its faster and memory efficient Python implementation, for the R version go `here <https://saezlab.github.io/decoupleR/>`_.
 
@@ -37,7 +45,7 @@ If you have any question or problem do not hesitate to open an `issue <https://g
 
 scverse
 -------
-**decoupler** is part of the `scverse <https://scverse.org>`_ ecosystem, a collection of tools for single-cell omics data analysis in python.
+``decoupler`` is part of the `scverse <https://scverse.org>`_ ecosystem, a collection of tools for single-cell omics data analysis in python.
 For more information check the link.
 
 License

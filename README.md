@@ -5,9 +5,12 @@
 [![Downloads](https://static.pepy.tech/badge/decoupler)](https://pepy.tech/project/decoupler)
 [![Documentation Status](https://readthedocs.org/projects/decoupler-py/badge/?version=latest)](https://decoupler-py.readthedocs.io/en/latest/?badge=latest)
 [![codecov](https://codecov.io/gh/saezlab/decoupler-py/branch/main/graph/badge.svg?token=TM0P29KKN5)](https://codecov.io/gh/saezlab/decoupler-py)
+
+[![Conda page](https://anaconda.org/bioconda/decoupler/badges/version.svg)](https://anaconda.org/bioconda/decoupler)
+[![Conda downloads](https://anaconda.org/bioconda/decoupler/badges/downloads.svg)](https://anaconda.org/bioconda/decoupler)
 <!-- badges: end -->
 
-**decoupler** is a package containing different statistical methods to extract biological activities from omics data within a unified framework.
+`decoupler` is a package containing different statistical methods to extract biological activities from omics data within a unified framework.
 This is its faster and memory efficient Python implementation, for the R version go [here](https://github.com/saezlab/decoupleR).
 
 For further information and example tutorials, please check our [documentation](https://decoupler-py.readthedocs.io/en/latest/index.html).
@@ -32,7 +35,7 @@ pip install git+https://github.com/saezlab/decoupler-py.git
 ```
 
 ## scverse
-**decoupler** is part of the [scverse](https://scverse.org) ecosystem, a collection of tools for single-cell omics data analysis in python.
+`decoupler` is part of the [scverse](https://scverse.org) ecosystem, a collection of tools for single-cell omics data analysis in python.
 For more information check the link.
 
 ## License
