@@ -14,11 +14,14 @@ __all__ = [
 ]
 
 import os
+import sys
 import builtins
 from types import ModuleType
 from typing import Iterable
 from typing_extensions import Literal
 import warnings
+import logging
+import traceback
 from datetime import datetime
 import numpy as np
 import pandas as pd
@@ -42,6 +45,11 @@ ORGANISMS = {
         'fly', 'd. melanogaster', 'dmelanogaster',
         '7227', 7227, 'drosphila melanogaster',
     ),
+}
+TAXIDS = {
+    'human': 9606,
+    'mouse': 10090,
+    'rat': 10116,
 }
 DOROTHEA_LEVELS = Literal['A', 'B', 'C', 'D']
 
@@ -97,6 +105,46 @@ def _is_rat(name: str) -> bool:
     return _is_organism(name, 'rat')
 
 
+def _static_fallback(
+        query: str,
+        resource: str,
+        organism: int | str,
+        **kwargs
+    ) -> pd.DataFrame:
+    """
+    Fallback for static tables.
+    """
+
+    _warn_failure(resource)
+
+    op = _check_if_omnipath()
+
+    return op.static.static_table(
+        query=query,
+        resource=resource,
+        organism=organism,
+        **kwargs
+    )
+
+
+def _warn_failure(resource: str, static_fallback: bool = True):
+
+    fallback_msg = (
+        'Falling back to static tables. This is not the recommended way to '
+        'access OmniPath; it is only a backup plan for situations when our '
+        'server or your computer is experiencing issues.'
+    )
+    msg = (
+        f'Failed to download `{resource}` from OmniPath. '
+        f'{fallback_msg if static_fallback else ""}'
+        'See the below traceback and the omnipath log for details.'
+    )
+    exc = traceback.format_exc()
+    logging.getLogger('omnipath').warning(exc)
+    logging.warning(msg)
+    warnings.warn(msg)
+
+
 def get_progeny(
         organism: str | int = 'human',
         top: int = 100,
@@ -129,7 +177,16 @@ def get_progeny(
 
     op = _check_if_omnipath()
 
-    p = op.requests.Annotations.get(resources='PROGENy', **kwargs)
+    try:
+        p = op.requests.Annotations.get(resources='PROGENy', **kwargs)
+    except:
+        p = _static_fallback(
+            query='annotations',
+            resource='PROGENy',
+            organism=9606,
+            wide=False,
+        )
+
     p = p.set_index([
         'record_id', 'uniprot', 'genesymbol',
         'entity_type', 'source', 'label',
@@ -154,6 +211,7 @@ def get_progeny(
     p['weight'] = p['weight'].astype(np.float32)
     p['p_value'] = p['p_value'].astype(np.float32)
     p.columns = ['source', 'target', 'weight', 'p_value']
+    p = op._misc.dtypes.auto_dtype(p)
 
     if not _is_human(organism):
 
@@ -197,20 +255,46 @@ def get_resource(
         Dataframe in long format relating genes to biological entities.
     """
 
-    resources = show_resources()
-    msg = (
-        f'{name} is not a valid resource. Please, run '
-        'decoupler.show_resources to see the list of available resources.'
-    )
-    assert name in resources, msg
-
     op = _check_if_omnipath()
 
-    df = op.requests.Annotations.get(
-        resources=name,
-        entity_type='protein',
-        **kwargs
-    )
+    annot_resources = None
+
+    try:
+        annot_resources = show_resources()
+    except Exception:
+        exc = traceback.format_exc()
+        logging.getLogger('omnipath').warning(exc)
+        msg = (
+            "Failed to check the list of available resources in OmniPath. "
+            "Proceeding anyways. See the traceback below and the omnipath "
+            "log for details."
+        )
+        logging.warn(msg)
+        sys.stdout.write(f'{exc}{os.linesep}')
+        sys.stdout.flush()
+        warnings.warn(msg)
+
+    if annot_resources:
+        msg = (
+            f'{name} is not a valid resource. Please, run '
+            'decoupler.show_resources to see the list of available resources.'
+        )
+        assert name in annot_resources, msg
+
+    try:
+        df = op.requests.Annotations.get(
+            resources=name,
+            entity_type='protein',
+            **kwargs
+        )
+    except:
+        df = _static_fallback(
+            query='annotations',
+            resource=name,
+            organism=9606,
+            wide=False,
+        )
+
     df = df.set_index([
         'record_id', 'uniprot',
         'genesymbol', 'entity_type',
@@ -223,6 +307,7 @@ def get_resource(
     df.columns = list(df.columns)
     df = df.reset_index()
     df = df.drop(columns=['record_id', 'uniprot', 'entity_type', 'source'])
+    df = op._misc.dtypes.auto_dtype(df)
 
     if not _is_human(organism):
 
@@ -304,12 +389,20 @@ def get_dorothea(
     op = _check_if_omnipath()
 
     # Load Dorothea
-    do = op.interactions.Dorothea.get(
-        fields=['dorothea_level', 'extra_attrs'],
-        dorothea_levels=['A', 'B', 'C', 'D'],
-        genesymbols=True,
-        organism=_organism,
-    )
+    try:
+        do = op.interactions.Dorothea.get(
+            fields=['dorothea_level', 'extra_attrs'],
+            dorothea_levels=['A', 'B', 'C', 'D'],
+            genesymbols=True,
+            organism=_organism,
+        )
+    except:
+        do = _static_fallback(
+            query='interactions',
+            resource='DoRothEA',
+            organism=TAXIDS[_organism],
+            dorothea_levels=['A', 'B', 'C', 'D'],
+        )
 
     # Filter extra columns
     do = do[[
@@ -423,10 +516,30 @@ def get_collectri(
     op = _check_if_omnipath()
 
     # Load collectri
-    ct = op.interactions.CollecTRI.get(genesymbols=True, organism=_organism, loops=True, **kwargs)
+    try:
+        ct = op.interactions.CollecTRI.get(
+            genesymbols=True,
+            organism=_organism,
+            loops=True,
+            **kwargs
+        )
+    except:
+        ct = _static_fallback(
+            query='interactions',
+            resource='CollecTRI',
+            organism=TAXIDS[_organism],
+        )
+
     if _organism == 'human':
-        mirna = op.interactions.TFmiRNA.get(genesymbols=True, databases=['CollecTRI'], strict_evidences=True)
-        ct = pd.concat([ct, mirna], ignore_index=True)
+        try:
+            mirna = op.interactions.TFmiRNA.get(
+                genesymbols=True,
+                databases=['CollecTRI'],
+                strict_evidences=True,
+            )
+            ct = pd.concat([ct, mirna], ignore_index=True)
+        except:
+            _warn_failure('TF-miRNA interaction', static_fallback=False)
 
     # Separate gene_pairs from normal interactions
     msk = np.array([s.startswith('COMPLEX') for s in ct['source']])
