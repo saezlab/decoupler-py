@@ -210,7 +210,7 @@ def test_plot_psbulk_samples():
     ], columns=['sample_id', 'cell_type', 'psbulk_n_cells', 'psbulk_counts'], index=['1', '2', '3', '4'])
     var = pd.DataFrame(index=['G1', 'G2'])
     X = np.zeros((4, 2))
-    adata = AnnData(X, obs=obs, var=var, dtype=np.float32)
+    adata = AnnData(X.astype(np.float32), obs=obs, var=var)
 
     with pytest.raises(ValueError):
         plot_psbulk_samples(adata, groupby=['cell_type', 'sample_id'], ax='ax')
@@ -242,7 +242,7 @@ def test_plot_filter_by_expr():
         ['B'],
         ['B'],
     ], index=index, columns=['group'])
-    adata = AnnData(df, obs=obs, dtype=np.float32)
+    adata = AnnData(df.astype(np.float32), obs=obs)
 
     plot_filter_by_expr(adata, obs=None, group=None, lib_size=None, min_count=10,
                         min_total_count=15, large_n=10, min_prop=0.7)
@@ -283,7 +283,7 @@ def test_plot_filter_by_prop():
         ['B'],
         ['B'],
     ], index=index, columns=['group'])
-    adata = AnnData(df, obs=obs, layers={'psbulk_props': props}, dtype=np.float32)
+    adata = AnnData(df.astype(np.float32), obs=obs, layers={'psbulk_props': props})
 
     plot_filter_by_prop(adata, min_prop=0.2, min_smpls=2)
     plot_filter_by_prop(adata, min_prop=0.2, min_smpls=2, return_fig=True)

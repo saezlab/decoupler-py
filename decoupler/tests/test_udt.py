@@ -47,7 +47,7 @@ def test_run_mdt():
     r = np.array(['S1', 'S2', 'S3', 'S4'])
     c = np.array(['G1', 'G2', 'G3'])
     df = pd.DataFrame(m, index=r, columns=c)
-    adata = AnnData(df, dtype=np.float32)
+    adata = AnnData(df.astype(np.float32))
     net = pd.DataFrame([['T1', 'G2', 1], ['T1', 'G4', 2], ['T2', 'G3', 3], ['T2', 'G1', 1]],
                        columns=['source', 'target', 'weight'])
     run_udt(adata, net, verbose=True, use_raw=False, min_n=0)
