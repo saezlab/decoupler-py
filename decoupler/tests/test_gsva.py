@@ -26,7 +26,7 @@ def test_run_gsva():
     r = np.array(['S1', 'S2', 'S3', 'S4'])
     c = np.array(['G1', 'G2', 'G3'])
     df = pd.DataFrame(m, index=r, columns=c)
-    adata = AnnData(df, dtype=np.float32)
+    adata = AnnData(df.astype(np.float32))
     net = pd.DataFrame([['T1', 'G2'], ['T1', 'G4'], ['T2', 'G3'], ['T2', 'G1']],
                        columns=['source', 'target'])
     run_gsva(adata, net, min_n=0, use_raw=False, verbose=True)
