@@ -640,6 +640,10 @@ def translate_net(
         Network in long format with translated genes.
     """
 
+    if source_organism == target_organism:
+
+        return net
+
     # Check if pypath is installed
     try:
 
