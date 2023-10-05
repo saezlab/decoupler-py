@@ -17,7 +17,7 @@ def test_get_acts():
     df = pd.DataFrame(m, index=r, columns=c)
     estimate = pd.DataFrame([[3.5, -0.5], [3.6, -0.6], [-1, 2]],
                             columns=['T1', 'T2'], index=r)
-    adata = AnnData(df, dtype=np.float32)
+    adata = AnnData(df.astype(np.float32))
     adata.obsm['estimate'] = estimate
     acts = get_acts(adata, 'estimate')
     assert acts.shape[0] == adata.shape[0]
@@ -31,7 +31,7 @@ def test_swap_layer():
     r = np.array(['S1', 'S2', 'S3'])
     c = np.array(['G1', 'G2', 'G3'])
     df = pd.DataFrame(m, index=r, columns=c)
-    adata = AnnData(df, dtype=np.float32)
+    adata = AnnData(df.astype(np.float32))
     adata.layers['norm'] = adata.X / np.sum(adata.X, axis=1).reshape(-1, 1)
     sdata = swap_layer(adata, layer_key='norm', X_layer_key='x', inplace=False)
     assert not np.all(np.mod(sdata.X, 1) == 0)
@@ -43,7 +43,7 @@ def test_swap_layer():
     swap_layer(adata, layer_key='norm', X_layer_key='x', inplace=True)
     assert not np.all(np.mod(adata.X, 1) == 0)
     assert 'x' in list(adata.layers.keys())
-    adata = AnnData(df, dtype=np.float32)
+    adata = AnnData(df.astype(np.float32))
     adata.layers['norm'] = adata.X / np.sum(adata.X, axis=1).reshape(-1, 1)
     swap_layer(adata, layer_key='norm', X_layer_key=None, inplace=True)
     assert np.all(adata.X == adata.layers['norm'])
@@ -56,7 +56,7 @@ def test_extract_psbulk_inputs():
     c = np.array(['G1', 'G2', 'G3'])
     df = pd.DataFrame(m, index=r, columns=c)
     obs = pd.DataFrame([['C01', 'C01', 'C02']], columns=r, index=['celltype']).T
-    adata = AnnData(df, obs=obs, dtype=np.float32)
+    adata = AnnData(df.astype(np.float32), obs=obs)
     adata.layers['counts'] = adata.X
     adata_raw = adata.copy()
     adata_raw.raw = adata_raw
@@ -241,7 +241,7 @@ def test_get_pseudobulk():
     smples = np.array(['S1', 'S1', 'S1', 'S2', 'S2'])
     groups = np.array(['C1', 'C1', 'C1', 'C1', 'C2'])
     obs = pd.DataFrame([smples, groups], columns=r, index=[sample_col, groups_col]).T
-    adata = AnnData(df, obs=obs, dtype=np.float32)
+    adata = AnnData(df.astype(np.float32), obs=obs)
 
     pdata = get_pseudobulk(adata, groups_col, groups_col, min_cells=0, min_counts=0, min_prop=None, min_smpls=None)
     assert np.all(pdata.shape == np.array([2, 3]))
@@ -303,7 +303,7 @@ def test_get_contrast():
     reference = 'Ht'
     obs = pd.DataFrame([['C1', 'C1', 'C1', 'C1'], [condition, condition, reference, reference]],
                        columns=r, index=[groups_col, condition_col]).T
-    adata = AnnData(df, obs=obs, dtype=np.float32)
+    adata = AnnData(df.astype(np.float32), obs=obs)
     get_contrast(adata, groups_col, condition_col, condition, None)
     get_contrast(adata, groups_col, condition_col, condition, reference)
     get_contrast(adata, None, condition_col, condition, reference)
@@ -345,7 +345,7 @@ def test_get_filterbyexpr_inputs():
     ], index=samples, columns=genes)
     obs = pd.DataFrame([['S1'], ['S2']], index=samples, columns=['group'])
     aobs = pd.DataFrame([['C1'], ['C2']], index=samples, columns=['group'])
-    adata = AnnData(df, obs=obs, dtype=np.float32)
+    adata = AnnData(df.astype(np.float32), obs=obs)
 
     y, nobs, var_names = get_filterbyexpr_inputs(adata=adata, obs=None)
     assert np.all(y == adata.X)
@@ -426,7 +426,7 @@ def test_filter_by_expr():
         ['B'],
         ['B'],
     ], index=index, columns=['group'])
-    adata = AnnData(df, obs=obs, dtype=np.float32)
+    adata = AnnData(df.astype(np.float32), obs=obs)
 
     genes = filter_by_expr(adata, obs=None, group=None, lib_size=None, min_count=10,
                            min_total_count=15, large_n=10, min_prop=0.7)
@@ -485,7 +485,7 @@ def test_filter_by_prop():
         ['B'],
         ['B'],
     ], index=index, columns=['group'])
-    adata = AnnData(df, obs=obs, layers={'psbulk_props': props}, dtype=np.float32)
+    adata = AnnData(df.astype(np.float32), obs=obs, layers={'psbulk_props': props})
 
     g = filter_by_prop(adata, min_prop=0.2, min_smpls=2)
     assert np.all(g == np.array(['G2', 'G3', 'G4']))
@@ -522,7 +522,7 @@ def test_rank_sources_groups():
          ['C'],
          ['C']], columns=['group'], index=['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7']
         )
-    acts = AnnData(X, obs=obs, var=var, dtype=np.float32)
+    acts = AnnData(X.astype(np.float32), obs=obs, var=var)
     gt_up = np.array([True, False, False, True, False, False, True, False, False])
     gt_dw = np.array([False, False, True, False, False, True, False, False, False])
 

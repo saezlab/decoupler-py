@@ -32,7 +32,7 @@ def test_extract():
     r = np.array(['S1', 'S2', 'S3'])
     c = np.array(['G1', 'G2', 'G3'])
     df = pd.DataFrame(m, index=r, columns=c)
-    adata = AnnData(df, dtype=np.float32)
+    adata = AnnData(df.astype(np.float32))
     adata_raw = adata.copy()
     adata_raw.raw = adata_raw
     extract([m, r, c])
@@ -83,7 +83,7 @@ def test_mask_features():
     r = np.array(['S1', 'S2', 'S3'])
     c = np.array(['G1', 'G2', 'G3'])
     df = pd.DataFrame(m, index=r, columns=c)
-    adata = AnnData(df, dtype=np.float32)
+    adata = AnnData(df.astype(np.float32))
     adata_raw = adata.copy()
     adata_raw.raw = adata_raw
     mask_features([m, r, c])

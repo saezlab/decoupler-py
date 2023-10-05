@@ -37,7 +37,7 @@ def test_run_viper():
     r = np.array(['S1', 'S2', 'S3', 'S4'])
     c = np.array(['G1', 'G2', 'G3', 'G4'])
     df = pd.DataFrame(m, index=r, columns=c)
-    adata = AnnData(df, dtype=np.float32)
+    adata = AnnData(df.astype(np.float32))
     net = pd.DataFrame([['T1', 'G1', 1], ['T1', 'G2', 2], ['T2', 'G3', -3], ['T2', 'G4', 4]],
                        columns=['source', 'target', 'weight'])
     run_viper(adata, net, verbose=True, use_raw=False, min_n=0)

@@ -42,7 +42,7 @@ def get_acts(adata, obsm_key, dtype=np.float32):
     uns = adata.uns
     obsm = adata.obsm
 
-    return AnnData(np.array(adata.obsm[obsm_key]), obs=obs, var=var, uns=uns, obsm=obsm, dtype=dtype)
+    return AnnData(np.array(adata.obsm[obsm_key]).astype(dtype), obs=obs, var=var, uns=uns, obsm=obsm)
 
 
 def swap_layer(adata, layer_key, X_layer_key='X', inplace=False):
@@ -383,7 +383,7 @@ def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=
     new_obs['psbulk_counts'] = counts
 
     # Create new AnnData
-    psbulk = AnnData(psbulk, obs=new_obs, var=var, layers=layers, dtype=dtype)
+    psbulk = AnnData(psbulk.astype(dtype), obs=new_obs, var=var, layers=layers)
 
     # Remove empty samples and features
     msk = psbulk.X == 0
