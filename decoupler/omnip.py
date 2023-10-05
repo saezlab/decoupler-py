@@ -20,11 +20,12 @@ from types import ModuleType
 from typing import Iterable
 from typing_extensions import Literal
 import warnings
-import logging
-import traceback
 from datetime import datetime
+
 import numpy as np
 import pandas as pd
+
+from decoupler import _misc
 
 builtins.PYPATH_LOG = os.devnull
 PYPATH_MIN_VERSION = '0.14.28'
@@ -139,10 +140,7 @@ def _warn_failure(resource: str, static_fallback: bool = True):
         f'{fallback_msg if static_fallback else ""}'
         'See the below traceback and the omnipath log for details.'
     )
-    exc = traceback.format_exc()
-    logging.getLogger('omnipath').warning(exc)
-    logging.warning(msg)
-    warnings.warn(msg)
+    _misc.log_traceback(msg)
 
 
 def get_progeny(
@@ -262,17 +260,12 @@ def get_resource(
     try:
         annot_resources = show_resources()
     except Exception:
-        exc = traceback.format_exc()
-        logging.getLogger('omnipath').warning(exc)
         msg = (
             "Failed to check the list of available resources in OmniPath. "
             "Proceeding anyways. See the traceback below and the omnipath "
             "log for details."
         )
-        logging.warn(msg)
-        sys.stdout.write(f'{exc}{os.linesep}')
-        sys.stdout.flush()
-        warnings.warn(msg)
+        _misc.log_traceback(msg)
 
     if annot_resources:
         msg = (
@@ -663,17 +656,21 @@ def translate_net(
             ver(pypath.__version__) < ver(PYPATH_MIN_VERSION)
         ):
 
-            raise RuntimeError(
+            msg = (
                 'The installed version of pypath-omnipath is too old, '
                 f'the oldest compatible version is {PYPATH_MIN_VERSION}.'
             )
+            _misc.log_traceback(msg)
+            raise RuntimeError(msg)
 
     except Exception:
 
-        raise ImportError(
+        msg = (
             'pypath-omnipath is not installed. Please install it with: '
             'pip install git+https://github.com/saezlab/pypath.git'
         )
+        _misc.log_traceback(msg)
+        raise ImportError(msg)
 
     _source_organism = taxonomy.ensure_ncbi_tax_id(source_organism)
     _target_organism = taxonomy.ensure_ncbi_tax_id(target_organism)
