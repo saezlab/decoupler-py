@@ -651,7 +651,7 @@ def translate_net(
             return tuple(map(int, v.split('.')))
 
         import pypath
-        from pypath.utils import homology
+        from pypath.utils import orthology
         from pypath.share import common
         from pypath.utils import taxonomy
 
@@ -698,7 +698,7 @@ def translate_net(
     hom_net = net.copy()
 
     # Translate
-    hom_net = homology.translate_df(
+    hom_net = orthology.translate_df(
         df=hom_net,
         target=_target_organism,
         cols=columns,
