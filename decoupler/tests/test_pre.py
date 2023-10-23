@@ -25,6 +25,10 @@ def test_check_mat():
     m = csr_matrix(np.array([[1, 0, 2], [np.nan, 0, 3], [0, 0, 0]]))
     with pytest.raises(ValueError):
         check_mat(m, r, c)
+    m = csr_matrix(np.array([[1, 0, 2], [1, 0, 3], [0, 0, 0]]))
+    m = m.tocsc()
+    nm, nr, nc = check_mat(m, r, c, verbose=True)
+    assert isinstance(nm, csr_matrix)
 
 
 def test_extract():

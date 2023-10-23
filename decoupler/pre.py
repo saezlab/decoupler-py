@@ -4,13 +4,17 @@ Functions to preprocess the data before running any method.
 """
 
 import numpy as np
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_matrix, issparse
 import pandas as pd
 
 from anndata import AnnData
 
 
 def check_mat(m, r, c, verbose=False):
+
+    # Accept any sparse format but transform to csr
+    if issparse(m) and not isinstance(m, csr_matrix):
+        m = csr_matrix(m)
 
     # Check for empty features
     if type(m) is csr_matrix:
