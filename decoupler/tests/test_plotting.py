@@ -6,7 +6,9 @@ from anndata import AnnData
 from ..plotting import check_if_matplotlib, check_if_seaborn, save_plot, set_limits, plot_volcano, plot_violins
 from ..plotting import plot_barplot, build_msks, write_labels, plot_metrics_scatter, plot_metrics_scatter_cols
 from ..plotting import plot_metrics_boxplot, plot_psbulk_samples, plot_filter_by_expr, plot_filter_by_prop, plot_volcano_df
-from ..plotting import plot_targets, plot_running_score, plot_barplot_df, plot_dotplot
+from ..plotting import plot_targets, plot_running_score, plot_barplot_df, plot_dotplot, get_dict_types, net_to_edgelist
+from ..plotting import check_if_igraph, get_g, get_norm, get_source_idxs, get_target_idxs, get_obs_act_net, add_colors
+from ..plotting import plot_network
 
 
 def test_check_if_matplotlib():
@@ -16,6 +18,9 @@ def test_check_if_matplotlib():
 
 def test_check_if_seaborn():
     check_if_seaborn()
+
+def test_check_if_igraph():
+    check_if_igraph()
 
 
 def test_save_plot():
@@ -339,3 +344,144 @@ def test_plot_dotplot():
                  s='Overlap ratio', cmap='viridis', title='Title')
     plot_dotplot(df=df.set_index('Term'), x='Combined score', y=None,
                  c='-log10 FDR p-value', s='Overlap ratio', cmap='viridis')
+
+
+def test_get_dict_types():
+    act = pd.DataFrame([[1, 2, 3]], columns=['N1', 'N2', 'N3'])
+    obs = pd.DataFrame([[1, 2, 3, 4]], columns=['N2', 'N3', 'N4', 'N5'])
+    v_dict, types = get_dict_types(act, obs)
+    assert len(v_dict) == 5
+    assert np.all(types == np.array([0, 0, 0, 1, 1]))
+
+
+def test_net_to_edgelist():
+    v_dict = {'N1': 0, 'N2': 1, 'N3': 2, 'N4': 3, 'N5': 4}
+    net = pd.DataFrame([
+        ['N1', 'N4', 1],
+        ['N1', 'N5', 1],
+        ['N2', 'N2', 1],
+        ['N2', 'N3', 1],
+        ['N3', 'N4', 1],
+    ], columns=['source', 'target', 'weight'])
+
+    edges = net_to_edgelist(v_dict, net)
+    assert np.all(np.array(edges) == np.array([[0, 3], [0, 4], [1, 1], [1, 2], [2, 3]]))
+
+
+def test_get_g():
+    act = pd.DataFrame([[1, 2, 3]], columns=['N1', 'N2', 'N3'])
+    obs = pd.DataFrame([[1, 2, 3, 4]], columns=['N2', 'N3', 'N4', 'N5'])
+    net = pd.DataFrame([
+        ['N1', 'N4', 1],
+        ['N1', 'N5', 1],
+        ['N2', 'N2', 1],
+        ['N2', 'N3', 1],
+        ['N3', 'N4', 1],
+    ], columns=['source', 'target', 'weight'])
+    ig = check_if_igraph()
+    g = get_g(act, obs, net)
+    assert isinstance(g, ig.Graph)
+    assert len(g.es) == 5
+    assert len(g.vs) == 5
+    assert np.all(np.array(g.vs['type']) == np.array([0, 0, 0, 1, 1]))
+
+
+def test_get_norm():
+    act = pd.DataFrame([[1, 2, 3]], columns=['N1', 'N2', 'N3'])
+    mpl = check_if_matplotlib(return_mpl=True)
+
+    norm = get_norm(act, vcenter=False)
+    x = list(norm(act.values[0]))
+    assert (np.min(x) == 0) & (np.max(x) == 1)
+
+    norm = get_norm(act, vcenter=True)
+    x = list(norm(act.values[0]))
+    assert (np.min(x) != 0) & (np.max(x) == 1)
+
+
+def test_get_source_idxs():
+    act = pd.DataFrame([[1, 2, -3]], columns=['N1', 'N2', 'N3'])
+    idx = get_source_idxs(n_sources='N2', act=act, by_abs=False)
+    assert (np.sum(idx) == 1) & idx[1]
+    idx = get_source_idxs(n_sources=['N2'], act=act, by_abs=False)
+    assert (np.sum(idx) == 1) & idx[1]
+    idx = get_source_idxs(n_sources=2, act=act, by_abs=False)
+    assert (idx.size == 2) & (np.all(idx == np.array([1, 0])))
+    idx = get_source_idxs(n_sources=2, act=act, by_abs=True)
+    assert (idx.size == 2) & (np.all(idx == np.array([2, 1])))
+
+
+def test_get_target_idxs():
+    obs = pd.DataFrame([[1, -2, 3, 4]], columns=['N2', 'N3', 'N4', 'N5'])
+    net = pd.DataFrame([
+        ['N1', 'N4', 1],
+        ['N1', 'N5', 1],
+        ['N2', 'N2', 1],
+        ['N2', 'N3', 1],
+        ['N3', 'N4', 1],
+    ], columns=['source', 'target', 'weight'])
+
+    idx = get_target_idxs(n_targets='N4', obs=obs, net=net, by_abs=False)
+    assert (np.sum(idx) == 2) & idx[0] & idx[4]
+    idx = get_target_idxs(n_targets=['N4'], obs=obs, net=net, by_abs=False)
+    assert (np.sum(idx) == 2) & idx[0] & idx[4]
+    idx = get_target_idxs(n_targets=1, obs=obs, net=net, by_abs=False)
+    assert (idx.size == 3) & (idx[1] == 2)
+    idx = get_target_idxs(n_targets=1, obs=obs, net=net, by_abs=True)
+    assert (idx.size == 3) & (idx[1] == 3)
+
+
+def test_get_obs_act_net():
+    act = pd.DataFrame([[1, 2, -3]], columns=['N1', 'N2', 'N3'])
+    obs = pd.DataFrame([[1, -2, 3, 4]], columns=['N2', 'N3', 'N4', 'N5'])
+    net = pd.DataFrame([
+        ['N1', 'N4'],
+        ['N1', 'N5'],
+        ['N2', 'N2'],
+        ['N2', 'N3'],
+        ['N3', 'N4'],
+    ], columns=['source', 'target'])
+
+    fact, fobs, fnet = get_obs_act_net(act, obs, net, n_sources=2, n_targets=1, by_abs=False)
+    assert np.all(fact.columns == np.array(['N2', 'N1']))
+    assert np.all(fobs.columns == np.array(['N2', 'N5']))
+    assert np.all(fnet['target'].values == np.array(['N5', 'N2']))
+
+    fact, fobs, fnet = get_obs_act_net(act, obs, net, n_sources=2, n_targets=1, by_abs=True)
+    assert np.all(fact.columns == np.array(['N3', 'N2']))
+    assert np.all(fobs.columns == np.array(['N3', 'N4']))
+    assert np.all(fnet['target'].values == np.array(['N3', 'N4']))
+
+
+def test_add_colors():
+    act = pd.DataFrame([[1, 2, -3]], columns=['N1', 'N2', 'N3'])
+    obs = pd.DataFrame([[1, -2, 3, 4]], columns=['N2', 'N3', 'N4', 'N5'])
+    net = pd.DataFrame([
+        ['N1', 'N4', 1],
+        ['N1', 'N5', 1],
+        ['N2', 'N2', 1],
+        ['N2', 'N3', 1],
+        ['N3', 'N4', 1],
+    ], columns=['source', 'target', 'weight'])
+    g = get_g(act, obs, net)
+    s_norm = get_norm(act, vcenter=False)
+    t_norm = get_norm(obs, vcenter=False)
+    s_cmap, t_cmap = 'RdBu_r', 'viridis'
+    r = add_colors(g, act, obs, s_norm, t_norm, s_cmap, t_cmap)
+    assert r is None
+    assert (g.vs['color'][0][0] > 0.82) & (g.vs['color'][0][1] < 0.38) & (g.vs['color'][0][2] < 0.31)
+    assert (g.vs['color'][-1][0] > 0.98) & (g.vs['color'][-1][1] > 0.89) & (g.vs['color'][-1][2] < 0.15)
+
+
+def test_plot_network():
+    act = pd.DataFrame([[1, 2, -3]], columns=['N1', 'N2', 'N3'])
+    obs = pd.DataFrame([[1, -2, 3, 4]], columns=['N2', 'N3', 'N4', 'N5'])
+    net = pd.DataFrame([
+        ['N1', 'N4'],
+        ['N1', 'N5'],
+        ['N2', 'N2'],
+        ['N2', 'N3'],
+        ['N3', 'N4'],
+    ], columns=['source', 'target'])
+    plot_network(obs, act, net, figsize=(3, 3), node_size=0.25)
+

@@ -26,7 +26,7 @@ from .plotting import plot_volcano, plot_violins, plot_barplot, plot_metrics_sca
 from .plotting import plot_metrics_scatter_cols, plot_psbulk_samples, plot_filter_by_expr, plot_filter_by_prop  # noqa: F401
 from .plotting import plot_volcano_df, plot_targets, plot_running_score  # noqa: F401
 from .plotting import plot_dotplot, plot_barplot_df  # noqa: F401
-from .plotting import plot_associations  # noqa: F401
+from .plotting import plot_associations, plot_network  # noqa: F401
 from .benchmark import benchmark, format_benchmark_inputs, get_performances  # noqa: F401
 from .utils_benchmark import get_toy_benchmark_data, show_metrics  # noqa: F401
 from .metrics import metric_auroc, metric_auprc, metric_mcauroc, metric_mcauprc  # noqa: F401

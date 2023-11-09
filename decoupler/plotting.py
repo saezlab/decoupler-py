@@ -39,6 +39,14 @@ def check_if_adjustText():
     return at
 
 
+def check_if_igraph():
+    try:
+        import igraph as ig
+    except Exception:
+        raise ImportError('igraph is not installed. Please install it with: pip install igraph')
+    return ig
+
+
 def save_plot(fig, ax, save):
     if save is not None:
         if ax is not None:
@@ -1633,3 +1641,234 @@ def plot_associations(data, uns_key, associations=None, cols=None, obs_annotatio
         cm_stats.ax.set_title(titles[1])
 
     return ax, legend_axes
+
+
+def get_dict_types(act, obs):
+    vs = np.unique(np.hstack([act.columns, obs.columns]))
+    v_dict = {k: i for i, k in enumerate(vs)}
+    types = (~np.isin(vs, act.columns)) * 1
+    return v_dict, types
+
+
+def net_to_edgelist(v_dict, net):
+    edges = []
+    for i in net.index:
+        source, target = net.loc[i, 'source'], net.loc[i, 'target']
+        edge = [v_dict[source], v_dict[target]]
+        edges.append(edge)
+    return edges
+
+
+def get_g(act, obs, net):
+
+    # Import igraph
+    ig = check_if_igraph()
+
+    # Unify network
+    v_dict, types = get_dict_types(act, obs)
+
+    # Transform net to edges
+    edges = net_to_edgelist(v_dict, net)
+
+    # Create graph
+    g = ig.Graph(
+        edges=edges,
+        directed=True,
+    )
+
+    # Update attributes
+    g.es['weight'] = net['weight'].values
+    g.vs['type'] = types
+    g.vs['label'] = list(v_dict.keys())
+    g.vs['shape'] = np.where(types, 'circle', 'square')
+
+    return g
+
+
+def get_norm(df, vcenter):
+    mpl = check_if_matplotlib(return_mpl=True)
+    x = df.values.ravel()
+    if vcenter:
+        vmax = np.max(np.abs(x))
+        norm = mpl.colors.Normalize(vmin=-vmax, vmax=vmax)
+    else:
+        vmax = np.max(x)
+        vmin = np.min(x)
+        norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
+    return norm
+
+
+def get_source_idxs(n_sources, act, by_abs):
+    if isinstance(n_sources, str):
+        s_idx = np.isin(act.columns, [n_sources])
+    elif isinstance(n_sources, list):
+        s_idx = np.isin(act.columns, n_sources)
+    elif isinstance(n_sources, int):
+        if by_abs:
+            s_idx = np.argsort(-abs(act.values[0]))[:n_sources]
+        else:
+            s_idx = np.argsort(-act.values[0])[:n_sources]
+    else:
+        raise ValueError('n_sources needs to be a list of source names or an integer number, {0} was passed.'.format(type(n_sources)))
+    return s_idx
+
+
+def get_target_idxs(n_targets, obs, net, by_abs):
+    if isinstance(n_targets, str):
+        t_idx = np.isin(net['target'].astype(str), [n_targets])
+    elif isinstance(n_targets, list):
+        t_idx = np.isin(net['target'].astype(str), n_targets)
+    elif isinstance(n_targets, int):
+        net['prod'] = [obs.loc[:, t][0] * w if t in obs.columns else 0 for t, w in zip(net['target'], net['weight'])]
+        if by_abs:
+            net['prod'] = abs(net['prod'])
+        t_idx = (
+            net
+            .sort_values(['source', 'prod'], ascending=[True, False])
+            .groupby(['source'])
+            .head(n_targets)
+            .index
+            .values
+        )
+    else:
+        raise ValueError('n_targets needs to be a list of target names or an integer number, {0} was passed.'.format(type(n_targets)))
+    return t_idx
+
+
+def get_obs_act_net(act, obs, net, n_sources, n_targets, by_abs):
+
+    assert np.all(obs.index == act.index) and (obs.index.size == 1)
+
+    # Select top sources
+    s_idx = get_source_idxs(n_sources, act, by_abs)
+
+    # Filter by top sources
+    act = act.iloc[:, s_idx]
+    net = net.loc[np.isin(net['source'].astype(str), act.columns.astype(str))].copy()
+
+    # Add w if needed
+    if 'weight' not in net.columns:
+        net['weight'] = 1
+
+    # Select top targets
+    t_idx = get_target_idxs(n_targets, obs, net, by_abs)
+
+    # Filter by top targets
+    net = net.loc[t_idx]
+
+    # Filter empty targets
+    obs = obs.loc[:, np.isin(obs.columns.astype(str), net['target'].astype(str))]
+    net = net.loc[np.isin(net['target'].astype(str), obs.columns.astype(str)), :]
+
+    return act, obs, net
+
+
+def add_colors(g, act, obs, s_norm, t_norm, s_cmap, t_cmap):
+
+    mpl = check_if_matplotlib(return_mpl=True)
+    s_cmap = mpl.cm.get_cmap(s_cmap)
+    t_cmap = mpl.cm.get_cmap(t_cmap)
+
+    color = []
+    for i, k in enumerate(g.vs['label']):
+        if g.vs['type'][i]:
+            color.append(t_cmap(t_norm(obs[k].values[0])))
+        else:
+            color.append(s_cmap(s_norm(act[k].values[0])))
+
+    g.vs['color'] = color
+
+
+def plot_network(obs, act, net, n_sources=5, n_targets=10, by_abs=True, node_size=0.5, label_size=5, s_cmap='RdBu_r',
+                 t_cmap='viridis', vcenter=False, c_pos_w='darkred', c_neg_w='darkblue', s_label='Enrichment score',
+                 t_label='Gene expression', layout='kk', figsize=(10, 10), dpi=150, return_fig=False, save=None):
+    """
+    Plot results of enrichment analysis as network.
+
+    Parameters
+    ----------
+    obs : DataFrame
+        Input of enrichment analysis, needs to be a one row dataframe with targets as features.
+    act : DataFrame
+        Ouput of enrichment analysis, needs to be a one row dataframe with sources as features.
+    net : DataFrame, None
+        Network dataframe. If None, plot classic volcano (without subsetting targets).
+    n_sources : str, list, int
+        Number of top sources to plot or list of source names.
+    n_targets : str, list, int
+        Number of top targets to plot or list of target names.
+    by_abs : bool
+        Whether to consider the absolute value when sorting for ``n_sources`` and ``n_targets``.
+    node_size : float
+        Size of the nodes in the plot.
+    label_size : int
+        Size of the labels in the plot.
+    s_cmap : str
+        Colormap to use to color sources.
+    t_cmap : str
+        Colormap to use to color targets.
+    vcenter : bool
+        Whether to center colors around 0.
+    c_pos_w : str
+        Color for edges with positive weights. If no weights are available, they are set to positive by default.
+    c_neg_w : str
+        Color for edges with negative weights.
+    s_label : str
+        Label to place in the source colorbar.
+    t_label : str
+        Label to place in the target colorbar.
+    layout : str
+        Layout to use to order the nodes. Check ``igraph`` documentation for more options.
+    figsize : tuple
+        Figure size.
+    dpi : int
+        DPI resolution of figure.
+    return_fig : bool
+        Whether to return a Figure object or not.
+    save : str, None
+        Path to where to save the plot. Infer the filetype if ending on {`.pdf`, `.png`, `.svg`}.
+
+    Returns
+    -------
+    fig : Figure, None
+        If return_fig, returns Figure object.
+    """
+
+    # Import matplotlib
+    plt = check_if_matplotlib(return_mpl=False)
+    mpl = check_if_matplotlib(return_mpl=True)
+    ig = check_if_igraph()
+
+    # Extract filtered obs act and net
+    fact, fobs, fnet = get_obs_act_net(act, obs, net, n_sources, n_targets, by_abs)
+
+    # Get colors
+    s_norm = get_norm(fact, vcenter=vcenter)
+    t_norm = get_norm(fobs, vcenter=vcenter)
+
+    # Get graph
+    g = get_g(fact, fobs, fnet)
+    g.es['color'] = [c_pos_w if w > 0 else c_neg_w for w in g.es['weight']]
+    add_colors(g, fact, fobs, s_norm, t_norm, s_cmap, t_cmap)
+
+    # Build figure
+    fig = plt.figure(figsize=figsize, dpi=dpi, tight_layout=True)
+    gs = mpl.gridspec.GridSpec(5, 4, height_ratios=[1, 1, 1, 1, 0.10])
+    ax1 = fig.add_subplot(gs[:-1, :])
+    ax2 = fig.add_subplot(gs[-1, 0])
+    ax3 = fig.add_subplot(gs[-1, -1])
+    ig.plot(
+        g,
+        target=ax1,
+        layout=layout,
+        vertex_size=node_size,
+        vertex_label_size=label_size
+    )
+
+    fig.colorbar(mpl.cm.ScalarMappable(norm=s_norm, cmap=s_cmap), cax=ax2, orientation="horizontal", label=s_label)
+    fig.colorbar(mpl.cm.ScalarMappable(norm=t_norm, cmap=t_cmap), cax=ax3, orientation="horizontal", label=t_label)
+
+    save_plot(fig, None, save)
+
+    if return_fig:
+        return fig

@@ -111,6 +111,7 @@ Plotting
    plot_barplot_df
    plot_dotplot
    plot_associations
+   plot_network
 
 Metrics
 -------

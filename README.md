@@ -10,7 +10,7 @@
 [![Conda downloads](https://anaconda.org/bioconda/decoupler/badges/downloads.svg)](https://anaconda.org/bioconda/decoupler)
 <!-- badges: end -->
 
-`decoupler` is a package containing different statistical methods to extract biological activities from omics data within a unified framework.
+`decoupler` is a package containing different enrichment statistical methods to extract biological activities from omics data within a unified framework.
 This is its faster and memory efficient Python implementation, for the R version go [here](https://github.com/saezlab/decoupleR).
 
 For further information and example tutorials, please check our [documentation](https://decoupler-py.readthedocs.io/en/latest/index.html).
