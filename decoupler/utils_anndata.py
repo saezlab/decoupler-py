@@ -286,7 +286,7 @@ def compute_psbulk(n_rows, n_cols, X, sample_col, groups_col, smples, groups, ob
 
 
 def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=False, mode='sum', min_cells=10,
-                   min_counts=1000, dtype=np.float32, skip_checks=False, min_prop=None, min_smpls=None):
+                   min_counts=1000, dtype=np.float32, skip_checks=False, min_prop=None, min_smpls=None, remove_empty=True):
     """
     Summarizes expression profiles across cells per sample and group.
 
@@ -337,6 +337,8 @@ def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=
     min_smpls : int
         Filter to remove genes by a minimum number of samples with non-zero values. Deprecated parameter,
         check ``decoupler.filter_by_prop``.
+    remove_empty : bool
+        Whether to remove empty observations (rows) or features (columns).
 
     Returns
     -------
@@ -386,8 +388,9 @@ def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=
     psbulk = AnnData(psbulk.astype(dtype), obs=new_obs, var=var, layers=layers)
 
     # Remove empty samples and features
-    msk = psbulk.X == 0
-    psbulk = psbulk[~np.all(msk, axis=1), ~np.all(msk, axis=0)].copy()
+    if remove_empty:
+        msk = psbulk.X == 0
+        psbulk = psbulk[~np.all(msk, axis=1), ~np.all(msk, axis=0)].copy()
 
     # Place first element of mode dict as X
     if type(mode) is dict:

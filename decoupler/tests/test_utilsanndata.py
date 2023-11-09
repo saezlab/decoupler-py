@@ -269,6 +269,17 @@ def test_get_pseudobulk():
     assert pdata.layers['median'] is not None
     assert pdata.layers['mean'] is not None
 
+    m = np.array([[6, 0, 1, 0], [2, 0, 2, 0], [1, 3, 3, 0], [0, 1, 1, 0], [1, 0, 1, 0], [0, 0, 0, 0]])
+    r = np.array(['B1', 'B2', 'B3', 'B4', 'B5', 'B6'])
+    c = np.array(['G1', 'G2', 'G3', 'G4'])
+    df = pd.DataFrame(m, index=r, columns=c)
+    smples = np.array(['S1', 'S1', 'S2', 'S2', 'S1', 'S1'])
+    groups = np.array(['C1', 'C1', 'C1', 'C1', 'C2', 'C2'])
+    obs = pd.DataFrame([smples, groups], columns=r, index=[sample_col, groups_col]).T
+    adata = AnnData(df.astype(np.float32), obs=obs)
+    pdata = get_pseudobulk(adata, sample_col, groups_col, min_cells=0, min_counts=0, min_prop=None, min_smpls=None, remove_empty=False)
+    assert (pdata.shape[0] == 4) & (pdata.shape[1] == 4)
+
 
 def test_get_unq_dict():
     col = pd.Series(['C1', 'C1', 'C2', 'C3'], index=['S1', 'S2', 'S3', 'S4'])
