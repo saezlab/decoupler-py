@@ -1839,6 +1839,9 @@ def plot_network(obs, act, net, n_sources=5, n_targets=10, by_abs=True, node_siz
     mpl = check_if_matplotlib(return_mpl=True)
     ig = check_if_igraph()
 
+    # Force act and obs to match
+    assert (act.index[0] == obs.index[0]) & (obs.index.size == 1), 'obs and act need to have the same row index.'
+
     # Extract filtered obs act and net
     fact, fobs, fnet = get_obs_act_net(act, obs, net, n_sources, n_targets, by_abs)
 
