@@ -13,6 +13,7 @@ from tqdm import tqdm
 
 from .utils import melt, p_adjust_fdr
 from .pre import rename_net
+import copy
 
 
 def get_acts(adata, obsm_key, dtype=np.float32):
@@ -160,7 +161,7 @@ def format_psbulk_inputs(sample_col, groups_col, obs):
 
     if groups_col is None:
         # Filter extra columns in obs
-        cols = obs.groupby(sample_col).apply(lambda x: x.apply(lambda y: len(y.unique()) == 1)).all(0)
+        cols = obs.groupby(sample_col, observed=True).apply(lambda x: x.apply(lambda y: len(y.unique()) == 1)).all(0)
         obs = obs.loc[:, cols]
 
         # Get unique samples
@@ -178,7 +179,7 @@ def format_psbulk_inputs(sample_col, groups_col, obs):
             groups_col = joined_cols
 
         # Filter extra columns in obs
-        cols = obs.groupby([sample_col, groups_col]).apply(lambda x: x.apply(lambda y: len(y.unique()) == 1)).all(0)
+        cols = obs.groupby([sample_col, groups_col], observed=True).apply(lambda x: x.apply(lambda y: len(y.unique()) == 1)).all(0)
         obs = obs.loc[:, cols]
 
         # Get unique samples and groups
@@ -506,7 +507,7 @@ def get_contrast(adata, group_col, condition_col, condition, reference=None, met
     for grp in groups:
 
         # Sub-set by group
-        sub_adata = adata[adata.obs[group_col] == grp].copy()
+        sub_adata = copy.deepcopy(adata[adata.obs[group_col] == grp])
         sub_adata.obs = sub_adata.obs[[condition_col]]
 
         # Transform string columns to categories (removes anndata warnings)
@@ -638,7 +639,7 @@ def format_contrast_results(logFCs, pvals):
 
     df = melt([logFCs, pvals]).rename({'sample': 'contrast', 'source': 'name', 'score': 'logFCs'}, axis=1)
     df = df[['contrast', 'name', 'logFCs', 'pvals']].sort_values('contrast').reset_index(drop=True)
-    df['adj_pvals'] = df.groupby('contrast').apply(lambda x: p_adjust_fdr(x['pvals'])).explode().values
+    df['adj_pvals'] = df.groupby('contrast', observed=True).apply(lambda x: p_adjust_fdr(x['pvals'])).explode().values
     df = df.sort_values(['contrast', 'pvals']).reset_index(drop=True)
 
     return df
@@ -1106,7 +1107,7 @@ def get_metadata_associations(data, obs_keys=None, obsm_key=None, use_X=False, l
     stats_df = stats_df.reset_index()
     stats_df['p_adj'] = np.stack(
         stats_df
-        .groupby('factor')
+        .groupby('factor', observed=True)
         .apply(lambda df: multipletests(df['pval'], alpha=alpha, method=method, returnsorted=False)[1])
         .values
     ).flatten()
