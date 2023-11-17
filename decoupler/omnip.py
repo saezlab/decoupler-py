@@ -14,7 +14,6 @@ __all__ = [
 ]
 
 import os
-import sys
 import builtins
 from types import ModuleType
 from typing import Iterable
@@ -110,8 +109,7 @@ def _static_fallback(
         query: str,
         resource: str,
         organism: int | str,
-        **kwargs
-    ) -> pd.DataFrame:
+        **kwargs) -> pd.DataFrame:
     """
     Fallback for static tables.
     """
@@ -177,7 +175,7 @@ def get_progeny(
 
     try:
         p = op.requests.Annotations.get(resources='PROGENy', **kwargs)
-    except:
+    except Exception:
         p = _static_fallback(
             query='annotations',
             resource='PROGENy',
@@ -280,7 +278,7 @@ def get_resource(
             entity_type='protein',
             **kwargs
         )
-    except:
+    except Exception:
         df = _static_fallback(
             query='annotations',
             resource=name,
@@ -389,7 +387,7 @@ def get_dorothea(
             genesymbols=True,
             organism=_organism,
         )
-    except:
+    except Exception:
         do = _static_fallback(
             query='interactions',
             resource='DoRothEA',
@@ -467,6 +465,18 @@ def get_dorothea(
     return do.reset_index(drop=True)
 
 
+def merge_genes_to_complexes(ct_cmplx):
+    cmpl_gsym = []
+    for s in ct_cmplx['source_genesymbol']:
+        if s.startswith('JUN') or s.startswith('FOS'):
+            cmpl_gsym.append('AP1')
+        elif s.startswith('REL') or s.startswith('NFKB'):
+            cmpl_gsym.append('NFKB')
+        else:
+            cmpl_gsym.append(s)
+    ct_cmplx.loc[:, 'source_genesymbol'] = cmpl_gsym
+
+
 def get_collectri(
         organism: str | int = 'human',
         split_complexes=False,
@@ -516,7 +526,7 @@ def get_collectri(
             loops=True,
             **kwargs
         )
-    except:
+    except Exception:
         ct = _static_fallback(
             query='interactions',
             resource='CollecTRI',
@@ -531,7 +541,7 @@ def get_collectri(
                 strict_evidences=True,
             )
             ct = pd.concat([ct, mirna], ignore_index=True)
-        except:
+        except Exception:
             _warn_failure('TF-miRNA interaction', static_fallback=False)
 
     # Separate gene_pairs from normal interactions
@@ -542,15 +552,7 @@ def get_collectri(
 
     # Merge gene_pairs into complexes
     if not split_complexes:
-        cmpl_gsym = []
-        for s in ct_cmplx['source_genesymbol']:
-            if s.startswith('JUN') or s.startswith('FOS'):
-                cmpl_gsym.append('AP1')
-            elif s.startswith('REL') or s.startswith('NFKB'):
-                cmpl_gsym.append('NFKB')
-            else:
-                cmpl_gsym.append(s)
-        ct_cmplx.loc[:, 'source_genesymbol'] = cmpl_gsym
+        merge_genes_to_complexes(ct_cmplx)
 
     # Merge
     ct = pd.concat([ct_inter, ct_cmplx])
@@ -559,15 +561,7 @@ def get_collectri(
     ct = ct.drop_duplicates(['source_genesymbol', 'target_genesymbol'])
 
     # Add weight
-    weights = []
-    for is_stimulation, is_inhibition in zip(ct['is_stimulation'], ct['is_inhibition']):
-        if is_stimulation:
-            weights.append(1)
-        elif is_inhibition:
-            weights.append(-1)
-        else:
-            weights.append(1)
-    ct['weight'] = weights
+    ct['weight'] = np.where(ct['is_inhibition'], -1, 1)
 
     # Select and rename columns
     ct = ct.rename(columns={'source_genesymbol': 'source', 'target_genesymbol': 'target', 'references_stripped': 'PMID'})
@@ -766,7 +760,7 @@ def get_ksn_omnipath(
     ksn = ksn.drop_duplicates(['source', 'target', 'weight'])
 
     # If duplicates remain, keep dephosphorylation
-    ksn = ksn.groupby(['source', 'target']).min().reset_index()
+    ksn = ksn.groupby(['source', 'target'], observed=True).min().reset_index()
 
     return ksn
 

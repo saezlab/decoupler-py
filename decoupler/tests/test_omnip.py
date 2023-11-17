@@ -6,6 +6,7 @@ from ..omnip import (
     get_resource,
     show_resources,
     get_dorothea,
+    merge_genes_to_complexes,
     get_collectri,
     get_ksn_omnipath
 )
@@ -34,6 +35,13 @@ def test_get_dorothea():
     with pytest.raises(AssertionError):
         get_dorothea(organism='asdfgh')
     get_dorothea(organism='mouse')
+
+
+def test_():
+    df = pd.DataFrame()
+    df['source_genesymbol'] = ['JUN1', 'JUN2', 'RELA', 'NFKB3', 'STAT1']
+    merge_genes_to_complexes(df)
+    assert df['source_genesymbol'].unique().size == 3
 
 
 def test_get_collectri():

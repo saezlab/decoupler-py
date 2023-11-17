@@ -678,7 +678,7 @@ def plot_metrics_scatter(df, x='auroc', y='auprc', groupby=None, show_text=True,
         # Reformat df
         sub = (
             df[msk]
-            .groupby(['method', 'metric'])
+            .groupby(['method', 'metric'], observed=True)
             .mean(numeric_only=True).reset_index()
             .pivot(index='method', columns='metric', values='score').reset_index()
         )
@@ -861,10 +861,10 @@ def plot_metrics_boxplot(df, metric, groupby=None, figsize=(5, 5), dpi=100, ax=N
         # Compute order
         order = (
             df
-            .groupby(['method', groupby])
+            .groupby(['method', groupby], observed=True)
             .mean(numeric_only=True)
             .reset_index()
-            .groupby('method')
+            .groupby('method', observed=True)
             .max()
             .sort_values('score')
             .index
@@ -1709,7 +1709,8 @@ def get_source_idxs(n_sources, act, by_abs):
         else:
             s_idx = np.argsort(-act.values[0])[:n_sources]
     else:
-        raise ValueError('n_sources needs to be a list of source names or an integer number, {0} was passed.'.format(type(n_sources)))
+        raise ValueError('n_sources needs to be a list of source names or an \
+        integer number, {0} was passed.'.format(type(n_sources)))
     return s_idx
 
 
@@ -1725,13 +1726,14 @@ def get_target_idxs(n_targets, obs, net, by_abs):
         t_idx = (
             net
             .sort_values(['source', 'prod'], ascending=[True, False])
-            .groupby(['source'])
+            .groupby(['source'], observed=True)
             .head(n_targets)
             .index
             .values
         )
     else:
-        raise ValueError('n_targets needs to be a list of target names or an integer number, {0} was passed.'.format(type(n_targets)))
+        raise ValueError('n_targets needs to be a list of target names or an \
+        integer number, {0} was passed.'.format(type(n_targets)))
     return t_idx
 
 
@@ -1766,8 +1768,8 @@ def get_obs_act_net(act, obs, net, n_sources, n_targets, by_abs):
 def add_colors(g, act, obs, s_norm, t_norm, s_cmap, t_cmap):
 
     mpl = check_if_matplotlib(return_mpl=True)
-    s_cmap = mpl.cm.get_cmap(s_cmap)
-    t_cmap = mpl.cm.get_cmap(t_cmap)
+    s_cmap = mpl.colormaps.get_cmap(s_cmap)
+    t_cmap = mpl.colormaps.get_cmap(t_cmap)
 
     color = []
     for i, k in enumerate(g.vs['label']):
