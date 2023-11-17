@@ -179,7 +179,8 @@ def format_psbulk_inputs(sample_col, groups_col, obs):
             groups_col = joined_cols
 
         # Filter extra columns in obs
-        cols = obs.groupby([sample_col, groups_col], observed=True).apply(lambda x: x.apply(lambda y: len(y.unique()) == 1)).all(0)
+        cols = obs.groupby([sample_col, groups_col],
+                           observed=True).apply(lambda x: x.apply(lambda y: len(y.unique()) == 1)).all(0)
         obs = obs.loc[:, cols]
 
         # Get unique samples and groups

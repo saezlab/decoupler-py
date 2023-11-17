@@ -261,7 +261,7 @@ def get_gsea_df(df, stat, net, source='source', target='target', times=1000, min
     # Transform targets to indxs
     table = {name: i for i, name in enumerate(c)}
     net['target'] = [table[target] for target in net['target']]
-    net = net.groupby('source')['target'].apply(lambda x: np.array(x, dtype=np.int64))
+    net = net.groupby('source', observed=True)['target'].apply(lambda x: np.array(x, dtype=np.int64))
 
     if verbose:
         print('Running gsea on df with {0} targets for {1} sources.'.format(len(c), len(net)))
@@ -352,7 +352,7 @@ def run_gsea(mat, net, source='source', target='target', times=1000, batch_size=
     # Transform targets to indxs
     table = {name: i for i, name in enumerate(c)}
     net['target'] = [table[target] for target in net['target']]
-    net = net.groupby('source')['target'].apply(lambda x: np.array(x, dtype=np.int64))
+    net = net.groupby('source', observed=True)['target'].apply(lambda x: np.array(x, dtype=np.int64))
 
     if verbose:
         print('Running gsea on mat with {0} samples and {1} targets for {2} sources.'.format(m.shape[0], len(c), len(net)))

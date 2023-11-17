@@ -277,7 +277,8 @@ def test_get_pseudobulk():
     groups = np.array(['C1', 'C1', 'C1', 'C1', 'C2', 'C2'])
     obs = pd.DataFrame([smples, groups], columns=r, index=[sample_col, groups_col]).T
     adata = AnnData(df.astype(np.float32), obs=obs)
-    pdata = get_pseudobulk(adata, sample_col, groups_col, min_cells=0, min_counts=0, min_prop=None, min_smpls=None, remove_empty=False)
+    pdata = get_pseudobulk(adata, sample_col, groups_col, min_cells=0, min_counts=0,
+                           min_prop=None, min_smpls=None, remove_empty=False)
     assert (pdata.shape[0] == 4) & (pdata.shape[1] == 4)
 
 

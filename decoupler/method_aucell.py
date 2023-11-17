@@ -141,7 +141,7 @@ def run_aucell(mat, net, source='source', target='target', n_up=None, min_n=5, s
     # Transform targets to indxs
     table = {name: i for i, name in enumerate(c)}
     net['target'] = [table[target] for target in net['target']]
-    net = net.groupby('source')['target'].apply(lambda x: np.array(x, dtype=np.int64))
+    net = net.groupby('source', observed=True)['target'].apply(lambda x: np.array(x, dtype=np.int64))
 
     if verbose:
         print('Running aucell on mat with {0} samples and {1} targets for {2} sources.'.format(m.shape[0], len(c), len(net)))

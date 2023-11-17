@@ -19,6 +19,7 @@ def test_check_if_matplotlib():
 def test_check_if_seaborn():
     check_if_seaborn()
 
+
 def test_check_if_igraph():
     check_if_igraph()
 
@@ -388,7 +389,6 @@ def test_get_g():
 
 def test_get_norm():
     act = pd.DataFrame([[1, 2, 3]], columns=['N1', 'N2', 'N3'])
-    mpl = check_if_matplotlib(return_mpl=True)
 
     norm = get_norm(act, vcenter=False)
     x = list(norm(act.values[0]))
@@ -484,4 +484,3 @@ def test_plot_network():
         ['N3', 'N4'],
     ], columns=['source', 'target'])
     plot_network(obs, act, net, figsize=(3, 3), node_size=0.25)
-
