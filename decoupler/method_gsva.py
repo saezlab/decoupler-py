@@ -218,13 +218,13 @@ def run_gsva(mat, net, source='source', target='target', kcdf=False, mx_diff=Tru
     # Transform targets to indxs
     table = {name: i for i, name in enumerate(c)}
     net['target'] = [table[target] for target in net['target']]
-    net = net.groupby('source')['target'].apply(lambda x: np.array(x, dtype=np.int64))
+    net = net.groupby('source', observed=True)['target'].apply(lambda x: np.array(x, dtype=np.int64))
 
     if verbose:
         print('Running gsva on mat with {0} samples and {1} targets for {2} sources.'.format(m.shape[0], len(c), len(net)))
 
     # Run GSVA
-    if isinstance(mat, csr_matrix):
+    if isinstance(m, csr_matrix):
         m = m.A
     estimate = gsva(m, net, kcdf=kcdf, verbose=verbose)
 
