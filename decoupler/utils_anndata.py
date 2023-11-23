@@ -1095,7 +1095,7 @@ def get_metadata_associations(data, obs_keys=None, obsm_key=None, use_X=False, l
                 # compute eta squared from anova table
                 eta_sq = aov_table.loc[var_name, 'sum_sq'] / aov_table.sum(axis=0)['sum_sq']
                 # eta squared = SS from explanatory variable / SStotal (i.e. sum of all SS from variables plus residual SS)
-                row = [explainer, aov_table['PR(>F)'][0], eta_sq]
+                row = [explainer, aov_table.iloc[0]['PR(>F)'], eta_sq]
             stats.append(row)
 
         stats = pd.DataFrame(stats, columns=['variable', 'pval', 'eta_sq']).set_index('variable')
