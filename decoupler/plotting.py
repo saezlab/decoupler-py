@@ -1720,7 +1720,7 @@ def get_target_idxs(n_targets, obs, net, by_abs):
     elif isinstance(n_targets, list):
         t_idx = np.isin(net['target'].astype(str), n_targets)
     elif isinstance(n_targets, int):
-        net['prod'] = [obs.loc[:, t][0] * w if t in obs.columns else 0 for t, w in zip(net['target'], net['weight'])]
+        net['prod'] = [obs.iloc[0][t] * w if t in obs.columns else 0 for t, w in zip(net['target'], net['weight'])]
         if by_abs:
             net['prod'] = abs(net['prod'])
         t_idx = (
