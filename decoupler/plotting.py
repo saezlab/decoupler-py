@@ -1768,17 +1768,22 @@ def get_obs_act_net(act, obs, net, n_sources, n_targets, by_abs):
 def add_colors(g, act, obs, s_norm, t_norm, s_cmap, t_cmap):
 
     mpl = check_if_matplotlib(return_mpl=True)
-    s_cmap = mpl.colormaps.get_cmap(s_cmap)
-    t_cmap = mpl.colormaps.get_cmap(t_cmap)
-
-    color = []
-    for i, k in enumerate(g.vs['label']):
-        if g.vs['type'][i]:
-            color.append(t_cmap(t_norm(obs[k].values[0])))
-        else:
-            color.append(s_cmap(s_norm(act[k].values[0])))
-
+    cmaps = mpl.colormaps.keys()
+    if (s_cmap in cmaps) and (t_cmap in cmaps):
+        s_cmap = mpl.colormaps.get_cmap(s_cmap)
+        t_cmap = mpl.colormaps.get_cmap(t_cmap)
+        color = []
+        for i, k in enumerate(g.vs['label']):
+            if g.vs['type'][i]:
+                color.append(t_cmap(t_norm(obs[k].values[0])))
+            else:
+                color.append(s_cmap(s_norm(act[k].values[0])))
+        is_cmap = True
+    else:
+        color = [s_cmap if typ == 0. else t_cmap for typ in g.vs['type']]
+        is_cmap = False
     g.vs['color'] = color
+    return is_cmap
 
 
 def plot_network(obs, act, net, n_sources=5, n_targets=10, by_abs=True, node_size=0.5, label_size=5, s_cmap='RdBu_r',
@@ -1806,9 +1811,9 @@ def plot_network(obs, act, net, n_sources=5, n_targets=10, by_abs=True, node_siz
     label_size : int
         Size of the labels in the plot.
     s_cmap : str
-        Colormap to use to color sources.
+        Color or colormap to use to color sources.
     t_cmap : str
-        Colormap to use to color targets.
+        Color or colormap to use to color targets.
     vcenter : bool
         Whether to center colors around 0.
     c_pos_w : str
@@ -1854,7 +1859,7 @@ def plot_network(obs, act, net, n_sources=5, n_targets=10, by_abs=True, node_siz
     # Get graph
     g = get_g(fact, fobs, fnet)
     g.es['color'] = [c_pos_w if w > 0 else c_neg_w for w in g.es['weight']]
-    add_colors(g, fact, fobs, s_norm, t_norm, s_cmap, t_cmap)
+    is_cmap = add_colors(g, fact, fobs, s_norm, t_norm, s_cmap, t_cmap)
 
     # Build figure
     fig = plt.figure(figsize=figsize, dpi=dpi, tight_layout=True)
@@ -1869,9 +1874,12 @@ def plot_network(obs, act, net, n_sources=5, n_targets=10, by_abs=True, node_siz
         vertex_size=node_size,
         vertex_label_size=label_size
     )
-
-    fig.colorbar(mpl.cm.ScalarMappable(norm=s_norm, cmap=s_cmap), cax=ax2, orientation="horizontal", label=s_label)
-    fig.colorbar(mpl.cm.ScalarMappable(norm=t_norm, cmap=t_cmap), cax=ax3, orientation="horizontal", label=t_label)
+    if is_cmap:
+        fig.colorbar(mpl.cm.ScalarMappable(norm=s_norm, cmap=s_cmap), cax=ax2, orientation="horizontal", label=s_label)
+        fig.colorbar(mpl.cm.ScalarMappable(norm=t_norm, cmap=t_cmap), cax=ax3, orientation="horizontal", label=t_label)
+    else:
+        ax2.axis("off")
+        ax3.axis("off")
 
     save_plot(fig, None, save)
 

@@ -467,10 +467,15 @@ def test_add_colors():
     s_norm = get_norm(act, vcenter=False)
     t_norm = get_norm(obs, vcenter=False)
     s_cmap, t_cmap = 'RdBu_r', 'viridis'
-    r = add_colors(g, act, obs, s_norm, t_norm, s_cmap, t_cmap)
-    assert r is None
+    is_cmap = add_colors(g, act, obs, s_norm, t_norm, s_cmap, t_cmap)
+    assert is_cmap
     assert (g.vs['color'][0][0] > 0.82) & (g.vs['color'][0][1] < 0.38) & (g.vs['color'][0][2] < 0.31)
     assert (g.vs['color'][-1][0] > 0.98) & (g.vs['color'][-1][1] > 0.89) & (g.vs['color'][-1][2] < 0.15)
+    s_cmap, t_cmap = 'red', 'blue'
+    is_cmap = add_colors(g, act, obs, s_norm, t_norm, s_cmap, t_cmap)
+    assert not is_cmap
+    assert g.vs['color'][0] == 'red'
+    assert g.vs['color'][-1] == 'blue'
 
 
 def test_plot_network():
@@ -484,3 +489,4 @@ def test_plot_network():
         ['N3', 'N4'],
     ], columns=['source', 'target'])
     plot_network(obs, act, net, figsize=(3, 3), node_size=0.25)
+    plot_network(obs, act, net, figsize=(3, 3), node_size=0.25, s_cmap='red', t_cmap='blue')
