@@ -3,6 +3,7 @@ import numpy as np
 from sklearn.metrics import roc_auc_score, average_precision_score
 from sklearn.metrics._ranking import _binary_clf_curve
 from ..metrics import check_m_inputs, binary_clf_curve, mc_perm, metric_auroc, metric_auprc, metric_mcauroc, metric_mcauprc
+from ..metrics import metric_rank, metric_nrank
 
 
 def test_check_m_inputs():
@@ -92,3 +93,21 @@ def test_metric_mcauprc():
     a = metric_auprc(y_true=grt, y_score=act, pi0=0.5)
     b = metric_mcauprc(y_true=grt, y_score=act)
     assert np.isclose(a, np.mean(b), rtol=1e-01)
+
+
+def test_metric_rank():
+    act = np.array([[7, 6, 5], [5, 4, 3], [2, 1, 0]])
+    grt = np.array([[1, 0, 0], [0, 1, 1], [0, 0, 1]])
+
+    a = metric_rank(y_true=grt, y_score=act)
+    assert a.size == 4
+    assert np.all(a == np.array([1., 2., 3., 3.]))
+
+
+def test_metric_nrank():
+    act = np.array([[7, 6, 5], [5, 4, 3], [2, 1, 0]])
+    grt = np.array([[1, 0, 0], [0, 1, 1], [0, 0, 1]])
+
+    a = metric_nrank(y_true=grt, y_score=act)
+    assert a.size == 4
+    assert np.all(a == np.array([0., 0.5, 1., 1.]))

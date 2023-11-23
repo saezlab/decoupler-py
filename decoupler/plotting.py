@@ -811,7 +811,7 @@ def plot_metrics_boxplot(df, metric, groupby=None, figsize=(5, 5), dpi=100, ax=N
     df : DataFrame
         Performance metrics per method, obtained by running run_benchmark.
     metric : str
-        Name of metric to plot, must be either "mcauroc" or "mcauprc".
+        Name of metric to plot, must be either "mcauroc", "mcauprc", "rank" or "nrank".
     groupby : str
         Metrics can be gruped by an extra categorical column.
     figsize : tuple
@@ -843,7 +843,7 @@ def plot_metrics_boxplot(df, metric, groupby=None, figsize=(5, 5), dpi=100, ax=N
     sns = check_if_seaborn()
     plt = check_if_matplotlib()
 
-    if metric not in ['mcauroc', 'mcauprc']:
+    if metric not in ['mcauroc', 'mcauprc', 'rank', 'nrank']:
         raise ValueError('Argument metric must be either "mcauroc" or "mcauprc".')
 
     # Subset metric

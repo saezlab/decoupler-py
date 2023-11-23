@@ -139,7 +139,7 @@ def _benchmark(mat, obs, net, perturb, sign, metrics=['auroc', 'auprc'], groupby
     return df
 
 
-def benchmark(mat, obs, net, perturb, sign, metrics=['auroc', 'auprc', 'mcauroc', 'mcauprc'], groupby=None,
+def benchmark(mat, obs, net, perturb, sign, metrics=['auroc', 'auprc', 'mcauroc', 'mcauprc', 'rank', 'nrank'], groupby=None,
               by='experiment', f_expr=True, f_srcs=False, min_exp=5, pi0=0.5, n_iter=1000, seed=42,
               verbose=True, use_raw=True, decouple_kws={}):
     """
@@ -160,8 +160,7 @@ def benchmark(mat, obs, net, perturb, sign, metrics=['auroc', 'auprc', 'mcauroc'
         Column name in obs with sign of the perturbation. Can be set to 1 or -1 if all experiments are overexpression or
         knockouts, respectively.
     metrics : list, str
-        Performance metric(s) to compute. See the description of get_performance for more details. Defaults
-        to ['roc', 'calprc'].
+        Performance metric(s) to compute. See the description of get_performance for more details.
     groupby : list, str, None
         Performance metrics(s) can be computed per groups if enough experiments are available.
     by : str

@@ -34,7 +34,7 @@ def test_show_metrics():
 def test_validate_metrics():
     metrics = 'auroc'
     validate_metrics(metrics)
-    metrics = ['auroc', 'auprc', 'mcauroc', 'mcauprc']
+    metrics = ['auroc', 'auprc', 'mcauroc', 'mcauprc', 'rank', 'nrank']
     validate_metrics(metrics)
     metrics = ['auroc', 'asd', 'mcauroc', 'mcauprc']
     with pytest.raises(ValueError):
@@ -42,19 +42,25 @@ def test_validate_metrics():
 
 
 def test_compute_metric():
-    act = [6., 5., 4., 3., 2., 1., 0.]
-    grt = [1., 0., 1., 1., 0., 0., 0.]
+    act = np.array([[6., 5., 4., 0.], [3., 2., 1., 0.]])
+    grt = np.array([[0., 1., 0., 0.], [1., 0., 0., 0.]])
     metric = 'auroc'
-    res = compute_metric(act, grt, metric)
+    res, ci = compute_metric(act, grt, metric)
     assert type(res) is np.ndarray
     metric = 'auprc'
-    res = compute_metric(act, grt, metric)
+    res, ci = compute_metric(act, grt, metric)
     assert type(res) is np.ndarray
     metric = 'mcauroc'
-    res = compute_metric(act, grt, metric)
+    res, ci = compute_metric(act, grt, metric)
     assert type(res) is np.ndarray
     metric = 'mcauprc'
-    res = compute_metric(act, grt, metric)
+    res, ci = compute_metric(act, grt, metric)
+    assert type(res) is np.ndarray
+    metric = 'rank'
+    res, ci = compute_metric(act, grt, metric)
+    assert type(res) is np.ndarray
+    metric = 'nrank'
+    res, ci = compute_metric(act, grt, metric)
     assert type(res) is np.ndarray
 
 

@@ -5,6 +5,7 @@ Functions to compute metrics for evaluating methods and networks.
 
 import numpy as np
 import numba as nb
+from scipy.stats import rankdata
 
 
 @nb.njit(nb.types.UniTuple(nb.f4[:], 3)(nb.f4[:], nb.f4[:]), cache=True)
@@ -127,6 +128,30 @@ def check_m_inputs(y_true, y_score):
         if not np.all(unq == lbl):
             raise ValueError("""Ground truth binary classes must be 0 and 1.""")
     assert y_true.size == y_score.size, 'y_true and y_score must have the same length.'
+
+
+def metric_rank(y_true, y_score):
+    """
+    Rank (from 1 to N)
+    """
+
+    check_m_inputs(y_true, y_score)
+
+    return rankdata(-y_score, axis=1, nan_policy='omit')[y_true.astype(bool)]
+
+
+def metric_nrank(y_true, y_score):
+    """
+    Min-max normalized rank (from 0 to 1)
+    """
+
+    check_m_inputs(y_true, y_score)
+
+    rnks = rankdata(-y_score, axis=1, nan_policy='omit')
+    mins = np.min(rnks, axis=1)
+    maxs = np.max(rnks, axis=1)
+    nrnks = (rnks - mins.reshape(-1, 1)) / (maxs - mins).reshape(-1, 1)
+    return nrnks[y_true.astype(bool)]
 
 
 def metric_auroc(y_true, y_score):

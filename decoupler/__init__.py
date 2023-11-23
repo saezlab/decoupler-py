@@ -29,4 +29,4 @@ from .plotting import plot_dotplot, plot_barplot_df  # noqa: F401
 from .plotting import plot_associations, plot_network  # noqa: F401
 from .benchmark import benchmark, format_benchmark_inputs, get_performances  # noqa: F401
 from .utils_benchmark import get_toy_benchmark_data, show_metrics  # noqa: F401
-from .metrics import metric_auroc, metric_auprc, metric_mcauroc, metric_mcauprc  # noqa: F401
+from .metrics import metric_auroc, metric_auprc, metric_mcauroc, metric_mcauprc, metric_rank, metric_nrank  # noqa: F401

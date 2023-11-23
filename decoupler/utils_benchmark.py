@@ -10,7 +10,7 @@ from scipy.sparse import csr_matrix
 
 from .utils import get_toy_data
 from .pre import match
-from .metrics import metric_auroc, metric_auprc, metric_mcauroc, metric_mcauprc
+from .metrics import metric_auroc, metric_auprc, metric_mcauroc, metric_mcauprc, metric_rank, metric_nrank
 
 
 def get_toy_benchmark_data(n_samples=24, seed=42, shuffle_perc=0.25):
@@ -101,42 +101,48 @@ def validate_metrics(metrics):
 
 def compute_metric(act, grt, metric, pi0=0.5, n_iter=1000, seed=42):
 
-    if metric == 'auroc':
-        scores = metric_auroc(grt, act)
-    elif metric == 'auprc':
-        scores = metric_auprc(grt, act, pi0=pi0)
-    elif metric == 'mcauroc':
-        scores = metric_mcauroc(grt, act, n_iter=n_iter, seed=seed)
-    elif metric == 'mcauprc':
-        scores = metric_mcauprc(grt, act, n_iter=n_iter, seed=seed)
+    if metric == 'rank':
+        scores = metric_rank(grt, act)
+        ci = np.nan
+    elif metric == 'nrank':
+        scores = metric_nrank(grt, act)
+        ci = np.nan
+    else:
+        # Flatten across obs
+        act = act.ravel()
+        grt = grt.ravel()
+        # Identify activity scores with NAs
+        nan_mask = np.isnan(act)
+        # Remove NAs from activity matrix and ground truth
+        act = act[~nan_mask]
+        grt = grt[~nan_mask]
+        # Compute Class Imbalance
+        ci = np.sum(grt) / len(grt)
+        if metric == 'auroc':
+            scores = metric_auroc(grt, act)
+        elif metric == 'auprc':
+            scores = metric_auprc(grt, act, pi0=pi0)
+        elif metric == 'mcauroc':
+            scores = metric_mcauroc(grt, act, n_iter=n_iter, seed=seed)
+        elif metric == 'mcauprc':
+            scores = metric_mcauprc(grt, act, n_iter=n_iter, seed=seed)
 
     # Output must be list
     if type(scores) is not np.ndarray:
         scores = np.array([scores])
 
-    return scores
+    return scores, ci
 
 
 def append_by_experiment(df, grpby_i, grp, act, grt, srcs, mthds, metrics, min_exp=5, pi0=0.5,
                          n_iter=1000, seed=42):
-
-    # Flatten act by method
-    act, grt = act.reshape(-1, act.shape[-1]).T, grt.flatten()
-
     # Compute per method and metric
     for m in range(len(mthds)):
         mth = mthds[m]
+        act_i = act[:, :, m]
+        # Compute metrics
         for metric in metrics:
-            # identify activity scores with NAs in each method
-            act_i = act[m]
-            nan_mask = np.isnan(act_i)
-            # Remove NAs from activity matrix and ground truth
-            act_i = act_i[~nan_mask]
-            grt_i = grt[~nan_mask]
-            # Compute Class Imbalance
-            ci = np.sum(grt_i) / len(grt_i)
-            # Compute metrics
-            scores = compute_metric(act_i, grt_i, metric, pi0=pi0, n_iter=n_iter, seed=seed)
+            scores, ci = compute_metric(act_i, grt, metric, pi0=pi0, n_iter=n_iter, seed=seed)
             for score in scores:
                 row = [grpby_i, grp, None, mth, metric, score, ci]
                 df.append(row)
@@ -144,34 +150,26 @@ def append_by_experiment(df, grpby_i, grp, act, grt, srcs, mthds, metrics, min_e
 
 def append_by_source(df, grpby_i, grp, act, grt, srcs, mthds, metrics, min_exp=5, pi0=0.5,
                      n_iter=1000, seed=42):
-
     for m in range(len(mthds)):
+        # Extract per method
         mth = mthds[m]
         act_i = act[:, :, m]
-        nan_mask = np.isnan(act_i)
-
-        grt_i = grt.copy()
-        grt_i[nan_mask] = np.nan
-
         # Remove sources with less than min_exp
-        src_msk = np.sum(grt_i > 0., axis=0) >= min_exp
-        act_i, grt_i = act[:, src_msk, :], grt_i[:, src_msk]
+        src_msk = np.sum(grt > 0., axis=0) >= min_exp
+        act_i, grt_i = act[:, src_msk, :], grt[:, src_msk]
         srcs_method = srcs[src_msk]
-
         # Compute per source, method and metric
         for s in range(len(srcs_method)):
             src = srcs_method[s]
-            tmp_grt = grt_i[:, s]
-            nan_mask = np.isnan(tmp_grt)
-
-            grt_source = tmp_grt[~nan_mask]
-            act_source = act_i[:, s, m][~nan_mask]
-
-            # Compute Class Imbalance
-            ci = np.sum(grt_source) / len(grt_source)
-            if ci != 0. and ci != 1.:
+            grt_source = grt_i[:, s]
+            act_source = act_i[:, s, m]
+            # Check that grt is not all the same
+            unq_grt = np.unique(grt_source[~np.isnan(act_source)])
+            # Convert from vector to arr
+            grt_source, act_source = grt_source[np.newaxis], act_source[np.newaxis]
+            if unq_grt.size > 1:
                 for metric in metrics:
-                    scores = compute_metric(act_source, grt_source, metric, pi0=pi0, n_iter=n_iter, seed=seed)
+                    scores, ci = compute_metric(act_source, grt_source, metric, pi0=pi0, n_iter=n_iter, seed=seed)
                     for score in scores:
                         row = [grpby_i, grp, src, mth, metric, score, ci]
                         df.append(row)
