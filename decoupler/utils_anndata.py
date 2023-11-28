@@ -1100,17 +1100,13 @@ def get_metadata_associations(data, obs_keys=None, obsm_key=None, use_X=False, l
 
         stats = pd.DataFrame(stats, columns=['variable', 'pval', 'eta_sq']).set_index('variable')
         stats['factor'] = dependent
+        # Add p-val correction
+        stats['p_adj'] = multipletests(stats['pval'], alpha=alpha, method=method, returnsorted=False)[1]
         if dependent_variables.index(dependent) == 0:
             stats_df = stats.copy()
         else:
             stats_df = pd.concat([stats_df, stats], axis=0, join='outer', sort=False)
 
     stats_df = stats_df.reset_index()
-    stats_df['p_adj'] = np.stack(
-        stats_df
-        .groupby('factor', observed=True)
-        .apply(lambda df: multipletests(df['pval'], alpha=alpha, method=method, returnsorted=False)[1])
-        .values
-    ).flatten()
 
     return format_assoc_results(data, stats_df, inplace, obsm_key, uns_key, use_X, layer)
