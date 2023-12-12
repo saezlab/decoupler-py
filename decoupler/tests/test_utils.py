@@ -1,5 +1,7 @@
 import pytest
 import numpy as np
+from scipy.sparse import csr_matrix
+import numpy.testing as npt
 import pandas as pd
 import os
 from anndata import AnnData
@@ -7,6 +9,7 @@ from ..utils import m_rename, melt, show_methods, check_corr, get_toy_data, summ
 from ..utils import assign_groups, p_adjust_fdr, dense_run, shuffle_net, read_gmt
 from ..method_mlm import run_mlm
 from ..method_ora import run_ora
+from ..method_gsva import run_gsva
 
 
 def test_m_rename():
@@ -32,6 +35,7 @@ def test_melt():
     melt(pvals)
     melt(res_dict)
     melt(res_list)
+    melt({estimate.name: estimate})
     with pytest.raises(ValueError):
         melt({0, 1, 2, 3})
 
@@ -85,13 +89,18 @@ def test_p_adjust_fdr():
 
 
 def test_denserun():
-    mat = pd.DataFrame([[0, 2, 3, 4, 5, 6], [1, 0, 0, 0, 0, 0]], columns=['G01', 'G02', 'G03', 'G06', 'G07', 'G08'])
+    mat = pd.DataFrame([[0, 2, 3, 4, 5, 6], [1, 0, 0, 0, 0, 0]], index=['S1', 'S2'],
+                       columns=['G01', 'G02', 'G03', 'G06', 'G07', 'G08'])
     net = pd.DataFrame([['T1', 'G01', 1], ['T1', 'G02', 1], ['T2', 'G06', 1], ['T2', 'G07', 0.5],
                         ['T3', 'G06', -0.5], ['T3', 'G07', -3]], columns=['source', 'target', 'weight'])
     acts, _ = dense_run(run_mlm, mat, net, min_n=2, verbose=True)
     assert acts.shape[1] == 2
     assert not np.all(np.isnan(acts.values[0]))
     assert np.all(np.isnan(acts.values[1]))
+    spr = AnnData(mat.astype(np.float32))
+    spr.X = csr_matrix(spr.X).copy()
+    dense_run(run_mlm, spr, net, min_n=2, verbose=True, use_raw=False)
+    npt.assert_allclose(spr.obsm['mlm_estimate'], acts)
 
     mat = AnnData(mat.astype(np.float32))
     dense_run(run_ora, mat, net, min_n=2, verbose=True, use_raw=False)
@@ -99,6 +108,7 @@ def test_denserun():
     assert acts.shape[1] == 2
     assert not np.all(np.isnan(acts.values[0]))
     assert np.all(np.isnan(acts.values[1]))
+    dense_run(run_gsva, mat, net, min_n=2, verbose=True, use_raw=False)
 
 
 def test_shuffle_net():

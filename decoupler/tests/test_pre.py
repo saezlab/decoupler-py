@@ -22,6 +22,8 @@ def test_check_mat():
     assert nr.size == 2
     assert nc.size == 2
     assert type(nm) is not csr_matrix and isinstance(nm, np.ndarray)
+    with pytest.raises(ValueError):
+        check_mat(m, r, np.array(['G1', 'G2', 'G1']))
     m = csr_matrix(np.array([[1, 0, 2], [np.nan, 0, 3], [0, 0, 0]]))
     with pytest.raises(ValueError):
         check_mat(m, r, c)
