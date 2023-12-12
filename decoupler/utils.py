@@ -406,10 +406,9 @@ def dense_run(func, mat, net, source='source', target='target', weight='weight',
         # Extract single sample
         if isinstance(m, csr_matrix):
             sample = m[i].A[0]
-            idx = sample.indices
         else:
             sample = m[i]
-            idx = sample != 0.
+        idx = sample != 0.
 
         # Remove zeros
         i_c = c[idx]
@@ -455,8 +454,8 @@ def dense_run(func, mat, net, source='source', target='target', weight='weight',
         pvals.append(pval)
 
     # Join
-    acts = pd.concat(acts, join='outer')
-    pvals = pd.concat(pvals, join='outer')
+    acts = pd.concat(acts, join='outer', sort=True)
+    pvals = pd.concat(pvals, join='outer', sort=True)
 
     # Name
     acts.name = '{0}_estimate'.format(fname)
