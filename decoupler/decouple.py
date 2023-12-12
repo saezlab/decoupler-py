@@ -5,7 +5,7 @@ Code to run methods simultaneously.
 
 import decoupler as dc
 from anndata import AnnData
-
+from .utils import show_methods, dense_run
 from .consensus import cons
 from .pre import extract
 
@@ -21,7 +21,7 @@ def get_wrappers(methods):
     return tmp
 
 
-def run_methods(mat, net, source, target, weight, methods, args, min_n, verbose, use_raw):
+def run_methods(mat, net, source, target, weight, methods, args, min_n, verbose, use_raw, dense):
 
     # Retrieve wrapper functions
     wrappers = get_wrappers(methods)
@@ -45,10 +45,20 @@ def run_methods(mat, net, source, target, weight, methods, args, min_n, verbose,
         is_weighted = 'weight' in f.__code__.co_varnames
 
         # Run method
-        if is_weighted:
+        if is_weighted and not dense:
             res = f(mat=mat, net=net, source=source, target=target, weight=weight, **a)
-        else:
+        elif not is_weighted and not dense:
             res = f(mat=mat, net=net, source=source, target=target, **a)
+        else:
+            res = dense_run(
+                func=f,
+                mat=mat,
+                net=net,
+                source=source,
+                target=target,
+                weight=weight,
+                **a
+            )
 
         # Extract for AnnData
         if res is None:
@@ -78,7 +88,7 @@ def parse_methods(methods, cns_metds):
             cns_metds = ['mlm_estimate', 'ulm_estimate', 'wsum_norm']
     elif not isinstance(methods, list):
         if methods.lower() == 'all':
-            methods = [method.split('run_')[1] for method in dc.show_methods()['Function'] if method != 'run_consensus']
+            methods = [method.split('run_')[1] for method in show_methods()['Function'] if method != 'run_consensus']
         else:
             methods = [methods]
 
@@ -86,7 +96,7 @@ def parse_methods(methods, cns_metds):
 
 
 def decouple(mat, net, source='source', target='target', weight='weight', methods=None, args={}, consensus=True,
-             cns_metds=None, min_n=5, verbose=True, use_raw=True):
+             cns_metds=None, min_n=5, verbose=True, use_raw=True, dense=False):
     """
     Decouple function.
 
@@ -120,6 +130,8 @@ def decouple(mat, net, source='source', target='target', weight='weight', method
         Whether to show progress.
     use_raw : bool
         If mat is AnnData, use its raw attribute.
+    dense : bool
+        Whether to run methods ignoring zero values per observation. See ``decoupler.dense_run`` for more information.
 
     Returns
     -------
@@ -138,7 +150,7 @@ def decouple(mat, net, source='source', target='target', weight='weight', method
                 print('Method name {0} in args not found in methods, will be ignored.'.format(methd))
 
     # Run methods
-    results = run_methods(mat, net, source, target, weight, methods, args, min_n, verbose, use_raw)
+    results = run_methods(mat, net, source, target, weight, methods, args, min_n, verbose, use_raw, dense)
 
     # Run consensus score
     if consensus:
