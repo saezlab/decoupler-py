@@ -148,8 +148,8 @@ def metric_nrank(y_true, y_score):
     check_m_inputs(y_true, y_score)
 
     rnks = rankdata(-y_score, axis=1, nan_policy='omit')
-    mins = np.min(rnks, axis=1)
-    maxs = np.max(rnks, axis=1)
+    mins = np.nanmin(rnks, axis=1)
+    maxs = np.nanmax(rnks, axis=1)
     nrnks = (rnks - mins.reshape(-1, 1)) / (maxs - mins).reshape(-1, 1)
     return nrnks[y_true.astype(bool)]
 
