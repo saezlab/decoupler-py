@@ -28,6 +28,14 @@ def check_mat(m, r, c, verbose=False):
         c = c[~msk_features]
         m = m[:, ~msk_features]
 
+    # Sort features
+    msk = np.argsort(c)
+    m, r, c = m[:, msk], r.astype('U'), c[msk].astype('U')
+
+    # Check for repeated features
+    if np.any(c[1:] == c[:-1]):
+        raise ValueError("""mat contains repeated feature names, please make them unique.""")
+
     # Check for empty samples
     if type(m) is csr_matrix:
         msk_samples = np.sum(m != 0, axis=1).A1 == 0
