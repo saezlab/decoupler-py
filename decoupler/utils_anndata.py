@@ -302,7 +302,7 @@ def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=
 
     This function produces some quality control metrics to assess if is necessary to filter some samples. The number of cells
     that belong to each sample is stored in ``.obs['psbulk_n_cells']``, the total sum of counts per sample in
-    ``.obs['psbulk_counts']``, and the proportion of cells that express a given gene in ``.layers['psbulk_props'].
+    ``.obs['psbulk_counts']``, and the proportion of cells that express a given gene in ``.layers['psbulk_props']``.
 
     Parameters
     ----------
