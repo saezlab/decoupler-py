@@ -773,7 +773,7 @@ def filter_by_prop(adata, min_prop=0.2, min_smpls=2):
     Parameters
     ----------
     adata : AnnData
-        AnnData obtained after running ``decoupler.get_pseudobulk``. It requieres ``.layer['psbulk_props']``.
+        AnnData obtained after running ``decoupler.get_pseudobulk``. It requires ``.layer['psbulk_props']``.
     min_prop : float
         Minimum proportion of cells that express a gene in a sample.
     min_smpls : int
