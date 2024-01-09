@@ -302,7 +302,7 @@ def get_pseudobulk(adata, sample_col, groups_col, obs=None, layer=None, use_raw=
 
     This function produces some quality control metrics to assess if is necessary to filter some samples. The number of cells
     that belong to each sample is stored in ``.obs['psbulk_n_cells']``, the total sum of counts per sample in
-    ``.obs['psbulk_counts']``, and the proportion of cells that express a given gene in ``.layers['psbulk_props'].
+    ``.obs['psbulk_counts']``, and the proportion of cells that express a given gene in ``.layers['psbulk_props']``.
 
     Parameters
     ----------
@@ -773,7 +773,7 @@ def filter_by_prop(adata, min_prop=0.2, min_smpls=2):
     Parameters
     ----------
     adata : AnnData
-        AnnData obtained after running ``decoupler.get_pseudobulk``. It requieres ``.layer['psbulk_props']``.
+        AnnData obtained after running ``decoupler.get_pseudobulk``. It requires ``.layer['psbulk_props']``.
     min_prop : float
         Minimum proportion of cells that express a gene in a sample.
     min_smpls : int
