@@ -75,8 +75,8 @@ def filter_limits(df, sign_limit=None, lFCs_limit=None):
 
 
 def plot_volcano(logFCs, pvals, contrast, name=None, net=None, top=5, source='source', target='target',
-                 weight='weight', sign_thr=0.05, lFCs_thr=0.5, sign_limit=None, lFCs_limit=None, figsize=(7, 5),
-                 dpi=100, ax=None, return_fig=False, save=None):
+                 weight='weight', sign_thr=0.05, lFCs_thr=0.5, sign_limit=None, lFCs_limit=None, color_pos='#D62728',
+                 color_neg='#1F77B4', color_null='gray', figsize=(7, 5), dpi=100, ax=None, return_fig=False, save=None):
     """
     Plot logFC and p-values. If name and net are provided, it does the same for the targets of a selected source.
 
@@ -108,6 +108,12 @@ def plot_volcano(logFCs, pvals, contrast, name=None, net=None, top=5, source='so
         Limit of p-values to plot in -log10.
     lFCs_limit : float
         Limit of logFCs to plot in absolute value.
+    color_pos: str
+        Color to plot significant positive genes.
+    color_neg: str
+        Color to plot significant negative genes. 
+    color_null: str
+        Color to plot rest of the genes.
     figsize : tuple
         Figure size.
     dpi : int
@@ -173,9 +179,9 @@ def plot_volcano(logFCs, pvals, contrast, name=None, net=None, top=5, source='so
         df['pvals'] = -np.log10(pvals.loc[[contrast]].T)
         df = df[~np.any(pd.isnull(df), axis=1)]
         df = filter_limits(df, sign_limit=sign_limit, lFCs_limit=lFCs_limit)
-        df['weight'] = 'gray'
-        df.loc[(df['logFCs'] >= lFCs_thr) & (df['pvals'] >= sign_thr), 'weight'] = '#D62728'
-        df.loc[(df['logFCs'] <= -lFCs_thr) & (df['pvals'] >= sign_thr), 'weight'] = '#1F77B4'
+        df['weight'] = color_null
+        df.loc[(df['logFCs'] >= lFCs_thr) & (df['pvals'] >= sign_thr), 'weight'] = color_pos
+        df.loc[(df['logFCs'] <= -lFCs_thr) & (df['pvals'] >= sign_thr), 'weight'] = color_neg
         df.plot.scatter(x='logFCs', y='pvals', c='weight', sharex=False, ax=ax)
         ax.set_title('{0}'.format(contrast))
 
@@ -202,8 +208,8 @@ def plot_volcano(logFCs, pvals, contrast, name=None, net=None, top=5, source='so
         return fig
 
 
-def plot_volcano_df(data, x, y, top=5, sign_thr=0.05, lFCs_thr=0.5, sign_limit=None, lFCs_limit=None,
-                    figsize=(7, 5), dpi=100, ax=None, return_fig=False, save=None):
+def plot_volcano_df(data, x, y, top=5, sign_thr=0.05, lFCs_thr=0.5, sign_limit=None, lFCs_limit=None, color_pos='#D62728',
+                    color_neg='#1F77B4', color_null='gray', figsize=(7, 5), dpi=100, ax=None, return_fig=False, save=None):
     """
     Plot logFC and p-values from a long formated data-frame.
 
@@ -225,6 +231,12 @@ def plot_volcano_df(data, x, y, top=5, sign_thr=0.05, lFCs_thr=0.5, sign_limit=N
         Limit of p-values to plot in -log10.
     lFCs_limit : float
         Limit of logFCs to plot in absolute value.
+    color_pos: str
+        Color to plot significant positive genes.
+    color_neg: str
+        Color to plot significant negative genes. 
+    color_null: str
+        Color to plot rest of the genes.
     figsize : tuple
         Figure size.
     dpi : int
@@ -258,11 +270,11 @@ def plot_volcano_df(data, x, y, top=5, sign_thr=0.05, lFCs_thr=0.5, sign_limit=N
     df = filter_limits(df, sign_limit=sign_limit, lFCs_limit=lFCs_limit)
 
     # Define color by up or down regulation and significance
-    df['weight'] = 'gray'
+    df['weight'] = color_null
     up_msk = (df['logFCs'] >= lFCs_thr) & (df['pvals'] >= sign_thr)
     dw_msk = (df['logFCs'] <= -lFCs_thr) & (df['pvals'] >= sign_thr)
-    df.loc[up_msk, 'weight'] = '#D62728'
-    df.loc[dw_msk, 'weight'] = '#1F77B4'
+    df.loc[up_msk, 'weight'] = color_pos
+    df.loc[dw_msk, 'weight'] = color_neg
 
     # Plot
     fig = None
