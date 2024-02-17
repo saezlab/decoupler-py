@@ -488,5 +488,6 @@ def test_plot_network():
         ['N2', 'N3'],
         ['N3', 'N4'],
     ], columns=['source', 'target'])
-    plot_network(obs, act, net, figsize=(3, 3), node_size=0.25)
-    plot_network(obs, act, net, figsize=(3, 3), node_size=0.25, s_cmap='red', t_cmap='blue')
+    plot_network(net, obs=None, act=None, figsize=(3, 3), node_size=0.25)
+    plot_network(net, obs, act, figsize=(3, 3), node_size=0.25)
+    plot_network(net, obs, act, figsize=(3, 3), node_size=0.25, s_cmap='red', t_cmap='blue')
