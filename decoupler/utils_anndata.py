@@ -1101,7 +1101,7 @@ def get_metadata_associations(data, obs_keys=None, obsm_key=None, use_X=False, l
         stats = pd.DataFrame(stats, columns=['variable', 'pval', 'eta_sq']).set_index('variable')
         stats['factor'] = dependent
         # Add p-val correction
-        stats['p_adj'] = multipletests(stats['pval'], alpha=alpha, method=method, returnsorted=False)[1]
+        stats['p_adj'] = multipletests(stats['pval'], alpha=alpha, method=method)[1]
         if dependent_variables.index(dependent) == 0:
             stats_df = stats.copy()
         else:
