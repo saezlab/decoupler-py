@@ -799,7 +799,7 @@ def plot_metrics_scatter_cols(df, col, x='auroc', y='auprc', groupby=None, n_col
         if i < len(cats):
             cat = cats[i]
             plot_metrics_scatter(df[df[col] == cat], x=x, y=y, groupby=groupby, show_text=False, show_legend=False,
-                                 mirror_xy=False, ax=ax, title=cat, xlabel='', ylabel='')
+                                 mirror_xy=False, ax=ax, title=cat)
         else:
             ax.axis('off')
 
@@ -856,7 +856,7 @@ def plot_metrics_boxplot(df, metric, groupby=None, figsize=(5, 5), dpi=100, ax=N
     plt = check_if_matplotlib()
 
     if metric not in ['mcauroc', 'mcauprc', 'rank', 'nrank']:
-        raise ValueError('Argument metric must be either "mcauroc" or "mcauprc".')
+        raise ValueError('Argument metric must be either "mcauroc", "mcauprc", "rank" or "nrank".')
 
     # Subset metric
     df = df[df['metric'] == metric]
@@ -882,8 +882,9 @@ def plot_metrics_boxplot(df, metric, groupby=None, figsize=(5, 5), dpi=100, ax=N
             .index
         )
 
-        sns.boxplot(x='method', y='score', hue=groupby, data=df, ax=ax, order=order, **kwargs)
-        ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), frameon=False)
+        sns.boxplot(x='method', y='score', hue=groupby, data=df, ax=ax, order=order, hue_order=np.sort(df[groupby].unique()), **kwargs)
+        if ax.get_legend() is not None:
+            ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), frameon=False)
 
     elif groupby is None:
 
@@ -1751,7 +1752,8 @@ def get_target_idxs(n_targets, obs, net, by_abs):
 
 def get_obs_act_net(act, obs, net, n_sources, n_targets, by_abs):
 
-    assert np.all(obs.index == act.index) and (obs.index.size == 1)
+    # Force act and obs to match
+    assert np.all(obs.index == act.index) and (obs.index.size == 1), 'obs and act need to have the same row index.'
 
     # Select top sources
     s_idx = get_source_idxs(n_sources, act, by_abs)
@@ -1798,7 +1800,7 @@ def add_colors(g, act, obs, s_norm, t_norm, s_cmap, t_cmap):
     return is_cmap
 
 
-def plot_network(obs, act, net, n_sources=5, n_targets=10, by_abs=True, node_size=0.5, label_size=5, s_cmap='RdBu_r',
+def plot_network(net, obs=None, act=None, n_sources=5, n_targets=10, by_abs=True, node_size=0.5, label_size=5, s_cmap='RdBu_r',
                  t_cmap='viridis', vcenter=False, c_pos_w='darkred', c_neg_w='darkblue', s_label='Enrichment score',
                  t_label='Gene expression', layout='kk', figsize=(10, 10), dpi=150, return_fig=False, save=None):
     """
@@ -1806,12 +1808,12 @@ def plot_network(obs, act, net, n_sources=5, n_targets=10, by_abs=True, node_siz
 
     Parameters
     ----------
-    obs : DataFrame
-        Input of enrichment analysis, needs to be a one row dataframe with targets as features.
-    act : DataFrame
-        Ouput of enrichment analysis, needs to be a one row dataframe with sources as features.
-    net : DataFrame, None
-        Network dataframe. If None, plot classic volcano (without subsetting targets).
+    net : DataFrame
+        Network dataframe with ``source`` and ``target`` columns (``weight`` is optional).
+    obs : None, DataFrame
+        Input of enrichment analysis, needs to be a one row dataframe with targets as features. Used to filter net.
+    act : None, DataFrame
+        Ouput of enrichment analysis, needs to be a one row dataframe with sources as features. Used to filter net.
     n_sources : str, list, int
         Number of top sources to plot or list of source names.
     n_targets : str, list, int
@@ -1858,8 +1860,11 @@ def plot_network(obs, act, net, n_sources=5, n_targets=10, by_abs=True, node_siz
     mpl = check_if_matplotlib(return_mpl=True)
     ig = check_if_igraph()
 
-    # Force act and obs to match
-    assert (act.index[0] == obs.index[0]) & (obs.index.size == 1), 'obs and act need to have the same row index.'
+    if act is None and obs is None:
+        sources = net['source'].unique().astype('U')
+        act = pd.DataFrame(np.ones((1, sources.size)), index=['0'], columns=sources)
+        targets = net['target'].unique().astype('U')
+        obs = pd.DataFrame(np.ones((1, targets.size)), index=['0'], columns=targets)
 
     # Extract filtered obs act and net
     fact, fobs, fnet = get_obs_act_net(act, obs, net, n_sources, n_targets, by_abs)
