@@ -90,18 +90,19 @@ def format_benchmark_inputs(mat, obs, perturb, sign, net, groupby, by, f_expr=Tr
         srcs = net['source'].values.astype('U')
         for i, src in enumerate(obs['perturb']):
             msk[i] = np.any(np.isin(src, srcs))
-        if verbose:
-            n = np.sum(~msk)
-            print("{0} experiments without sources in net, they will be removed.".format(n))
         mat, obs = mat[msk], obs.loc[msk]
+        if verbose:
+            n_removed = np.sum(~msk)
+            print("Removed {0} experiments without sources in net.".format(n_removed))
 
     # Remove sources without experiments in obs
     if f_srcs:
-        msk = np.isin(net['source'].values, obs['perturb'].values.ravel())
-        if verbose:
-            n = np.sum(~msk)
-            print("{0} sources without experiments in obs, they will be removed.".format(n))
+        srcs = net.loc[:, 'source'].values
+        msk = np.isin(srcs, obs['perturb'].values.ravel())
         net = net.loc[msk]
+        if verbose:
+            n_removed = np.unique(srcs[~msk]).size
+            print("Removed {0} sources without experiments in obs.".format(n_removed))
 
     return mat, obs, var, net, groupby
 
@@ -125,6 +126,8 @@ def _benchmark(mat, obs, net, perturb, sign, metrics=['auroc', 'auprc'], groupby
 
     # Run prediction
     if verbose:
+        n_src = obs.loc[:, 'perturb'].unique().size
+        print("Running {0} experiments for {1} unique sources.".format(mat.shape[0], n_src))
         print('Running methods...')
     res = decouple([mat, obs.index, var.index], net, verbose=verbose, **decouple_kws)
 
