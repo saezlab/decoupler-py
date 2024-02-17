@@ -1,6 +1,31 @@
 Release notes
 =============
 
+1.6.0
+-----
+
+Bug fixes
+~~~~~~~~~
+- Fixed wrong corrected p-values of ``get_metadata_associations`` whenever more than 10 factors were present.
+- Added static fallback for the most used ``omnipath`` resources, enabling their retrieval when internet connection is unstable.
+- Fixed ZeroDivisionError of ``gsea`` when many 0s were present.
+- ``dense_run`` now returns sorted features.
+
+Changes
+~~~~~~~
+- Methods now throw an error if there are repeated feature names in ``mat``.
+- Functions can now accept ``AnnData`` objects with any sparse format than just ``scipy.sparse.csr_matrix``.
+- ``get_pseudobulk`` now can return empty observations and features with the parameter ``remove_empty=False``.
+- Fixed ``pandas`` warnings for categorical data across several functions.
+- ``plot_volcano`` and ``plot_volcano_df`` now can use different colors for positive, negative and null genes.
+- ``benchmark`` now has increased verbosity.
+
+Additions
+~~~~~~~~~
+- Added ``plot_network`` to visualize the network structure of top sources and their targets.
+- Added metrics ``rank`` and ``nrank`` to the benchmark pipeline.
+- Added ``dense`` argument to ``decouple`` to run methods ignoring zeroes per observation.
+
 1.5.0
 -----
 
