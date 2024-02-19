@@ -19,6 +19,8 @@ Changes
 - Fixed ``pandas`` warnings for categorical data across several functions.
 - ``plot_volcano`` and ``plot_volcano_df`` now can use different colors for positive, negative and null genes.
 - ``benchmark`` now has increased verbosity.
+- ``get_metadata_associations`` now has a ``verbose`` argument.
+- ``plot_associations`` now uses the ``marsilea`` plotting library instead of ``PyComplexHeatmap``.
 
 Additions
 ~~~~~~~~~
