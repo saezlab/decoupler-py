@@ -111,7 +111,7 @@ def plot_volcano(logFCs, pvals, contrast, name=None, net=None, top=5, source='so
     color_pos: str
         Color to plot significant positive genes.
     color_neg: str
-        Color to plot significant negative genes. 
+        Color to plot significant negative genes.
     color_null: str
         Color to plot rest of the genes.
     figsize : tuple
@@ -234,7 +234,7 @@ def plot_volcano_df(data, x, y, top=5, sign_thr=0.05, lFCs_thr=0.5, sign_limit=N
     color_pos: str
         Color to plot significant positive genes.
     color_neg: str
-        Color to plot significant negative genes. 
+        Color to plot significant negative genes.
     color_null: str
         Color to plot rest of the genes.
     figsize : tuple
@@ -882,7 +882,8 @@ def plot_metrics_boxplot(df, metric, groupby=None, figsize=(5, 5), dpi=100, ax=N
             .index
         )
 
-        sns.boxplot(x='method', y='score', hue=groupby, data=df, ax=ax, order=order, hue_order=np.sort(df[groupby].unique()), **kwargs)
+        sns.boxplot(x='method', y='score', hue=groupby, data=df, ax=ax, order=order,
+                    hue_order=np.sort(df[groupby].unique()), **kwargs)
         if ax.get_legend() is not None:
             ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), frameon=False)
 
@@ -1525,8 +1526,9 @@ def _check_assoc_plot_intputs(data, associations, cols, uns_key, obsm_key, use_X
 
 
 def plot_associations(data, uns_key, associations=None, cols=None, obs_annotation_cols=None, obsm_key=None, use_X=False,
-                      layer=None, stat_col='p_adj', titles=['Scores', 'Stats'], sign_thr=0.05, n_factors=10, cmap_stats='Purples',
-                      cmap_scores='BrBG', cmap_cats='Set2', figsize=(5, 5), dpi=100, return_fig=False, save=None):
+                      layer=None, stat_col='p_adj', titles=['Scores', 'Stats'], sign_thr=0.05, n_factors=10,
+                      cmap_stats='Purples', cmap_scores='BrBG', cmap_cats='Set2', figsize=(5, 5), dpi=100, return_fig=False,
+                      save=None):
     """
     Create a composite plot displaying association results between scores (bottom) and summary statistics
     (top) using a clustermap.
@@ -1575,7 +1577,6 @@ def plot_associations(data, uns_key, associations=None, cols=None, obs_annotatio
         Whether to return a Figure object or not.
     save : str, None
         Path to where to save the plot. Infer the filetype if ending on {``.pdf``, ``.png``, ``.svg``}.
-        
 
     Returns
     -------
