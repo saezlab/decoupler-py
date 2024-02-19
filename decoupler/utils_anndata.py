@@ -1012,7 +1012,7 @@ def format_assoc_results(data, stats_df, inplace, obsm_key, uns_key, use_X, laye
 
 
 def get_metadata_associations(data, obs_keys=None, obsm_key=None, use_X=False, layer=None, uns_key=None, inplace=False,
-                              alpha=0.05, method='fdr_bh'):
+                              alpha=0.05, method='fdr_bh', verbose=False):
     """
     Associate the data to sample metadata using ANOVA. The data can be any kind of embedding stored in a layer,
     obsm or X matrix.
@@ -1045,6 +1045,8 @@ def get_metadata_associations(data, obs_keys=None, obsm_key=None, use_X=False, l
     method : (str, optional):
         The method used for multiple testing correction. It can be one of the methods supported by
         ``statsmodels.stats.multitest.multipletests`` (default is ``fdr_bh``, i.e., Benjamini-Hochberg method).
+    verbose : bool
+        Whether to show progress.
 
     Returns
     -------
@@ -1065,7 +1067,7 @@ def get_metadata_associations(data, obs_keys=None, obsm_key=None, use_X=False, l
 
     # for each dependent variable, test the association with the other columns in scores using an ANOVA
     # collect p-values and eta_sq in a dataframe
-    for dependent in tqdm(dependent_variables):
+    for dependent in tqdm(dependent_variables, disable=not verbose):
         stats = []
         for explainer in explanatory_variables:
             # check the data type of the column
