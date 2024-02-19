@@ -126,7 +126,10 @@ def _benchmark(mat, obs, net, perturb, sign, metrics=['auroc', 'auprc'], groupby
 
     # Run prediction
     if verbose:
-        n_src = obs.loc[:, 'perturb'].unique().size
+        srcs = []
+        for p in obs.loc[:, 'perturb']:
+            srcs.extend(p)
+        n_src = np.unique(srcs).size
         print("Running {0} experiments for {1} unique sources.".format(mat.shape[0], n_src))
         print('Running methods...')
     res = decouple([mat, obs.index, var.index], net, verbose=verbose, **decouple_kws)
