@@ -123,7 +123,7 @@ def plot_volcano(logFCs, pvals, contrast, name=None, net=None, top=5, source='so
     return_fig : bool
         Whether to return a Figure object or not.
     save : str, None
-        Path to where to save the plot. Infer the filetype if ending on {`.pdf`, `.png`, `.svg`}.
+        Path to where to save the plot. Infer the filetype if ending on {``.pdf``, ``.png``, ``.svg``}.
 
     Returns
     -------
@@ -246,7 +246,7 @@ def plot_volcano_df(data, x, y, top=5, sign_thr=0.05, lFCs_thr=0.5, sign_limit=N
     return_fig : bool
         Whether to return a Figure object or not.
     save : str, None
-        Path to where to save the plot. Infer the filetype if ending on {`.pdf`, `.png`, `.svg`}.
+        Path to where to save the plot. Infer the filetype if ending on {``.pdf``, ``.png``, ``.svg``}.
 
     Returns
     -------
@@ -338,7 +338,7 @@ def plot_targets(data, stat, source_name, net, source='source', target='target',
     return_fig : bool
         Whether to return a Figure object or not.
     save : str, None
-        Path to where to save the plot. Infer the filetype if ending on {`.pdf`, `.png`, `.svg`}.
+        Path to where to save the plot. Infer the filetype if ending on {``.pdf``, ``.png``, ``.svg``}.
 
     Returns
     -------
@@ -423,7 +423,7 @@ def plot_violins(mat, thr=None, log=False, use_raw=False, figsize=(7, 5), dpi=10
     return_fig : bool
         Whether to return a Figure object or not.
     save : str, None
-        Path to where to save the plot. Infer the filetype if ending on {`.pdf`, `.png`, `.svg`}.
+        Path to where to save the plot. Infer the filetype if ending on {``.pdf``, ``.png``, ``.svg``}.
 
     Returns
     -------
@@ -521,7 +521,7 @@ def plot_barplot(acts, contrast, top=25, vertical=False, cmap='coolwarm', vmin=N
     return_fig : bool
         Whether to return a Figure object or not.
     save : str, None
-        Path to where to save the plot. Infer the filetype if ending on {`.pdf`, `.png`, `.svg`}.
+        Path to where to save the plot. Infer the filetype if ending on {``.pdf``, ``.png``, ``.svg``}.
 
     Returns
     -------
@@ -667,7 +667,7 @@ def plot_metrics_scatter(df, x='auroc', y='auprc', groupby=None, show_text=True,
     return_fig : bool
         Whether to return a Figure object or not.
     save : str, None
-        Path to where to save the plot. Infer the filetype if ending on {`.pdf`, `.png`, `.svg`}.
+        Path to where to save the plot. Infer the filetype if ending on {``.pdf``, ``.png``, ``.svg``}.
 
     Returns
     -------
@@ -758,7 +758,7 @@ def plot_metrics_scatter_cols(df, col, x='auroc', y='auprc', groupby=None, n_col
     return_fig : bool
         Whether to return a Figure object or not.
     save : str, None
-        Path to where to save the plot. Infer the filetype if ending on {`.pdf`, `.png`, `.svg`}.
+        Path to where to save the plot. Infer the filetype if ending on {``.pdf``, ``.png``, ``.svg``}.
 
     Returns
     -------
@@ -841,7 +841,7 @@ def plot_metrics_boxplot(df, metric, groupby=None, figsize=(5, 5), dpi=100, ax=N
     return_fig : bool
         Whether to return a Figure object or not.
     save : str, None
-        Path to where to save the plot. Infer the filetype if ending on {`.pdf`, `.png`, `.svg`}.
+        Path to where to save the plot. Infer the filetype if ending on {``.pdf``, ``.png``, ``.svg``}.
     kwargs : dict
         Other keyword arguments are passed through to seaborn.boxplot().
 
@@ -940,7 +940,7 @@ def plot_psbulk_samples(adata, groupby, figsize=(5, 5), dpi=100, ax=None, return
     return_fig : bool
         Whether to return a Figure object or not.
     save : str, None
-        Path to where to save the plot. Infer the filetype if ending on {`.pdf`, `.png`, `.svg`}.
+        Path to where to save the plot. Infer the filetype if ending on {``.pdf``, ``.png``, ``.svg``}.
     kwargs : dict
         Other keyword arguments are passed through to seaborn.scatterplot().
 
@@ -1024,7 +1024,7 @@ def plot_filter_by_expr(adata, obs=None, group=None, lib_size=None, min_count=10
     return_fig : bool
         Whether to return a Figure object or not.
     save : str, None
-        Path to where to save the plot. Infer the filetype if ending on {`.pdf`, `.png`, `.svg`}.
+        Path to where to save the plot. Infer the filetype if ending on {``.pdf``, ``.png``, ``.svg``}.
     kwargs : dict
         Other keyword arguments are passed through to ``sns.histplot``.
 
@@ -1083,7 +1083,7 @@ def plot_filter_by_expr(adata, obs=None, group=None, lib_size=None, min_count=10
 def plot_filter_by_prop(adata, min_prop=0.2, min_smpls=2, cmap='viridis', figsize=(5, 4),
                         dpi=100, ax=None, return_fig=False, save=None, **kwargs):
     """
-    Plot to help determining the thresholds of the ``decoupler.filter_by_expr`` function.
+    Plot to help determining the thresholds of the ``decoupler.filter_by_prop`` function.
 
     Parameters
     ----------
@@ -1104,7 +1104,7 @@ def plot_filter_by_prop(adata, min_prop=0.2, min_smpls=2, cmap='viridis', figsiz
     return_fig : bool
         Whether to return a Figure object or not.
     save : str, None
-        Path to where to save the plot. Infer the filetype if ending on {`.pdf`, `.png`, `.svg`}.
+        Path to where to save the plot. Infer the filetype if ending on {``.pdf``, ``.png``, ``.svg``}.
     kwargs : dict
         Other keyword arguments are passed through to ``matplotlib.pyplot.hist``.
 
@@ -1175,7 +1175,7 @@ def plot_running_score(df, stat, net, set_name, source='source', target='target'
     return_fig : bool
         Whether to return a Figure object or not.
     save : str, None
-        Path to where to save the plot. Infer the filetype if ending on {`.pdf`, `.png`, `.svg`}.
+        Path to where to save the plot. Infer the filetype if ending on {``.pdf``, ``.png``, ``.svg``}.
 
     Returns
     -------
@@ -1330,7 +1330,7 @@ def plot_barplot_df(df, x, y, color='gray', thr=None, thr_color='black', title=N
     return_fig : bool
         Whether to return a Figure object or not.
     save : str, None
-        Path to where to save the plot. Infer the filetype if ending on {`.pdf`, `.png`, `.svg`}.
+        Path to where to save the plot. Infer the filetype if ending on {``.pdf``, ``.png``, ``.svg``}.
     kwargs : dict
         Other keyword arguments are passed through to ``matplotlib.pyplot.barh``.
 
@@ -1403,7 +1403,7 @@ def plot_dotplot(df, x, y, c, s, scale=5, cmap='viridis_r', title=None, figsize=
     return_fig : bool
         Whether to return a Figure object or not.
     save : str, None
-        Path to where to save the plot. Infer the filetype if ending on {`.pdf`, `.png`, `.svg`}.
+        Path to where to save the plot. Infer the filetype if ending on {``.pdf``, ``.png``, ``.svg``}.
 
     Returns
     -------
@@ -1525,135 +1525,132 @@ def _check_assoc_plot_intputs(data, associations, cols, uns_key, obsm_key, use_X
 
 
 def plot_associations(data, uns_key, associations=None, cols=None, obs_annotation_cols=None, obsm_key=None, use_X=False,
-                      layer=None, stat_col='p_adj', titles=['Scores', 'Stats'], scores_kwargs={}, stats_kwargs={}):
+                      layer=None, stat_col='p_adj', titles=['Scores', 'Stats'], sign_thr=0.05, n_factors=10, cmap_stats='Purples',
+                      cmap_scores='BrBG', cmap_cats='Set2', figsize=(5, 5), dpi=100, return_fig=False, save=None):
     """
     Create a composite plot displaying association results between scores (bottom) and summary statistics
-    (top) using a ClusterMap.
+    (top) using a clustermap.
 
     Requires PyComplexHeatmap to be installed.
 
     Parameters:
     ------------
-        data : AnnData or MuData
-            The input data containing the association results in .uns[uns_key] and the underlying data in
-            .obsm[obsm_key], .X or .layers[layer].
-        uns_key : str, optional
-            Key in `data.uns` where the association statistics are stored.
-        associations : list, optional
-            List of association names to be plotted. If None, all associations will be plotted (default is None).
-        cols : list, optional
-            List of columns to be plotted (i.e. columns of .obsm/rows of .var). If None, all columns will be
-            plotted (default is None).
-        obsm_key : str, optional
-            Key of `data.obsm` used to plot the bottom clustermap. Either `obsm_key`, `use_X`, or `layer` must be specified.
-        use_X : bool, optional
-            Boolean indicating whether to use the data in `.X` for the bottom clustermap. Either `obsm_key`, `use_X`,
-            or `layer` must be specified.
-        layer : str, optional
-            Key of `data.layers` used to plot the bottom clustermap. Either `obsm_key`, `use_X`, or `layer` must be specified.
-        stat_col : str, optional
-            Name of the summary statistic column in `data.uns[uns_key]` to be shown in the top clustermap (default is 'p_adj').
-        titles : list, optional
-            A list of two strings representing the titles for the ClusterMap for scores and statistics,
-            respectively (default is ['Scores', 'Stats']).
-        scores_kwargs : dict, optional
-            A dictionary of additional keyword arguments for customizing the ClusterMap for scores.
-            See PyComplexHeatmap.ClusterMapPlotter for available options.
-        stats_kwargs : dict, optional
-            A dictionary of additional keyword arguments for customizing the ClusterMap for statistics.
-            See PyComplexHeatmap.ClusterMapPlotter for available options.
+    data : AnnData or MuData
+        The input data containing the association results in .uns[uns_key] and the underlying data in
+        .obsm[obsm_key], .X or .layers[layer].
+    uns_key : str, optional
+        Key in `data.uns` where the association statistics are stored.
+    associations : list, optional
+        List of association names to be plotted. If None, all associations will be plotted (default is None).
+    cols : list, optional
+        List of columns to be plotted (i.e. columns of .obsm/rows of .var). If None, all columns will be
+        plotted (default is None).
+    obsm_key : str, optional
+        Key of `data.obsm` used to plot the bottom clustermap. Either `obsm_key`, `use_X`, or `layer` must be specified.
+    use_X : bool, optional
+        Boolean indicating whether to use the data in `.X` for the bottom clustermap. Either `obsm_key`, `use_X`,
+        or `layer` must be specified.
+    layer : str, optional
+        Key of `data.layers` used to plot the bottom clustermap. Either `obsm_key`, `use_X`, or `layer` must be specified.
+    stat_col : str, optional
+        Name of the summary statistic column in `data.uns[uns_key]` to be shown in the top clustermap (default is 'p_adj').
+    titles : list, optional
+        A list of two strings representing the titles for the ClusterMap for scores and statistics,
+        respectively (default is ['Scores', 'Stats']).
+    sign_thr : float
+        Significance threshold for p-values.
+    n_factors : int
+        Number of factors (score features) to plot.
+    cmap_stats : str
+        Colormap to use for stats values.
+    cmap_scores : str
+        Colormap to use for scores values.
+    cmap_cats : str
+        Colormap to use for ``obs_annotation_cols`` categories.
+    figsize : tuple
+        Figure size.
+    dpi : int
+        DPI resolution of figure.
+    return_fig : bool
+        Whether to return a Figure object or not.
+    save : str, None
+        Path to where to save the plot. Infer the filetype if ending on {``.pdf``, ``.png``, ``.svg``}.
+        
 
-    Returns:
-        ax : matplotlib.Axes
-            The main axis of the composite plot.
-        legend_axes : list
-            A list of matplotlib.Axes containing the legend(s) associated with the ClusterMap(s).
+    Returns
+    -------
+    fig : Figure, None
+        If return_fig, returns Figure object.
     """
 
     try:
-        import PyComplexHeatmap as pch
+        import marsilea as ma
+        import marsilea.plotter as mp
+        from matplotlib.patches import Rectangle
+        import matplotlib.pyplot as plt
     except ImportError:
-        raise ImportError('PyComplexHeatmap is not installed. Please install it using "pip install PyComplexHeatmap"')
+        raise ImportError('marsilea is not installed. Please install it using "pip install marsilea"')
 
+    # Extract inputs
     stats, acts = _check_assoc_plot_intputs(data, associations, cols, uns_key, obsm_key, use_X, layer, stat_col)
 
-    # subset acts columns with those in stats['factor']
-    acts = acts[stats.factor.unique()]
-
-    # go from long to wide format using only the selected summary statistic
-    stats = stats.pivot(index='factor', columns='variable', values=stat_col).T
+    # Go from long to wide format using only the selected summary statistic
+    col_order = stats['factor'].unique()
+    stats = stats.pivot(index='factor', columns='variable', values=stat_col).T.loc[:, col_order]
     stats.index.name = None
     stats.columns.name = None
     if stat_col in ['pval', 'p_adj']:  # do log transform for pvalues
         stats = -np.log10(stats)
 
-    # defining defaults for clustermaps
-    score_defaults = {'col_cluster': False,
-                      'row_cluster': True,
-                      'label': '{0}scores'.format('' if obsm_key is None else obsm_key.replace('X_', '') + ' '),
-                      'row_dendrogram': True,
-                      'col_dendrogram': False,
-                      'show_rownames': False,
-                      'show_colnames': True,
-                      'verbose': 0,
-                      'legend_gap': 5,
-                      'cmap': 'RdBu_r',
-                      'center': 0}
-    score_defaults.update(scores_kwargs)
+    # Subset stats and acts columns with those in stats['factor']
+    stats = stats.loc[:, stats.columns[:n_factors]].copy()
+    acts = acts.loc[:, stats.columns].copy()
 
-    stats_label = '-log10({0})'.format(stat_col) if stat_col in ['pval', 'p_adj'] else stat_col
-    stats_defaults = {'col_cluster': False,
-                      'row_cluster': True,
-                      'label': stats_label,
-                      'row_dendrogram': True,
-                      'col_dendrogram': False,
-                      'show_rownames': True,
-                      'show_colnames': False,
-                      'verbose': 0,
-                      'legend_gap': 5,
-                      'cmap': 'Reds' if stat_col in ['pval', 'p_adj'] else 'Greens'}
-    stats_defaults.update(stats_kwargs)
+    h1 = ma.Heatmap(stats, cmap=cmap_stats, width=4, height=1, name="h1")
+    h1.add_title(top=titles[1], align="center")
+    h1.add_legends()
+    h1.add_dendrogram("left")
+    h1.add_right(mp.Labels(stats.index, ))
+    sign_msk = stats.values > -np.log10(sign_thr)
+    layer = mp.MarkerMesh(sign_msk, marker='*', label="{0} < {1}".format(stat_col, str(sign_thr)))
+    h1.add_layer(layer, name='sign')
 
-    if obs_annotation_cols is not None:
-        simples = {}
-        for col in obs_annotation_cols:
-            if data.obs[col].dtype == 'object' or data.obs[col].dtype == 'category':
-                annot = data.obs[col].astype('object')
-                simples[col] = pch.annotations.anno_simple(annot, label=True)
-            else:
-                raise ValueError("""Column {0} is not of object or category dtype.
-                These are the only formats supported for now. If you want more complex types annotations, please build your
-                own HeatMapAnnotation object from PyComplexHeatmap and pass it to
-                `score_defaults` under right_annotation""".format(col))
-        score_defaults['right_annotation'] = pch.HeatmapAnnotation(
-            **simples,
-            wgap=2,
-            legend_width=10,
-            label_side='bottom',
-            legend=False,
-            axis=0
-        )
+    h2 = ma.Heatmap(acts.values, cmap=cmap_scores, width=0.4, height=4, name="h2")
+    h2.add_title(top=titles[0], align="center")
+    h2.add_legends()
+    h2.add_dendrogram("left")
 
-    # making both clustermaps
-    cm_scores = pch.ClusterMapPlotter(data=acts, plot=False, **score_defaults)
-    cm_stats = pch.ClusterMapPlotter(data=stats, plot=False, **stats_defaults)
+    for cat_col in obs_annotation_cols:
+        cats = list(data.obs[cat_col].values)
+        cat_colors = mp.Colors(cats, cmap=cmap_cats, label=cat_col)
+        h2.add_right(cat_colors, pad=0.1, size=0.2)
 
-    # combine clustermaps vertically
-    ax, legend_axes = pch.composite(
-        cmlist=[cm_stats, cm_scores],
-        main=1,
-        axis=0,
-        height_ratios=[1, 3],
-        row_gap=7,
-        legend_gap=15
-    )
+    h2.add_bottom(mp.Labels(acts.columns))
 
-    # add titles
-    if titles is not None:
-        cm_scores.ax.set_title(titles[0])
-        cm_stats.ax.set_title(titles[1])
+    c = (h1 / .2 / h2)
+    c.add_legends(side="right",
+                  stack_by='row', stack_size=2)
+    c.render()
+    if return_fig or save is not None:
+        plt.close()
 
-    return ax, legend_axes
+    hax = c.get_ax(board_name='h1', ax_name='h1')
+    border = Rectangle((0, 0), 1, 1, fill=False, ec=".1", lw=2, transform=hax.transAxes)
+    hax.add_artist(border)
+
+    hax = c.get_ax(board_name='h2', ax_name='h2')
+    border = Rectangle((0, 0), 1, 1, fill=False, ec=".1", lw=2, transform=hax.transAxes)
+    hax.add_artist(border)
+
+    fig = c.figure
+    fig.set_figwidth(figsize[0])
+    fig.set_figheight(figsize[1])
+    fig.set_dpi(dpi)
+
+    save_plot(fig, True, save)
+
+    if return_fig:
+        return fig
 
 
 def get_dict_types(act, obs):
@@ -1847,7 +1844,7 @@ def plot_network(net, obs=None, act=None, n_sources=5, n_targets=10, by_abs=True
     return_fig : bool
         Whether to return a Figure object or not.
     save : str, None
-        Path to where to save the plot. Infer the filetype if ending on {`.pdf`, `.png`, `.svg`}.
+        Path to where to save the plot. Infer the filetype if ending on {``.pdf``, ``.png``, ``.svg``}.
 
     Returns
     -------
@@ -1898,7 +1895,7 @@ def plot_network(net, obs=None, act=None, n_sources=5, n_targets=10, by_abs=True
         ax2.axis("off")
         ax3.axis("off")
 
-    save_plot(fig, None, save)
+    save_plot(fig, True, save)
 
     if return_fig:
         return fig
