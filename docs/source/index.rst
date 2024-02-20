@@ -20,11 +20,11 @@ decoupler - Ensemble of methods to infer biological activities
 .. |Codecov| image:: https://codecov.io/gh/saezlab/decoupler-py/branch/main/graph/badge.svg?token=TM0P29KKN5
    :target: https://codecov.io/gh/saezlab/decoupler-py
 
-.. |Conda| image:: https://anaconda.org/bioconda/decoupler/badges/version.svg
-   :target: https://anaconda.org/bioconda/decoupler
+.. |Conda| image:: https://img.shields.io/conda/vn/conda-forge/decoupler-py.svg
+   :target: https://anaconda.org/conda-forge/decoupler-py
 
-.. |CondaDownloads| image:: https://anaconda.org/bioconda/decoupler/badges/downloads.svg
-   :target: https://anaconda.org/bioconda/decoupler
+.. |CondaDownloads| image:: https://img.shields.io/conda/dn/conda-forge/decoupler-py.svg
+   :target: https://anaconda.org/conda-forge/decoupler-py
 
 ``decoupler`` is a package containing different statistical methods to extract biological activities from omics data within a unified framework. It allows to flexibly test any enrichment method with any prior knowledge resource and incorporates methods that take into account the sign and weight. It can be used with any omic, as long as its features can be linked to a biological process based on prior knowledge. For example, in transcriptomics gene sets regulated by a transcription factor, or in phospho-proteomics phosphosites that are targeted by a kinase.
 

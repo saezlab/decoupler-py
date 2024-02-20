@@ -18,7 +18,7 @@ It can also be installed from ``conda`` and ``mamba`` (this includes extra depen
 
 .. code-block:: console
 
-   mamba create -n=decoupler -c conda-forge -c bioconda decoupler
+   mamba create -n=decoupler conda-forge::decoupler-py
 
 Development Version
 -------------------

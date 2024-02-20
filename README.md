@@ -6,8 +6,8 @@
 [![Documentation Status](https://readthedocs.org/projects/decoupler-py/badge/?version=latest)](https://decoupler-py.readthedocs.io/en/latest/?badge=latest)
 [![codecov](https://codecov.io/gh/saezlab/decoupler-py/branch/main/graph/badge.svg?token=TM0P29KKN5)](https://codecov.io/gh/saezlab/decoupler-py)
 
-[![Conda page](https://anaconda.org/bioconda/decoupler/badges/version.svg)](https://anaconda.org/bioconda/decoupler)
-[![Conda downloads](https://anaconda.org/bioconda/decoupler/badges/downloads.svg)](https://anaconda.org/bioconda/decoupler)
+[![Conda page](https://img.shields.io/conda/vn/conda-forge/decoupler-py.svg)](https://anaconda.org/conda-forge/decoupler-py)
+[![Conda downloads](https://img.shields.io/conda/dn/conda-forge/decoupler-py.svg)](https://anaconda.org/conda-forge/decoupler-py)
 <!-- badges: end -->
 
 `decoupler` is a package containing different enrichment statistical methods to extract biological activities from omics data within a unified framework.
@@ -26,7 +26,7 @@ pip install decoupler
 
 It can also be installed from `conda` and `mamba` (this includes extra dependencies):
 ```
-mamba create -n=decoupler -c conda-forge -c bioconda decoupler
+mamba create -n=decoupler conda-forge::decoupler-py
 ```
 
 Alternatively, to stay up-to-date with the newest unreleased version, install from source: 
