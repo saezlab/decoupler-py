@@ -13,7 +13,6 @@ from tqdm import tqdm
 
 from .utils import melt, p_adjust_fdr
 from .pre import rename_net
-import copy
 
 
 def get_acts(adata, obsm_key, dtype=np.float32):
@@ -508,7 +507,7 @@ def get_contrast(adata, group_col, condition_col, condition, reference=None, met
     for grp in groups:
 
         # Sub-set by group
-        sub_adata = copy.deepcopy(adata[adata.obs[group_col] == grp])
+        sub_adata = adata[adata.obs[group_col] == grp]
         sub_adata.obs = sub_adata.obs[[condition_col]]
 
         # Transform string columns to categories (removes anndata warnings)
