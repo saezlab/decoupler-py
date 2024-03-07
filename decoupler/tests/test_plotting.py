@@ -105,6 +105,8 @@ def test_plot_barplot():
                             columns=['T1', 'T2', 'T3'], index=['C1', 'C2', 'C3'])
     plot_barplot(estimate, 'C1', vertical=False, return_fig=False)
     plot_barplot(estimate, 'C1', vertical=True, return_fig=True)
+    fig, ax = plt.subplots(1, 1)
+    plot_barplot(estimate, 'C1', vertical=False, ax=ax)
 
 
 def test_build_msks():

@@ -492,7 +492,7 @@ def set_limits(vmin, vcenter, vmax, values):
 
 
 def plot_barplot(acts, contrast, top=25, vertical=False, cmap='coolwarm', vmin=None, vcenter=0, vmax=None,
-                 figsize=(7, 5), dpi=100, return_fig=False, save=None):
+                 figsize=(7, 5), dpi=100, ax=None, return_fig=False, save=None):
     """
     Plot barplots showing the top absolute value activities.
 
@@ -518,6 +518,8 @@ def plot_barplot(acts, contrast, top=25, vertical=False, cmap='coolwarm', vmin=N
         Figure size.
     dpi : int
         DPI resolution of figure.
+    ax : Axes, None
+        A matplotlib axes object. If None returns new figure.
     return_fig : bool
         Whether to return a Figure object or not.
     save : str, None
@@ -562,7 +564,9 @@ def plot_barplot(acts, contrast, top=25, vertical=False, cmap='coolwarm', vmin=N
         x, y = 'index', 'acts'
 
     # Plot
-    fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=dpi)
+    fig = None
+    if ax is None:
+        fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=dpi)
     sns.barplot(data=df, x=x, y=y, ax=ax)
 
     if vertical:
@@ -588,7 +592,7 @@ def plot_barplot(acts, contrast, top=25, vertical=False, cmap='coolwarm', vmin=N
     # Add legend
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=divnorm)
     sm.set_array([])
-    fig.colorbar(sm, ax=ax)
+    ax.get_figure().colorbar(sm, ax=ax)
 
     save_plot(fig, ax, save)
 
