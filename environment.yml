@@ -8,4 +8,4 @@ dependencies:
   - "pandas=2.1.1" 
   - pip
   - pip:
-    - omnipath=1.0.8
+    - omnipath==1.0.8
