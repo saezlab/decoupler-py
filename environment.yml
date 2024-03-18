@@ -1,0 +1,12 @@
+name: backsub
+channels:
+  - conda-forge
+  - defaults
+  - anaconda
+dependencies:
+  - "python=3.12"
+  - "scipy=1.9.3"
+  - "pandas=2.1.1" 
+  - pip
+  - pip:
+    - omnipath=1.0.8
