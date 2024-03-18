@@ -1,7 +1,5 @@
 name: Publish to Docker
 on:
-  push:
-    branches: [ main ]
   release:
     types: [published]
 permissions:
@@ -18,7 +16,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/saezlab/publish-packages/game
+          images: ghcr.io/saezlab/publish-packages/decoupler
           tags: type=sha
       - name: Login to GHCR
         uses: docker/login-action@v3
