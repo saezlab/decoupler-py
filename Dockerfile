@@ -7,5 +7,5 @@ RUN apt-get update -qq && apt-get install -y \
 RUN conda env create -f environment.yml
 ENV PATH="/opt/conda/envs/backsub/bin:$PATH"
 
-RUN pip install --upgrade git+https://github.com/saezlab/decoupler-py
+RUN pip install --upgrade decoupler-py
 
