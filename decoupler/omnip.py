@@ -714,6 +714,90 @@ def translate_net(
     return hom_net
 
 
+def add_genesymbols(
+        net: pd.DataFrame,
+        column: str,
+        target_column: str,
+        organism: str | int = 'human',
+        resource: (
+            Literal['uniprot', 'ensembl'] |
+            dict[str, set[str]]
+        ) = 'uniprot',
+    ) -> pd.DataFrame:
+    """
+    Add or update gene symbols in data frame.
+
+    Parameters
+    ----------
+    net : DataFrame
+        A data frame with a column containing UniProt IDs.
+    column : str
+        Name of the column containing the UniProt IDs.
+    target_column : str
+        Column name where to store the gene symbols.
+    resource : str
+        Resource to query for gene symbols. Either 'uniprot' or 'ensembl', or a
+        dictionary with UniProt IDs as keys and sets of Gene Symbols as values.
+
+    Returns
+    -------
+    net : DataFrame
+        The input data frame with gene symbols added or updated.
+    """
+
+    _check_if_pypath()
+    from pypath.internals import input_formats
+    from pypath.utils import mapping
+    from pypath.utils import taxonomy
+
+    _organism = taxonomy.ensure_ncbi_tax_id(organism)
+
+    if not isinstance(resource, dict):
+
+        if resource == 'uniprot':
+            mapping_cls = input_formats.UniProtMapping
+        elif resource == 'ensembl':
+            mapping_cls = input_formats.BiomartMapping
+        else:
+            raise ValueError('Resource must be either "uniprot" or "ensembl".')
+
+        mapping_def = mapping_cls(
+            id_type_a = 'uniprot',
+            id_type_b = 'genesymbol',
+            ncbi_tax_id = _organism,
+        )
+
+        resource = mapping.MapReader(mapping_def).a_to_b
+
+    mapping_table = pd.DataFrame(
+        (
+            (u, g)
+            for u, gs in
+            resource.items()
+            for g in gs
+        ),
+        columns = (column, target_column),
+    )
+
+    if target_column in net.columns:
+
+        col_idx = net.columns.get_loc(target_column)
+        net = net.drop(target_column, axis = 1)
+
+    else:
+
+        col_idx = net.columns.get_loc(column) + 1
+
+    net = net.merge(mapping_table, how = 'left', on = column)
+    net = net[
+        list(net.columns[1:col_idx]) +
+        [target_column] +
+        list(net.columns[col_idx:-1])
+    ]
+
+    return net
+
+
 def get_ksn_omnipath(
         ) -> pd.DataFrame:
     """
