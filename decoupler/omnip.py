@@ -137,6 +137,15 @@ def _is_rat(name: str) -> bool:
     return _is_organism(name, 'rat')
 
 
+def _the_organism(organism: str | int) -> str:
+
+    return (
+        'mouse' if _is_mouse(organism) else
+        'rat' if _is_rat(organism) else
+        'human'
+    )
+
+
 def _static_fallback(
         query: str,
         resource: str,
@@ -176,8 +185,12 @@ def _warn_failure(resource: str, static_fallback: bool = True):
 def get_progeny(
         organism: str | int = 'human',
         top: int = 100,
+        genesymbol_resource: (
+            Literal['uniprot', 'ensembl'] |
+            dict[str, set[str]]
+        ) = 'uniprot',
         **kwargs
-        ) -> pd.DataFrame:
+    ) -> pd.DataFrame:
     """
     Pathway RespOnsive GENes for activity inference (PROGENy).
 
@@ -193,6 +206,10 @@ def get_progeny(
         translated from human data by orthology.
     top : int
         Number of genes per pathway to return.
+    genesymbol_resource : str
+        Resource to query for gene symbols. Either "uniprot" or "ensembl",
+        or a dictionary with UniProt IDs as keys and sets of Gene Symbols
+        as values.
     kwargs
         Passed to `omnipath.requests.Annotations.get`.
 
@@ -222,8 +239,28 @@ def get_progeny(
     p = p.unstack('label').droplevel(axis=1, level=0)
     p.columns = np.array(p.columns)
     p = p.reset_index()
+    p = p.drop('record_id', axis = 1)
     p.columns.name = None
-    p = p[['genesymbol', 'p_value', 'pathway', 'weight']]
+
+    if not _is_human(organism):
+
+        p = translate_net(
+            p,
+            columns='uniprot',
+            id_type='uniprot',
+            source_organism=9606,
+            target_organism=organism,
+        )
+
+    p = add_genesymbols(
+        net = p,
+        column = 'uniprot',
+        target_column = 'genesymbol',
+        organism = organism,
+        resource = genesymbol_resource,
+    )
+
+    p = p[['pathway', 'genesymbol', 'weight', 'p_value']]
     p = p[~p.duplicated(['pathway', 'genesymbol'])]
     p['p_value'] = p['p_value'].astype(np.float32)
     p['weight'] = p['weight'].astype(np.float32)
@@ -233,22 +270,11 @@ def get_progeny(
         groupby('pathway').
         head(top).
         sort_values(['pathway', 'p_value']).
-        reset_index()
+        reset_index(drop = True)
     )
-    p = p[['pathway', 'genesymbol', 'weight', 'p_value']]
-    p['weight'] = p['weight'].astype(np.float32)
-    p['p_value'] = p['p_value'].astype(np.float32)
     p.columns = ['source', 'target', 'weight', 'p_value']
     p = op._misc.dtypes.auto_dtype(p)
 
-    if not _is_human(organism):
-
-        p = translate_net(
-            p,
-            columns='target',
-            source_organism=9606,
-            target_organism=organism,
-        )
 
     return p.reset_index(drop=True)
 
@@ -256,6 +282,10 @@ def get_progeny(
 def get_resource(
         name: str,
         organism: str | int = 'human',
+        genesymbol_resource: (
+            Literal['uniprot', 'ensembl'] |
+            dict[str, set[str]]
+        ) = 'uniprot',
         **kwargs
         ) -> pd.DataFrame:
     """
@@ -274,6 +304,10 @@ def get_resource(
         The organism of interest: either NCBI Taxonomy ID, common name,
         latin name or Ensembl name. Organisms other than human will be
         translated from human data by orthology.
+    genesymbol_resource : str
+        Resource to query for gene symbols. Either "uniprot" or "ensembl",
+        or a dictionary with UniProt IDs as keys and sets of Gene Symbols
+        as values.
     kwargs
         Passed to `omnipath.requests.Annotations.get`.
 
@@ -310,6 +344,7 @@ def get_resource(
             entity_type='protein',
             **kwargs
         )
+
     except Exception:
         df = _static_fallback(
             query='annotations',
@@ -329,17 +364,26 @@ def get_resource(
     )
     df.columns = list(df.columns)
     df = df.reset_index()
-    df = df.drop(columns=['record_id', 'uniprot', 'entity_type', 'source'])
-    df = op._misc.dtypes.auto_dtype(df)
 
     if not _is_human(organism):
 
         df = translate_net(
             df,
             target_organism=organism,
-            columns='genesymbol',
+            columns='uniprot',
             unique_by=None,
         )
+
+    df = add_genesymbols(
+        net = df,
+        column = 'uniprot',
+        target_column = 'genesymbol',
+        organism = organism,
+        resource = genesymbol_resource,
+    )
+
+    df = df.drop(columns=['record_id', 'uniprot', 'entity_type', 'source'])
+    df = op._misc.dtypes.auto_dtype(df)
 
     return df.reset_index(drop=True)
 
@@ -364,6 +408,10 @@ def get_dorothea(
         organism: str | int = 'human',
         levels: DOROTHEA_LEVELS | Iterable[DOROTHEA_LEVELS] = ('A', 'B', 'C'),
         weight_dict: dict[str, int] | None = None,
+        genesymbol_resource: (
+            Literal['uniprot', 'ensembl'] |
+            dict[str, set[str]]
+        ) = 'uniprot',
         **kwargs
         ) -> pd.DataFrame:
     """
@@ -388,6 +436,10 @@ def get_dorothea(
         Dictionary of values to divide the mode of regulation (-1 or 1),
         one for each confidence level. Bigger values will generate weights
         close to zero.
+    genesymbol_resource : str
+        Resource to query for gene symbols. Either "uniprot" or "ensembl",
+        or a dictionary with UniProt IDs as keys and sets of Gene Symbols
+        as values.
     kwargs
         Passed to `omnipath.interactions.Dorothea.get`.
 
@@ -402,11 +454,7 @@ def get_dorothea(
     weights = {'A': 1, 'B': 2, 'C': 3, 'D': 4}
     weights.update(weight_dict or {})
 
-    _organism = (
-        'mouse' if _is_mouse(organism) else
-        'rat' if _is_rat(organism) else
-        'human'
-    )
+    _organism = _the_organism(organism)
 
     _omnipath_check_version()
     op = _check_if_omnipath()
@@ -425,6 +473,26 @@ def get_dorothea(
             resource='DoRothEA',
             organism=TAXIDS[_organism],
             dorothea_levels=['A', 'B', 'C', 'D'],
+        )
+
+    if _organism not in ('mouse', 'rat') and not _is_human(organism):
+
+        do = translate_net(
+            net=do,
+            target_organism=organism,
+            columns=('source', 'target'),
+            unique_by=('source', 'target'),
+            id_type='uniprot',
+        )
+
+    for side in ('source', 'target'):
+
+        do = add_genesymbols(
+            net = do,
+            column = side,
+            target_column = f'{side}_genesymbol',
+            organism = organism,
+            resource = genesymbol_resource,
         )
 
     # Filter extra columns
@@ -484,16 +552,6 @@ def get_dorothea(
         reset_index(drop=True)
     )
 
-    if _organism not in ('mouse', 'rat') and not _is_human(organism):
-
-        do = translate_net(
-            net=do,
-            target_organism=organism,
-            columns=('source', 'target'),
-            unique_by=('source', 'target'),
-            id_type='genesymbol',
-        )
-
     return do.reset_index(drop=True)
 
 
@@ -512,6 +570,10 @@ def merge_genes_to_complexes(ct_cmplx):
 def get_collectri(
         organism: str | int = 'human',
         split_complexes=False,
+        genesymbol_resource: (
+            Literal['uniprot', 'ensembl'] |
+            dict[str, set[str]]
+        ) = 'uniprot',
         **kwargs
         ) -> pd.DataFrame:
     """
@@ -530,6 +592,10 @@ def get_collectri(
         translated from human data by orthology.
     split_complexes : bool
         Whether to split complexes into subunits. By default complexes are kept as they are.
+    genesymbol_resource : str
+        Resource to query for gene symbols. Either "uniprot" or "ensembl",
+        or a dictionary with UniProt IDs as keys and sets of Gene Symbols
+        as values.
     kwargs
         Passed to `omnipath.interactions.CollecTRI.get`.
 
@@ -541,44 +607,84 @@ def get_collectri(
         each interaction.
     """
 
-    _organism = (
-        'mouse' if _is_mouse(organism) else
-        'rat' if _is_rat(organism) else
-        'human'
-    )
+    _organism = _the_organism(organism)
 
     _omnipath_check_version()
     op = _check_if_omnipath()
 
     # Load collectri
     try:
+
         ct = op.interactions.CollecTRI.get(
             genesymbols=True,
             organism=_organism,
             loops=True,
             **kwargs
         )
+
     except Exception:
+
         ct = _static_fallback(
             query='interactions',
             resource='CollecTRI',
             organism=TAXIDS[_organism],
         )
 
+    if _organism not in ('mouse', 'rat') and not _is_human(organism):
+
+        ct = translate_net(
+            net=ct,
+            target_organism=organism,
+            columns=('source', 'target'),
+            unique_by=('source', 'target'),
+            id_type='uniprot',
+        )
+
+    for side in ('source', 'target'):
+
+        ct = add_genesymbols(
+            net = ct,
+            column = side,
+            target_column = f'{side}_genesymbol',
+            organism = organism,
+            resource = genesymbol_resource,
+        )
+
     if _organism == 'human':
+
         try:
+
             mirna = op.interactions.TFmiRNA.get(
                 genesymbols=True,
-                databases=['CollecTRI'],
+                resources=['CollecTRI'],
                 strict_evidences=True,
             )
+
+            if genesymbol_resource != 'uniprot':
+
+                mirna = add_genesymbols(
+                    net = mirna,
+                    column = 'source',
+                    target_column = 'source_genesymbol',
+                    organism = organism,
+                    resource = genesymbol_resource,
+                )
+
             ct = pd.concat([ct, mirna], ignore_index=True)
+
         except Exception:
+
             _warn_failure('TF-miRNA interaction', static_fallback=False)
 
     # Separate gene_pairs from normal interactions
     msk = np.array([s.startswith('COMPLEX') for s in ct['source']])
-    cols = ['source_genesymbol', 'target_genesymbol', 'is_stimulation', 'is_inhibition', 'references_stripped']
+    cols = [
+        'source_genesymbol',
+        'target_genesymbol',
+        'is_stimulation',
+        'is_inhibition',
+        'references_stripped',
+    ]
     ct_inter = ct.loc[~msk, cols]
     ct_cmplx = ct.loc[msk, cols].copy()
 
@@ -596,18 +702,14 @@ def get_collectri(
     ct['weight'] = np.where(ct['is_inhibition'], -1, 1)
 
     # Select and rename columns
-    ct = ct.rename(columns={'source_genesymbol': 'source', 'target_genesymbol': 'target', 'references_stripped': 'PMID'})
+    ct = ct.rename(
+        columns = {
+            'source_genesymbol': 'source',
+            'target_genesymbol': 'target',
+            'references_stripped': 'PMID',
+        },
+    )
     ct = ct[['source', 'target', 'weight', 'PMID']]
-
-    if _organism not in ('mouse', 'rat') and not _is_human(organism):
-
-        ct = translate_net(
-            net=ct,
-            target_organism=organism,
-            columns=('source', 'target'),
-            unique_by=('source', 'target'),
-            id_type='genesymbol',
-        )
 
     return ct.reset_index(drop=True)
 
@@ -746,28 +848,32 @@ def add_genesymbols(
     """
 
     _check_if_pypath()
-    from pypath.internals import input_formats
     from pypath.utils import mapping
     from pypath.utils import taxonomy
+    from pypath.internals import input_formats
 
     _organism = taxonomy.ensure_ncbi_tax_id(organism)
 
     if not isinstance(resource, dict):
 
         if resource == 'uniprot':
-            mapping_cls = input_formats.UniProtMapping
+            mapping_cls = input_formats.UniprotMapping
         elif resource == 'ensembl':
             mapping_cls = input_formats.BiomartMapping
         else:
             raise ValueError('Resource must be either "uniprot" or "ensembl".')
 
         mapping_def = mapping_cls(
-            id_type_a = 'uniprot',
-            id_type_b = 'genesymbol',
+            id_type_a = 'genesymbol',
+            id_type_b = 'uniprot',
             ncbi_tax_id = _organism,
         )
 
-        resource = mapping.MapReader(mapping_def).a_to_b
+        resource = mapping.MapReader(
+            mapping_def,
+            load_b_to_a = True,
+            load_a_to_b = False,
+        ).b_to_a
 
     mapping_table = pd.DataFrame(
         (
@@ -790,7 +896,7 @@ def add_genesymbols(
 
     net = net.merge(mapping_table, how = 'left', on = column)
     net = net[
-        list(net.columns[1:col_idx]) +
+        list(net.columns[0:col_idx]) +
         [target_column] +
         list(net.columns[col_idx:-1])
     ]
@@ -799,7 +905,8 @@ def add_genesymbols(
 
 
 def get_ksn_omnipath(
-        ) -> pd.DataFrame:
+        organism: str | int = 'human',
+    ) -> pd.DataFrame:
     """
     OmniPath kinase-substrate network
 
@@ -816,8 +923,10 @@ def get_ksn_omnipath(
 
     op = _check_if_omnipath()
 
+    _organism = _the_organism(organism)
+
     # Load Kinase-Substrate Network
-    ksn = op.requests.Enzsub.get(genesymbols=True)
+    ksn = op.requests.Enzsub.get(genesymbols=True, organism = _organism)
 
     # Filter by phosphorilation
     cols = ['enzyme_genesymbol', 'substrate_genesymbol', 'residue_type',
