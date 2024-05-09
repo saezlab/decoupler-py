@@ -70,6 +70,38 @@ def _check_if_omnipath() -> ModuleType:
     return op
 
 
+def _check_if_pypath() -> None:
+
+    # Check if pypath is installed
+    try:
+
+        def ver(v):
+            return tuple(map(int, v.split('.')))
+
+        import pypath
+
+        if (
+            getattr(pypath, '__version__', None) and
+            ver(pypath.__version__) < ver(PYPATH_MIN_VERSION)
+        ):
+
+            msg = (
+                'The installed version of pypath-omnipath is too old, '
+                f'the oldest compatible version is {PYPATH_MIN_VERSION}.'
+            )
+            _misc.log_traceback(msg)
+            raise RuntimeError(msg)
+
+    except Exception:
+
+        msg = (
+            'pypath-omnipath is not installed. Please install it with: '
+            'pip install git+https://github.com/saezlab/pypath.git'
+        )
+        _misc.log_traceback(msg)
+        raise ImportError(msg)
+
+
 def _is_organism(
         name: str | int,
         organism: Literal['human', 'mouse', 'rat'],
@@ -638,37 +670,10 @@ def translate_net(
 
         return net
 
-    # Check if pypath is installed
-    try:
-
-        def ver(v):
-            return tuple(map(int, v.split('.')))
-
-        import pypath
-        from pypath.utils import orthology
-        from pypath.share import common
-        from pypath.utils import taxonomy
-
-        if (
-            getattr(pypath, '__version__', None) and
-            ver(pypath.__version__) < ver(PYPATH_MIN_VERSION)
-        ):
-
-            msg = (
-                'The installed version of pypath-omnipath is too old, '
-                f'the oldest compatible version is {PYPATH_MIN_VERSION}.'
-            )
-            _misc.log_traceback(msg)
-            raise RuntimeError(msg)
-
-    except Exception:
-
-        msg = (
-            'pypath-omnipath is not installed. Please install it with: '
-            'pip install git+https://github.com/saezlab/pypath.git'
-        )
-        _misc.log_traceback(msg)
-        raise ImportError(msg)
+    _check_if_pypath()
+    from pypath.utils import orthology
+    from pypath.share import common
+    from pypath.utils import taxonomy
 
     _source_organism = taxonomy.ensure_ncbi_tax_id(source_organism)
     _target_organism = taxonomy.ensure_ncbi_tax_id(target_organism)
