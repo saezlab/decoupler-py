@@ -11,6 +11,7 @@ __all__ = [
     'get_resource',
     'get_dorothea',
     'translate_net',
+    'add_genesymbols',
 ]
 
 import os
@@ -187,8 +188,10 @@ def get_progeny(
         top: int = 100,
         genesymbol_resource: (
             Literal['uniprot', 'ensembl'] |
-            dict[str, set[str]]
-        ) = 'uniprot',
+            dict[str, set[str]] |
+            bool |
+            None
+        ) = None,
         **kwargs
     ) -> pd.DataFrame:
     """
@@ -207,9 +210,11 @@ def get_progeny(
     top : int
         Number of genes per pathway to return.
     genesymbol_resource : str
-        Resource to query for gene symbols. Either "uniprot" or "ensembl",
+        Resource to query for Gene Symbols. Either "uniprot" or "ensembl",
         or a dictionary with UniProt IDs as keys and sets of Gene Symbols
-        as values.
+        as values. If None, the Gene Symbols provided by the web service will
+        be left intact. If False, the Gene Symbols will be dropped and UniProt
+        IDs will be used instead.
     kwargs
         Passed to `omnipath.requests.Annotations.get`.
 
@@ -241,25 +246,7 @@ def get_progeny(
     p = p.reset_index()
     p = p.drop('record_id', axis = 1)
     p.columns.name = None
-
-    if not _is_human(organism):
-
-        p = translate_net(
-            p,
-            columns='uniprot',
-            id_type='uniprot',
-            source_organism=9606,
-            target_organism=organism,
-        )
-
-    p = add_genesymbols(
-        net = p,
-        column = 'uniprot',
-        target_column = 'genesymbol',
-        organism = organism,
-        resource = genesymbol_resource,
-    )
-
+    p = _annotation_identifiers(p, organism, genesymbol_resource)
     p = p[['pathway', 'genesymbol', 'weight', 'p_value']]
     p = p[~p.duplicated(['pathway', 'genesymbol'])]
     p['p_value'] = p['p_value'].astype(np.float32)
@@ -275,7 +262,6 @@ def get_progeny(
     p.columns = ['source', 'target', 'weight', 'p_value']
     p = op._misc.dtypes.auto_dtype(p)
 
-
     return p.reset_index(drop=True)
 
 
@@ -284,8 +270,10 @@ def get_resource(
         organism: str | int = 'human',
         genesymbol_resource: (
             Literal['uniprot', 'ensembl'] |
-            dict[str, set[str]]
-        ) = 'uniprot',
+            dict[str, set[str]] |
+            bool |
+            None
+        ) = None,
         **kwargs
         ) -> pd.DataFrame:
     """
@@ -305,9 +293,11 @@ def get_resource(
         latin name or Ensembl name. Organisms other than human will be
         translated from human data by orthology.
     genesymbol_resource : str
-        Resource to query for gene symbols. Either "uniprot" or "ensembl",
+        Resource to query for Gene Symbols. Either "uniprot" or "ensembl",
         or a dictionary with UniProt IDs as keys and sets of Gene Symbols
-        as values.
+        as values. If None, the Gene Symbols provided by the web service will
+        be left intact. If False, the Gene Symbols will be dropped and UniProt
+        IDs will be used instead.
     kwargs
         Passed to `omnipath.requests.Annotations.get`.
 
@@ -339,6 +329,7 @@ def get_resource(
         assert name in annot_resources, msg
 
     try:
+
         df = op.requests.Annotations.get(
             resources=name,
             entity_type='protein',
@@ -346,6 +337,7 @@ def get_resource(
         )
 
     except Exception:
+
         df = _static_fallback(
             query='annotations',
             resource=name,
@@ -364,24 +356,7 @@ def get_resource(
     )
     df.columns = list(df.columns)
     df = df.reset_index()
-
-    if not _is_human(organism):
-
-        df = translate_net(
-            df,
-            target_organism=organism,
-            columns='uniprot',
-            unique_by=None,
-        )
-
-    df = add_genesymbols(
-        net = df,
-        column = 'uniprot',
-        target_column = 'genesymbol',
-        organism = organism,
-        resource = genesymbol_resource,
-    )
-
+    df = _annotation_identifiers(df, organism, genesymbol_resource)
     df = df.drop(columns=['record_id', 'uniprot', 'entity_type', 'source'])
     df = op._misc.dtypes.auto_dtype(df)
 
@@ -410,8 +385,10 @@ def get_dorothea(
         weight_dict: dict[str, int] | None = None,
         genesymbol_resource: (
             Literal['uniprot', 'ensembl'] |
-            dict[str, set[str]]
-        ) = 'uniprot',
+            dict[str, set[str]] |
+            bool |
+            None
+        ) = None,
         **kwargs
         ) -> pd.DataFrame:
     """
@@ -437,9 +414,11 @@ def get_dorothea(
         one for each confidence level. Bigger values will generate weights
         close to zero.
     genesymbol_resource : str
-        Resource to query for gene symbols. Either "uniprot" or "ensembl",
+        Resource to query for Gene Symbols. Either "uniprot" or "ensembl",
         or a dictionary with UniProt IDs as keys and sets of Gene Symbols
-        as values.
+        as values. If None, the Gene Symbols provided by the web service will
+        be left intact. If False, the Gene Symbols will be dropped and UniProt
+        IDs will be used instead.
     kwargs
         Passed to `omnipath.interactions.Dorothea.get`.
 
@@ -461,13 +440,16 @@ def get_dorothea(
 
     # Load Dorothea
     try:
+
         do = op.interactions.Dorothea.get(
             fields=['dorothea_level', 'extra_attrs'],
             dorothea_levels=['A', 'B', 'C', 'D'],
             genesymbols=True,
             organism=_organism,
         )
+
     except Exception:
+
         do = _static_fallback(
             query='interactions',
             resource='DoRothEA',
@@ -475,25 +457,7 @@ def get_dorothea(
             dorothea_levels=['A', 'B', 'C', 'D'],
         )
 
-    if _organism not in ('mouse', 'rat') and not _is_human(organism):
-
-        do = translate_net(
-            net=do,
-            target_organism=organism,
-            columns=('source', 'target'),
-            unique_by=('source', 'target'),
-            id_type='uniprot',
-        )
-
-    for side in ('source', 'target'):
-
-        do = add_genesymbols(
-            net = do,
-            column = side,
-            target_column = f'{side}_genesymbol',
-            organism = organism,
-            resource = genesymbol_resource,
-        )
+    do = _network_identifiers(do, organism, genesymbol_resource)
 
     # Filter extra columns
     do = do[[
@@ -572,8 +536,10 @@ def get_collectri(
         split_complexes=False,
         genesymbol_resource: (
             Literal['uniprot', 'ensembl'] |
-            dict[str, set[str]]
-        ) = 'uniprot',
+            dict[str, set[str]] |
+            bool |
+            None
+        ) = None,
         **kwargs
         ) -> pd.DataFrame:
     """
@@ -593,9 +559,11 @@ def get_collectri(
     split_complexes : bool
         Whether to split complexes into subunits. By default complexes are kept as they are.
     genesymbol_resource : str
-        Resource to query for gene symbols. Either "uniprot" or "ensembl",
+        Resource to query for Gene Symbols. Either "uniprot" or "ensembl",
         or a dictionary with UniProt IDs as keys and sets of Gene Symbols
-        as values.
+        as values. If None, the Gene Symbols provided by the web service will
+        be left intact. If False, the Gene Symbols will be dropped and UniProt
+        IDs will be used instead.
     kwargs
         Passed to `omnipath.interactions.CollecTRI.get`.
 
@@ -630,25 +598,7 @@ def get_collectri(
             organism=TAXIDS[_organism],
         )
 
-    if _organism not in ('mouse', 'rat') and not _is_human(organism):
-
-        ct = translate_net(
-            net=ct,
-            target_organism=organism,
-            columns=('source', 'target'),
-            unique_by=('source', 'target'),
-            id_type='uniprot',
-        )
-
-    for side in ('source', 'target'):
-
-        ct = add_genesymbols(
-            net = ct,
-            column = side,
-            target_column = f'{side}_genesymbol',
-            organism = organism,
-            resource = genesymbol_resource,
-        )
+    ct = _network_identifiers(ct, organism, genesymbol_resource)
 
     if _organism == 'human':
 
@@ -660,7 +610,7 @@ def get_collectri(
                 strict_evidences=True,
             )
 
-            if genesymbol_resource != 'uniprot':
+            if genesymbol_resource and genesymbol_resource != 'uniprot':
 
                 mirna = add_genesymbols(
                     net = mirna,
@@ -669,6 +619,11 @@ def get_collectri(
                     organism = organism,
                     resource = genesymbol_resource,
                 )
+
+            elif genesymbol_resource is False:
+
+                mirna['source_genesymbol'] = mirna['source']
+                mirna['target_genesymbol'] = mirna['target']
 
             ct = pd.concat([ct, mirna], ignore_index=True)
 
@@ -827,7 +782,7 @@ def add_genesymbols(
         ) = 'uniprot',
     ) -> pd.DataFrame:
     """
-    Add or update gene symbols in data frame.
+    Add or update Gene Symbols in data frame.
 
     Parameters
     ----------
@@ -836,15 +791,15 @@ def add_genesymbols(
     column : str
         Name of the column containing the UniProt IDs.
     target_column : str
-        Column name where to store the gene symbols.
+        Column name where to store the Gene Symbols.
     resource : str
-        Resource to query for gene symbols. Either 'uniprot' or 'ensembl', or a
+        Resource to query for Gene Symbols. Either 'uniprot' or 'ensembl', or a
         dictionary with UniProt IDs as keys and sets of Gene Symbols as values.
 
     Returns
     -------
     net : DataFrame
-        The input data frame with gene symbols added or updated.
+        The input data frame with Gene Symbols added or updated.
     """
 
     _check_if_pypath()
@@ -900,6 +855,89 @@ def add_genesymbols(
         [target_column] +
         list(net.columns[col_idx:-1])
     ]
+
+    return net
+
+
+def _network_identifiers(
+        net: pd.DataFrame,
+        organism: str | int,
+        genesymbol_resource: (
+            Literal['uniprot', 'ensembl'] |
+            dict[str, set[str]] |
+            bool |
+            None
+        ) = None,
+    ) -> pd.DataFrame:
+
+    _organism = _the_organism(organism)
+
+    if _organism not in ('mouse', 'rat') and not _is_human(organism):
+
+        net = translate_net(
+            net=net,
+            target_organism=organism,
+            columns=('source', 'target'),
+            unique_by=('source', 'target'),
+            id_type='uniprot',
+        )
+
+    if genesymbol_resource:
+
+        for side in ('source', 'target'):
+
+            net = add_genesymbols(
+                net = net,
+                column = side,
+                target_column = f'{side}_genesymbol',
+                organism = organism,
+                resource = genesymbol_resource,
+            )
+
+    elif genesymbol_resource is False:
+
+        net['source_genesymbol'] = net['source']
+        net['target_genesymbol'] = net['target']
+
+    return net
+
+
+def _annotation_identifiers(
+        net: pd.DataFrame,
+        organism: str | int,
+        genesymbol_resource: (
+            Literal['uniprot', 'ensembl'] |
+            dict[str, set[str]] |
+            bool |
+            None
+        ) = None,
+    ) -> pd.DataFrame:
+
+    if not _is_human(organism):
+
+        net = translate_net(
+            net,
+            columns='uniprot',
+            id_type='uniprot',
+            source_organism=9606,
+            target_organism=organism,
+        )
+
+    if genesymbol_resource is False:
+
+        net['genesymbol'] = net['uniprot']
+
+    elif genesymbol_resource or not _is_human(organism):
+
+        genesymbol_resource = genesymbol_resource or 'uniprot'
+
+        net = add_genesymbols(
+            net = net,
+            column = 'uniprot',
+            target_column = 'genesymbol',
+            organism = organism,
+            resource = genesymbol_resource,
+        )
 
     return net
 
