@@ -1,6 +1,19 @@
 Release notes
 =============
 
+1.7.0
+-----
+
+Changes
+~~~~~~~
+- Resource functions such as ``get_resource`` or ``get_collectri`` now accept different ``genesymbol_resource`` than UniProt for gene translation to other organisms.
+
+Bug fixes
+~~~~~~~~~
+- Fixed error in in ``get_contrast`` by reverting use of ``copy.deepcopy`` to ``copy``.
+- Fixed verbose error regarding the number of unique sources being used in ``benchmark``.
+- Added check for minimum version of ``igraph>=0.10.0`` to properly render ``plot_network``.
+
 1.6.0
 -----
 
@@ -9,7 +22,7 @@ Bug fixes
 - Fixed wrong corrected p-values of ``get_metadata_associations`` whenever more than 10 factors were present.
 - Added static fallback for the most used ``omnipath`` resources, enabling their retrieval when internet connection is unstable.
 - Fixed ZeroDivisionError of ``gsea`` when many 0s were present.
-- ``dense_run`` now returns sorted features.
+- ``dense_run`` now returns sorted features, which allows to run the benchmark pipeline ignoring zeros.
 
 Changes
 ~~~~~~~

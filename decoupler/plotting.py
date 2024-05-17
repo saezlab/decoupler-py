@@ -44,6 +44,9 @@ def check_if_igraph():
         import igraph as ig
     except Exception:
         raise ImportError('igraph is not installed. Please install it with: pip install igraph')
+    from packaging.version import Version
+    if Version(ig.__version__) < Version("0.10.0"):
+        raise ImportError('igraph version needs to be at least 0.10.0. Please install it with: pip install igraph==0.10.0')
     return ig
 
 
