@@ -14,7 +14,7 @@ jobs:
     - name: Set up Python 3.10
       uses: actions/setup-python@v4
       with:
-        python-version: "3.10"
+        python-version: "3.10.14"
     - name: Install dependencies
       run: |
         sudo apt-get update
@@ -36,7 +36,7 @@ jobs:
         curl -Os https://uploader.codecov.io/latest/linux/codecov
         chmod +x codecov
         ./codecov -t ${CODECOV_TOKEN}
-        
+
   build-macOS:
 
     runs-on: macOS-latest
@@ -46,7 +46,7 @@ jobs:
     - name: Set up Python 3.10
       uses: actions/setup-python@v4
       with:
-        python-version: "3.10"
+        python-version: "3.10.14"
     - name: Install dependencies
       run: |
         brew install openssl
