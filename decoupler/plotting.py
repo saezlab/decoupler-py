@@ -862,7 +862,7 @@ def plot_metrics_boxplot(df, metric, groupby=None, figsize=(5, 5), dpi=100, ax=N
     sns = check_if_seaborn()
     plt = check_if_matplotlib()
 
-    if metric not in ['mcauroc', 'mcauprc', 'rank', 'nrank']:
+    if metric not in ['mcauroc', 'mcauprc', 'rank', 'nrank', 'recall']:
         raise ValueError('Argument metric must be either "mcauroc", "mcauprc", "rank" or "nrank".')
 
     # Subset metric
