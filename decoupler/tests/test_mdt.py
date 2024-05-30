@@ -21,7 +21,7 @@ def test_fit_rf():
     ])
     sample = np.array([7., 6., 1., -3., -4., 0.])
     sr = check_if_skranger()
-    a, b = fit_rf(sr, net, sample)
+    a, b = fit_rf(sr, net, sample, min_leaf=2)
     assert a > b
 
 
@@ -35,9 +35,9 @@ def test_mdt():
         [0., -.5],
         [0., -1.],
     ])
-    a, b = mdt(m, net, seed=42, trees=100)[0]
+    a, b = mdt(m, net, seed=42, trees=100, min_leaf=2)[0]
     assert a > b
-    a, b = mdt(m.A, net, seed=42, trees=100)[0]
+    a, b = mdt(m.A, net, seed=42, trees=100, min_leaf=2)[0]
     assert a > b
 
 

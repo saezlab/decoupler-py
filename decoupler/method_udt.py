@@ -26,7 +26,7 @@ def fit_dt(sk, regulator, sample, min_leaf=5, seed=42):
     # Fit DT
     x, y = regulator.reshape(-1, 1), sample.reshape(-1, 1)
     regr = sk.tree.DecisionTreeRegressor(min_samples_leaf=min_leaf, random_state=seed)
-    regr.fit(x, y)
+    regr.fit(x, y, check_input=False)
 
     # Get importance
     return regr.tree_.compute_feature_importances(normalize=False)[0]

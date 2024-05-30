@@ -15,17 +15,17 @@ from tqdm import tqdm
 
 def check_if_skranger():
     try:
-        from skranger import ensemble
+        from sklearn import ensemble
     except Exception:
-        raise ImportError('skranger is not installed. Please install it with: pip install skranger')
+        raise ImportError('sklearn is not installed. Please install it with: pip install scikit-learn')
     return ensemble
 
 
 def fit_rf(sr, net, sample, trees=100, min_leaf=5, n_jobs=-1, seed=42):
 
     # Fit Random Forest
-    regr = sr.RangerForestRegressor(n_estimators=trees, min_node_size=min_leaf, n_jobs=n_jobs,
-                                    seed=seed, importance='impurity')
+    regr = sr.RandomForestRegressor(n_estimators=trees, min_samples_leaf=min_leaf, n_jobs=n_jobs,
+                                    random_state=seed)
     regr.fit(net, sample)
 
     # Extract importances
