@@ -13,11 +13,11 @@ from .utils_benchmark import format_acts_grts, append_metrics_scores, adjust_sig
 from .utils_benchmark import validate_metrics, check_groupby, rename_obs
 
 
-def get_performances(res, obs, groupby, by, metrics, min_exp=5, pi0=0.5, n_iter=1000,
-                     seed=42, verbose=False):
+def get_performances(res, obs, groupby, by, metrics, use_pval=None, min_exp=5, pi0=0.5,
+                     n_iter=1000, seed=42, verbose=False):
 
     # Return acts, grts and msks tensors
-    acts, grts, msks, srcs, mthds, grpbys, grps = format_acts_grts(res, obs, groupby)
+    acts, grts, msks, srcs, mthds, grpbys, grps = format_acts_grts(res, obs, groupby, use_pval)
 
     # Init empty df
     df = []
@@ -108,7 +108,8 @@ def format_benchmark_inputs(mat, obs, perturb, sign, net, groupby, by, f_expr=Tr
 
 
 def _benchmark(mat, obs, net, perturb, sign, metrics=['auroc', 'auprc'], groupby=None, by='experiment', f_expr=True,
-               f_srcs=False, min_exp=5, pi0=0.5, n_iter=1000, seed=42, verbose=True, use_raw=True, decouple_kws={}):
+               f_srcs=False, use_pval=None, min_exp=5, pi0=0.5, n_iter=1000, seed=42, verbose=True, use_raw=True,
+               decouple_kws={}):
 
     # Format inputs
     mat, obs, var, net, groupby = format_benchmark_inputs(mat, obs, perturb, sign, net, groupby, by, f_expr=f_expr,
@@ -140,16 +141,16 @@ def _benchmark(mat, obs, net, perturb, sign, metrics=['auroc', 'auprc'], groupby
     # Compute metrics
     if verbose:
         print('Calculating metrics...')
-    df = get_performances(res, obs, groupby, by, metrics, min_exp=min_exp, pi0=pi0,
-                          n_iter=n_iter, seed=seed, verbose=verbose)
+    df = get_performances(res, obs, groupby, by, metrics, use_pval=use_pval, min_exp=min_exp,
+                          pi0=pi0, n_iter=n_iter, seed=seed, verbose=verbose)
     if verbose:
         print('Done.')
 
     return df
 
 
-def benchmark(mat, obs, net, perturb, sign, metrics=['auroc', 'auprc', 'mcauroc', 'mcauprc', 'rank', 'nrank'], groupby=None,
-              by='experiment', f_expr=True, f_srcs=False, min_exp=5, pi0=0.5, n_iter=1000, seed=42,
+def benchmark(mat, obs, net, perturb, sign, metrics=['auroc', 'auprc', 'mcauroc', 'mcauprc', 'rank', 'nrank', 'recall'], groupby=None,
+              by='experiment', f_expr=True, f_srcs=False, use_pval=None, min_exp=5, pi0=0.5, n_iter=1000, seed=42,
               verbose=True, use_raw=True, decouple_kws={}):
     """
     Benchmark methods or networks on a given set of perturbation experiments using activity inference with decoupler.
@@ -178,6 +179,9 @@ def benchmark(mat, obs, net, perturb, sign, metrics=['auroc', 'auprc', 'mcauroc'
         Whether to filter out experiments whose perturbed sources are not in the given net. Defaults to True.
     f_srcs : bool
         Whether to fitler out sources in net for which there are not perturbation data. Defaults to False.
+    use_pval: None, float
+        Whether to fitler out activity scores by a given p-value after FDR correction (BH). Defaults to None. Methods that
+        generate no p-value will use the (1 - pvalue) quantile based on activity score as being significant.
     min_exp : int
         Minimum of perturbation experiments per group.
     pi0 : float
@@ -223,8 +227,8 @@ def benchmark(mat, obs, net, perturb, sign, metrics=['auroc', 'auprc', 'mcauroc'
         decouple_kws = {**default_kws, **decouple_kws}
 
         # Run benchmark
-        df = _benchmark(mat, obs, net, perturb, sign, metrics, groupby, by, f_expr, f_srcs, min_exp, pi0,
-                        n_iter, seed, verbose, use_raw, decouple_kws)
+        df = _benchmark(mat, obs, net, perturb, sign, metrics, groupby, by, f_expr, f_srcs, use_pval, min_exp,
+                        pi0, n_iter, seed, verbose, use_raw, decouple_kws)
     else:
         df = []
         for net_name in net:
@@ -238,7 +242,7 @@ def benchmark(mat, obs, net, perturb, sign, metrics=['auroc', 'auprc', 'mcauroc'
 
             # Run benchmark
             tmp = _benchmark(mat, obs, net[net_name], perturb, sign, metrics, groupby, by, f_expr, f_srcs,
-                             min_exp, pi0, n_iter, seed, verbose, use_raw, decouple_kws[net_name])
+                             use_pval, min_exp, pi0, n_iter, seed, verbose, use_raw, decouple_kws[net_name])
             tmp['net'] = net_name
             df.append(tmp)
 

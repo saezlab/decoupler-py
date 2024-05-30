@@ -118,6 +118,12 @@ def prc_auc(y_true, y_score, pi0):
     return -np.sum(dx * prc[:-1])
 
 
+def recall(y_true, y_score):
+    tp = np.sum((y_score != 0.) & (y_true != 0.))
+    fn = np.sum((y_score == 0.) & (y_true != 0.))
+    return tp / (tp + fn)
+
+
 def check_m_inputs(y_true, y_score):
     unq = np.sort(np.unique(y_true))
     lbl = np.array([0, 1])
@@ -152,6 +158,19 @@ def metric_nrank(y_true, y_score):
     maxs = np.nanmax(rnks, axis=1)
     nrnks = (rnks - mins.reshape(-1, 1)) / (maxs - mins).reshape(-1, 1)
     return nrnks[y_true.astype(bool)]
+
+
+def metric_recall(y_true, y_score):
+    """
+    Recall. Assumes y_true has been filtered by p-value or quantile and non-significant values have been set to zero.
+    """
+    # Flatten
+    y_true = np.asarray(y_true, dtype=np.float32).flatten()
+    y_score = np.asarray(y_score, dtype=np.float32).flatten()
+
+    check_m_inputs(y_true, y_score)
+
+    return recall(y_true, y_score)
 
 
 def metric_auroc(y_true, y_score):

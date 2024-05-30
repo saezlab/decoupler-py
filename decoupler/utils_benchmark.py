@@ -6,11 +6,12 @@ Functions to benchmark methods and nets using perturbation experiments.
 import numpy as np
 from numpy.random import default_rng
 import pandas as pd
-from scipy.sparse import csr_matrix
+import scipy
+from scipy.sparse import csr_matrix, issparse
 
 from .utils import get_toy_data
 from .pre import match
-from .metrics import metric_auroc, metric_auprc, metric_mcauroc, metric_mcauprc, metric_rank, metric_nrank
+from .metrics import metric_auroc, metric_auprc, metric_mcauroc, metric_mcauprc, metric_rank, metric_nrank, metric_recall
 
 
 def get_toy_benchmark_data(n_samples=24, seed=42, shuffle_perc=0.25):
@@ -126,6 +127,8 @@ def compute_metric(act, grt, metric, pi0=0.5, n_iter=1000, seed=42):
             scores = metric_mcauroc(grt, act, n_iter=n_iter, seed=seed)
         elif metric == 'mcauprc':
             scores = metric_mcauprc(grt, act, n_iter=n_iter, seed=seed)
+        elif metric == 'recall':
+            scores = metric_recall(grt, act)
 
     # Output must be list
     if type(scores) is not np.ndarray:
@@ -192,14 +195,30 @@ def append_metrics_scores(df, grpby_i, grp, act, grt, srcs, mthds, metrics, by, 
 
 def adjust_sign(mat, v_sign):
     v_sign = v_sign.reshape(-1, 1)
-    if isinstance(mat, csr_matrix):
+    if issparse(mat):
         mat = mat.multiply(v_sign).tocsr()
     else:
         mat = mat * v_sign
     return mat
 
 
-def build_acts_tensor(res):
+def filter_act_by_pval(m, res, use_pval):
+    if use_pval is not None:
+        estimate_name = m.split('_')[0]
+        act = res[m].values
+        pval_name = estimate_name + '_pvals'
+        if pval_name in res:
+            pval = res[pval_name].values
+            pval = scipy.stats.false_discovery_control(pval, axis=1)
+            act[(pval >= use_pval) | (act < 0)] = 0.
+        else:
+            q = np.quantile(act, 1 - use_pval, axis=1).reshape(-1, 1)
+            q = np.clip(q, a_min=0, a_max=None)  # Remove negative acts
+            act[act < q] = 0.
+        res[m].loc[:, :] = act
+
+
+def build_acts_tensor(res, use_pval):
 
     # Get unique methods
     mthds = [m for m in res.keys() if '_pvals' not in m]
@@ -212,6 +231,7 @@ def build_acts_tensor(res):
     n_exp, n_src, n_mth = len(exps), len(srcs), len(mthds)
     acts = np.zeros((n_exp, n_src, n_mth))
     for i, m in enumerate(mthds):
+        filter_act_by_pval(m, res, use_pval)
         acts[:, :, i] = res[m].values
     msk = np.argsort(srcs)
     acts = acts[:, msk]
@@ -300,10 +320,10 @@ def build_msks_tensor(obs, groupby):
     return msks, grpbys, grps
 
 
-def format_acts_grts(res, obs, groupby):
+def format_acts_grts(res, obs, groupby, use_pval):
 
     # Build acts tensor and sort by exps and srcs
-    acts, exps, srcs, mthds = build_acts_tensor(res)
+    acts, exps, srcs, mthds = build_acts_tensor(res, use_pval)
 
     # Make sure obs and acts match by exps idxs
     obs = obs.loc[exps]

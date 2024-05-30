@@ -6,7 +6,7 @@ from ..utils_benchmark import get_toy_benchmark_data, show_metrics, validate_met
 from ..utils_benchmark import compute_metric, build_acts_tensor, build_grts_mat
 from ..utils_benchmark import unique_obs, build_msks_tensor, append_by_experiment
 from ..utils_benchmark import append_by_source, append_metrics_scores, check_groupby
-from ..utils_benchmark import rename_obs, format_acts_grts, adjust_sign
+from ..utils_benchmark import rename_obs, format_acts_grts, adjust_sign, filter_act_by_pval
 
 
 def test_get_toy_benchmark_data():
@@ -34,7 +34,7 @@ def test_show_metrics():
 def test_validate_metrics():
     metrics = 'auroc'
     validate_metrics(metrics)
-    metrics = ['auroc', 'auprc', 'mcauroc', 'mcauprc', 'rank', 'nrank']
+    metrics = ['auroc', 'auprc', 'mcauroc', 'mcauprc', 'rank', 'nrank', 'recall']
     validate_metrics(metrics)
     metrics = ['auroc', 'asd', 'mcauroc', 'mcauprc']
     with pytest.raises(ValueError):
@@ -60,6 +60,9 @@ def test_compute_metric():
     res, ci = compute_metric(act, grt, metric)
     assert type(res) is np.ndarray
     metric = 'nrank'
+    res, ci = compute_metric(act, grt, metric)
+    assert type(res) is np.ndarray
+    metric = 'recall'
     res, ci = compute_metric(act, grt, metric)
     assert type(res) is np.ndarray
 
@@ -97,7 +100,7 @@ def test_build_acts_tensor():
     ], index=exps, columns=srcs)
     res = {mthds[0]: m_a, mthds[1]: m_b}
 
-    racts, rexps, rsrcs, rmthds = build_acts_tensor(res)
+    racts, rexps, rsrcs, rmthds = build_acts_tensor(res, use_pval=None)
     assert np.all(racts[0, :, 0] == np.array([4., 5., 6.]))
     assert np.all(racts[1, :, 0] == np.array([1., 2., 3.]))
     assert np.all(racts[0, :, 1] == np.array([7., 8., 9.]))
@@ -396,5 +399,23 @@ def test_format_acts_grts():
             ['A2', 'B2', 'C2', 'T3', -1],
         ], columns=['col_A', 'col_B', 'col_C', 'perturb', 'sign'], index=exps)
 
-    out = format_acts_grts(res, obs, groupby=['col_C'])
+    out = format_acts_grts(res, obs, groupby=['col_C'], use_pval=None)
     assert out is not None
+
+
+def test_filter_act_by_pval():
+    gsva_e = pd.DataFrame([[4., -1., 1.], [3., 4., -3.]])
+    ulm_e = pd.DataFrame([[4., -1., 1.], [3., 4., -3.]])
+    ulm_p = pd.DataFrame([[.01, .01, .9], [.01, .01, .9]])
+    res = {
+        'gsva_estimate': gsva_e.copy(),
+        'ulm_estimate': ulm_e.copy(),
+        'ulm_pvals': ulm_p.copy(),
+    }
+    filter_act_by_pval(m='gsva_estimate', res=res, use_pval=None)
+    filter_act_by_pval(m='gsva_estimate', res=res, use_pval=0.05)
+    assert (res['gsva_estimate'] != gsva_e).values.any()
+    assert (res['gsva_estimate'].values >= 0).all()
+    filter_act_by_pval(m='ulm_estimate', res=res, use_pval=0.05)
+    assert (res['ulm_estimate'] != ulm_e).values.any()
+    assert (res['ulm_estimate'].values >= 0).all()

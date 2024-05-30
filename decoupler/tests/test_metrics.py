@@ -2,8 +2,10 @@ import pytest
 import numpy as np
 from sklearn.metrics import roc_auc_score, average_precision_score
 from sklearn.metrics._ranking import _binary_clf_curve
-from ..metrics import check_m_inputs, binary_clf_curve, mc_perm, metric_auroc, metric_auprc, metric_mcauroc, metric_mcauprc
-from ..metrics import metric_rank, metric_nrank
+from ..metrics import (
+    check_m_inputs, binary_clf_curve, mc_perm, metric_auroc, metric_auprc, metric_mcauroc, metric_mcauprc, metric_rank,
+    metric_nrank, metric_recall
+)
 
 
 def test_check_m_inputs():
@@ -111,3 +113,10 @@ def test_metric_nrank():
     a = metric_nrank(y_true=grt, y_score=act)
     assert a.size == 4
     assert np.all(a == np.array([0., 0.5, 1., 1.]))
+
+
+def test_metric_recall():
+    act = np.array([7, 0, 5, 0, 0, 3, 0, 1, 0])
+    grt = np.array([1, 0, 0, 0, 1, 1, 0, 0, 0])
+    a = metric_recall(y_true=grt, y_score=act)
+    assert isinstance(a, float)

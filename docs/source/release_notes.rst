@@ -1,18 +1,22 @@
 Release notes
 =============
 
-1.7.0
+1.6.X
 -----
-
-Changes
-~~~~~~~
-- Resource functions such as ``get_resource`` or ``get_collectri`` now accept different ``genesymbol_resource`` than UniProt for gene translation to other organisms.
 
 Bug fixes
 ~~~~~~~~~
 - Fixed error in in ``get_contrast`` by reverting use of ``copy.deepcopy`` to ``copy``.
 - Fixed verbose error regarding the number of unique sources being used in ``benchmark``.
 - Added check for minimum version of ``igraph>=0.10.0`` to properly render ``plot_network``.
+
+Changes
+~~~~~~~
+- Resource functions such as ``get_resource`` or ``get_collectri`` now accept different ``genesymbol_resource`` than UniProt for gene translation to other organisms.
+
+Additions
+~~~~~~~~~
+- Added metric ``recall`` to the benchmark pipeline.
 
 1.6.0
 -----
