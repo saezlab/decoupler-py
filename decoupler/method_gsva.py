@@ -83,7 +83,7 @@ def density(mat, kcdf=False):
 @nb.njit(nb.types.Tuple((nb.f4[:, :], nb.i8[:, :]))(nb.f4[:, :]), parallel=True, cache=True)
 def nb_get_D_I(mat):
     n = mat.shape[1]
-    rev_idx = np.abs(np.arange(start=n, stop=0, step=-1, dtype=nb.f4) - n / 2)
+    rev_idx = np.abs(np.arange(n, stop=0, step=-1, dtype=nb.f4) - n / 2)
     Idx = np.zeros(mat.shape, dtype=nb.i8)
     for i in nb.prange(mat.shape[0]):
         Idx[i] = np.argsort(-mat[i])
