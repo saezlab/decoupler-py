@@ -32,12 +32,12 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python }}
-    - name: System dependencies ${{ matrix.os }}
+    - name: System dependencies Linux
       if: ${{ matrix.os == 'ubuntu-latest' }}
       run: |
         sudo apt-get update
         sudo apt-get install -y libcurl4-openssl-dev
-    - name: System dependencies ${{ matrix.os }}
+    - name: System dependencies OSX
       if: ${{ matrix.os == 'macos-latest' }}
       run: |
         brew install openssl
@@ -60,7 +60,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: .venv
-        key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+        key: venv-${{ runner.os }}-${{ matrix.python }}-${{ hashFiles('**/poetry.lock') }}
     - name: Install dependencies
       if: ${{ steps.cached-poetry-dependencies.outputs.cache-hit != 'true' }}
       run: poetry install --no-interaction --no-root
