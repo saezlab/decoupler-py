@@ -33,12 +33,12 @@ jobs:
       with:
         python-version: ${{ matrix.python }}
     - name: System dependencies ${{ matrix.os }}
-      if: ${{ matrix.os }} == 'ubuntu-latest'
+      if: ${{ matrix.os == 'ubuntu-latest' }}
       run: |
         sudo apt-get update
         sudo apt-get install -y libcurl4-openssl-dev
     - name: System dependencies ${{ matrix.os }}
-      if: ${{ matrix.os }} == 'macos-latest'
+      if: ${{ matrix.os == 'macos-latest' }}
       run: |
         brew install openssl
         export LDFLAGS="-L/usr/local/opt/openssl@3/lib"
@@ -62,7 +62,7 @@ jobs:
         path: .venv
         key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
     - name: Install dependencies
-      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+      if: ${{ steps.cached-poetry-dependencies.outputs.cache-hit != 'true' }}
       run: poetry install --no-interaction --no-root
     - name: Install library
       run: poetry install --no-interaction
@@ -73,15 +73,15 @@ jobs:
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         poetry run flake8 $MODULE --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Tests and test coverage
-      if: github.event_name == 'push'
+      if: ${{ github.event_name == 'push' }}
       run: |
         poetry run pytest --cov --disable-warnings
     - name: Tests
-      if: github.event_name == 'pull_request'
+      if: ${{ github.event_name == 'pull_request' }}
       run: |
         poetry run pytest --disable-warnings
     - name: Upload coverage reports to Codecov
-      if: github.event_name == 'push'
+      if: ${{ github.event_name == 'push' }}
       run: |
         curl -Os https://uploader.codecov.io/latest/linux/codecov
         chmod +x codecov
