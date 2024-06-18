@@ -335,7 +335,7 @@ def p_adjust_fdr(p):
     """
 
     # Code adapted from: https://stackoverflow.com/a/33532498/8395875
-    p = np.asfarray(p)
+    p = np.asarray(p, dtype = 'float64')
     by_descend = p.argsort()[::-1]
     by_orig = by_descend.argsort()
     steps = float(len(p)) / np.arange(len(p), 0, -1)
