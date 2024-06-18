@@ -10,27 +10,45 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.11"
-    - name: Install dependencies
+    - name: Check out main
+      uses: actions/checkout@main
+    - name: Setup Python
+      uses: actions/setup-python@v5
+    - name: System dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y libcurl4-openssl-dev
-        python -m pip install --upgrade pip
-        pip install wheel
-        pip install pytest-cov flake8 scikit-learn git+https://github.com/saezlab/omnipath scanpy adjustText pypath-omnipath psutil igraph .
+    - name: Load cached Poetry installation
+      uses: actions/cache@v4
+      with:
+        path: ~/.local
+        key: poetry-0
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+        installer-parallel: true
+    - name: Load cached venv
+      id: cached-poetry-dependencies
+      uses: actions/cache@v4
+      with:
+        path: .venv
+        key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+    - name: Install dependencies
+      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+      run: poetry install --no-interaction --no-root
+    - name: Install library
+      run: poetry install --no-interaction
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        poetry run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        poetry run flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test and add coverage
       run: |
-        pytest --cov --disable-warnings decoupler
+        poetry run pytest --cov --disable-warnings
     - name: Upload coverage reports to Codecov
       run: |
         curl -Os https://uploader.codecov.io/latest/linux/codecov
@@ -42,26 +60,44 @@ jobs:
     runs-on: macOS-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.11"
-    - name: Install dependencies
+    - name: Check out main
+      uses: actions/checkout@main
+    - name: Setup Python
+      uses: actions/setup-python@v5
+    - name: System dependencies
       run: |
         brew install openssl
         export LDFLAGS="-L/usr/local/opt/openssl@3/lib"
         export CPPFLAGS="-I/usr/local/opt/openssl@3/include"
         export PKG_CONFIG_PATH="/usr/local/opt/openssl@3/lib/pkgconfig"
-        python -m pip install --upgrade pip
-        pip install wheel
-        pip install pytest flake8 scikit-learn git+https://github.com/saezlab/omnipath scanpy adjustText pypath-omnipath psutil igraph .
+    - name: Load cached Poetry installation
+      uses: actions/cache@v4
+      with:
+        path: ~/.local
+        key: poetry-0
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+        installer-parallel: true
+    - name: Load cached venv
+      id: cached-poetry-dependencies
+      uses: actions/cache@v4
+      with:
+        path: .venv
+        key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+    - name: Install dependencies
+      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+      run: poetry install --no-interaction --no-root
+    - name: Install library
+      run: poetry install --no-interaction
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        poetry run flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Test
+        poetry run flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    - name: Tests
       run: |
-        pytest --disable-warnings .
+        poetry run pytest --disable-warnings
