@@ -71,6 +71,16 @@ jobs:
         poetry run flake8 $MODULE --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         poetry run flake8 $MODULE --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Tests
+    - name: Tests and test coverage
+      if: github.event_name == 'push'
+      run: |
+        poetry run pytest --cov --disable-warnings
+      if: github.event_name == 'pull_request'
       run: |
         poetry run pytest --disable-warnings
+    - name: Upload coverage reports to Codecov
+      if: github.event_name == 'push'
+      run: |
+        curl -Os https://uploader.codecov.io/latest/linux/codecov
+        chmod +x codecov
+        ./codecov -t ${CODECOV_TOKEN}
