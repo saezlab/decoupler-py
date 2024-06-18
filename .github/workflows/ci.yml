@@ -76,6 +76,7 @@ jobs:
       if: github.event_name == 'push'
       run: |
         poetry run pytest --cov --disable-warnings
+    - name: Tests
       if: github.event_name == 'pull_request'
       run: |
         poetry run pytest --disable-warnings
