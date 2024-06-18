@@ -32,11 +32,12 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python }}
-    - name: System dependencies
+    - name: System dependencies Linux
       if: ${{ matrix.os }} == 'ubuntu-latest'
       run: |
         sudo apt-get update
         sudo apt-get install -y libcurl4-openssl-dev
+    - name: System dependencies OSX
       if: ${{ matrix.os }} == 'macos-latest'
       run: |
         brew install openssl
