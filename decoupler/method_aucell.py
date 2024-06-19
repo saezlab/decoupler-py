@@ -34,7 +34,7 @@ def nb_aucell(row, net, starts, offsets, n_up, n_fsets):
         fset = net[srt:off]
 
         # Compute max AUC for fset
-        x_th = np.arange(start=1, stop=fset.shape[0]+1, dtype=nb.i8)
+        x_th = np.arange(1, stop=fset.shape[0]+1, dtype=nb.i8)
         x_th = x_th[x_th < n_up]
         max_auc = np.sum(np.diff(np.append(x_th, n_up)) * x_th)
 
