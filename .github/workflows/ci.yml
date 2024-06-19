@@ -44,11 +44,6 @@ jobs:
         export LDFLAGS="-L/usr/local/opt/openssl@3/lib"
         export CPPFLAGS="-I/usr/local/opt/openssl@3/include"
         export PKG_CONFIG_PATH="/usr/local/opt/openssl@3/lib/pkgconfig"
-    - name: Load cached Poetry installation
-      uses: actions/cache@v4
-      with:
-        path: ~/.local
-        key: poetry-0
     - name: Install Poetry
       uses: snok/install-poetry@v1
       with:
