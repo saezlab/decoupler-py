@@ -149,9 +149,9 @@ def _benchmark(mat, obs, net, perturb, sign, metrics=['auroc', 'auprc'], groupby
     return df
 
 
-def benchmark(mat, obs, net, perturb, sign, metrics=['auroc', 'auprc', 'mcauroc', 'mcauprc', 'rank', 'nrank', 'recall'], groupby=None,
-              by='experiment', f_expr=True, f_srcs=False, use_pval=None, min_exp=5, pi0=0.5, n_iter=1000, seed=42,
-              verbose=True, use_raw=True, decouple_kws={}):
+def benchmark(mat, obs, net, perturb, sign, metrics=['auroc', 'auprc', 'mcauroc', 'mcauprc', 'rank', 'nrank', 'recall'],
+              groupby=None, by='experiment', f_expr=True, f_srcs=False, use_pval=None, min_exp=5, pi0=0.5, n_iter=1000,
+              seed=42, verbose=True, use_raw=True, decouple_kws={}):
     """
     Benchmark methods or networks on a given set of perturbation experiments using activity inference with decoupler.
 

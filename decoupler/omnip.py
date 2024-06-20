@@ -73,31 +73,32 @@ def _check_if_omnipath() -> ModuleType:
 
 def _check_if_pypath() -> None:
 
+    def ver(v):
+        return tuple(map(int, v.split('.')))
+
     # Check if pypath is installed
     try:
-
-        def ver(v):
-            return tuple(map(int, v.split('.')))
-
         import pypath
 
-        if (
-            getattr(pypath, '__version__', None) and
-            ver(pypath.__version__) < ver(PYPATH_MIN_VERSION)
-        ):
-
-            msg = (
-                'The installed version of pypath-omnipath is too old, '
-                f'the oldest compatible version is {PYPATH_MIN_VERSION}.'
-            )
-            _misc.log_traceback(msg)
-            raise RuntimeError(msg)
-
     except Exception:
-
         msg = (
             'pypath-omnipath is not installed. Please install it with: '
-            'pip install git+https://github.com/saezlab/pypath.git'
+            'pip install pypath-omnipath'
+        )
+        _misc.log_traceback(msg)
+        raise ImportError(msg)
+
+    if (getattr(pypath, '__version__', None) and ver(pypath.__version__) < ver(PYPATH_MIN_VERSION)):
+        msg = (
+            'The installed version of pypath-omnipath is too old, '
+            f'the oldest compatible version is {PYPATH_MIN_VERSION}.'
+        )
+        _misc.log_traceback(msg)
+        raise ImportError(msg)
+    elif not callable(getattr(pypath, "disclaimer", False)):
+        msg = (
+            'pypath is installed instead of pypath-omnipath. Please, remove'
+            'pypath (pip uninstall pypath) and install pypath-omnipath (pip install pypath-omnipath)'
         )
         _misc.log_traceback(msg)
         raise ImportError(msg)
@@ -193,7 +194,7 @@ def get_progeny(
             None
         ) = None,
         **kwargs
-    ) -> pd.DataFrame:
+        ) -> pd.DataFrame:
     """
     Pathway RespOnsive GENes for activity inference (PROGENy).
 
@@ -244,7 +245,7 @@ def get_progeny(
     p = p.unstack('label').droplevel(axis=1, level=0)
     p.columns = np.array(p.columns)
     p = p.reset_index()
-    p = p.drop('record_id', axis = 1)
+    p = p.drop('record_id', axis=1)
     p.columns.name = None
     p = _annotation_identifiers(p, organism, genesymbol_resource)
     p = p[['pathway', 'genesymbol', 'weight', 'p_value']]
@@ -257,7 +258,7 @@ def get_progeny(
         groupby('pathway').
         head(top).
         sort_values(['pathway', 'p_value']).
-        reset_index(drop = True)
+        reset_index(drop=True)
     )
     p.columns = ['source', 'target', 'weight', 'p_value']
     p = op._misc.dtypes.auto_dtype(p)
@@ -613,11 +614,11 @@ def get_collectri(
             if genesymbol_resource and genesymbol_resource != 'uniprot':
 
                 mirna = add_genesymbols(
-                    net = mirna,
-                    column = 'source',
-                    target_column = 'source_genesymbol',
-                    organism = organism,
-                    resource = genesymbol_resource,
+                    net=mirna,
+                    column='source',
+                    target_column='source_genesymbol',
+                    organism=organism,
+                    resource=genesymbol_resource,
                 )
 
             elif genesymbol_resource is False:
@@ -658,7 +659,7 @@ def get_collectri(
 
     # Select and rename columns
     ct = ct.rename(
-        columns = {
+        columns={
             'source_genesymbol': 'source',
             'target_genesymbol': 'target',
             'references_stripped': 'PMID',
@@ -780,7 +781,7 @@ def add_genesymbols(
             Literal['uniprot', 'ensembl'] |
             dict[str, set[str]]
         ) = 'uniprot',
-    ) -> pd.DataFrame:
+        ) -> pd.DataFrame:
     """
     Add or update Gene Symbols in data frame.
 
@@ -819,15 +820,15 @@ def add_genesymbols(
             raise ValueError('Resource must be either "uniprot" or "ensembl".')
 
         mapping_def = mapping_cls(
-            id_type_a = 'genesymbol',
-            id_type_b = 'uniprot',
-            ncbi_tax_id = _organism,
+            id_type_a='genesymbol',
+            id_type_b='uniprot',
+            ncbi_tax_id=_organism,
         )
 
         resource = mapping.MapReader(
             mapping_def,
-            load_b_to_a = True,
-            load_a_to_b = False,
+            load_b_to_a=True,
+            load_a_to_b=False,
         ).b_to_a
 
     mapping_table = pd.DataFrame(
@@ -837,19 +838,19 @@ def add_genesymbols(
             resource.items()
             for g in gs
         ),
-        columns = (column, target_column),
+        columns=(column, target_column),
     )
 
     if target_column in net.columns:
 
         col_idx = net.columns.get_loc(target_column)
-        net = net.drop(target_column, axis = 1)
+        net = net.drop(target_column, axis=1)
 
     else:
 
         col_idx = net.columns.get_loc(column) + 1
 
-    net = net.merge(mapping_table, how = 'left', on = column)
+    net = net.merge(mapping_table, how='left', on=column)
     net = net[
         list(net.columns[0:col_idx]) +
         [target_column] +
@@ -868,7 +869,7 @@ def _network_identifiers(
             bool |
             None
         ) = None,
-    ) -> pd.DataFrame:
+        ) -> pd.DataFrame:
 
     _organism = _the_organism(organism)
 
@@ -887,11 +888,11 @@ def _network_identifiers(
         for side in ('source', 'target'):
 
             net = add_genesymbols(
-                net = net,
-                column = side,
-                target_column = f'{side}_genesymbol',
-                organism = organism,
-                resource = genesymbol_resource,
+                net=net,
+                column=side,
+                target_column=f'{side}_genesymbol',
+                organism=organism,
+                resource=genesymbol_resource,
             )
 
     elif genesymbol_resource is False:
@@ -911,7 +912,7 @@ def _annotation_identifiers(
             bool |
             None
         ) = None,
-    ) -> pd.DataFrame:
+        ) -> pd.DataFrame:
 
     if not _is_human(organism):
 
@@ -932,11 +933,11 @@ def _annotation_identifiers(
         genesymbol_resource = genesymbol_resource or 'uniprot'
 
         net = add_genesymbols(
-            net = net,
-            column = 'uniprot',
-            target_column = 'genesymbol',
-            organism = organism,
-            resource = genesymbol_resource,
+            net=net,
+            column='uniprot',
+            target_column='genesymbol',
+            organism=organism,
+            resource=genesymbol_resource,
         )
 
     return net
@@ -944,7 +945,7 @@ def _annotation_identifiers(
 
 def get_ksn_omnipath(
         organism: str | int = 'human',
-    ) -> pd.DataFrame:
+        ) -> pd.DataFrame:
     """
     OmniPath kinase-substrate network
 
@@ -964,7 +965,7 @@ def get_ksn_omnipath(
     _organism = _the_organism(organism)
 
     # Load Kinase-Substrate Network
-    ksn = op.requests.Enzsub.get(genesymbols=True, organism = _organism)
+    ksn = op.requests.Enzsub.get(genesymbols=True, organism=_organism)
 
     # Filter by phosphorilation
     cols = ['enzyme_genesymbol', 'substrate_genesymbol', 'residue_type',

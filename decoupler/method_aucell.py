@@ -12,7 +12,6 @@ from tqdm import tqdm
 
 from .pre import extract, rename_net, filt_min_n, return_data
 
-from anndata import AnnData
 import numba as nb
 
 

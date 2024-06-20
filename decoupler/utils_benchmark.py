@@ -7,7 +7,7 @@ import numpy as np
 from numpy.random import default_rng
 import pandas as pd
 import scipy
-from scipy.sparse import csr_matrix, issparse
+from scipy.sparse import issparse
 
 from .utils import get_toy_data
 from .pre import match

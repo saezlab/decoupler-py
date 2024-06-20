@@ -9,7 +9,6 @@ import pandas as pd
 
 from .pre import extract, match, rename_net, get_net_mat, filt_min_n, return_data
 
-from anndata import AnnData
 from tqdm import tqdm
 
 
