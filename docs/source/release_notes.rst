@@ -1,7 +1,7 @@
 Release notes
 =============
 
-1.6.X
+1.7.0
 -----
 
 Bug fixes
