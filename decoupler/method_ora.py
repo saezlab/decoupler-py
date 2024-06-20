@@ -12,7 +12,7 @@ from scipy.sparse import csr_matrix
 from scipy.stats import rankdata
 from math import log, exp, lgamma
 
-from .pre import extract, rename_net, filt_min_n
+from .pre import extract, rename_net, filt_min_n, return_data
 from .utils import p_adjust_fdr
 
 from anndata import AnnData
@@ -315,10 +315,4 @@ def run_ora(mat, net, source='source', target='target', n_up=None, n_bottom=0, n
     estimate = pd.DataFrame(-np.log10(pvals), index=r, columns=pvals.columns)
     estimate.name = 'ora_estimate'
 
-    # AnnData support
-    if isinstance(mat, AnnData):
-        # Update obsm AnnData object
-        mat.obsm[estimate.name] = estimate
-        mat.obsm[pvals.name] = pvals
-    else:
-        return estimate, pvals
+    return return_data(mat=mat, results=(estimate, pvals))

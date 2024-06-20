@@ -6,7 +6,7 @@ Functions to preprocess the data before running any method.
 import numpy as np
 from scipy.sparse import csr_matrix, issparse
 import pandas as pd
-
+import logging
 from anndata import AnnData
 
 
@@ -278,3 +278,23 @@ def mask_features(mat, log=False, thr=1, use_raw=False):
     else:
         raise ValueError("""mat must be a list of [matrix, samples, features], dataframe (samples x features) or an AnnData
         instance.""")
+
+
+def add_to_anndata(mat, results):
+    for result in results:
+        if result is not None:
+            mat.obsm[result.name] = result
+
+
+def return_data(mat, results):
+    if isinstance(mat, AnnData):
+        if mat.obs_names.size != results[0].index.size:
+            logging.warning('Provided AnnData contains empty observations. Returning repaired object.')
+            mat = mat[results[0].index, :].copy()
+            add_to_anndata(mat, results)
+            return mat
+        else:
+            add_to_anndata(mat, results)
+            return None
+    else:
+        return tuple([result for result in results if result is not None])

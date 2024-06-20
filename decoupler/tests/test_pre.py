@@ -3,7 +3,10 @@ import pandas as pd
 import numpy as np
 from scipy.sparse import csr_matrix
 from anndata import AnnData
-from ..pre import check_mat, extract, filt_min_n, match, rename_net, get_net_mat, mask_features
+from ..pre import (
+    check_mat, extract, filt_min_n, match, rename_net, get_net_mat, mask_features,
+    return_data, add_to_anndata
+)
 
 
 def test_check_mat():
@@ -101,3 +104,38 @@ def test_mask_features():
         mask_features('asdfg')
     with pytest.raises(ValueError):
         mask_features(adata, use_raw=True)
+
+
+def test_add_to_anndata():
+    m = np.array([[1, 0, 2], [1, 0, 3]])
+    r = np.array(['S1', 'S2'])
+    c = np.array(['G1', 'G2', 'G3'])
+    df = pd.DataFrame(m, index=r, columns=c)
+    adata = AnnData(df.astype(np.float32))
+    estimate = np.array([[1], [4]])
+    s = np.array(['S1'])
+    estimate = pd.DataFrame(estimate, index=r, columns=s)
+    estimate.name = 'estimate'
+    add_to_anndata(mat=adata, results=(estimate, None))
+    assert 'estimate' in adata.obsm
+
+
+def test_return_data():
+    m = np.array([[1, 0, 2], [1, 0, 3], [0, 0, 0]])
+    r = np.array(['S1', 'S2', 'S3'])
+    c = np.array(['G1', 'G2', 'G3'])
+    df = pd.DataFrame(m, index=r, columns=c)
+    adata = AnnData(df.astype(np.float32))
+    estimate = np.array([[1], [4]])
+    s = np.array(['S1'])
+    estimate = pd.DataFrame(estimate, index=r[:-1], columns=s)
+    estimate.name = 'estimate'
+    pvals = np.array([[0.4], [0.01]])
+    pvals = pd.DataFrame(pvals, index=estimate.index, columns=estimate.columns)
+    pvals.name = 'pvals'
+    ret = return_data(mat=adata, results=(estimate, pvals))
+    assert isinstance(ret, AnnData)
+    ret = return_data(mat=adata[estimate.index, :].copy(), results=(estimate, pvals))
+    assert ret is None
+    ret = return_data(mat=df, results=(estimate, pvals))
+    assert isinstance(ret, tuple)

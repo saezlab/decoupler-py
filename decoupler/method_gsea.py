@@ -9,7 +9,7 @@ import pandas as pd
 from numpy.random import default_rng
 from scipy.sparse import csr_matrix
 
-from .pre import extract, rename_net, filt_min_n
+from .pre import extract, rename_net, filt_min_n, return_data
 from .utils import p_adjust_fdr
 
 from anndata import AnnData
@@ -369,15 +369,4 @@ def run_gsea(mat, net, source='source', target='target', times=1000, batch_size=
         pvals = pd.DataFrame(pvals, index=r, columns=net.index)
         pvals.name = 'gsea_pvals'
 
-    # AnnData support
-    if isinstance(mat, AnnData):
-        # Update obsm AnnData object
-        mat.obsm[estimate.name] = estimate
-        if norm_e is not None:
-            mat.obsm[norm_e.name] = norm_e
-            mat.obsm[pvals.name] = pvals
-    else:
-        if pvals is not None:
-            return estimate, norm_e, pvals
-        else:
-            return estimate
+    return return_data(mat=mat, results=(estimate, norm_e, pvals))

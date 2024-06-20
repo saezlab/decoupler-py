@@ -10,7 +10,7 @@ from scipy.stats import norm
 from scipy.sparse import csr_matrix
 from numpy.random import default_rng
 
-from .pre import extract, rename_net, filt_min_n
+from .pre import extract, rename_net, filt_min_n, return_data
 from .method_gsea import std
 
 from anndata import AnnData
@@ -232,9 +232,4 @@ def run_gsva(mat, net, source='source', target='target', kcdf=False, mx_diff=Tru
     estimate = pd.DataFrame(estimate, index=r, columns=net.index)
     estimate.name = 'gsva_estimate'
 
-    # AnnData support
-    if isinstance(mat, AnnData):
-        # Update obsm AnnData object
-        mat.obsm[estimate.name] = estimate
-    else:
-        return estimate
+    return return_data(mat=mat, results=(estimate, ))

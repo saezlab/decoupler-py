@@ -9,10 +9,12 @@ Bug fixes
 - Fixed error in in ``get_contrast`` by reverting use of ``copy.deepcopy`` to ``copy``.
 - Fixed verbose error regarding the number of unique sources being used in ``benchmark``.
 - Added check for minimum version of ``igraph>=0.10.0`` to properly render ``plot_network``.
+- Fixed return error of methods triggered when an observation was empty and input was ``AnnData``.
 
 Changes
 ~~~~~~~
 - Resource functions such as ``get_resource`` or ``get_collectri`` now accept different ``genesymbol_resource`` than UniProt for gene translation to other organisms.
+- Deprecated ``sklearn`` and switched to ``sklearn`` for ``udt``.
 
 Additions
 ~~~~~~~~~

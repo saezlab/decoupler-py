@@ -10,7 +10,7 @@ from scipy.sparse import csr_matrix
 from numpy.random import default_rng
 from tqdm import tqdm
 
-from .pre import extract, rename_net, filt_min_n
+from .pre import extract, rename_net, filt_min_n, return_data
 
 from anndata import AnnData
 import numba as nb
@@ -151,9 +151,4 @@ def run_aucell(mat, net, source='source', target='target', n_up=None, min_n=5, s
     estimate = pd.DataFrame(estimate, index=r, columns=net.index)
     estimate.name = 'aucell_estimate'
 
-    # AnnData support
-    if isinstance(mat, AnnData):
-        # Update obsm AnnData object
-        mat.obsm[estimate.name] = estimate
-    else:
-        return estimate
+    return return_data(mat=mat, results=(estimate, ))

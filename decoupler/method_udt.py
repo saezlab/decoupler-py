@@ -7,7 +7,7 @@ import numpy as np
 from scipy.sparse import csr_matrix
 import pandas as pd
 
-from .pre import extract, match, rename_net, get_net_mat, filt_min_n
+from .pre import extract, match, rename_net, get_net_mat, filt_min_n, return_data
 
 from anndata import AnnData
 from tqdm import tqdm
@@ -114,9 +114,4 @@ def run_udt(mat, net, source='source', target='target', weight='weight', min_lea
     estimate = pd.DataFrame(estimate, index=r, columns=sources)
     estimate.name = 'udt_estimate'
 
-    # AnnData support
-    if isinstance(mat, AnnData):
-        # Update obsm AnnData object
-        mat.obsm[estimate.name] = estimate
-    else:
-        return estimate
+    return return_data(mat=mat, results=(estimate, ))

@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from scipy.sparse import csr_matrix
 
-from .pre import extract, match, rename_net, get_net_mat, filt_min_n
+from .pre import extract, match, rename_net, get_net_mat, filt_min_n, return_data
 
 from anndata import AnnData
 from scipy import stats
@@ -131,10 +131,4 @@ def run_mlm(mat, net, source='source', target='target', weight='weight', batch_s
     pvals = pd.DataFrame(pvals, index=r, columns=sources)
     pvals.name = 'mlm_pvals'
 
-    # AnnData support
-    if isinstance(mat, AnnData):
-        # Update obsm AnnData object
-        mat.obsm[estimate.name] = estimate
-        mat.obsm[pvals.name] = pvals
-    else:
-        return estimate, pvals
+    return return_data(mat=mat, results=(estimate, pvals))

@@ -10,7 +10,7 @@ import pandas as pd
 from scipy.stats import rankdata
 from scipy.stats import norm
 
-from .pre import extract, match, rename_net, get_net_mat, filt_min_n
+from .pre import extract, match, rename_net, get_net_mat, filt_min_n, return_data
 
 from anndata import AnnData
 from tqdm import tqdm
@@ -308,10 +308,4 @@ def run_viper(mat, net, source='source', target='target', weight='weight', pleio
     pvals = pd.DataFrame(pvals, index=r, columns=sources)
     pvals.name = 'viper_pvals'
 
-    # AnnData support
-    if isinstance(mat, AnnData):
-        # Update obsm AnnData object
-        mat.obsm[estimate.name] = estimate
-        mat.obsm[pvals.name] = pvals
-    else:
-        return estimate, pvals
+    return return_data(mat=mat, results=(estimate, pvals))

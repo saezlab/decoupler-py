@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from scipy.sparse import csr_matrix
 
-from .pre import extract, match, rename_net, get_net_mat, filt_min_n
+from .pre import extract, match, rename_net, get_net_mat, filt_min_n, return_data
 from .method_gsea import std
 
 from anndata import AnnData
@@ -173,16 +173,4 @@ def run_wsum(mat, net, source='source', target='target', weight='weight', times=
         pvals = pd.DataFrame(pvals, index=r, columns=sources)
         pvals.name = 'wsum_pvals'
 
-    # AnnData support
-    if isinstance(mat, AnnData):
-        # Update obsm AnnData object
-        mat.obsm[estimate.name] = estimate
-        if pvals is not None:
-            mat.obsm[norm.name] = norm
-            mat.obsm[corr.name] = corr
-            mat.obsm[pvals.name] = pvals
-    else:
-        if pvals is not None:
-            return estimate, norm, corr, pvals
-        else:
-            return estimate
+    return return_data(mat=mat, results=(estimate, norm, corr, pvals))
