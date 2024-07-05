@@ -14,7 +14,7 @@ def test_wmean():
     assert norm[2, 0] < 0
     assert norm[3, 0] < 0
     assert np.all((0. <= pvl) * (pvl <= 1.))
-    est, norm, corr, pvl = wmean(m.A, net, 1000, 10000, 42, True)
+    est, norm, corr, pvl = wmean(m.toarray(), net, 1000, 10000, 42, True)
     assert norm[0, 0] > 0
     assert norm[1, 0] > 0
     assert norm[2, 0] < 0

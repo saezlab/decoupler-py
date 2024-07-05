@@ -114,7 +114,7 @@ def ora(mat, net, n_up_msk, n_bt_msk, n_background=20000, verbose=False):
     for i in tqdm(range(n_samples), disable=not verbose):
 
         if isinstance(mat, csr_matrix):
-            row = mat[i].A[0]
+            row = mat[i].toarray()[0]
         else:
             row = mat[i]
 

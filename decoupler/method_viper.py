@@ -195,7 +195,7 @@ def viper(mat, net, pleiotropy=True, reg_sign=0.05, n_targets=10, penalty=20, ba
 
             # Subset batch
             srt, end = i*batch_size, i*batch_size+batch_size
-            tmp = mat[srt:end].A
+            tmp = mat[srt:end].toarray()
 
             # Compute VIPER for batch
             nes[srt:end] = aREA(tmp, net)
@@ -211,7 +211,7 @@ def viper(mat, net, pleiotropy=True, reg_sign=0.05, n_targets=10, penalty=20, ba
 
             # Extract per sample
             if isinstance(mat, csr_matrix):
-                ss_i = mat[i].A[0]
+                ss_i = mat[i].toarray()[0]
             else:
                 ss_i = mat[i]
             nes_i = nes[i]

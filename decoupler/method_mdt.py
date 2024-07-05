@@ -42,7 +42,7 @@ def mdt(mat, net, trees=100, min_leaf=5, n_jobs=4, seed=42, verbose=False):
     # For each sample
     for i in tqdm(range(mat.shape[0]), disable=not verbose):
         if isinstance(mat, csr_matrix):
-            sample = mat[i].A[0]
+            sample = mat[i].toarray()[0]
         else:
             sample = mat[i]
         acts[i] = fit_rf(sr, net, sample, trees=trees, min_leaf=min_leaf, n_jobs=n_jobs, seed=seed)

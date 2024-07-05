@@ -55,7 +55,7 @@ def mlm(mat, net, batch_size=10000, verbose=False):
 
             # Subset batch
             srt, end = i * batch_size, i * batch_size + batch_size
-            y = mat[srt:end].A.T
+            y = mat[srt:end].toarray().T
 
             # Compute MLM for batch
             es[srt:end] = fit_mlm(net, y, inv, df)[:, 1:]

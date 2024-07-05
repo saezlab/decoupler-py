@@ -10,13 +10,13 @@ def test_init_cdfs():
 
 
 def test_density():
-    m = csr_matrix(np.array([[1, 0, 2], [1., 0, 3], [0, 0, 0]], dtype=np.float32)).A
+    m = csr_matrix(np.array([[1, 0, 2], [1., 0, 3], [0, 0, 0]], dtype=np.float32)).toarray()
     density(m, kcdf=True)
     density(m, kcdf=False)
 
 
 def test_gsva():
-    m = csr_matrix(np.array([[1, 0, 2], [1., 0, 3], [0, 0, 0]], dtype=np.float32)).A
+    m = csr_matrix(np.array([[1, 0, 2], [1., 0, 3], [0, 0, 0]], dtype=np.float32)).toarray()
     net = pd.Series([np.array([1, 3], dtype=np.int64), np.array([1, 3], dtype=np.int64)], index=['T1', 'T2'])
     gsva(m, net)
 

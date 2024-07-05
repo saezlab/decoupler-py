@@ -18,7 +18,7 @@ def test_aucell():
     assert act[2, 0] < 0.7
     assert act[3, 0] < 0.7
     assert np.all((0. <= act) * (act <= 1.))
-    act = aucell(m.A, net, n_up, False)
+    act = aucell(m.toarray(), net, n_up, False)
     assert act[0, 0] > 0.7
     assert act[1, 0] > 0.7
     assert act[2, 0] < 0.7

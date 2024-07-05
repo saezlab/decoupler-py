@@ -79,7 +79,7 @@ def test_check_X():
     X_neg = csr_matrix(np.array([[1, 0, -2], [1, 0, -3], [0, 0, 0]]))
     X_inf = csr_matrix(np.array([[1, 0, np.nan], [1, 0, 3], [0, 0, 0]]))
     check_X(X, mode='sum', skip_checks=False)
-    check_X(X.A, mode='sum', skip_checks=False)
+    check_X(X.toarray(), mode='sum', skip_checks=False)
     with pytest.raises(ValueError):
         check_X(X_inf, mode='sum', skip_checks=False)
     with pytest.raises(ValueError):
@@ -89,13 +89,13 @@ def test_check_X():
     with pytest.raises(ValueError):
         check_X(X_float, mode='sum', skip_checks=False)
     check_X(X_neg, mode='sum', skip_checks=True)
-    check_X(X_neg.A, mode='sum', skip_checks=True)
+    check_X(X_neg.toarray(), mode='sum', skip_checks=True)
     check_X(X_float, mode='sum', skip_checks=True)
-    check_X(X_float.A, mode='sum', skip_checks=True)
+    check_X(X_float.toarray(), mode='sum', skip_checks=True)
     check_X(X_neg, mode=sum, skip_checks=False)
-    check_X(X_neg.A, mode=sum, skip_checks=False)
+    check_X(X_neg.toarray(), mode=sum, skip_checks=False)
     check_X(X_neg, mode={'sum': sum}, skip_checks=False)
-    check_X(X_neg.A, mode={'sum': sum}, skip_checks=False)
+    check_X(X_neg.toarray(), mode={'sum': sum}, skip_checks=False)
 
 
 def test_format_psbulk_inputs():
@@ -195,7 +195,7 @@ def test_compute_psbulk():
                                                    new_obs, min_cells, min_counts, mode, dtype)
     assert np.all(np.sum(psbulk, axis=1) == counts)
     assert np.all(np.array(psbulk.shape) == np.array(props.shape))
-    psbulk, ncells, counts, props = compute_psbulk(n_rows, n_cols, X.A, sample_col, groups_col, smples, groups, obs,
+    psbulk, ncells, counts, props = compute_psbulk(n_rows, n_cols, X.toarray(), sample_col, groups_col, smples, groups, obs,
                                                    new_obs, min_cells, min_counts, mode, dtype)
     assert np.all(np.sum(psbulk, axis=1) == counts)
     assert np.all(np.array(psbulk.shape) == np.array(props.shape))
@@ -203,7 +203,7 @@ def test_compute_psbulk():
                                                    new_obs, min_cells, 9, mode, dtype)
     assert np.sum(psbulk, axis=1)[2] == 0.
     assert np.all(psbulk[2] == props[2])
-    psbulk, ncells, counts, props = compute_psbulk(n_rows, n_cols, X.A, sample_col, groups_col, smples, groups, obs,
+    psbulk, ncells, counts, props = compute_psbulk(n_rows, n_cols, X.toarray(), sample_col, groups_col, smples, groups, obs,
                                                    new_obs, min_cells, 9, mode, dtype)
     assert np.sum(psbulk, axis=1)[2] == 0.
     assert np.all(psbulk[2] == props[2])
@@ -217,7 +217,7 @@ def test_compute_psbulk():
     assert np.all(np.sum(psbulk, axis=1) == counts)
     assert np.all(np.array(psbulk.shape) == np.array(props.shape))
     assert psbulk.shape[0] == 2
-    psbulk, ncells, counts, props = compute_psbulk(n_rows, n_cols, X.A, sample_col, None, smples, groups, obs,
+    psbulk, ncells, counts, props = compute_psbulk(n_rows, n_cols, X.toarray(), sample_col, None, smples, groups, obs,
                                                    new_obs, min_cells, min_counts, mode, dtype)
     assert np.all(np.sum(psbulk, axis=1) == counts)
     assert np.all(np.array(psbulk.shape) == np.array(props.shape))
@@ -226,7 +226,7 @@ def test_compute_psbulk():
                                                    new_obs, min_cells, 21, mode, dtype)
     assert np.sum(psbulk, axis=1)[0] == 0.
     assert np.all(psbulk[0] == props[0])
-    psbulk, ncells, counts, props = compute_psbulk(n_rows, n_cols, X.A, sample_col, None, smples, groups, obs,
+    psbulk, ncells, counts, props = compute_psbulk(n_rows, n_cols, X.toarray(), sample_col, None, smples, groups, obs,
                                                    new_obs, min_cells, 21, mode, dtype)
     assert np.sum(psbulk, axis=1)[0] == 0.
     assert np.all(psbulk[0] == props[0])

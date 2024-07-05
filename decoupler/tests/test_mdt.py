@@ -37,7 +37,7 @@ def test_mdt():
     ])
     a, b = mdt(m, net, seed=42, trees=100, min_leaf=2)[0]
     assert a > b
-    a, b = mdt(m.A, net, seed=42, trees=100, min_leaf=2)[0]
+    a, b = mdt(m.toarray(), net, seed=42, trees=100, min_leaf=2)[0]
     assert a > b
 
 

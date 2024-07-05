@@ -65,7 +65,7 @@ def test_ulm():
     assert act[2, 0] < 0
     assert act[3, 0] < 0
     assert np.all((0. <= pvl) * (pvl <= 1.))
-    act, pvl = ulm(m.A, net)
+    act, pvl = ulm(m.toarray(), net)
     assert act[0, 0] > 0
     assert act[1, 0] > 0
     assert act[2, 0] < 0

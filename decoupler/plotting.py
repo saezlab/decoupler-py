@@ -444,7 +444,7 @@ def plot_violins(mat, thr=None, log=False, use_raw=False, figsize=(7, 5), dpi=10
     # Format
     x = np.repeat(r, m.shape[1])
     if isinstance(m, csr_matrix):
-        y = m.A.flatten()
+        y = m.toarray().flatten()
     else:
         y = m.flatten()
 

@@ -42,7 +42,7 @@ def ulm(mat, net, batch_size=10000, verbose=False):
 
             # Subset batch
             srt, end = i * batch_size, i * batch_size + batch_size
-            batch = mat[srt:end].A.T
+            batch = mat[srt:end].toarray().T
 
             # Compute R for batch
             r = mat_cor(net, batch)

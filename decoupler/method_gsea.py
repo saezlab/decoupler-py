@@ -195,7 +195,7 @@ def gsea(mat, net, times=1000, seed=42, verbose=False):
     for i in tqdm(range(n_samples), disable=not verbose):
 
         if isinstance(mat, csr_matrix):
-            row = mat[i].A[0]
+            row = mat[i].toarray()[0]
         else:
             row = mat[i]
 

@@ -82,7 +82,7 @@ def wsum(mat, net, times, batch_size, seed, verbose):
 
             # Subset batch
             srt, end = i * batch_size, i * batch_size + batch_size
-            tmp = mat[srt:end].A
+            tmp = mat[srt:end].toarray()
 
             # Run WSUM
             estimate[srt:end] = tmp.dot(net)

@@ -67,7 +67,7 @@ def aucell(mat, net, n_up, verbose):
     for i in tqdm(range(mat.shape[0]), disable=not verbose):
 
         if isinstance(mat, csr_matrix):
-            row = mat[i].A[0]
+            row = mat[i].toarray()[0]
         else:
             row = mat[i]
 

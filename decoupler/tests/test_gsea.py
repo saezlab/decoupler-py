@@ -28,10 +28,10 @@ def test_gsea():
     es, nes, pval = gsea(m, net, times=10)
     assert nes[0][0] > 0.
     assert nes[0][1] < 0.
-    es, nes, pval = gsea(m.A, net, times=10)
+    es, nes, pval = gsea(m.toarray(), net, times=10)
     assert nes[0][0] > 0.
     assert nes[0][1] < 0.
-    es, nes, pval = gsea(m.A, net, times=0)
+    es, nes, pval = gsea(m.toarray(), net, times=0)
     assert (nes is None) & (pval is None)
     assert es[0][0] > 0.
     assert es[0][1] < 0.

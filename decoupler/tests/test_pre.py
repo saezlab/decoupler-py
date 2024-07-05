@@ -19,7 +19,7 @@ def test_check_mat():
     assert nr.size == 2
     assert nc.size == 2
     assert type(nm) is csr_matrix
-    nm, nr, nc = check_mat(m.A, r, c, verbose=True)
+    nm, nr, nc = check_mat(m.toarray(), r, c, verbose=True)
     assert nm.shape[0] == 2
     assert nm.shape[1] == 2
     assert nr.size == 2

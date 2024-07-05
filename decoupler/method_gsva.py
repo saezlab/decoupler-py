@@ -224,7 +224,7 @@ def run_gsva(mat, net, source='source', target='target', kcdf=False, mx_diff=Tru
 
     # Run GSVA
     if isinstance(m, csr_matrix):
-        m = m.A
+        m = m.toarray()
     estimate = gsva(m, net, kcdf=kcdf, verbose=verbose)
 
     # Transform to df

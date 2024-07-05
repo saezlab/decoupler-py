@@ -226,7 +226,7 @@ def compute_psbulk(n_rows, n_cols, X, sample_col, groups_col, smples, groups, ob
             # Get cells from specific sample
             profile = X[obs[sample_col] == smp]
             if isinstance(X, csr_matrix):
-                profile = profile.A
+                profile = profile.toarray()
 
             # Skip if few cells or not enough counts
             ncell = profile.shape[0]
@@ -261,7 +261,7 @@ def compute_psbulk(n_rows, n_cols, X, sample_col, groups_col, smples, groups, ob
                 # Get cells from specific sample and group
                 profile = X[(obs[sample_col] == smp) & (obs[groups_col] == grp)]
                 if isinstance(X, csr_matrix):
-                    profile = profile.A
+                    profile = profile.toarray()
 
                 # Skip if few cells or not enough counts
                 ncell = profile.shape[0]

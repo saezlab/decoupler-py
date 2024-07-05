@@ -38,7 +38,7 @@ def test_udt():
     ])
     a, b = udt(m, net, seed=42, min_leaf=1)[0]
     assert a > b
-    a, b = udt(m.A, net, seed=42, min_leaf=1)[0]
+    a, b = udt(m.toarray(), net, seed=42, min_leaf=1)[0]
     assert a > b
 
 

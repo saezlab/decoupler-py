@@ -42,7 +42,7 @@ def udt(mat, net, min_leaf=5, seed=42, verbose=False):
     # For each sample and regulator fit dt
     for i in tqdm(range(mat.shape[0]), disable=not verbose):
         if isinstance(mat, csr_matrix):
-            sample = mat[i].A[0]
+            sample = mat[i].toarray()[0]
         else:
             sample = mat[i]
         for j in range(net.shape[1]):
