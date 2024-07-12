@@ -11,7 +11,7 @@ from .pre import extract, match, rename_net, get_net_mat, filt_min_n, return_dat
 
 from scipy import stats
 
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 import numba as nb
 

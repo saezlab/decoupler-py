@@ -11,7 +11,7 @@ from scipy.stats import t
 
 from .pre import extract, match, rename_net, get_net_mat, filt_min_n, return_data
 
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 
 def mat_cov(A, b):

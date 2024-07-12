@@ -13,7 +13,7 @@ from numpy.random import default_rng
 from .pre import extract, rename_net, filt_min_n, return_data
 from .method_gsea import std
 
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 import numba as nb
 

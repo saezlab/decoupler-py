@@ -15,7 +15,7 @@ from math import log, exp, lgamma
 from .pre import extract, rename_net, filt_min_n, return_data
 from .utils import p_adjust_fdr
 
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 import numba as nb
 
