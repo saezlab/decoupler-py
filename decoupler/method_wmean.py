@@ -10,7 +10,7 @@ from scipy.sparse import csr_matrix
 from .pre import extract, match, rename_net, get_net_mat, filt_min_n, return_data
 from .method_gsea import std
 
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 import numba as nb
 

@@ -8,7 +8,7 @@ import pandas as pd
 from scipy.sparse import csr_matrix
 
 from numpy.random import default_rng
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from .pre import extract, rename_net, filt_min_n, return_data
 

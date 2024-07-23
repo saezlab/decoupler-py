@@ -18,7 +18,7 @@ def check_mat(m, r, c, verbose=False):
 
     # Check for empty features
     if type(m) is csr_matrix:
-        msk_features = np.sum(m != 0, axis=0).A1 == 0
+        msk_features = m.getnnz(axis=0) == 0
     else:
         msk_features = np.count_nonzero(m, axis=0) == 0
     n_empty_features = np.sum(msk_features)
@@ -29,8 +29,8 @@ def check_mat(m, r, c, verbose=False):
         m = m[:, ~msk_features]
 
     # Sort features
-    msk = np.argsort(c)
-    m, r, c = m[:, msk], r.astype('U'), c[msk].astype('U')
+    #msk = np.argsort(c)
+    #m, r, c = m[:, msk], r.astype('U'), c[msk].astype('U')
 
     # Check for repeated features
     if np.any(c[1:] == c[:-1]):
@@ -38,7 +38,7 @@ def check_mat(m, r, c, verbose=False):
 
     # Check for empty samples
     if type(m) is csr_matrix:
-        msk_samples = np.sum(m != 0, axis=1).A1 == 0
+        msk_samples = m.getnnz(axis=1) == 0
     else:
         msk_samples = np.count_nonzero(m, axis=1) == 0
     n_empty_samples = np.sum(msk_samples)
@@ -174,9 +174,12 @@ def match(c, r, net):
     # Init empty regX
     regX = np.zeros((c.shape[0], net.shape[1]), dtype=np.float32)
 
-    # Match genes from mat, else are 0s
-    idxs = np.searchsorted(c, r)
-    regX[idxs] = net
+    # Create an index array for rows of c corresponding to r
+    c_dict = {gene: i for i, gene in enumerate(c)}
+    idxs = [c_dict[gene] for gene in r if gene in c_dict]
+
+    # Populate regX using advanced indexing
+    regX[idxs, :] = net[: len(idxs), :]
 
     return regX
 
