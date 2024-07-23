@@ -332,7 +332,7 @@ def format_acts_grts(res, obs, groupby, use_pval):
     grts = build_grts_mat(obs, exps, srcs)
 
     # Match to same srcs between acts and grts
-    grts = match(srcs, grts.columns, grts.T).T
+    grts = match(srcs, grts.columns, grts.T.values).T
 
     # Build msks tensor
     msks, grpbys, grps = build_msks_tensor(obs, groupby)
