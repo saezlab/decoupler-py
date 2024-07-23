@@ -15,32 +15,17 @@ from .pre import extract, match, rename_net, get_net_mat, filt_min_n, return_dat
 
 from tqdm import tqdm
 
+
 def zscore(m, net, flavor='RoKAI', verbose=False):
-
-    # Get dims
-    n_samples = m.shape[0]
-    n_features, n_fsets = net.shape
-    
-    es = np.zeros((n_samples, n_fsets))
-    pv = np.zeros((n_samples, n_fsets))
-                     
-    # Compute each element of Matrix3
-    for i in range(n_samples):
-        for f in range(n_fsets):
-            m_f = m[:, i]
-            if isspmatrix_csr(m_f):
-                m_f = m_f.toarray()
-                m_f = m_f.reshape(1, -1)
-            net_i = net[:, f]
-
-            mean_product = np.sum(m_f * net_i) / np.sum(abs(net_i))
-            mean_m_f = 0 if flavor == "RoKAI" else np.mean(m_f)
-            std_m_f = np.std(m_f)
-            count_non_zeros = np.count_nonzero(net_i)
-
-            es[i, f] = (mean_product - mean_m_f) * np.sqrt(count_non_zeros) / std_m_f
-            pv[i, f] = norm.cdf(-abs(es[i, f]))
-
+    stds = np.std(m, axis=1, ddof=1)
+    if flavor != 'RoKAI':
+        mean_all = np.mean(m, axis=1)
+    else:
+        mean_all = np.zeros(stds.shape)
+    n = np.sqrt(np.count_nonzero(net, axis=0))
+    mean = m.dot(net) / np.sum(np.abs(net), axis=0)
+    es = ((mean - mean_all.reshape(-1, 1)) * n) / stds.reshape(-1, 1)
+    pv = norm.cdf(-np.abs(es))
     return es, pv
 
 
