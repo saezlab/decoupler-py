@@ -5,15 +5,10 @@ Code to run the z-score (RoKAI, KSEA) method.
 
 import numpy as np
 import pandas as pd
-from scipy.sparse import csr_matrix
-from scipy.sparse import isspmatrix_csr
 
-from scipy.stats import t
 from scipy.stats import norm
 
 from .pre import extract, match, rename_net, get_net_mat, filt_min_n, return_data
-
-from tqdm import tqdm
 
 
 def zscore(m, net, flavor='RoKAI', verbose=False):
@@ -40,8 +35,8 @@ def run_zscore(mat, net, source='source', target='target', weight='weight', batc
 
     Parameters
     ----------
-    mat : list, DataFrame
-        List of [features, matrix], dataframe (samples x features).
+    mat : list, DataFrame or AnnData
+        List of [features, matrix], dataframe (samples x features) or an AnnData instance.
     net : DataFrame
         Network in long format.
     source : str
@@ -50,8 +45,8 @@ def run_zscore(mat, net, source='source', target='target', weight='weight', batc
         Column name in net with target nodes.
     weight : str
         Column name in net with weights.
-    flavor : int
-        Whether to use the implementation of RoKAI (default) or KSEA.
+    batch_size : int
+        Size of the samples to use for each batch. Increasing this will consume more memmory but it will run faster.
     min_n : int
         Minimum of targets per source. If less, sources are removed.
     verbose : bool
@@ -62,9 +57,9 @@ def run_zscore(mat, net, source='source', target='target', weight='weight', batc
     Returns
     -------
     estimate : DataFrame
-        Z-scores.
+        Z-scores. Stored in `.obsm['zscore_estimate']` if `mat` is AnnData.
     pvals : DataFrame
-        Obtained p-values.
+        Obtained p-values. Stored in `.obsm['zscore_pvals']` if `mat` is AnnData.
     """
 
     # Extract sparse matrix and array of genes
