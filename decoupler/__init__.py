@@ -21,6 +21,7 @@ from .method_gsva import run_gsva  # noqa: F401
 from .method_gsea import run_gsea, get_gsea_df  # noqa: F401
 from .method_viper import run_viper  # noqa: F401
 from .method_aucell import run_aucell  # noqa: F401
+from .method_zscore import run_zscore  # noqa: F401
 from .decouple import decouple, run_consensus  # noqa: F401
 from .consensus import cons  # noqa: F401
 from .omnip import (
