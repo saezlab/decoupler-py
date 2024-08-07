@@ -241,6 +241,8 @@ def test_get_pseudobulk():
     smples = np.array(['S1', 'S1', 'S1', 'S2', 'S2'])
     groups = np.array(['C1', 'C1', 'C1', 'C1', 'C2'])
     obs = pd.DataFrame([smples, groups], columns=r, index=[sample_col, groups_col]).T
+    obs['sample_id'] = obs['sample_id'].astype('category')
+    obs['celltype'] = obs['celltype'].astype('category')
     adata = AnnData(df.astype(np.float32), obs=obs)
 
     pdata = get_pseudobulk(adata, groups_col, groups_col, min_cells=0, min_counts=0, min_prop=None, min_smpls=None)

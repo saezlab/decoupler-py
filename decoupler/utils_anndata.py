@@ -160,7 +160,8 @@ def format_psbulk_inputs(sample_col, groups_col, obs):
 
     if groups_col is None:
         # Filter extra columns in obs
-        cols = obs.groupby(sample_col, observed=True).apply(lambda x: x.apply(lambda y: len(y.unique()) == 1)).all(0)
+        cols = obs.groupby(sample_col, observed=True).nunique().eq(1).all(0)
+        cols = np.hstack([sample_col, cols[cols].index])
         obs = obs.loc[:, cols]
 
         # Get unique samples
@@ -174,12 +175,12 @@ def format_psbulk_inputs(sample_col, groups_col, obs):
         if type(groups_col) is list:
             obs = obs.copy()
             joined_cols = '_'.join(groups_col)
-            obs[joined_cols] = obs[groups_col[0]].str.cat(obs[groups_col[1:]], sep='_')
+            obs[joined_cols] = obs[groups_col[0]].str.cat(obs[groups_col[1:]].astype('U'), sep='_')
             groups_col = joined_cols
 
         # Filter extra columns in obs
-        cols = obs.groupby([sample_col, groups_col],
-                           observed=True).apply(lambda x: x.apply(lambda y: len(y.unique()) == 1)).all(0)
+        cols = obs.groupby([sample_col, groups_col], observed=True).nunique().eq(1).all(0)
+        cols = np.hstack([sample_col, groups_col, cols[cols].index])
         obs = obs.loc[:, cols]
 
         # Get unique samples and groups
@@ -639,7 +640,13 @@ def format_contrast_results(logFCs, pvals):
 
     df = melt([logFCs, pvals]).rename({'sample': 'contrast', 'source': 'name', 'score': 'logFCs'}, axis=1)
     df = df[['contrast', 'name', 'logFCs', 'pvals']].sort_values('contrast').reset_index(drop=True)
-    df['adj_pvals'] = df.groupby('contrast', observed=True).apply(lambda x: p_adjust_fdr(x['pvals'])).explode().values
+    df['adj_pvals'] = (
+        df
+        .groupby('contrast', observed=True)
+        .apply(lambda x: p_adjust_fdr(x['pvals']), include_groups=False)
+        .explode()
+        .values
+    )
     df = df.sort_values(['contrast', 'pvals']).reset_index(drop=True)
 
     return df
