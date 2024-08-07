@@ -42,7 +42,8 @@ def test_ppois():
 
 
 def test_norm_cdf():
-    assert np.isclose(norm_cdf(np.array([1, 2, 3], dtype=float), mu=0.0, sigma=1.0), np.array([0.8413447, 0.9772499, 0.9986501])).all()
+    assert np.isclose(norm_cdf(np.array([1, 2, 3], dtype=float), mu=0.0, sigma=1.0),
+                      np.array([0.8413447, 0.9772499, 0.9986501])).all()
     assert np.isclose(norm_cdf(np.array([0, 9, 1], dtype=float), mu=0.0, sigma=1.0), np.array([0.5, 1., 0.8413447])).all()
 
 

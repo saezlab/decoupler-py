@@ -25,13 +25,13 @@ def zscore(m, net, flavor='RoKAI', verbose=False):
 
 
 def run_zscore(mat, net, source='source', target='target', weight='weight', batch_size=10000, flavor='RoKAI',
-             min_n=5, verbose=False, use_raw=True):
+               min_n=5, verbose=False, use_raw=True):
     """
     z-score.
 
-    Calculates regulatory activities using a z-score as descibed in KSEA or RoKAI. The z-score calculates the mean of the molecular features of the 
-    known targets for each regulator and adjusts it for the number of identified targets for the regulator, the standard deviation of all molecular 
-    features (RoKAI), as well as the mean of all moleculare features (KSEA).
+    Calculates regulatory activities using a z-score as descibed in KSEA or RoKAI. The z-score calculates the mean of the
+    molecular features of the known targets for each regulator and adjusts it for the number of identified targets for the
+    regulator, the standard deviation of all molecular features (RoKAI), as well as the mean of all moleculare features (KSEA).
 
     Parameters
     ----------
@@ -74,7 +74,8 @@ def run_zscore(mat, net, source='source', target='target', weight='weight', batc
     net = match(c, targets, net)
 
     if verbose:
-        print('Running zscore on mat with {0} samples and {1} targets for {2} sources.'.format(m.shape[0], len(c), net.shape[1]))
+        print('Running zscore on mat with {0} samples and {1} targets for {2} sources.'.format(
+            m.shape[0], len(c), net.shape[1]))
 
     # Run ULM
     estimate, pvals = zscore(m, net, flavor=flavor)

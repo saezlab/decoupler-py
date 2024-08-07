@@ -307,4 +307,3 @@ def break_ties(m, c, seed):
     idx = rng.choice(idx, c.size, replace=False)
     m, c = m[:, idx], c[idx]
     return m, c
-

@@ -6,7 +6,6 @@ Code to run the Over Representation Analysis (ORA) method.
 import numpy as np
 import pandas as pd
 
-from numpy.random import default_rng
 from scipy.sparse import csr_matrix
 
 from scipy.stats import rankdata

@@ -6,9 +6,7 @@ Code to run the Gene Set Variation Analysis (GSVA) method.
 import numpy as np
 import pandas as pd
 
-from scipy.stats import norm
 from scipy.sparse import csr_matrix
-from numpy.random import default_rng
 import math
 
 from .pre import extract, rename_net, filt_min_n, return_data, break_ties
@@ -35,6 +33,7 @@ def erf(x):
     t = 1.0 / (1.0 + a6 * abs_x)
     y = 1.0 - (((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * np.exp(-abs_x * abs_x))
     return sign * y
+
 
 @nb.njit(nb.f8[:](nb.f8[:], nb.f8, nb.f8), cache=True)
 def norm_cdf(x, mu=0.0, sigma=1.0):
