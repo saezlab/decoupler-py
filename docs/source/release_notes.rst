@@ -1,6 +1,23 @@
 Release notes
 =============
 
+1.8.0
+-----
+Bug fixes
+~~~~~~~~~
+- Fixed ``scipy >= 1.14.0`` errors due to deprecated ``.A`` attribute.
+- ``get_pseudobulk`` now handles categorical columns.
+
+Changes
+~~~~~~~
+- ``pre`` functions now are more efficient.
+- Changed ``kcdf`` density argument for ``run_gsva``. Now it accepts either ``'gaussian'``, ``'poisson'`` or ``None``.
+
+Additions
+~~~~~~~~~
+- Added method ``zscore``.
+- Added ``pre`` function ``break_ties``.
+
 1.7.0
 -----
 
