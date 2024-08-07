@@ -9,90 +9,152 @@ import pandas as pd
 from scipy.stats import norm
 from scipy.sparse import csr_matrix
 from numpy.random import default_rng
+import math
 
-from .pre import extract, rename_net, filt_min_n, return_data
-from .method_gsea import std
+from .pre import extract, rename_net, filt_min_n, return_data, break_ties
 
 from tqdm.auto import tqdm
 
 import numba as nb
 
 
-def init_cdfs(pre_res=10000, max_pre=10):
-    pre_cdf = norm.cdf(np.arange(pre_res+1) * max_pre / pre_res, loc=0, scale=1).astype(np.float32)
+@nb.njit(nb.f8(nb.f8[:], nb.i8), cache=True, error_model='numpy')
+def std(arr, ddof):
+    N = arr.shape[0]
+    m = np.mean(arr)
+    var = np.sum((arr - m)**2) / (N - ddof)
+    sd = np.sqrt(var)
+    return sd
 
+
+@nb.njit(nb.f8[:](nb.f8[:]), cache=True)
+def erf(x):
+    a1, a2, a3, a4, a5, a6 = 0.254829592, -0.284496736, 1.421413741, -1.453152027, 1.061405429, 0.3275911
+    sign = np.sign(x)
+    abs_x = np.abs(x)
+    t = 1.0 / (1.0 + a6 * abs_x)
+    y = 1.0 - (((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * np.exp(-abs_x * abs_x))
+    return sign * y
+
+@nb.njit(nb.f8[:](nb.f8[:], nb.f8, nb.f8), cache=True)
+def norm_cdf(x, mu=0.0, sigma=1.0):
+    e = erf((x - mu) / (sigma * np.sqrt(2.0)))
+    return (0.5 * (1.0 + e))
+
+
+@nb.njit(nb.f8(nb.f8, nb.f8), cache=True)
+def poisson_pmf(k, lam):
+    if k < 0 or lam < 0:
+        return 0.0
+    if k == 0:
+        return np.exp(-lam)
+
+    log_pmf = -lam + k * np.log(lam) - math.lgamma(k + 1)
+    return np.exp(log_pmf)
+
+
+@nb.njit(nb.f8(nb.f8, nb.f8), cache=True)
+def ppois(k, lam):
+    cdf_sum = 0.0
+    for i in range(int(k) + 1):
+        cdf_sum += poisson_pmf(i, lam)
+    if cdf_sum > 1:
+        cdf_sum = 1.
+    return cdf_sum
+
+
+@nb.njit(nb.f8[:](), cache=True)
+def init_cdfs():
+    pre_res = 10000
+    max_pre = 10
+    pre_cdf = norm_cdf(np.arange(pre_res + 1) * max_pre / pre_res, 0, 1)
     return pre_cdf
 
 
-@nb.njit(nb.f4[:](nb.f4[:]), cache=True)
+@nb.njit(nb.f8[:](nb.f8[:]), cache=True)
 def apply_ecdf(x):
     v = np.sort(x)
     n = len(x)
-    return (np.searchsorted(v, x, side='right').astype(nb.f4)) / n
+    return np.searchsorted(v, x, side='right') / n
 
 
-@nb.njit(nb.f4[:, :](nb.f4[:, :]), parallel=True, cache=True)
+@nb.njit(nb.f8[:, :](nb.f8[:, :]), parallel=True, cache=True)
 def mat_ecdf(mat):
+    D = mat.copy()
     for j in nb.prange(mat.shape[1]):
-        mat[:, j] = apply_ecdf(mat[:, j])
-    return mat
+        D[:, j] = apply_ecdf(mat[:, j])
+    return D
 
 
-@nb.njit(nb.f4[:](nb.f4[:], nb.f4[:]), cache=True)
-def col_d(x, pre_cdf):
+@nb.njit(nb.f8[:](nb.f8[:], nb.b1, nb.f8[:]), cache=True)
+def col_d(x, gauss, pre_cdf):
     size = x.shape[0]
-    bw = (std(x, 1) / 4.0)
-    col = np.zeros(size, dtype=nb.f4)
-    for j in nb.prange(size):
+    if gauss:
+        bw = std(x, 1) / 4.0
+    else:
+        bw = 0.5
+    col = np.zeros(size, dtype=nb.f8)
+    for j in range(size):
         left_tail = 0.0
-        for i in nb.prange(size):
-            diff = (x[j] - x[i]) / bw
-            if diff < -10:
-                left_tail += 0.0
-            elif diff > 10:
-                left_tail += 1.0
-            else:
-                cdf_val = pre_cdf[int(np.abs(diff) / 10 * 10000)]
-                if diff < 0:
-                    left_tail += 1.0 - cdf_val
+        for i in range(size):
+            if gauss:
+                diff = (x[j] - x[i]) / bw
+                if diff < -10:
+                    left_tail += 0.0
+                elif diff > 10:
+                    left_tail += 1.0
                 else:
-                    left_tail += cdf_val
+                    cdf_val = pre_cdf[int(np.abs(diff) / 10 * 10000)]
+                    if diff < 0:
+                        left_tail += 1.0 - cdf_val
+                    else:
+                        left_tail += cdf_val
+            else:
+                left_tail += ppois(x[j], x[i] + bw)
         left_tail = left_tail/size
         col[j] = -1.0 * np.log((1.0-left_tail)/left_tail)
     return col
 
 
-@nb.njit(nb.f4[:, :](nb.f4[:, :], nb.f4[:]), parallel=True, cache=True)
-def mat_d(mat, pre_cdf):
-    D = np.zeros(mat.shape, dtype=nb.f4)
+@nb.njit(nb.f8[:, :](nb.f8[:, :], nb.b1), parallel=True, cache=True)
+def mat_d(mat, gauss):
+    pre_cdf = init_cdfs()
+    D = np.zeros(mat.shape, dtype=nb.f8)
     for j in nb.prange(mat.shape[1]):
-        D[:, j] = col_d(mat[:, j], pre_cdf)
+        D[:, j] = col_d(mat[:, j], gauss, pre_cdf)
     return D
 
 
-def density(mat, kcdf=False):
-    #if kcdf:
-    #    pre_cdf = init_cdfs()
-    #    mat = mat_d(mat, pre_cdf)
-    #else:
-    mat = mat_ecdf(mat)
+def density(mat, kcdf):
+    mat = mat.astype(float)
+    if kcdf is None:
+        mat = mat_ecdf(mat)
+    else:
+        if kcdf == 'gaussian':
+            gauss = True
+        elif kcdf == 'poisson':
+            gauss = False
+        else:
+            raise ValueError("kcdf needs to be either 'gaussian', 'poisson', or None")
+        mat = mat_d(mat, gauss=gauss)
+
     return mat
 
 
-@nb.njit(nb.types.Tuple((nb.f4[:, :], nb.i8[:, :]))(nb.f4[:, :]), parallel=True, cache=True)
+@nb.njit(nb.types.Tuple((nb.f8[:, :], nb.i8[:, :]))(nb.f8[:, :]), parallel=True, cache=True)
 def nb_get_D_I(mat):
     n = mat.shape[1]
-    rev_idx = np.abs(np.arange(n, 0, -1, nb.f4) - n / 2)
+    rev_idx = np.abs(np.arange(n, 0, -1, nb.f8) - n / 2)
     Idx = np.zeros(mat.shape, dtype=nb.i8)
     for i in nb.prange(mat.shape[0]):
         Idx[i] = np.argsort(-mat[i])
-        tmp = np.zeros(n, dtype=nb.f4)
+        tmp = np.zeros(n, dtype=nb.f8)
         tmp[Idx[i]] = rev_idx
         mat[i] = tmp
     return mat, Idx
 
 
-@nb.njit(nb.f4(nb.f4[:], nb.i8[:], nb.i8, nb.i8[:], nb.i8[:], nb.i8, nb.f4), cache=True)
+@nb.njit(nb.f8(nb.f8[:], nb.i8[:], nb.i8, nb.i8[:], nb.i8[:], nb.i8, nb.f8), cache=True)
 def ks_sample(D, Idx, n_genes, geneset_mask, fset, n_geneset, dec):
 
     sum_gset = 0.0
@@ -121,7 +183,7 @@ def ks_sample(D, Idx, n_genes, geneset_mask, fset, n_geneset, dec):
     return mx_value_sign
 
 
-@nb.njit(nb.f4[:](nb.f4[:, :], nb.i8[:, :], nb.i8[:]), parallel=True, cache=True)
+@nb.njit(nb.f8[:](nb.f8[:, :], nb.i8[:, :], nb.i8[:]), parallel=True, cache=True)
 def ks_matrix(D, Idx, fset):
     n_samples, n_genes = D.shape
     n_geneset = fset.shape[0]
@@ -131,7 +193,7 @@ def ks_matrix(D, Idx, fset):
 
     dec = 1.0 / (n_genes - n_geneset)
 
-    res = np.zeros(n_samples, dtype=nb.f4)
+    res = np.zeros(n_samples, dtype=nb.f8)
     for i in nb.prange(n_samples):
         res[i] = ks_sample(D[i], Idx[i], n_genes, geneset_mask, fset, n_geneset, dec)
 
@@ -153,7 +215,7 @@ def gsva(mat, net, kcdf=False, verbose=False):
     return acts
 
 
-def run_gsva(mat, net, source='source', target='target', kcdf=False, mx_diff=True, abs_rnk=False, min_n=5, seed=42,
+def run_gsva(mat, net, source='source', target='target', kcdf='gaussian', mx_diff=True, abs_rnk=False, min_n=5, seed=42,
              verbose=False, use_raw=True):
     """
     Gene Set Variation Analysis (GSVA).
@@ -178,7 +240,7 @@ def run_gsva(mat, net, source='source', target='target', kcdf=False, mx_diff=Tru
         Column name in net with target nodes.
     kcdf : bool
         Whether to use a Gaussian kernel or not during the non-parametric estimation of the cumulative distribution function.
-        By default no kernel is used (faster), to reproduce GSVA original behaviour in R set to True.
+        To reproduce GSVA original behaviour in R set to True.
     mx_diff : bool
         Changes how the enrichment statistic (ES) is calculated. If True (default), ES is calculated as the difference between
         the maximum positive and negative random walk deviations. If False, ES is calculated as the maximum positive to 0.
@@ -209,10 +271,7 @@ def run_gsva(mat, net, source='source', target='target', kcdf=False, mx_diff=Tru
     net = filt_min_n(c, net, min_n=min_n)
 
     # Randomize feature order to break ties randomly
-    rng = default_rng(seed=seed)
-    idx = np.arange(m.shape[1])
-    rng.shuffle(idx)
-    m, c = m[:, idx], c[idx]
+    m, c = break_ties(m, c, seed)
 
     # Transform targets to indxs
     table = {name: i for i, name in enumerate(c)}
