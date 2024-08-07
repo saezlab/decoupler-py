@@ -12,7 +12,7 @@ from scipy.sparse import csr_matrix
 from scipy.stats import rankdata
 from math import log, exp, lgamma
 
-from .pre import extract, rename_net, filt_min_n, return_data
+from .pre import extract, rename_net, filt_min_n, return_data, break_ties
 from .utils import p_adjust_fdr
 
 from tqdm.auto import tqdm
@@ -293,10 +293,7 @@ def run_ora(mat, net, source='source', target='target', n_up=None, n_bottom=0, n
     net = filt_min_n(c, net, min_n=min_n)
 
     # Randomize feature order to break ties randomly
-    rng = default_rng(seed=seed)
-    idx = np.arange(m.shape[1])
-    rng.shuffle(idx)
-    m, c = m[:, idx], c[idx]
+    m, c = break_ties(m, c, seed)
 
     # Transform targets to indxs
     table = {name: i for i, name in enumerate(c)}
