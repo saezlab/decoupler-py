@@ -8,6 +8,7 @@ from scipy.sparse import csr_matrix, issparse
 import pandas as pd
 import logging
 from anndata import AnnData
+from numpy.random import default_rng
 
 
 def check_mat(m, r, c, verbose=False):
@@ -27,10 +28,6 @@ def check_mat(m, r, c, verbose=False):
             print("{0} features of mat are empty, they will be removed.".format(n_empty_features))
         c = c[~msk_features]
         m = m[:, ~msk_features]
-
-    # Sort features
-    #msk = np.argsort(c)
-    #m, r, c = m[:, msk], r.astype('U'), c[msk].astype('U')
 
     # Check for repeated features
     if np.any(c[1:] == c[:-1]):
@@ -301,3 +298,13 @@ def return_data(mat, results):
             return None
     else:
         return tuple([result for result in results if result is not None])
+
+
+def break_ties(m, c, seed):
+    # Randomize feature order to break ties randomly
+    rng = default_rng(seed=seed)
+    idx = np.arange(c.size)
+    idx = rng.choice(idx, c.size, replace=False)
+    m, c = m[:, idx], c[idx]
+    return m, c
+

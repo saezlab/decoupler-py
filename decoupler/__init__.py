@@ -1,7 +1,7 @@
 __version__ = '1.7.1'  # noqa: F401
 __version_info__ = tuple([int(num) for num in __version__.split('.')])  # noqa: F401
 
-from .pre import extract, match, rename_net, get_net_mat, filt_min_n, mask_features, return_data  # noqa: F401
+from .pre import extract, match, rename_net, get_net_mat, filt_min_n, mask_features, return_data, break_ties  # noqa: F401
 from .utils import (
     melt, show_methods, check_corr, get_toy_data, summarize_acts, assign_groups, dense_run, p_adjust_fdr, shuffle_net,
     read_gmt  # noqa: F401
