@@ -39,7 +39,7 @@ pip install git+https://github.com/saezlab/decoupler-py.git
 For more information check the link.
 
 ## License
-Footprint methods inside decoupler can be used for academic or commercial purposes, except `viper` which holds a non-commercial license. 
+Enrichment methods inside decoupler can be used for academic or commercial purposes, except `viper` which holds a non-commercial license. 
 
 The data redistributed by OmniPath does not have a license, each original resource carries their own. 
 [Here](https://omnipathdb.org/info) one can find the license information of all the resources in OmniPath.
