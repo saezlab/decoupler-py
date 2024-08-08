@@ -11,7 +11,10 @@ Bug fixes
 Changes
 ~~~~~~~
 - ``pre`` functions now are more efficient.
-- Changed ``kcdf`` density argument for ``run_gsva``. Now it accepts either ``'gaussian'``, ``'poisson'`` or ``None``.
+- Refactored ``run_gsva``:
+   -``kcdf`` density argument now accepts either ``'gaussian'``, ``'poisson'`` or ``None``.
+   -``mx_diff`` and ``abs_rnk`` now can be set to different values.
+   -Deprecated ``tau`` parameter
 
 Additions
 ~~~~~~~~~
