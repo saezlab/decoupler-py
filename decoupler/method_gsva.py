@@ -291,9 +291,10 @@ def run_gsva(mat, net, source='source', target='target', kcdf='gaussian', mx_dif
     # Remove repeated features
     if issparse(m):
         m = m.toarray()
-    msk = ~np.all(m == m[0, :], axis=0)
-    m = m[:, msk]
-    c = c[msk]
+    if m.shape[0] > 1:
+        msk = ~np.all(m == m[0, :], axis=0)
+        m = m[:, msk]
+        c = c[msk]
 
     # Transform net
     net = rename_net(net, source=source, target=target, weight=None)
