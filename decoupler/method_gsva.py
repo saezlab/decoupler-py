@@ -225,7 +225,10 @@ def gsva(mat, net, kcdf=False, maxdiff=True, absrnk=False, verbose=False):
     if issparse(mat):
         mat = mat.toarray()
     # Get feature Density
-    mat = density(mat, kcdf=kcdf)
+    if mat.shape[0] > 1:
+        mat = density(mat, kcdf=kcdf)
+    else:
+        mat = mat.astype(float)
     ord, rst = order_rankstat(mat)
 
     # Run GSVA for each feature set
