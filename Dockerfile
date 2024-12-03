@@ -9,3 +9,6 @@ ENV PATH="/opt/conda/envs/backsub/bin:$PATH"
 
 RUN pip install --upgrade decoupler[omnipath,scikit,plotting]
 
+LABEL org.opencontainers.image.source=https://github.com/saezlab/decoupler-py
+LABEL org.opencontainers.image.description="Decoupler Anaconda image"
+LABEL org.opencontainers.image.licenses=GPLv3
