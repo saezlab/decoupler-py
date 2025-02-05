@@ -212,6 +212,7 @@ def rename_net(net, source='source', target='target', weight='weight'):
         net = net.copy()
         net['weight'] = 1.0
         weight = 'weight'
+    net['weight'] = net['weight'].astype(float)
 
     # Rename
     net = net.rename(columns={source: 'source', target: 'target', weight: 'weight'})
