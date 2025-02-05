@@ -2,10 +2,11 @@
 <!-- badges: start -->
 [![main](https://github.com/saezlab/decoupler-py/actions/workflows/ci.yml/badge.svg)](https://github.com/saezlab/decoupler-py/actions)
 [![GitHub issues](https://img.shields.io/github/issues/saezlab/decoupler-py.svg)](https://github.com/saezlab/decoupler-py/issues/)
-[![Downloads](https://static.pepy.tech/badge/decoupler)](https://pepy.tech/project/decoupler)
 [![Documentation Status](https://readthedocs.org/projects/decoupler-py/badge/?version=latest)](https://decoupler-py.readthedocs.io/en/latest/?badge=latest)
 [![codecov](https://codecov.io/gh/saezlab/decoupler-py/branch/main/graph/badge.svg?token=TM0P29KKN5)](https://codecov.io/gh/saezlab/decoupler-py)
+[![Downloads](https://static.pepy.tech/badge/decoupler)](https://pepy.tech/project/decoupler)
 
+[![Conda Recipe](https://img.shields.io/badge/recipe-decoupler--py-green.svg)](https://anaconda.org/conda-forge/decoupler-py)
 [![Conda page](https://img.shields.io/conda/vn/conda-forge/decoupler-py.svg)](https://anaconda.org/conda-forge/decoupler-py)
 [![Conda downloads](https://img.shields.io/conda/dn/conda-forge/decoupler-py.svg)](https://anaconda.org/conda-forge/decoupler-py)
 <!-- badges: end -->
@@ -41,7 +42,8 @@ For more information check the link.
 ## License
 Enrichment methods inside decoupler can be used for academic or commercial purposes, except `viper` which holds a non-commercial license. 
 
-The data redistributed by OmniPath does not have a license, each original resource carries their own. 
+The data redistributed by OmniPath does not have a single license, each original resource has its own. By default, `decoupler`
+assumes an academic license, but commercial or nonprofit licenses can be specified in the `license` parameter of `decoupler`'s OmniPath functions.
 [Here](https://omnipathdb.org/info) one can find the license information of all the resources in OmniPath.
 
 ## Citation
