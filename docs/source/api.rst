@@ -89,6 +89,7 @@ Omnipath wrappers:
    get_resource
    get_progeny
    get_dorothea
+   get_ksn_omnipath
    get_collectri
    translate_net
    

@@ -1,6 +1,17 @@
 Release notes
 =============
 
+1.9.0
+-----
+Bug fixes
+~~~~~~~~~
+- ``get_pseudobulk`` now handles ``pandas>=2.0.0`` and properly handles ``NA``s.
+
+Changes
+~~~~~~~
+- All OmniPath functions now query directly the OmniPath server, ``omnipath`` and ``pypath-omnipath`` packages are no longuer needed. Now orthology conversion uses ``liana``'s implementation instead.
+- All OmniPath functions now include a ``license`` parameter, allowing you to choose between ``"academic"``, ``"commercial"``, or ``"nonprofit"`` licenses (by default, the academic license is used, as it contains the most information)..
+
 1.8.0
 -----
 Bug fixes
