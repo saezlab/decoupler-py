@@ -225,7 +225,7 @@ def compute_psbulk(n_rows, n_cols, X, sample_col, groups_col, smples, groups, ob
             new_obs.loc[smp, :] = tmp
 
             # Get cells from specific sample
-            profile = X[obs[sample_col] == smp]
+            profile = X[(obs[sample_col] == smp).values]
             if isinstance(X, csr_matrix):
                 profile = profile.toarray()
 
