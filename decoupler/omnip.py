@@ -3,198 +3,50 @@ Utility functions to query OmniPath.
 Functions to retrieve resources from the meta-database OmniPath.
 """
 
-from __future__ import annotations
-
-__all__ = [
-    'get_progeny',
-    'show_resources',
-    'get_resource',
-    'get_dorothea',
-    'translate_net',
-    'add_genesymbols',
-]
 
 import os
-import builtins
-from types import ModuleType
-from typing import Iterable
-from typing_extensions import Literal
-import warnings
-from datetime import datetime
-
 import numpy as np
 import pandas as pd
 
-from decoupler import _misc
 
-builtins.PYPATH_LOG = os.devnull
-PYPATH_MIN_VERSION = '0.14.28'
-ORGANISMS = {
-    'human': (
-        'human', 'h. sapiens', 'hsapiens',
-        '9606', 9606, 'homo sapiens',
-    ),
-    'mouse': (
-        'mouse', 'm. musculus', 'mmusculus',
-        '10090', 10090, 'mus musculus',
-    ),
-    'rat': (
-        'rat', 'r. norvegicus', 'rnorvegicus',
-        '10116', 10116, 'rattus norvegicus',
-    ),
-    'fly': (
-        'fly', 'd. melanogaster', 'dmelanogaster',
-        '7227', 7227, 'drosphila melanogaster',
-    ),
-}
-TAXIDS = {
-    'human': 9606,
-    'mouse': 10090,
-    'rat': 10116,
-}
-DOROTHEA_LEVELS = Literal['A', 'B', 'C', 'D']
+url_dbs = 'https://omnipathdb.org/annotations?databases='
+url_inter = 'https://omnipathdb.org/interactions/?genesymbols=1&'
 
 
-def _check_if_omnipath() -> ModuleType:
-
+def _check_if_liana():
     try:
-
-        import omnipath as op
-
+        import liana as li
     except Exception:
-
         raise ImportError(
-            'omnipath is not installed. Please install it by: '
-            '`pip install omnipath`.'
+            'liana is not installed. Please install it by: '
+            '`pip install liana`.'
         )
-
-    return op
-
-
-def _check_if_pypath() -> None:
-
-    def ver(v):
-        return tuple(map(int, v.split('.')))
-
-    # Check if pypath is installed
-    try:
-        import pypath
-
-    except Exception:
-        msg = (
-            'pypath-omnipath is not installed. Please install it with: '
-            'pip install pypath-omnipath'
-        )
-        _misc.log_traceback(msg)
-        raise ImportError(msg)
-
-    if (getattr(pypath, '__version__', None) and ver(pypath.__version__) < ver(PYPATH_MIN_VERSION)):
-        msg = (
-            'The installed version of pypath-omnipath is too old, '
-            f'the oldest compatible version is {PYPATH_MIN_VERSION}.'
-        )
-        _misc.log_traceback(msg)
-        raise ImportError(msg)
-    elif not callable(getattr(pypath, "disclaimer", False)):
-        msg = (
-            'pypath is installed instead of pypath-omnipath. Please, remove'
-            'pypath (pip uninstall pypath) and install pypath-omnipath (pip install pypath-omnipath)'
-        )
-        _misc.log_traceback(msg)
-        raise ImportError(msg)
+    return li
 
 
-def _is_organism(
-        name: str | int,
-        organism: Literal['human', 'mouse', 'rat'],
-        ) -> bool:
+def show_resources():
     """
-    Tells if `name` means one of human, mouse, rat.
+    Shows available resources in Omnipath. For more information visit the
+    official website for [Omnipath](https://omnipathdb.org/).
+
+    Returns
+    -------
+    lst : list
+        List of available resources to query with `dc.get_resource`.
     """
 
-    return str(name).lower() in ORGANISMS.get(organism.lower(), ())
+    ann = pd.read_csv('https://omnipathdb.org/queries/annotations', sep='\t')
+    ann = ann.set_index('argument').loc['databases'].str.split(';')['values']
 
-
-def _is_mouse(name: str) -> bool:
-    """
-    Does the organism name or ID mean mouse?
-    """
-
-    return _is_organism(name, 'mouse')
-
-
-def _is_human(name: str) -> bool:
-    """
-    Does the organism name or ID mean human?
-    """
-
-    return _is_organism(name, 'human')
-
-
-def _is_rat(name: str) -> bool:
-    """
-    Does the organism name or ID mean human?
-    """
-
-    return _is_organism(name, 'rat')
-
-
-def _the_organism(organism: str | int) -> str:
-
-    return (
-        'mouse' if _is_mouse(organism) else
-        'rat' if _is_rat(organism) else
-        'human'
-    )
-
-
-def _static_fallback(
-        query: str,
-        resource: str,
-        organism: int | str,
-        **kwargs) -> pd.DataFrame:
-    """
-    Fallback for static tables.
-    """
-
-    _warn_failure(resource)
-
-    op = _check_if_omnipath()
-
-    return op.static.static_table(
-        query=query,
-        resource=resource,
-        organism=organism,
-        **kwargs
-    )
-
-
-def _warn_failure(resource: str, static_fallback: bool = True):
-
-    fallback_msg = (
-        'Falling back to static tables. This is not the recommended way to '
-        'access OmniPath; it is only a backup plan for situations when our '
-        'server or your computer is experiencing issues.'
-    )
-    msg = (
-        f'Failed to download `{resource}` from OmniPath. '
-        f'{fallback_msg if static_fallback else ""}'
-        'See the below traceback and the omnipath log for details.'
-    )
-    _misc.log_traceback(msg)
+    return ann
 
 
 def get_progeny(
-        organism: str | int = 'human',
-        top: int = 100,
-        genesymbol_resource: (
-            Literal['uniprot', 'ensembl'] |
-            dict[str, set[str]] |
-            bool |
-            None
-        ) = None,
-        **kwargs
-        ) -> pd.DataFrame:
+    organism='human',
+    top=np.inf,
+    license='academic',
+    **kwargs
+    ):
     """
     Pathway RespOnsive GENes for activity inference (PROGENy).
 
@@ -205,19 +57,14 @@ def get_progeny(
     Parameters
     ----------
     organism : str
-        The organism of interest: either NCBI Taxonomy ID, common name,
-        latin name or Ensembl name. Organisms other than human will be
-        translated from human data by orthology.
+        The organism of interest. By default human.
     top : int
-        Number of genes per pathway to return.
-    genesymbol_resource : str
-        Resource to query for Gene Symbols. Either "uniprot" or "ensembl",
-        or a dictionary with UniProt IDs as keys and sets of Gene Symbols
-        as values. If None, the Gene Symbols provided by the web service will
-        be left intact. If False, the Gene Symbols will be dropped and UniProt
-        IDs will be used instead.
+        Number of genes per pathway to return. By default all of them.
+    license: str
+        Which license to use, available options are: academic, commercial, or nonprofit.
+        By default, is set to academic to retrieve all possible interactions.
     kwargs
-        Passed to `omnipath.requests.Annotations.get`.
+        Passed to `decoupler.translate_net`.
 
     Returns
     -------
@@ -225,58 +72,41 @@ def get_progeny(
         Dataframe in long format containing target genes for each pathway with
         their associated weights and p-values.
     """
-
-    op = _check_if_omnipath()
-
-    try:
-        p = op.requests.Annotations.get(resources='PROGENy', **kwargs)
-    except Exception:
-        p = _static_fallback(
-            query='annotations',
-            resource='PROGENy',
-            organism=9606,
-            wide=False,
-        )
-
-    p = p.set_index([
-        'record_id', 'uniprot', 'genesymbol',
-        'entity_type', 'source', 'label',
-    ])
-    p = p.unstack('label').droplevel(axis=1, level=0)
-    p.columns = np.array(p.columns)
-    p = p.reset_index()
-    p = p.drop('record_id', axis=1)
-    p.columns.name = None
-    p = _annotation_identifiers(p, organism, genesymbol_resource)
+    p = pd.read_csv(url_dbs + f'PROGENy&license={license}', sep="\t")
+    p = p[['genesymbol', 'label', 'value', 'record_id']]
+    p = p.pivot(index=["genesymbol", "record_id"], columns="label", values="value").reset_index()
     p = p[['pathway', 'genesymbol', 'weight', 'p_value']]
     p = p[~p.duplicated(['pathway', 'genesymbol'])]
     p['p_value'] = p['p_value'].astype(np.float32)
     p['weight'] = p['weight'].astype(np.float32)
+    p.columns = ['source', 'target', 'weight', 'p_value']
+    p = p.infer_objects()
+    p = p.convert_dtypes()
+    if organism != 'human':
+        p = translate_net(
+            p,
+            columns='target',
+            target_organism=organism,
+            **kwargs
+        )
     p = (
         p.
         sort_values('p_value').
-        groupby('pathway').
+        groupby('source').
         head(top).
-        sort_values(['pathway', 'p_value']).
+        sort_values(['source', 'p_value']).
         reset_index(drop=True)
     )
-    p.columns = ['source', 'target', 'weight', 'p_value']
-    p = op._misc.dtypes.auto_dtype(p)
-
-    return p.reset_index(drop=True)
+    
+    return p
 
 
 def get_resource(
-        name: str,
-        organism: str | int = 'human',
-        genesymbol_resource: (
-            Literal['uniprot', 'ensembl'] |
-            dict[str, set[str]] |
-            bool |
-            None
-        ) = None,
+        name,
+        organism='human',
+        license='academic',
         **kwargs
-        ) -> pd.DataFrame:
+    ):
     """
     Wrapper to access resources inside Omnipath.
 
@@ -290,17 +120,12 @@ def get_resource(
     name : str
         Name of the resource to query.
     organism : int | str
-        The organism of interest: either NCBI Taxonomy ID, common name,
-        latin name or Ensembl name. Organisms other than human will be
-        translated from human data by orthology.
-    genesymbol_resource : str
-        Resource to query for Gene Symbols. Either "uniprot" or "ensembl",
-        or a dictionary with UniProt IDs as keys and sets of Gene Symbols
-        as values. If None, the Gene Symbols provided by the web service will
-        be left intact. If False, the Gene Symbols will be dropped and UniProt
-        IDs will be used instead.
+        The organism of interest. By default human.
+    license: str
+        Which license to use, available options are: academic, commercial, or nonprofit.
+        By default, is set to academic to retrieve all possible interactions.
     kwargs
-        Passed to `omnipath.requests.Annotations.get`.
+        Passed to `decoupler.translate_net`.
 
     Returns
     -------
@@ -308,88 +133,37 @@ def get_resource(
         Dataframe in long format relating genes to biological entities.
     """
 
-    op = _check_if_omnipath()
-
-    annot_resources = None
-
-    try:
-        annot_resources = show_resources()
-    except Exception:
-        msg = (
-            "Failed to check the list of available resources in OmniPath. "
-            "Proceeding anyways. See the traceback below and the omnipath "
-            "log for details."
-        )
-        _misc.log_traceback(msg)
-
-    if annot_resources:
-        msg = (
-            f'{name} is not a valid resource. Please, run '
-            'decoupler.show_resources to see the list of available resources.'
-        )
-        assert name in annot_resources, msg
-
-    try:
-
-        df = op.requests.Annotations.get(
-            resources=name,
-            entity_type='protein',
+    names = show_resources()
+    if name not in names:
+        raise ValueError(f'name must be one of these: {names}')
+    df = pd.read_csv(url_dbs + f'{name}&license={license}', sep="\t")
+    labels = df['label'].unique()
+    for label in labels:
+        if label in df.columns:
+            df.loc[df['label'] == label, 'label'] = f'_{label}'
+    df = df[['genesymbol', 'label', 'value', 'record_id']]
+    df = df.pivot(index=["genesymbol", "record_id"], columns="label", values="value").reset_index()
+    df.index.name = ''
+    df.columns.name = ''
+    cols_to_remove = ['record_id', 'entity_type']
+    df = df.drop(columns=[c for c in cols_to_remove if c in df.columns])
+    df = df.infer_objects()
+    df = df.convert_dtypes()
+    if organism != 'human':
+        df = translate_net(
+            df,
+            columns='genesymbol',
+            target_organism=organism,
             **kwargs
         )
-
-    except Exception:
-
-        df = _static_fallback(
-            query='annotations',
-            resource=name,
-            organism=9606,
-            wide=False,
-        )
-
-    df = df.set_index([
-        'record_id', 'uniprot',
-        'genesymbol', 'entity_type',
-        'source', 'label',
-    ])
-    df = df.unstack('label').droplevel(axis=1, level=0)
-    df = df.drop(
-        columns=[name for name in df.index.names if name in df.columns]
-    )
-    df.columns = list(df.columns)
-    df = df.reset_index()
-    df = _annotation_identifiers(df, organism, genesymbol_resource)
-    df = df.drop(columns=['record_id', 'uniprot', 'entity_type', 'source'])
-    df = op._misc.dtypes.auto_dtype(df)
-
-    return df.reset_index(drop=True)
-
-
-def show_resources() -> list:
-    """
-    Shows available resources in Omnipath. For more information visit the
-    official website for [Omnipath](https://omnipathdb.org/).
-
-    Returns
-    -------
-    lst : list
-        List of available resources to query with `dc.get_resource`.
-    """
-
-    op = _check_if_omnipath()
-
-    return list(op.requests.Annotations.resources())
+    return df
 
 
 def get_dorothea(
-        organism: str | int = 'human',
-        levels: DOROTHEA_LEVELS | Iterable[DOROTHEA_LEVELS] = ('A', 'B', 'C'),
-        weight_dict: dict[str, int] | None = None,
-        genesymbol_resource: (
-            Literal['uniprot', 'ensembl'] |
-            dict[str, set[str]] |
-            bool |
-            None
-        ) = None,
+        organism='human',
+        levels=['A', 'B', 'C'],
+        weight_dict= None,
+        license='academic',
         **kwargs
         ) -> pd.DataFrame:
     """
@@ -403,10 +177,8 @@ def get_dorothea(
 
     Parameters
     ----------
-    organism : str
-        The organism of interest: either NCBI Taxonomy ID, common name,
-        latin name or Ensembl name. Organisms other than human will be
-        translated from human data by orthology.
+    organism : int | str
+        The organism of interest. By default human.
     levels : list
         List of confidence levels to return. Goes from A to D, A being the
         most confident and D being the less.
@@ -414,14 +186,11 @@ def get_dorothea(
         Dictionary of values to divide the mode of regulation (-1 or 1),
         one for each confidence level. Bigger values will generate weights
         close to zero.
-    genesymbol_resource : str
-        Resource to query for Gene Symbols. Either "uniprot" or "ensembl",
-        or a dictionary with UniProt IDs as keys and sets of Gene Symbols
-        as values. If None, the Gene Symbols provided by the web service will
-        be left intact. If False, the Gene Symbols will be dropped and UniProt
-        IDs will be used instead.
+    license: str
+        Which license to use, available options are: academic, commercial, or nonprofit.
+        By default, is set to academic to retrieve all possible interactions.
     kwargs
-        Passed to `omnipath.interactions.Dorothea.get`.
+        Passed to `decoupler.translate_net`.
 
     Returns
     -------
@@ -434,32 +203,9 @@ def get_dorothea(
     weights = {'A': 1, 'B': 2, 'C': 3, 'D': 4}
     weights.update(weight_dict or {})
 
-    _organism = _the_organism(organism)
-
-    _omnipath_check_version()
-    op = _check_if_omnipath()
-
-    # Load Dorothea
-    try:
-
-        do = op.interactions.Dorothea.get(
-            fields=['dorothea_level', 'extra_attrs'],
-            dorothea_levels=['A', 'B', 'C', 'D'],
-            genesymbols=True,
-            organism=_organism,
-        )
-
-    except Exception:
-
-        do = _static_fallback(
-            query='interactions',
-            resource='DoRothEA',
-            organism=TAXIDS[_organism],
-            dorothea_levels=['A', 'B', 'C', 'D'],
-        )
-
-    do = _network_identifiers(do, organism, genesymbol_resource)
-
+    # Read
+    do = pd.read_csv(url_inter + 
+                     f'datasets=dorothea&dorothea_levels=A,B,C,D&fields=dorothea_level&license={license}', sep="\t")
     # Filter extra columns
     do = do[[
         'source_genesymbol', 'target_genesymbol',
@@ -467,22 +213,17 @@ def get_dorothea(
         'consensus_direction', 'consensus_stimulation',
         'consensus_inhibition', 'dorothea_level',
     ]]
-
     # Remove duplicates
     do = do[~do.duplicated([
         'source_genesymbol',
         'dorothea_level',
         'target_genesymbol',
     ])]
-
     # Assign top level if more than 2
     do['dorothea_level'] = [lvl.split(';')[0] for lvl in do['dorothea_level']]
-
     # Assign mode of regulation
     mor = []
-
     for i in do.itertuples():
-
         if i.is_stimulation and i.is_inhibition:
             if i.consensus_stimulation:
                 mor.append(1)
@@ -494,55 +235,38 @@ def get_dorothea(
             mor.append(-1)
         else:
             mor.append(1)
-
     do['mor'] = mor
-
     # Compute weight based on confidence: mor/confidence
     do['weight'] = [
         i.mor / weights[i.dorothea_level]
         for i in do.itertuples()
     ]
-
-    # Filter and rename
-    do = do[[
-        'source_genesymbol', 'dorothea_level',
-        'target_genesymbol', 'weight',
-    ]]
-    do.columns = ['source', 'confidence', 'target', 'weight']
-
-    # Filter by levels
+    # Format
     do = (
-        do[np.isin(do['confidence'], levels)].
-        sort_values('confidence').
-        reset_index(drop=True)
+        do
+        .rename(columns={'source_genesymbol': 'source', 'target_genesymbol': 'target', 'dorothea_level': 'confidence'})
+        [['source', 'target', 'weight', 'confidence']]
+        .sort_values('confidence')
     )
-
-    return do.reset_index(drop=True)
-
-
-def merge_genes_to_complexes(ct_cmplx):
-    cmpl_gsym = []
-    for s in ct_cmplx['source_genesymbol']:
-        if s.startswith('JUN') or s.startswith('FOS'):
-            cmpl_gsym.append('AP1')
-        elif s.startswith('REL') or s.startswith('NFKB'):
-            cmpl_gsym.append('NFKB')
-        else:
-            cmpl_gsym.append(s)
-    ct_cmplx.loc[:, 'source_genesymbol'] = cmpl_gsym
+    do = do[do['confidence'].isin(levels)].reset_index(drop=True)
+    if organism != 'human':
+        do = translate_net(
+            do,
+            columns=['source', 'target'],
+            target_organism=organism,
+            **kwargs
+        )
+    do = do.infer_objects()
+    do = do.convert_dtypes()
+    return do
 
 
 def get_collectri(
-        organism: str | int = 'human',
+        organism='human',
         split_complexes=False,
-        genesymbol_resource: (
-            Literal['uniprot', 'ensembl'] |
-            dict[str, set[str]] |
-            bool |
-            None
-        ) = None,
+        license='academic',
         **kwargs
-        ) -> pd.DataFrame:
+    ):
     """
     CollecTRI gene regulatory network.
 
@@ -553,20 +277,15 @@ def get_collectri(
 
     Parameters
     ----------
-    organism : str
-        The organism of interest: either NCBI Taxonomy ID, common name,
-        latin name or Ensembl name. Organisms other than human will be
-        translated from human data by orthology.
+    organism : int | str
+        The organism of interest. By default human.
     split_complexes : bool
         Whether to split complexes into subunits. By default complexes are kept as they are.
-    genesymbol_resource : str
-        Resource to query for Gene Symbols. Either "uniprot" or "ensembl",
-        or a dictionary with UniProt IDs as keys and sets of Gene Symbols
-        as values. If None, the Gene Symbols provided by the web service will
-        be left intact. If False, the Gene Symbols will be dropped and UniProt
-        IDs will be used instead.
+    license: str
+        Which license to use, available options are: academic, commercial, or nonprofit.
+        By default, is set to academic to retrieve all possible interactions.
     kwargs
-        Passed to `omnipath.interactions.CollecTRI.get`.
+        Passed to `decoupler.translate_net`.
 
     Returns
     -------
@@ -576,382 +295,112 @@ def get_collectri(
         each interaction.
     """
 
-    _organism = _the_organism(organism)
-
-    _omnipath_check_version()
-    op = _check_if_omnipath()
-
-    # Load collectri
-    try:
-
-        ct = op.interactions.CollecTRI.get(
-            genesymbols=True,
-            organism=_organism,
-            loops=True,
+    ct = pd.read_csv(url_inter + f'datasets=collectri&fields=references&license={license}', sep="\t")
+    ct = ct[['source_genesymbol', 'target_genesymbol', 'is_inhibition', 'references']]
+    ct.loc[:, 'pmid'] = (
+        ct
+        .loc[~ct['references'].isna(), "references"]
+        .str.findall(r":(\d+)").apply(lambda x: ";".join(sorted(set(x))))
+    )
+    ct['weight'] = np.where(ct['is_inhibition'], -1, 1)
+    ct = ct.rename(columns={'source_genesymbol': 'source', 'target_genesymbol': 'target'})[['source', 'target', 'weight', 'pmid']]
+    if organism != 'human':
+        ct = translate_net(
+            ct,
+            columns=['source', 'target'],
+            target_organism=organism,
             **kwargs
         )
-
-    except Exception:
-
-        ct = _static_fallback(
-            query='interactions',
-            resource='CollecTRI',
-            organism=TAXIDS[_organism],
-        )
-
-    ct = _network_identifiers(ct, organism, genesymbol_resource)
-
-    if _organism == 'human':
-
-        try:
-
-            mirna = op.interactions.TFmiRNA.get(
-                genesymbols=True,
-                resources=['CollecTRI'],
-                strict_evidences=True,
-            )
-
-            if genesymbol_resource and genesymbol_resource != 'uniprot':
-
-                mirna = add_genesymbols(
-                    net=mirna,
-                    column='source',
-                    target_column='source_genesymbol',
-                    organism=organism,
-                    resource=genesymbol_resource,
-                )
-
-            elif genesymbol_resource is False:
-
-                mirna['source_genesymbol'] = mirna['source']
-                mirna['target_genesymbol'] = mirna['target']
-
-            ct = pd.concat([ct, mirna], ignore_index=True)
-
-        except Exception:
-
-            _warn_failure('TF-miRNA interaction', static_fallback=False)
-
-    # Separate gene_pairs from normal interactions
-    msk = np.array([s.startswith('COMPLEX') for s in ct['source']])
-    cols = [
-        'source_genesymbol',
-        'target_genesymbol',
-        'is_stimulation',
-        'is_inhibition',
-        'references_stripped',
-    ]
-    ct_inter = ct.loc[~msk, cols]
-    ct_cmplx = ct.loc[msk, cols].copy()
-
-    # Merge gene_pairs into complexes
     if not split_complexes:
-        merge_genes_to_complexes(ct_cmplx)
-
-    # Merge
-    ct = pd.concat([ct_inter, ct_cmplx])
-
-    # Drop duplicates
-    ct = ct.drop_duplicates(['source_genesymbol', 'target_genesymbol'])
-
-    # Add weight
-    ct['weight'] = np.where(ct['is_inhibition'], -1, 1)
-
-    # Select and rename columns
-    ct = ct.rename(
-        columns={
-            'source_genesymbol': 'source',
-            'target_genesymbol': 'target',
-            'references_stripped': 'PMID',
-        },
-    )
-    ct = ct[['source', 'target', 'weight', 'PMID']]
-
-    return ct.reset_index(drop=True)
+        updated_names = []
+        for gene in ct['source']:
+            ugene = gene.upper()
+            if ugene.startswith('JUN') or ugene.startswith('FOS'):
+                updated_names.append('AP1')
+            elif ugene.startswith('REL') or ugene.startswith('NFKB'):
+                updated_names.append('NFKB')
+            else:
+                updated_names.append(gene)
+        ct.loc[:, 'source'] = updated_names
+    ct = ct.infer_objects()
+    ct = ct.convert_dtypes()
+    return ct
 
 
 def translate_net(
-        net: pd.DataFrame,
-        columns: str | Iterable[str] = ('source', 'target', 'genesymbol'),
-        source_organism: str | int = 'human',
-        target_organism: str | int = 'mouse',
-        id_type: str | tuple[str, str] = 'genesymbol',
-        unique_by: Iterable[str] | None = ('source', 'target'),
-        **kwargs: dict[str, str]
-        ) -> pd.DataFrame:
-    """
-    Translate networks between species by orthology.
-
-    This function downloads orthology databases from omnipath and converts
-    genes between species. The first time you run this function will take a
-    while (~15 minutes) but then it stores all the information in cache for
-    quick reusability.
-
-    In case you need to reset the cache, you can do it by doing:
-    ``rm -r ~/.pypath/cache/``.
-
-    With its default parameters, this function translates almost any network
-    or annotation data frame acquired by the functions in this module from
-    human to mouse. For the PROGENy resource you should pass ``columns =
-    "target"``, as here the `source` column contains pathways, not identifers.
-
-    Parameters
-    ----------
-    net : DataFrame
-        Network in long format.
-    columns : str | list[str] | dict[str, str] | None
-        One or more columns to be translated. These columns must contain
-        identifiers of the source organism. It can be a single column name,
-        a list of column names, or a dict with column names as keys and the
-        type of identifiers in these columns as values.
-    source_organism: int | str
-        Name or NCBI Taxonomy ID of the organism to translate from.
-    target_organism : int | str
-        Name or NCBI Taxonomy ID of the organism to translate to.
-    id_type: str | tuple[str, str]
-        Shortcut to provide a single identifier type if all columns
-        should be translated from and to the same ID type. If a tuple of two
-        provided, the translation happens from the first ID type and the
-        orthologs returned in the second ID type.
-    kwargs: str | tuple[str, str]
-        Alternative way to pass ``columns``. The only limitation is that
-        column names can not match any of the existing arguments of this
-        function.
-
-    Returns
-    -------
-    hom_net : DataFrame
-        Network in long format with translated genes.
-    """
-
-    if source_organism == target_organism:
-
-        return net
-
-    _check_if_pypath()
-    from pypath.utils import orthology
-    from pypath.share import common
-    from pypath.utils import taxonomy
-
-    _source_organism = taxonomy.ensure_ncbi_tax_id(source_organism)
-    _target_organism = taxonomy.ensure_ncbi_tax_id(target_organism)
-
-    assert _source_organism, f'Unknown organism: `{source_organism}`.'
-    assert _target_organism, f'Unknown organism: `{target_organism}`.'
-
-    if _source_organism == _target_organism:
-
-        return net
-
-    if not isinstance(columns, dict):
-
-        columns = common.to_list(columns)
-        columns = dict(zip(columns, [id_type] * len(columns)))
-
-    columns.update(kwargs)
-    columns = {k: v for k, v in columns.items() if k in net.columns}
-
-    # Make a copy of net
-    hom_net = net.copy()
-
-    # Translate
-    hom_net = orthology.translate_df(
-        df=hom_net,
-        target=_target_organism,
-        cols=columns,
-        source=_source_organism,
-    )
-
-    unique_by = common.to_list(unique_by)
-
-    if unique_by and all(c in hom_net.columns for c in unique_by):
-
-        # Remove duplicated based on source and target
-        hom_net = hom_net[~hom_net.duplicated(unique_by)]
-
-    return hom_net
-
-
-def add_genesymbols(
-        net: pd.DataFrame,
-        column: str,
-        target_column: str,
-        organism: str | int = 'human',
-        resource: (
-            Literal['uniprot', 'ensembl'] |
-            dict[str, set[str]]
-        ) = 'uniprot',
-        ) -> pd.DataFrame:
-    """
-    Add or update Gene Symbols in data frame.
-
-    Parameters
-    ----------
-    net : DataFrame
-        A data frame with a column containing UniProt IDs.
-    column : str
-        Name of the column containing the UniProt IDs.
-    target_column : str
-        Column name where to store the Gene Symbols.
-    resource : str
-        Resource to query for Gene Symbols. Either 'uniprot' or 'ensembl', or a
-        dictionary with UniProt IDs as keys and sets of Gene Symbols as values.
-
-    Returns
-    -------
-    net : DataFrame
-        The input data frame with Gene Symbols added or updated.
-    """
-
-    _check_if_pypath()
-    from pypath.utils import mapping
-    from pypath.utils import taxonomy
-    from pypath.internals import input_formats
-
-    _organism = taxonomy.ensure_ncbi_tax_id(organism)
-
-    if not isinstance(resource, dict):
-
-        if resource == 'uniprot':
-            mapping_cls = input_formats.UniprotMapping
-        elif resource == 'ensembl':
-            mapping_cls = input_formats.BiomartMapping
-        else:
-            raise ValueError('Resource must be either "uniprot" or "ensembl".')
-
-        mapping_def = mapping_cls(
-            id_type_a='genesymbol',
-            id_type_b='uniprot',
-            ncbi_tax_id=_organism,
-        )
-
-        resource = mapping.MapReader(
-            mapping_def,
-            load_b_to_a=True,
-            load_a_to_b=False,
-        ).b_to_a
-
-    mapping_table = pd.DataFrame(
-        (
-            (u, g)
-            for u, gs in
-            resource.items()
-            for g in gs
-        ),
-        columns=(column, target_column),
-    )
-
-    if target_column in net.columns:
-
-        col_idx = net.columns.get_loc(target_column)
-        net = net.drop(target_column, axis=1)
-
-    else:
-
-        col_idx = net.columns.get_loc(column) + 1
-
-    net = net.merge(mapping_table, how='left', on=column)
-    net = net[
-        list(net.columns[0:col_idx]) +
-        [target_column] +
-        list(net.columns[col_idx:-1])
+    net,
+    columns=['source', 'target', 'genesymbol'],
+    target_organism='mouse',
+    unique_by=['source', 'target'],
+    min_evidence=3,
+    one_to_many=1,
+):
+    valid_orgs = [
+        'anole_lizard',
+        'c.elegans',
+        'cat',
+        'cattle',
+        'chicken',
+        'chimpanzee',
+        'dog',
+        'fruitfly',
+        'horse',
+        'macaque',
+        'mouse',
+        'opossum',
+        'pig',
+        'platypus',
+        'rat',
+        's.cerevisiae',
+        's.pombe',
+        'xenopus',
+        'zebrafish'
     ]
-
-    return net
-
-
-def _network_identifiers(
-        net: pd.DataFrame,
-        organism: str | int,
-        genesymbol_resource: (
-            Literal['uniprot', 'ensembl'] |
-            dict[str, set[str]] |
-            bool |
-            None
-        ) = None,
-        ) -> pd.DataFrame:
-
-    _organism = _the_organism(organism)
-
-    if _organism not in ('mouse', 'rat') and not _is_human(organism):
-
-        net = translate_net(
-            net=net,
-            target_organism=organism,
-            columns=('source', 'target'),
-            unique_by=('source', 'target'),
-            id_type='uniprot',
-        )
-
-    if genesymbol_resource:
-
-        for side in ('source', 'target'):
-
-            net = add_genesymbols(
-                net=net,
-                column=side,
-                target_column=f'{side}_genesymbol',
-                organism=organism,
-                resource=genesymbol_resource,
-            )
-
-    elif genesymbol_resource is False:
-
-        net['source_genesymbol'] = net['source']
-        net['target_genesymbol'] = net['target']
-
-    return net
-
-
-def _annotation_identifiers(
-        net: pd.DataFrame,
-        organism: str | int,
-        genesymbol_resource: (
-            Literal['uniprot', 'ensembl'] |
-            dict[str, set[str]] |
-            bool |
-            None
-        ) = None,
-        ) -> pd.DataFrame:
-
-    if not _is_human(organism):
-
-        net = translate_net(
-            net,
-            columns='uniprot',
-            id_type='uniprot',
-            source_organism=9606,
-            target_organism=organism,
-        )
-
-    if genesymbol_resource is False:
-
-        net['genesymbol'] = net['uniprot']
-
-    elif genesymbol_resource or not _is_human(organism):
-
-        genesymbol_resource = genesymbol_resource or 'uniprot'
-
-        net = add_genesymbols(
-            net=net,
-            column='uniprot',
-            target_column='genesymbol',
-            organism=organism,
-            resource=genesymbol_resource,
-        )
-
-    return net
+    li = _check_if_liana()
+    if target_organism not in valid_orgs:
+        raise ValueError(f'target_organism must be one of these: {valid_orgs}')
+    if isinstance(columns, str):
+        columns = [columns]
+    columns = [c for c in columns if c in net.columns]
+    if not columns:
+        raise ValueError(f'columns must be one of these: {net.columns}')
+    # Read orthologs
+    target_col = f'{target_organism}_symbol'
+    if target_organism == 'anole_lizard':
+        target_col = 'anole lizard_symbol'
+    elif target_organism == 'fruitfly':
+        target_col = 'fruit fly_symbol'
+    map_df = li.rs.get_hcop_orthologs(
+        url=f'https://ftp.ebi.ac.uk/pub/databases/genenames/hcop/human_{target_organism}_hcop_fifteen_column.txt.gz',
+        columns=[f'human_symbol', target_col],
+        min_evidence=min_evidence
+    )
+    map_df = map_df.rename(columns={'human_symbol': 'source', target_col: 'target'})
+    df = li.rs.translate_resource(
+        net,
+        map_df=map_df,
+        columns=columns,
+        replace=True,
+        one_to_many=1,
+    )
+    return df.reset_index(drop=True)
 
 
 def get_ksn_omnipath(
-        organism: str | int = 'human',
-        ) -> pd.DataFrame:
+        license='academic',
+    ):
     """
     OmniPath kinase-substrate network
 
     Wrapper to access the OmniPath kinase-substrate network. It contains a collection of
     kinases and their target phosphosites. Each interaction is is weighted by its mode of
     regulation (either positive for phosphorylation or negative for dephosphorylation).
+
+    Parameters
+    ----------
+    license: str
+        Which license to use, available options are: academic, commercial, or nonprofit.
+        By default, is set to academic to retrieve all possible interactions.
 
     Returns
     -------
@@ -960,63 +409,20 @@ def get_ksn_omnipath(
         their associated weights.
     """
 
-    op = _check_if_omnipath()
-
-    _organism = _the_organism(organism)
-
-    # Load Kinase-Substrate Network
-    ksn = op.requests.Enzsub.get(genesymbols=True, organism=_organism)
-
-    # Filter by phosphorilation
-    cols = ['enzyme_genesymbol', 'substrate_genesymbol', 'residue_type',
-            'residue_offset', 'modification', 'references', 'n_references']
-    msk = np.isin(ksn['modification'], ['phosphorylation', 'dephosphorylation'])
-    ksn = ksn.loc[msk, cols]
-
-    # Remove inters that are only Protmap, keep nans
-    msk = []
-    for r, l in zip(ksn['references'], ksn['n_references']):
-        if type(r) is str:
-            n = r.count('ProtMapper')
-            b = n < l
-        else:
-            b = True
-        msk.append(b)
-    msk = np.array(msk)
-    ksn = ksn.loc[msk, :]
-
-    # Build target gene substrate column
-    ksn['target'] = ['{0}_{1}{2}'.format(sub, res, off) for sub, res, off in
-                     zip(ksn['substrate_genesymbol'], ksn['residue_type'], ksn['residue_offset'])]
-
-    # Assigns mode of regulation
-    ksn['weight'] = [+1 if mod == 'phosphorylation' else -1 for mod in ksn['modification']]
-
-    # Remove duplicates
-    ksn = ksn.rename(columns={'enzyme_genesymbol': 'source'})[['source', 'target', 'weight']]
-    ksn = ksn.drop_duplicates(['source', 'target', 'weight'])
+    ks = pd.read_csv(f'https://omnipathdb.org/enz_sub?genesymbols=1&fields=references&license={license}', sep="\t")
+    ks = ks.rename(columns={'enzyme_genesymbol': 'source', 'substrate_genesymbol': 'target'})
+    ks = ks[ks['modification'].isin(['phosphorylation', 'dephosphorylation'])]
+    ks['weight'] = [+1 if mod == 'phosphorylation' else -1 for mod in ks['modification']]
+    ks.loc[:, 'pmid'] = (
+        ks
+        .loc[~ks['references'].isna(), "references"]
+        .str.findall(r":(\d+)").apply(lambda x: ";".join(sorted(set(x))))
+    )
+    ks['target'] = [f'{sub}_{res}{off}' for sub, res, off in zip(ks['target'], ks['residue_type'], ks['residue_offset'])]
+    ks = ks[['source', 'target', 'weight', 'pmid']]
 
     # If duplicates remain, keep dephosphorylation
-    ksn = ksn.groupby(['source', 'target'], observed=True).min().reset_index()
+    ks = ks.groupby(['source', 'target'], as_index=False)['weight'].min()
 
-    return ksn
+    return ks
 
-
-def _omnipath_check_version() -> None:
-
-    import omnipath
-
-    version = tuple(map(int, omnipath.__version__.split('.')))
-
-    if version < (1, 0, 7):
-
-        op_updated = datetime.fromtimestamp(os.stat(omnipath.__file__).st_mtime)
-
-        if op_updated < datetime(2023, 5, 30):
-
-            warnings.warn(
-                'The installed version of `omnipath` is older than 1.0.7 or '
-                '2023-05-30. To make sure CollecTRI and DoRothEA data is '
-                'processed correctly, please update to the latest version by '
-                '`pip install git+https://github.com/saezlab/omnipath.git`.'
-            )

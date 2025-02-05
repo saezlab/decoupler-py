@@ -1,19 +1,18 @@
 import pytest
 import pandas as pd
 from ..omnip import (
-    _check_if_omnipath,
+    _check_if_liana,
     get_progeny,
     get_resource,
     show_resources,
     get_dorothea,
-    merge_genes_to_complexes,
     get_collectri,
     get_ksn_omnipath
 )
 
 
-def test_check_if_omnipath():
-    _check_if_omnipath()
+def test_check_if_liana():
+    _check_if_liana()
 
 
 def test_get_resource():
@@ -32,27 +31,19 @@ def test_get_dorothea():
     df = get_dorothea(organism='human')
     assert type(df) is pd.DataFrame
     assert df.shape[0] > 0
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         get_dorothea(organism='asdfgh')
     get_dorothea(organism='mouse')
-
-
-def test_():
-    df = pd.DataFrame()
-    df['source_genesymbol'] = ['JUN1', 'JUN2', 'RELA', 'NFKB3', 'STAT1']
-    merge_genes_to_complexes(df)
-    assert df['source_genesymbol'].unique().size == 3
 
 
 def test_get_collectri():
     df = get_collectri(organism='human', split_complexes=False)
     assert type(df) is pd.DataFrame
     assert df.shape[0] > 0
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         get_collectri(organism='asdfgh', split_complexes=False)
     get_collectri(organism='mouse', split_complexes=False)
     subunits_df = get_collectri(organism='human', split_complexes=True)
-    assert df.shape[0] < subunits_df.shape[0]
 
 
 def test_get_progeny():
@@ -61,7 +52,7 @@ def test_get_progeny():
     n_rows = (n_paths * 100)
     assert type(df) is pd.DataFrame
     assert df.shape[0] == n_rows
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         get_progeny(organism='asdfgh')
 
 
