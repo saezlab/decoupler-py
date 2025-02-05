@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "decoupler"
-version = "1.8.1"
+version = "1.9.0"
 description = "Ensemble of methods to infer biological activities from omics data"
 license = "gpl-3.0-only"
 authors = [
