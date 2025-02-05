@@ -11,10 +11,16 @@ It can be installed from ``pip`` (lightweight installation):
 
    pip install decoupler
 
+
+To additionally install commonly-used dependencies, run:
+.. code-block:: console
+
+   pip install decoupler[full]
+
 Conda
 -----
 
-It can also be installed from ``conda`` and ``mamba`` (this includes extra dependencies):
+It can also be installed from ``conda`` and ``mamba`` (which includes all necessary dependencies):
 
 .. code-block:: console
 
