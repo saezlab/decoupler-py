@@ -25,7 +25,7 @@ from .method_zscore import run_zscore  # noqa: F401
 from .decouple import decouple, run_consensus  # noqa: F401
 from .consensus import cons  # noqa: F401
 from .omnip import (
-    show_resources, get_resource, get_progeny, get_dorothea, translate_net, get_collectri, get_ksn_omnipath  # noqa: F401
+    show_resources, get_resource, get_progeny, get_dorothea, translate_net, get_collectri, get_ksn_omnipath, show_organisms  # noqa: F401
 )
 from .plotting import (
     plot_volcano, plot_violins, plot_barplot, plot_metrics_scatter, plot_metrics_boxplot, plot_metrics_scatter_cols,

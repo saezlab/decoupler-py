@@ -324,17 +324,19 @@ def get_collectri(
         ct.loc[:, 'source'] = updated_names
     ct = ct.infer_objects()
     ct = ct.convert_dtypes()
+    ct = ct.groupby(['source', 'target'], as_index=False)['weight'].min()
     return ct
 
 
-def translate_net(
-    net,
-    columns=['source', 'target', 'genesymbol'],
-    target_organism='mouse',
-    unique_by=['source', 'target'],
-    min_evidence=3,
-    one_to_many=1,
-):
+def show_organisms():
+    """
+    Shows available organisms to translate to with ``translate_net``.
+
+    Returns
+    -------
+    lst : list
+        List of available organisms.
+    """
     valid_orgs = [
         'anole_lizard',
         'c.elegans',
@@ -356,6 +358,16 @@ def translate_net(
         'xenopus',
         'zebrafish'
     ]
+    return valid_orgs
+
+def translate_net(
+    net,
+    columns=['source', 'target', 'genesymbol'],
+    target_organism='mouse',
+    min_evidence=3,
+    one_to_many=1,
+):
+    valid_orgs = show_organisms()
     li = _check_if_liana()
     if target_organism not in valid_orgs:
         raise ValueError(f'target_organism must be one of these: {valid_orgs}')
@@ -382,8 +394,8 @@ def translate_net(
         columns=columns,
         replace=True,
         one_to_many=1,
-    )
-    return df.reset_index(drop=True)
+    ).reset_index(drop=True)
+    return df
 
 
 def get_ksn_omnipath(
