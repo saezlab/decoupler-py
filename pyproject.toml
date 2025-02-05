@@ -46,10 +46,9 @@ python = "^3.9"
 tqdm = "^4.66.4"
 typing-extensions = "^4.12.2"
 numba = "^0.60.0"
-numpy = "^1"
+numpy = "^2"
 pandas = "^2.2.2"
-omnipath = { version = "^1.0.8", optional = true }
-pypath-omnipath = { version = "^0.16.15", optional = true }
+liana = { version = "^1.5.0", optional = true }
 scikit-learn = { version = "^1.5.0", optional = true }
 igraph = { version = "^0.11.5", optional = true }
 adjusttext = { version = "^1.1.1", optional = true }
@@ -65,7 +64,7 @@ sphinx = "^7.3.7"
 nbsphinx = "^0.9.4"
 
 [tool.poetry.extras]
-omnipath = ["omnipath", "pypath-omnipath"]
+liana = ['liana']
 scikit = ["scikit-learn"]
 plotting = ["igraph", "adjusttext"]
 
