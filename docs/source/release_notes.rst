@@ -10,7 +10,12 @@ Bug fixes
 Changes
 ~~~~~~~
 - All OmniPath functions now query directly the OmniPath server, ``omnipath`` and ``pypath-omnipath`` packages are no longuer needed. Now orthology conversion uses ``liana``'s implementation instead.
-- All OmniPath functions now include a ``license`` parameter, allowing you to choose between ``"academic"``, ``"commercial"``, or ``"nonprofit"`` licenses (by default, the academic license is used, as it contains the most information)..
+- All OmniPath functions now include a ``license`` parameter, allowing you to choose between ``"academic"``, ``"commercial"``, or ``"nonprofit"`` licenses (by default, the academic license is used, as it contains the most information).
+
+Additions
+~~~~~~~~~
+- Added function ``show_organisms``.
+- Added new vignette on how to use different licenses to access OmniPath databases.
 
 1.8.0
 -----

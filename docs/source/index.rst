@@ -86,3 +86,4 @@ from omics data. Bioinformatics Advances. https://doi.org/10.1093/bioadv/vbac016
    notebooks/bulk
    notebooks/benchmark
    notebooks/translate
+   notebooks/license
