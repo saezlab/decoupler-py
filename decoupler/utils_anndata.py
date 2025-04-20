@@ -4,6 +4,7 @@ Functions to process AnnData objects.
 """
 
 import numpy as np
+import scipy.stats as sts
 from scipy.sparse import csr_matrix, issparse
 import pandas as pd
 import sys
@@ -12,7 +13,7 @@ from anndata import AnnData
 from tqdm import tqdm
 
 from .utils import melt, p_adjust_fdr
-from .pre import rename_net
+from .pre import rename_net, extract
 
 
 def get_acts(adata, obsm_key, dtype=np.float32):
@@ -835,8 +836,6 @@ def rank_sources_groups(adata, groupby, reference='rest', method='t-test_overest
     results: DataFrame with changes in source activity score between groups.
     """
 
-    from scipy.stats import ranksums, ttest_ind_from_stats
-
     # Get tf names
     features = adata.var.index.values
 
@@ -874,9 +873,9 @@ def rank_sources_groups(adata, groupby, reference='rest', method='t-test_overest
             assert np.all(np.isfinite(v_group)) and np.all(np.isfinite(v_rest)), \
                 "adata contains not finite values, please remove them."
             if method == 'wilcoxon':
-                stat, pval = ranksums(v_group, v_rest)
+                stat, pval = sts.ranksums(v_group, v_rest)
             elif method == 't-test':
-                stat, pval = ttest_ind_from_stats(
+                stat, pval = sts.ttest_ind_from_stats(
                     mean1=np.mean(v_group),
                     std1=np.std(v_group, ddof=1),
                     nobs1=v_group.size,
@@ -886,7 +885,7 @@ def rank_sources_groups(adata, groupby, reference='rest', method='t-test_overest
                     equal_var=False,  # Welch's
                 )
             elif method == 't-test_overestim_var':
-                stat, pval = ttest_ind_from_stats(
+                stat, pval = sts.ttest_ind_from_stats(
                     mean1=np.mean(v_group),
                     std1=np.std(v_group, ddof=1),
                     nobs1=v_group.size,
@@ -1118,3 +1117,144 @@ def get_metadata_associations(data, obs_keys=None, obsm_key=None, use_X=False, l
     stats_df = stats_df.reset_index()
 
     return format_assoc_results(data, stats_df, inplace, obsm_key, uns_key, use_X, layer)
+
+
+def rank_sources_ordered(adata, order, thr_padj=0.05, use_raw=False, seed=42):
+    """
+    Rank sources along a continuous, ordered process such as pseudotime.
+
+    Parameters
+    ----------
+    adata : AnnData
+        AnnData obtained after running ``decoupler.utils_anndata.get_acts``.
+    order: str
+        The name of the column in ``.obs`` to consider for ordering.
+    thr_padj: float
+        Threshold used to assign significance after FDR correction.
+    use_raw : bool
+        Use raw attribute of mat if present.
+    seed : int
+        Random seed to use.
+
+    Returns
+    -------
+    DataFrame with sources associated with the ordering variable. For each source the following statistics are reported:
+    - importance of the ``XGBRegressor``
+    - Pearson correlation coefficient
+    - the sign of the association, 0 if the correltation is non-significant, and +1 or -1 depending on the correlation sign.
+    """
+
+    try:
+        from xgboost import XGBRegressor
+    except Exception:
+        raise ImportError('xgboost is not installed. Please install it with: pip install xgboost')
+
+    # Get vars and ordinal variable
+    X, _, names = extract(adata, use_raw=use_raw)
+    if issparse(X):
+        X = X.toarray()
+    y = adata.obs[order].values
+
+    # Fit
+    reg = XGBRegressor(random_state=seed).fit(X, y)
+    df = pd.DataFrame()
+    df['name'] = names
+    df['impr'] = reg.feature_importances_
+    df['corr'], df['pval'] = sts.pearsonr(X, y.reshape(-1, 1), axis=0)
+    df['padj'] = sts.false_discovery_control(df['pval'])
+    df = df.sort_values('impr', ascending=False).reset_index(drop=True)
+
+    # Find direction of change
+    sign = []
+    for corr, padj in zip(df['corr'], df['padj']):
+        if padj < thr_padj:
+            if corr > 0:
+                s = 1
+            else:
+                s = -1
+        else:
+            s = 0
+        sign.append(s)
+    df['sign'] = sign
+
+    return df
+
+
+def bin_sources_ordered(adata, order, names, label=None, nbins=100, use_raw=False):
+    """
+    Bins given sources along a continuous, ordered process such as pseudotime.
+    Used before ``decoupler.plot_sources_ordered``.
+
+    Parameters
+    ----------
+    adata : AnnData
+        AnnData obtained after running ``decoupler.utils_anndata.get_acts``.
+    order: str
+        The name of the column in ``.obs`` to consider for ordering.
+    names: str, list
+        Names of the sources to bin.
+    label: str, None
+        The name of the column in ``.obs`` to consider for coloring the grouping. By default ``None``.
+    nbins: int
+        Number of bins to use.
+    use_raw : bool
+        Use raw attribute of mat if present.
+
+    Returns
+    -------
+    DataFrame with sources binned alng a continous ordered proess.
+    """
+
+    # Get vars and ordinal variable
+    X, _, cnames = extract(adata, use_raw=use_raw)
+    if issparse(X):
+        X = X.toarray()
+    y = adata.obs[order].values
+    
+    # Normalize to 0 and 1
+    yabs = np.abs(y)
+    ymax = yabs.max()
+    ymin = yabs.min()
+    y = (y - ymin) / (ymax - ymin)
+
+    # Check inputs
+    if isinstance(names, str):
+        names = [names]
+    assert np.isin(names, cnames).all(), 'names must be inside adata.var_names'
+    assert nbins > 1 and isinstance(nbins, int), 'nbins should be higher than 1 and be an integer'
+
+    # Make windows
+    bin_edges = np.linspace(0, 1, nbins + 1)
+    bin_midpoints = (bin_edges[:-1] + bin_edges[1:]) / 2
+
+    # Prepare label colors
+    cols = ['name', 'midpoint', 'value']
+    if label is not None:
+        adata.obs[label] = pd.Categorical(adata.obs[label])
+        if adata.uns[f'{label}_colors'] is None:
+            from matplotlib.colors import to_hex
+            import matplotlib.pyplot as plt
+            cmap = plt.get_cmap('tab10')
+            adata.uns[f'{label}_colors'] = [to_hex(cmap(i)) for i in adata.obs[label].sort_values().cat.codes.unique()]
+        cols += ['label', 'color']
+
+    dfs = []
+    for name in names:
+        # Assign to windows based on order
+        df = pd.DataFrame()
+        df['value'] = X[:, cnames == name].ravel()
+        df['name'] = name
+        df['order'] = y
+        df['window'] = pd.cut(df['order'], bins=bin_edges, labels=False, include_lowest=True, right=True)
+        df['midpoint'] = df['window'].map(lambda x: bin_midpoints[int(x)])
+        if label is not None:
+            df['label'] = adata.obs[label].values
+            df['color'] = [adata.uns[f'{label}_colors'][i] for i in adata.obs[label].cat.codes]
+        df = df.sort_values('order')
+        dfs.append(df)
+    df = pd.concat(dfs)
+    df = df[cols]
+    df = df.rename(columns={'midpoint': 'order'}).reset_index(drop=True)
+    omin, omax = df['order'].min(), df['order'].max()
+    df['order'] = (df['order'] - omin) / (omax - omin)
+    return df
