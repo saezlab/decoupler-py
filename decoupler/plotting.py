@@ -1156,7 +1156,7 @@ def plot_filter_by_prop(adata, min_prop=0.2, min_smpls=2, cmap='viridis', figsiz
 
 
 def plot_running_score(df, stat, net, set_name, source='source', target='target', cmap='RdBu_r',
-                       figsize=(5, 5), dpi=100, return_fig=False, save=None):
+                       color='#88c544', figsize=(5, 5), dpi=100, return_fig=False, save=None):
     """
     Plot the running score of GSEA.
 
@@ -1257,9 +1257,9 @@ def plot_running_score(df, stat, net, set_name, source='source', target='target'
     # Plot random walk
     ax = axes[0]
     ax.margins(0.)
-    ax.plot(rnks, es, color='#88c544', linewidth=2)
-    ax.axvline(rnks[j], linestyle='--', color='#88c544')
-    ax.axhline(0, linestyle='--', color='#88c544')
+    ax.plot(rnks, es, color=color, linewidth=2)
+    ax.axvline(rnks[j], linestyle='--', color=color)
+    ax.axhline(0, linestyle='--', color=color)
     ax.set_ylabel('Enrichment Score')
     ax.set_title(set_name)
 
@@ -1268,7 +1268,7 @@ def plot_running_score(df, stat, net, set_name, source='source', target='target'
     ax.margins(0.)
     ax.set_yticklabels([])
     ax.set_yticks([])
-    ax.vlines(rnks[set_msk], 0, 1, linewidth=0.5, color='#88c544')
+    ax.vlines(rnks[set_msk], 0, 1, linewidth=0.5, color=color)
 
     # Plot color bar
     ax = axes[2]
@@ -1902,6 +1902,220 @@ def plot_network(net, obs=None, act=None, n_sources=5, n_targets=10, by_abs=True
     else:
         ax2.axis("off")
         ax3.axis("off")
+
+    save_plot(fig, True, save)
+
+    if return_fig:
+        return fig
+
+
+def plot_sources_ordered(df, mode='line', figsize=(6, 3), dpi=100, ax=None,
+                         return_fig=False, save=None, **kwargs):
+    """
+    Plot results of enrichment analysis as dots.
+
+    Parameters
+    ----------
+    df : DataFrame
+        Results of ``decoupler.utils_anndata.bin_sources_ordered``.
+    mode : str
+        The type of plot to use, either "line" or "mat".
+    figsize : tuple
+        Figure size.
+    dpi : int
+        DPI resolution of figure.
+    ax : Axes, None
+        A matplotlib axes object. If None returns new figure.
+    return_fig : bool
+        Whether to return a Figure object or not.
+    save : str, None
+        Path to where to save the plot. Infer the filetype if ending on {``.pdf``, ``.png``, ``.svg``}.
+    kwargs : key, value mappings
+        Other keyword arguments are passed down to ``seaborn.lineplot`` or ``matplotlib.pyplot.imshow``,
+        depending on ``mode`` used.
+
+    Returns
+    -------
+    fig : Figure, None
+        If return_fig, returns Figure object.
+    """
+
+    # Import libraries
+    plt = check_if_matplotlib()
+    sns = check_if_seaborn()
+
+    # Plot
+    fig = None
+    if ax is None:
+        fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=dpi)
+
+    # Add cbar if added
+    has_cbar = False
+    if np.isin(['label', 'color'], df.columns).all():
+        from matplotlib.colors import to_rgb
+        colors = df[df['name'] == df.loc[0, 'name']]['color']
+        colors = [[to_rgb(c) for c in colors]]
+        has_cbar = True
+
+    ymax = df['value'].max()
+    xmin, xmax = df['order'].min(), df['order'].max()
+    n_names = df['name'].unique().size
+    if mode == 'line':
+        if has_cbar:
+            ax.imshow(colors, aspect='auto', extent=[xmin, xmax, 1.05 * ymax, 1.2 * ymax], transform=ax.transData, zorder=2)
+            ax.axhline(y=1.05 * ymax, c='black', lw=1)
+        sns.lineplot(
+            data=df,
+            x='order',
+            y='value',
+            hue='name',
+            ax=ax,
+            **kwargs
+        )
+        ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), frameon=False)
+    elif mode == 'mat':
+        mat = (
+            df
+            .groupby(['name', 'order'], as_index=False)['value'].mean()
+            .pivot(index='name', columns='order', values='value')
+        )
+        img = ax.imshow(mat, extent=[xmin, xmax, 0, n_names], aspect='auto', **kwargs)
+        if has_cbar:
+            ax.imshow(colors, aspect='auto', extent=[xmin, xmax, n_names, 1.1 * n_names], zorder=2)
+            ax.axhline(y=n_names, c='black', lw=1)
+            ax.set_ylim(0, 1.1 * n_names)
+        fig.colorbar(img, ax=ax, shrink=0.5, label='Mean value', location='top')
+        ax.set_yticks(np.arange(n_names) + 0.5)
+        ax.set_yticklabels(np.flip(mat.index))
+        ax.grid(axis='y', visible=False)
+        ax.set_xlabel('order')
+    ax.set_xlim(0, 1)
+
+    save_plot(fig, ax, save)
+
+    if return_fig:
+        return fig
+
+
+def plot_targets_ordered(
+    adata,
+    net,
+    source,
+    order,
+    score_name='ulm_estimate',
+    nbins=100,
+    label=None,
+    top=10,
+    use_raw=False,
+    pos_cmap='Reds',
+    neg_cmap='Blues',
+    color_score='#88c544',
+    vmin=None,
+    vmax=None,
+    figsize=None,
+    dpi=100,
+    return_fig=False,
+    save=None
+):
+    # Filter net to adata
+    c = adata.var_names
+    snet = filt_min_n(c, net, min_n=0)
+    snet = snet[snet['source'] == source]
+
+    # Get scoring method
+    score = get_acts(adata, score_name)
+
+    # Split by sign
+    pos_names = snet[snet['weight'] > 0]['target'].values.astype('U')
+    neg_names = snet[snet['weight'] < 0]['target'].values.astype('U')
+
+    # Bin by order
+    df_ftr = bin_sources_ordered(adata, order, snet['target'], label=label, nbins=nbins, use_raw=use_raw)
+    df_scr = bin_sources_ordered(score, order, source, label=label, nbins=nbins, use_raw=use_raw)
+
+    # Check if labels are included
+    has_cbar = False
+    if np.isin(['label', 'color'], df_ftr.columns).all():
+        colors = df_ftr[df_ftr['name'] == df_ftr.loc[0, 'name']]['color']
+        colors = [[to_rgb(c) for c in colors]]
+        has_cbar = True
+
+    # Get mat of target values
+    mat = (
+        df_ftr
+        .groupby(['name', 'order'], as_index=False)['value'].mean()
+        .pivot(index='name', columns='order', values='value')
+    )
+    if vmax is None:
+        vmax = mat.values.max()
+    if vmin is None:
+        vmin = mat.values.min()
+
+    # Sort by magnitude
+    sorted_names = mat.std(1, ddof=1).sort_values().tail(top).index
+    pos_names = sorted_names.intersection(pos_names)[::-1]
+    neg_names = sorted_names.intersection(neg_names)
+    n_names = pos_names.size + neg_names.size
+
+    # Plot
+    if figsize is None:
+        figsize = (6, np.max([sorted_names.size / 3, 3]))
+    fig, axes = plt.subplots(
+        2, 1, figsize=figsize, dpi=dpi, sharex=True,
+        height_ratios=[0.2, 0.8],
+    )
+    
+    # Source score
+    ax = axes[0]
+    sns.lineplot(
+        data=df_scr,
+        x='order',
+        y='value',
+        ax=ax,
+        color=color_score,
+        lw=2
+    )
+    ax.set_ylabel(f'{source}\nscore')
+    
+    # Target values
+    ax = axes[1]
+    ax.set_xlabel('order')
+    ax.grid(axis='y', visible=False)
+    ax.set_ylabel('Targets')
+    yticklabels = []
+
+    # Add neg targets
+    if neg_names.size > 0:
+        img = ax.imshow(mat.loc[neg_names], extent=[0, 1, 0, neg_names.size], aspect='auto', cmap=neg_cmap, vmin=vmin, vmax=vmax)
+        yticklabels.extend(list(neg_names)[::-1])
+        cbar_mappable = ScalarMappable(cmap=neg_cmap, norm=Normalize(vmin=vmin, vmax=vmax))
+        pos = ax.get_position().bounds
+        cax = fig.add_axes([0.97, pos[1], 0.05, pos[3] / 2])
+        cax.grid(axis='y', visible=False)
+        fig.colorbar(cbar_mappable, cax=cax, aspect=5, shrink=0.5, label='- target\nvalues', location='right')
+    ax.axhline(y=neg_names.size, c='black', lw=1)
+
+    # Add pos targets
+    if pos_names.size > 0:
+        img = ax.imshow(mat.loc[pos_names], extent=[0, 1, neg_names.size, neg_names.size + pos_names.size], aspect='auto', cmap='Reds', vmin=vmin, vmax=vmax)
+        yticklabels.extend(list(pos_names)[::-1])
+        cbar_mappable = ScalarMappable(cmap=pos_cmap, norm=Normalize(vmin=vmin, vmax=vmax))
+        pos = ax.get_position().bounds
+        cax = fig.add_axes([0.97, pos[1] + (pos[3] / 2), 0.05, pos[3] / 2])
+        cax.grid(axis='y', visible=False)
+        fig.colorbar(cbar_mappable, cax=cax, aspect=5, shrink=0.5, label='+ target\nvalues', location='right')
+
+    # Plot labels
+    ax.set_ylim(0, n_names)
+    if has_cbar:
+        ax.imshow(colors, aspect='auto', extent=[0, 1, n_names, 1.1 * n_names], zorder=2)
+        ax.axhline(y=n_names, c='black', lw=1)
+        ax.set_ylim(0, 1.1 * n_names)
+
+    # Format plot
+    ax.set_yticks(np.arange(n_names) + 0.5)
+    ax.set_yticklabels(yticklabels)
+    fig.subplots_adjust(hspace=0)
 
     save_plot(fig, True, save)
 
