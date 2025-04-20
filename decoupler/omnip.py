@@ -44,6 +44,7 @@ def show_resources():
 def get_progeny(
     organism='human',
     top=np.inf,
+    thr_padj=0.05,
     license='academic',
     **kwargs
     ):
@@ -60,6 +61,8 @@ def get_progeny(
         The organism of interest. By default human.
     top : int
         Number of genes per pathway to return. By default all of them.
+    thr_padj: float
+        Significance threshold to trim interactions.
     license: str
         Which license to use, available options are: academic, commercial, or nonprofit.
         By default, is set to academic to retrieve all possible interactions.
@@ -97,6 +100,8 @@ def get_progeny(
         sort_values(['source', 'p_value']).
         reset_index(drop=True)
     )
+    p = p.rename(columns={'p_value': 'pval'})
+    p = p[p['pval'] < thr_padj]
     
     return p
 
@@ -395,6 +400,7 @@ def translate_net(
         replace=True,
         one_to_many=1,
     ).reset_index(drop=True)
+    df = df.drop_duplicates(['source', 'target']).reset_index(drop=True)
     return df
 
 
