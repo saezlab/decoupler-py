@@ -1,0 +1,185 @@
+from typing import Tuple
+
+import pandas as pd
+import numpy as np
+import numba as nb
+
+from decoupler._log import _log
+
+
+def validate_net(
+    net = pd.DataFrame,
+    verbose: bool = False,
+) -> pd.DataFrame:
+    assert isinstance(net, pd.DataFrame), 'net must be a DataFrame'
+    assert {'source', 'target'}.issubset(net.columns), \
+    "DataFrame must have 'source' and 'target' columns\n \
+    If present but with a different names use:\n \
+    net = net.rename(columns={'...' : 'source', '...': 'target'})"
+    assert not net.duplicated(subset=['source', 'target']).any(), \
+    "net has duplicate rows, use:\n \
+    net = net.drop_duplicates(subset=['source', 'target'])"
+    if 'weight' not in net.columns:
+        vnet = net[['source', 'target']]
+        vnet['weight'] = 1.
+        m = "weight not found in net.columns, adding it as:\nnet['weight'] = 1"
+        _log(m, level='warn', verbose=verbose)
+    else:
+        vnet = net[['source', 'target', 'weight']]
+    vnet['source'] = vnet['source'].astype('U')
+    vnet['target'] = vnet['target'].astype('U')
+    vnet['weight'] = vnet['weight'].astype(float)
+    return vnet
+
+
+def prune(
+    features: np.ndarray,
+    net: pd.DataFrame,
+    tmin: int = 5,
+    verbose: bool = False,
+) -> pd.DataFrame:
+    """
+    Removes sources of a ``net`` with less than ``tmin`` targets shared with mat.
+
+    Parameters
+    ----------
+    features
+        Features in ``mat``.
+    net
+        Network in long format.
+    tmin
+        Minimum of targets per source. If less, sources are removed.
+    verbose
+        If True, print progress messages or additional information during execution.
+
+    Returns
+    -------
+    Filtered net in long format.
+    """
+    # Validate
+    features = set(features)
+    vnet = validate_net(net, verbose=verbose)
+    assert isinstance(tmin, (int, float)) and tmin >= 0, 'tmin must be numeric and >= 0'
+    # Find shared targets between mat and net
+    msk = vnet['target'].isin(features)
+    vnet = vnet.loc[msk]
+    # Find unique sources with tmin
+    sources = vnet['source'].value_counts()
+    sources = set(sources[sources >= tmin].index)
+    # Filter
+    msk = vnet['source'].isin(sources)
+    vnet = vnet[msk]
+    assert not vnet.empty, \
+    f'No sources with more than tmin={tmin} targets after\n \
+    filtering by shared features in mat.\n \
+    Make sure mat and net have shared target features or\n \
+    reduce the number assigned to tmin'
+    return vnet
+
+
+def _adj(
+    net: pd.DataFrame,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    # Pivot df to a wider format
+    X = net.pivot(columns='source', index='target', values='weight').fillna(0)
+    # Store node names and weights
+    sources = X.columns.values.astype('U')
+    targets = X.index.values.astype('U')
+    X = X.values.astype(float)
+    return sources, targets, X
+
+
+def _order(
+    features: np.ndarray,
+    targets: np.ndarray,
+    adjmat: np.ndarray,
+) -> np.ndarray:
+    # Init empty madjmat
+    madjmat = np.zeros((features.shape[0], adjmat.shape[1]), dtype=np.float32)
+    # Create an index array for rows of features corresponding to targets
+    features_dict = {gene: i for i, gene in enumerate(features)}
+    idxs = [features_dict[gene] for gene in targets if gene in features_dict]
+    # Populate madjmat using advanced indexing
+    madjmat[idxs, :] = adjmat[: len(idxs), :]
+    return madjmat
+
+
+def adjmat(
+    features: np.ndarray,
+    net: pd.DataFrame,
+    verbose: bool = False,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Converts a network in long format into a regulatory adjacency matrix (targets x sources).
+
+    Parameters
+    ----------
+    net
+        Network in long format.
+
+    Returns
+    -------
+    Returns the source names (columns), target names (rows), and the adjacency matrix of weights.
+    """
+    # Extract adj mat
+    sources, targets, adjm = _adj(net=net)
+    # Sort adjmat to match features
+    adjm = _order(features, targets, adjm)
+    m = f'Network adjacency matrix has {targets.size} unique features and {sources.size} unique sources'
+    _log(m, level='info', verbose=verbose)
+    return sources, targets, adjm
+
+
+def idxmat(
+    features: np.ndarray,
+    net: pd.DataFrame,
+    verbose: bool = False,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Indexes and returns feature sets as a decomposed sparse matrix.
+
+    Parameters
+    ----------
+    features
+        Column names of ``mat``.
+    net
+        Network in long format.
+
+    Returns
+    -------
+    List of sources, concatenated indexes, starts and offsets.
+    """
+    # Transform targets to indxs
+    table = {name: i for i, name in enumerate(features)}
+    net['target'] = [table[target] for target in net['target']]
+    # Find sets
+    cnct = (
+        net
+        .groupby('source', observed=True)
+        ['target']
+        .apply(lambda x: np.array(x, dtype=int))
+    )
+    sources = cnct.index.values.astype('U')
+    # Flatten net and get offsets
+    offsets = cnct.apply(lambda x: len(x)).values
+    cnct = np.concatenate(cnct.values)
+    # Define starts to subset offsets
+    starts = np.zeros(offsets.shape[0], dtype=int)
+    starts[1:] = np.cumsum(offsets)[:-1]
+    targets = np.unique(cnct)
+    m = f'Network has {targets.size} unique features and {sources.size} unique sources'
+    _log(m, level='info', verbose=verbose)
+    return sources, cnct, starts, offsets
+
+
+@nb.njit(cache=True)
+def _getset(
+    cnct: np.ndarray,
+    starts: np.ndarray,
+    offsets: np.ndarray,
+    j: int
+) -> np.ndarray:
+    srt = starts[j]
+    off = srt + offsets[j]
+    fset = cnct[srt:off]
+    return fset
