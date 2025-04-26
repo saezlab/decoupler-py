@@ -1,0 +1,11 @@
+from decoupler.mt._aucell import aucell
+from decoupler.mt._gsea import gsea  # p-vals are weird compared to old version
+from decoupler.mt._gsva import gsva
+from decoupler.mt._mdt import mdt
+from decoupler.mt._mlm import mlm
+from decoupler.mt._ora import ora
+from decoupler.mt._udt import udt
+from decoupler.mt._ulm import ulm
+from decoupler.mt._viper import viper
+from decoupler.mt._waggr import waggr
+from decoupler.mt._zscore import zscore
