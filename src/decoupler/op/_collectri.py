@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 from decoupler._log import _log
-from decoupler.op._download import URL_INT, _download
+from decoupler._download import URL_INT, _download
 from decoupler.op._translate import translate
 from decoupler.op._dtype import _infer_dtypes
 

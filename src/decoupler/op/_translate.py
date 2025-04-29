@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 
 from decoupler._log import _log
+from decoupler._download import _download
 
 
 def show_organisms(
@@ -162,6 +163,7 @@ def translate(
         target_col = 'fruit fly_symbol'
     # Process orthologs
     url = f'https://ftp.ebi.ac.uk/pub/databases/genenames/hcop/human_{target_organism}_hcop_fifteen_column.txt.gz'
+    map_df = _download(url, low_memory=False, verbose=verbose)
     map_df = pd.read_csv(url, sep="\t", low_memory=False)
     map_df['evidence'] = map_df['support'].apply(lambda x: len(x.split(",")))
     map_df = map_df[map_df['evidence'] >= min_evidence]

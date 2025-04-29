@@ -11,6 +11,7 @@ URL_INT = 'https://omnipathdb.org/interactions/?genesymbols=1&'
 def _download(
     url: str,
     verbose: bool = False,
+    **kwargs,
 ) -> pd.DataFrame:
     assert isinstance(url, str), 'url must be str'
     # Download with progress bar
@@ -26,7 +27,7 @@ def _download(
                     pbar.update(len(chunk))
     # Read into pandas
     data = io.BytesIO(b"".join(chunks))
-    df = pd.read_csv(data, sep='\t')
+    df = pd.read_csv(data, sep='\t', **kwargs)
     m = f'Download finished'
     _log(m, level='info', verbose=verbose)
     return df
