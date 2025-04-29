@@ -4,10 +4,11 @@ import pandas as pd
 import numpy as np
 import numba as nb
 
+from decoupler._docs import docs
 from decoupler._log import _log
 
 
-def validate_net(
+def _validate_net(
     net = pd.DataFrame,
     verbose: bool = False,
 ) -> pd.DataFrame:
@@ -20,18 +21,19 @@ def validate_net(
     "net has duplicate rows, use:\n \
     net = net.drop_duplicates(subset=['source', 'target'])"
     if 'weight' not in net.columns:
-        vnet = net[['source', 'target']]
+        vnet = net[['source', 'target']].copy()
         vnet['weight'] = 1.
         m = "weight not found in net.columns, adding it as:\nnet['weight'] = 1"
         _log(m, level='warn', verbose=verbose)
     else:
-        vnet = net[['source', 'target', 'weight']]
+        vnet = net[['source', 'target', 'weight']].copy()
     vnet['source'] = vnet['source'].astype('U')
     vnet['target'] = vnet['target'].astype('U')
     vnet['weight'] = vnet['weight'].astype(float)
     return vnet
 
 
+@docs.dedent
 def prune(
     features: np.ndarray,
     net: pd.DataFrame,
@@ -39,18 +41,14 @@ def prune(
     verbose: bool = False,
 ) -> pd.DataFrame:
     """
-    Removes sources of a ``net`` with less than ``tmin`` targets shared with mat.
+    Removes sources of a ``net`` with less than ``tmin`` targets shared with ``mat``.
 
     Parameters
     ----------
-    features
-        Features in ``mat``.
-    net
-        Network in long format.
-    tmin
-        Minimum of targets per source. If less, sources are removed.
-    verbose
-        If True, print progress messages or additional information during execution.
+    %(features)s
+    %(net)s
+    %(tmin)s
+    %(verbose)s
 
     Returns
     -------
@@ -58,7 +56,7 @@ def prune(
     """
     # Validate
     features = set(features)
-    vnet = validate_net(net, verbose=verbose)
+    vnet = _validate_net(net, verbose=verbose)
     assert isinstance(tmin, (int, float)) and tmin >= 0, 'tmin must be numeric and >= 0'
     # Find shared targets between mat and net
     msk = vnet['target'].isin(features)
@@ -104,6 +102,7 @@ def _order(
     return madjmat
 
 
+@docs.dedent
 def adjmat(
     features: np.ndarray,
     net: pd.DataFrame,
@@ -114,8 +113,7 @@ def adjmat(
 
     Parameters
     ----------
-    net
-        Network in long format.
+    %(net)s
 
     Returns
     -------
@@ -130,6 +128,7 @@ def adjmat(
     return sources, targets, adjm
 
 
+@docs.dedent
 def idxmat(
     features: np.ndarray,
     net: pd.DataFrame,
@@ -140,10 +139,8 @@ def idxmat(
 
     Parameters
     ----------
-    features
-        Column names of ``mat``.
-    net
-        Network in long format.
+    %(features)s
+    %(net)s
 
     Returns
     -------

@@ -6,6 +6,7 @@ from numpy.random import default_rng
 from anndata import AnnData
 import scipy.sparse as sps
 
+from decoupler._docs import docs
 from decoupler._log import _log
 from decoupler._datatype import DataType
 
@@ -103,6 +104,7 @@ def break_ties(
     return mat, features
 
 
+@docs.dedent
 def extract(
     data: DataType,
     layer: str | None = None,
@@ -115,16 +117,11 @@ def extract(
 
     Parameters
     ----------
-    data
-        AnnData instance, DataFrame or tuple of [matrix, samples, features].
-    layer
-        Layer key name.
-    raw
-        Whether to use the ``.raw`` attribute of ``AnnData``.
-    empty
-        Whether to remove empty observations (rows) or features (columns).
-    verbose
-        If True, print progress messages or additional information during execution.
+    %(data)s
+    %(layer)s
+    %(raw)s
+    %(empty)s
+    %(verbose)s
 
     Returns
     -------
