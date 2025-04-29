@@ -29,10 +29,34 @@ def _wmean(
     return agg / div
 
 
+def _fun(
+    f: Callable,
+    verbose: bool = False,
+):
+    @nb.njit(parallel=True, cache=True)
+    def _f(mat, adj):
+        nobs, nvar = mat.shape
+        nvar, nsrc = adj.shape
+        es = np.zeros((nobs, nsrc))
+        for i in nb.prange(nobs):
+            x = mat[i]
+            for j in range(nsrc):
+                w = adj[:, j]
+                es[i, j] = f(x, w)
+        return es
+    _f.__name__ = f.__name__
+    if _f.__name__ not in _cfuncs:
+        _cfuncs[f.__name__] = _f
+        m = f'waggr - using {_f.__name__} for the first time, will need to be compiled'
+        _log(m, level='info', verbose=verbose)
+
+
 _fun_dict = {
     'wsum': _wsum,
     'wmean': _wmean,
 }
+
+_cfuncs = dict()
 
 def _validate_args(
     fun: Callable,
@@ -57,7 +81,7 @@ def _validate_args(
 def _validate_func(
     fun: str | Callable,
     verbose: bool,
-) -> Callable:
+) -> None:
     fun = _validate_args(fun=fun, verbose=verbose)
     x = np.array([1., 2., 3.])
     w = np.array([-1., 0., 2.])
@@ -66,19 +90,9 @@ def _validate_func(
         assert isinstance(res, (int, float)), 'output of fun must be a single numerical value'
     except:
         raise ValueError(f'fun failed to run with test data: fun(x={x}), w={w}')
-    m = f'waggr - wsing function {fun.__name__}'
+    m = f'waggr - using function {fun.__name__}'
     _log(m, level='info', verbose=verbose)
-    def _fun(mat, adj):
-        nobs, nvar = mat.shape
-        nvar, nsrc = adj.shape
-        es = np.zeros((nobs, nsrc))
-        for i in nb.prange(nobs):
-            x = mat[i]
-            for j in range(nsrc):
-                w = adj[:, j]
-                es[i, j] = fun(x, w)
-        return es
-    return nb.njit(_fun, cache=True)
+    _fun(f=fun, verbose=verbose)
 
 
 @nb.njit(parallel=True, cache=True)
@@ -134,7 +148,8 @@ def _func_waggr(
     if isinstance(fun, str):
         assert fun in _fun_dict, 'when fun is str, it must be wmean or wsum'
         fun = _fun_dict[fun]
-    vfun = _validate_func(fun, verbose=verbose)
+    _validate_func(fun, verbose=verbose)
+    vfun = _cfuncs[fun.__name__]
     assert isinstance(times, (int, float)) and times >= 0, 'times must be numeric and >= 0'
     assert isinstance(seed, (int, float)) and seed >= 0, 'seed must be numeric and >= 0'
     times, seed = int(times), int(seed)
