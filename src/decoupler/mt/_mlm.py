@@ -55,5 +55,6 @@ _mlm = MethodMeta(
     test=True,
     limits=(-np.inf, +np.inf),
     reference='https://doi.org/10.1093/bioadv/vbac016',
+    params='',
 )
 mlm = Method(_method=_mlm)

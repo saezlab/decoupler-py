@@ -145,6 +145,16 @@ def _func_ora(
     return es, pv
 
 
+params = """\
+n_up
+    Number of top-ranked features, based on their magnitude, to select as observed features.
+    If ``None``, the top 5% of positive features are selected.
+n_bm
+    Number of bottom-ranked features, based on their magnitude, to select as observed features.
+n_bg
+    Number indicating the background size. If ``None``, is `` mat - (n_up | n_bm)``.
+"""
+
 _ora = MethodMeta(
     name='ora',
     func=_func_ora,
@@ -154,5 +164,6 @@ _ora = MethodMeta(
     test=True,
     limits=(-np.inf, +np.inf),
     reference='https://doi.org/10.2307/2340521',
+    params=params,
 )
 ora = Method(_method=_ora)

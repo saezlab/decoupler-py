@@ -44,6 +44,10 @@ def _func_udt(
     return es, None
 
 
+params = """\
+kwargs
+    All other keyword arguments are passed to xgboost.XGBRegressor"""
+
 _udt = MethodMeta(
     name='udt',
     func=_func_udt,
@@ -53,5 +57,6 @@ _udt = MethodMeta(
     test=False,
     limits=(0, 1),
     reference='https://doi.org/10.1093/bioadv/vbac016',
+    params=params,
 )
 udt = Method(_method=_udt)

@@ -78,6 +78,13 @@ def _func_aucell(
     return es, None
 
 
+params = """\
+n_up
+    Number of features to include in the AUC calculation.
+    If ``None``, the top 5% of features based on their magnitude are selected.
+"""
+
+
 _aucell = MethodMeta(
     name='aucell',
     func=_func_aucell,
@@ -87,5 +94,6 @@ _aucell = MethodMeta(
     test=False,
     limits=(0, 1),
     reference='https://doi.org/10.1038/nmeth.4463',
+    params=params,
 )
 aucell = Method(_method=_aucell)

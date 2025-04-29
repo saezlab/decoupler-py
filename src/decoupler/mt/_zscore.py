@@ -38,5 +38,6 @@ _zscore = MethodMeta(
     test=True,
     limits=(-np.inf, +np.inf),
     reference='https://doi.org/10.1038/s41467-021-21211-6',
+    params='',
 )
 zscore = Method(_method=_zscore)

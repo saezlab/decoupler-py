@@ -207,6 +207,17 @@ def _func_viper(
     return nes, pvals
 
 
+params = """\
+pleiotropy
+    Whether correction for pleiotropic regulation should be performed.
+reg_sign
+    If ``pleiotropy``, p-value threshold for considering significant regulators.
+n_targets
+    If ``pleiotropy``, integer indicating the minimal number of overlaping targets to consider for analysis.
+penalty
+    If ``pleiotropy``, number higher than 1 indicating the penalty for the pleiotropic interactions. 1 = no penalty.
+"""
+
 _viper = MethodMeta(
     name='viper',
     func=_func_viper,
@@ -216,5 +227,6 @@ _viper = MethodMeta(
     test=True,
     limits=(-np.inf, +np.inf),
     reference='https://doi.org/10.1038/ng.3593',
+    params=params,
 )
 viper = Method(_method=_viper)

@@ -192,6 +192,11 @@ def _func_gsea(
         es = nes
     return es, pv
 
+
+params = """\
+%(times)s
+%(seed)s"""
+
 _gsea = MethodMeta(
     name='gsea',
     func=_func_gsea,
@@ -201,5 +206,6 @@ _gsea = MethodMeta(
     test=True,
     limits=(-np.inf, +np.inf),
     reference='https://doi.org/10.1073/pnas.0506580102',
+    params=params,
 )
 gsea = Method(_method=_gsea)

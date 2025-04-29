@@ -168,6 +168,15 @@ def _func_waggr(
     return es, pv
 
 
+params = """\
+fun
+    Function to compute enrichment statistic from omics readouts (``x``) and feature weights (``w``).
+    Provided function must contain ``x`` and ``w`` arguments and ouput a single float.
+    By default, 'wmean' and 'wsum' are implemented.
+%(times)s
+%(seed)s
+"""
+
 _waggr = MethodMeta(
     name='waggr',
     func=_func_waggr,
@@ -177,5 +186,6 @@ _waggr = MethodMeta(
     test=True,
     limits=(-np.inf, +np.inf),
     reference='https://doi.org/10.1093/bioadv/vbac016',
+    params=params,
 )
 waggr = Method(_method=_waggr)

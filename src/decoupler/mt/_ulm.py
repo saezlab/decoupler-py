@@ -58,5 +58,6 @@ _ulm = MethodMeta(
     test=True,
     limits=(-np.inf, +np.inf),
     reference='https://doi.org/10.1093/bioadv/vbac016',
+    params='',
 )
 ulm = Method(_method=_ulm)

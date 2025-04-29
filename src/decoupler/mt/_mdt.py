@@ -40,6 +40,9 @@ def _func_mdt(
         es[i, :] = _xgbr(x=adj, y=obs, **kwargs)
     return (es, None)
 
+params = """\
+kwargs
+    All other keyword arguments are passed to xgboost.XGBRegressor"""
 
 _mdt = MethodMeta(
     name='mdt',
@@ -50,5 +53,6 @@ _mdt = MethodMeta(
     test=False,
     limits=(0, 1),
     reference='https://doi.org/10.1093/bioadv/vbac016',
+    params=params,
 )
 mdt = Method(_method=_mdt)

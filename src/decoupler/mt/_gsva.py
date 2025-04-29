@@ -283,6 +283,19 @@ def _func_gsva(
         es[:, j] = _ks_fset(ordr, rst, fset, maxdiff, absrnk)
     return es, None
 
+
+params = """\
+kcdf
+    Which kernel to use during the non-parametric estimation of the cumulative distribution function.
+    Options are gaussian, poisson or None.
+mx_diff
+    Changes how the enrichment statistic (ES) is calculated. If ``True`` (default), ES is calculated as the difference between
+    the maximum positive and negative random walk deviations. If ``False``, ES is calculated as the maximum positive to 0.
+abs_rnk : bool
+    Used when ``mx_diff=True``. If ``False`` (default), the enrichment statistic (ES) is calculated taking the magnitude
+    difference between the largest positive and negative random walk deviations. If ``True``, feature sets with features
+    enriched on either extreme (high or low) will be regarded as 'highly' activated."""
+
 _gsva = MethodMeta(
     name='gsva',
     func=_func_gsva,
@@ -292,5 +305,6 @@ _gsva = MethodMeta(
     test=False,
     limits=(-1, +1),
     reference='https://doi.org/10.1186/1471-2105-14-7',
+    params=params,
 )
 gsva = Method(_method=_gsva)

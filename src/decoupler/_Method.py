@@ -1,7 +1,9 @@
 from typing import Callable
+import textwrap
 
 import pandas as pd
 
+from decoupler._docs import docs
 from decoupler._datatype import DataType
 from decoupler.mt._run import _run
 
@@ -20,27 +22,8 @@ class MethodMeta:
         test: bool,
         limits: tuple,
         reference: str,
+        params: str,
     ):
-        """
-        Parameters
-        ----------
-        name
-            Name of the Method.
-        func
-            Enrichment scoring function.
-        stype
-            Statistic type, either categorical or numerical.
-        adj
-            Wether the method transforms net to an adjacency matrix.
-        weight
-            Wether the method models feature weights.
-        test
-            Wether the method performs any test, returning a p-value.
-        limits
-            Range of values that the enrichment score can reach.
-        reference
-            Publication of method.
-        """
         self.name = name
         self.func = func
         self.stype = stype
@@ -49,6 +32,7 @@ class MethodMeta:
         self.test = test
         self.limits = limits
         self.reference = reference
+        self.params = params
 
     def meta(self) -> pd.DataFrame:
         meta = pd.DataFrame([{
@@ -61,10 +45,36 @@ class MethodMeta:
         }])
         return meta
 
+mparams = {
+    'aucell': 'aucell',
+    'gsea': 'gsea',
+    'gsva': 'gsva',
+    'mdt': 'mdt',
+    'mlm': 'mlm',
+    'ora': 'ora',
+    'udt': 'udt',
+    'ulm': 'ulm',
+    'viper': 'viper',
+    'waggr': 'waggr',
+    'zscore': 'zscore'
+}
 
+@docs.dedent
 class Method(MethodMeta):
     """
     Enrichment Method Class
+
+    Parameters
+    ----------
+    %(data)s
+    %(net)s
+    %(tmin)s
+    %(raw)s
+    %(empty)s
+    bsize
+        For large datasets in sparse format, this parameter controls how many observations are processed at once.
+        Increasing this value speeds up computation but uses more memory.
+    %(verbose)s
     """
     def __init__(
         self,
@@ -79,8 +89,11 @@ class Method(MethodMeta):
             test=_method.test,
             limits=_method.limits,
             reference=_method.reference,
+            params=_method.params
         )
         self._method = _method
+        self.__doc__ = f"{self.__doc__}\n\nMethod parameters\n-----------------\n{self.params}\n\n"
+
 
     def __call__(
         self,
@@ -93,27 +106,6 @@ class Method(MethodMeta):
         verbose: bool = False,
         **kwargs,
     ):
-        """
-        Run an enrichment method.
-
-        Parameters
-        ----------
-        data
-            AnnData instance, DataFrame or tuple of [matrix, samples, features].
-        net
-            Network in long format.
-        tmin
-            Minimum of number of targets per source after overlaping with ``mat``. If less, sources are removed.
-        raw
-            Whether to use the ``.raw`` attribute of ``AnnData``.
-        empty
-            Whether to remove empty observations (rows) or features (columns).
-        bsize
-            For large datasets in sparse format, this parameter controls how many observations are processed at once.
-            Increasing this value speeds up computation but uses more memory.
-        verbose
-            If True, print progress messages or additional information during execution.
-        """
         return _run(
             name=self.name,
             func=self.func,
@@ -128,3 +120,17 @@ class Method(MethodMeta):
             verbose=verbose,
             **kwargs,
         )
+
+    def __repr__(self):
+        doc = f"""
+        Method
+        ------
+        Name: {self.name}
+        Type of enrichment statistic: {self.stype}
+        Models feature weights: {self.weight}
+        Performs statistical test: {self.test}
+        Range of values: {self.limits}
+        Reference: {self.reference}
+
+        """
+        return doc
