@@ -382,7 +382,7 @@ def _ssize_tcount(
     cpm_cutoff = _cpm_cutoff(lib_size=lib_size, min_count=min_count)
     # CPM mask
     cpm = _cpm(X=X, lib_size=lib_size)
-    sample_size = np.sum(cpm >= cpm_cutoff.reshape(-1, 1), axis=0)
+    sample_size = np.round(np.sum(cpm >= cpm_cutoff.reshape(-1, 1), axis=0))
     total_count = np.sum(X, axis=0)
     return sample_size, total_count
 
