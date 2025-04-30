@@ -83,6 +83,7 @@ def _run(
     # Handle pvals and FDR correction
     if test:
         _log(f'{name} - adjusting p-values by FDR', level='info', verbose=verbose)
+        pv = np.vstack(pv)
         pv = pd.DataFrame(pv, index=obs, columns=sources)
         pv.loc[:, :] = sts.false_discovery_control(pv.values, axis=1, method='bh')
     else:
