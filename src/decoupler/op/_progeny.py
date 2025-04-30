@@ -52,5 +52,5 @@ def progeny(
     p = p[['source', 'target', 'weight', 'pval']]
     m = f'progeny - filtered interactions for padj < {thr_padj}'
     _log(m, level='info', verbose=verbose)
-    p = do.drop_duplicates(['source', 'target']).reset_index(drop=True)
+    p = p.drop_duplicates(['source', 'target']).reset_index(drop=True)
     return p
