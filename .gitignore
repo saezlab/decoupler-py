@@ -18,3 +18,6 @@ __pycache__/
 # docs
 /docs/generated/
 /docs/_build/
+
+# jupyter
+.ipynb_checkpoints/
