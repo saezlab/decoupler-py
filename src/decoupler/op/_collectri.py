@@ -1,12 +1,14 @@
 import numpy as np
 import pandas as pd
 
+from decoupler._docs import docs
 from decoupler._log import _log
 from decoupler._download import URL_INT, _download
 from decoupler.op._translate import translate
 from decoupler.op._dtype import _infer_dtypes
 
 
+@docs.dedent
 def collectri(
     organism: str = 'human',
     split_complexes: bool = False,
@@ -23,13 +25,10 @@ def collectri(
 
     Parameters
     ----------
-    organism
-        The organism of interest. By default human.
+    %(organism)s
     split_complexes
         Whether to split complexes into subunits. By default complexes are kept as they are.
-    license
-        Which license to use, available options are: academic, commercial, or nonprofit.
-        By default, is set to academic to retrieve all possible interactions.
+    %(license)s
 
     Returns
     -------
@@ -43,7 +42,7 @@ def collectri(
     url = URL_INT + url_ext
     m = f'collectri - Accessing CollecTRI with {license} license'
     _log(m, level='info', verbose=verbose)
-    ct = _download(url, verbose=verbose)
+    ct = _download(url, sep='\t', verbose=verbose)
     ct = ct[['source_genesymbol', 'target_genesymbol', 'is_inhibition', 'references']]
     ct.loc[:, 'pmid'] = (
         ct

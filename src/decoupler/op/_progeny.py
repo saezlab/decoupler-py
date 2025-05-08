@@ -1,9 +1,12 @@
 import numpy as np
 import pandas as pd
 
+from decoupler._docs import docs
 from decoupler._log import _log
 from decoupler.op._resource import resource
 
+
+@docs.dedent
 def progeny(
     organism: str = 'human',
     top: int | float = np.inf,
@@ -20,15 +23,12 @@ def progeny(
 
     Parameters
     ----------
-    organism
-        The organism of interest. By default human.
+    %(organism)s
     top
         Number of genes per pathway to return. By default all of them.
     thr_padj
         Significance threshold to trim interactions.
-    license
-        Which license to use, available options are: academic, commercial, or nonprofit.
-        By default, is set to academic to retrieve all possible interactions.
+    %(license)s
 
     Returns
     -------

@@ -3,6 +3,7 @@ from itertools import product
 import pandas as pd
 import numpy as np
 
+from decoupler._docs import docs
 from decoupler._log import _log
 from decoupler._download import _download
 
@@ -100,6 +101,7 @@ def _translate(
     return resource
 
 
+@docs.dedent
 def translate(
     net: pd.DataFrame,
     columns: str | list = ['source', 'target', 'genesymbol'],
@@ -114,8 +116,7 @@ def translate(
 
     Parameters
     ----------
-    net
-        Network in long format.
+    %(net)s
     columns
         Column or columns of ``net`` to translate.
     target_organism
@@ -163,7 +164,7 @@ def translate(
         target_col = 'fruit fly_symbol'
     # Process orthologs
     url = f'https://ftp.ebi.ac.uk/pub/databases/genenames/hcop/human_{target_organism}_hcop_fifteen_column.txt.gz'
-    map_df = _download(url, low_memory=False, verbose=verbose)
+    map_df = _download(url, low_memory=False, compression='gzip', sep='\t', verbose=verbose)
     map_df = pd.read_csv(url, sep="\t", low_memory=False)
     map_df['evidence'] = map_df['support'].apply(lambda x: len(x.split(",")))
     map_df = map_df[map_df['evidence'] >= min_evidence]

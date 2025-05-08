@@ -27,7 +27,7 @@ def _download(
                     pbar.update(len(chunk))
     # Read into pandas
     data = io.BytesIO(b"".join(chunks))
-    df = pd.read_csv(data, sep='\t', **kwargs)
+    df = pd.read_csv(data, **kwargs)
     m = f'Download finished'
     _log(m, level='info', verbose=verbose)
     return df

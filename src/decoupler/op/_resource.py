@@ -1,5 +1,6 @@
 import pandas as pd
 
+from decoupler._docs import docs
 from decoupler._log import _log
 from decoupler._download import URL_DBS, _download
 from decoupler.op._translate import translate
@@ -21,6 +22,7 @@ def show_resources(
     return ann
 
 
+@docs.dedent
 def resource(
     name: str,
     organism: str = 'human',
@@ -39,11 +41,8 @@ def resource(
     ----------
     name:
         Name of the resource to query.
-    organism
-        The organism of interest.
-    license:
-        Which license to use, available options are: academic, commercial, or nonprofit.
-        By default, is set to academic to retrieve all possible interactions.
+    %(organism)s
+    %(license)s
     kwargs
         Passed to ``decoupler.op.translate``.
 
@@ -63,7 +62,7 @@ def resource(
     _log(m, level='info', verbose=verbose)
     # Download
     url = URL_DBS + f'{name}&license={license}'
-    df = _download(url, verbose=verbose)
+    df = _download(url, sep='\t', verbose=verbose)
     # Process
     labels = df['label'].unique()
     for label in labels:

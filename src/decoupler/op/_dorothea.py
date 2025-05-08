@@ -1,12 +1,14 @@
 import numpy as np
 import pandas as pd
 
+from decoupler._docs import docs
 from decoupler._log import _log
 from decoupler._download import URL_INT, _download
 from decoupler.op._translate import translate
 from decoupler.op._dtype import _infer_dtypes
 
 
+@docs.dedent
 def dorothea(
     organism: str = 'human',
     levels: str | list = ['A', 'B', 'C'],
@@ -25,8 +27,7 @@ def dorothea(
 
     Parameters
     ----------
-    organism
-        The organism of interest. By default human.
+    %(organism)s
     levels
         List of confidence levels to return. Goes from A to D, A being the
         most confident and D being the less.
@@ -34,9 +35,7 @@ def dorothea(
         Dictionary of values to divide the mode of regulation (-1 or 1),
         one for each confidence level. Bigger values will generate weights
         close to zero.
-    license
-        Which license to use, available options are: academic, commercial, or nonprofit.
-        By default, is set to academic to retrieve all possible interactions.
+    %(license)s
 
     Returns
     -------
@@ -59,7 +58,7 @@ def dorothea(
     url = URL_INT + url_ext
     m = f'dorothea - Accessing DoRothEA (levels {str_levels}) with {license} license and weights={weights}'
     _log(m, level='info', verbose=verbose)
-    do = _download(url, verbose=verbose)
+    do = _download(url, sep='\t', verbose=verbose)
     # Filter extra columns
     do = do[[
         'source_genesymbol', 'target_genesymbol',
