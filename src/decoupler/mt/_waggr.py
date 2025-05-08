@@ -6,6 +6,7 @@ import numpy as np
 import scipy.stats as sts
 import numba as nb
 
+from decoupler._docs import docs
 from decoupler._log import _log
 from decoupler._Method import MethodMeta, Method
 from decoupler.mt._gsea import _std, _ridx
@@ -168,17 +169,18 @@ def _func_waggr(
     return es, pv
 
 
-params = """\
+params = docs.dedent("""\
 fun
     Function to compute enrichment statistic from omics readouts (``x``) and feature weights (``w``).
     Provided function must contain ``x`` and ``w`` arguments and ouput a single float.
     By default, 'wmean' and 'wsum' are implemented.
 %(times)s
 %(seed)s
-"""
+""")
 
 _waggr = MethodMeta(
     name='waggr',
+    desc='Weighted Aggregate (WAGGR)',
     func=_func_waggr,
     stype='numerical',
     adj=True,

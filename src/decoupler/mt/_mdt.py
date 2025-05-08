@@ -46,6 +46,7 @@ kwargs
 
 _mdt = MethodMeta(
     name='mdt',
+    desc='Multivariate Decision Tree (MDT)',
     func=_func_mdt,
     stype='numerical',
     adj=True,

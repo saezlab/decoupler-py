@@ -298,6 +298,7 @@ abs_rnk : bool
 
 _gsva = MethodMeta(
     name='gsva',
+    desc='Gene Set Variation Analysis (GSVA)',
     func=_func_gsva,
     stype='numerical',
     adj=False,

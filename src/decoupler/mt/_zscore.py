@@ -31,6 +31,7 @@ def _func_zscore(
 
 _zscore = MethodMeta(
     name='zscore',
+    desc='Z-score (ZSCORE)',
     func=_func_zscore,
     stype='numerical',
     adj=True,

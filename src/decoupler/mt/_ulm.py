@@ -51,6 +51,7 @@ def _func_ulm(
 
 _ulm = MethodMeta(
     name='ulm',
+    desc='Univariate Linear Model (ULM)',
     func=_func_ulm,
     stype='numerical',
     adj=True,

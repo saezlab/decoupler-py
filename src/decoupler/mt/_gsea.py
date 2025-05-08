@@ -6,6 +6,7 @@ import scipy.sparse as sps
 from tqdm.auto import tqdm
 import numba as nb
 
+from decoupler._docs import docs
 from decoupler._log import _log
 from decoupler._Method import MethodMeta, Method
 from decoupler.pp.net import _getset
@@ -193,12 +194,13 @@ def _func_gsea(
     return es, pv
 
 
-params = """\
+params = docs.dedent("""\
 %(times)s
-%(seed)s"""
+%(seed)s""")
 
 _gsea = MethodMeta(
     name='gsea',
+    desc='Gene Set Enrichment Analysis (GSEA)',
     func=_func_gsea,
     stype='numerical',
     adj=False,

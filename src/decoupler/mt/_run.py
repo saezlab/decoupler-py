@@ -53,6 +53,7 @@ def _run(
     verbose: bool = False,
     **kwargs
 ) -> Tuple[pd.DataFrame, pd.DataFrame] | AnnData | None:
+    _log(f'{name} - Running {name}', level='info', verbose=verbose)
     # Process data
     mat, obs, var = extract(data, layer=layer, raw=raw, empty=empty, verbose=verbose)
     sparse = sps.issparse(mat)

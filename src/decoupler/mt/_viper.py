@@ -220,6 +220,7 @@ penalty
 
 _viper = MethodMeta(
     name='viper',
+    desc='Virtual Inference of Protein-activity by Enriched Regulon analysis (VIPER)',
     func=_func_viper,
     stype='numerical',
     adj=True,

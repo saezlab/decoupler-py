@@ -117,7 +117,7 @@ def _func_ora(
     nobs, nvar = mat.shape
     nsrc = starts.size
     if n_up is None:
-        n_up = int(np.ceil(0.05 * nvar))
+        n_up = int(np.max([np.ceil(0.05 * nvar), 2]))
         m = f'ora - setting n_up={n_up}' 
         _log(m, level='info', verbose=verbose)
     if n_bg is None:
@@ -157,6 +157,7 @@ n_bg
 
 _ora = MethodMeta(
     name='ora',
+    desc='Over Representation Analysis (ORA)',
     func=_func_ora,
     stype='categorical',
     adj=False,

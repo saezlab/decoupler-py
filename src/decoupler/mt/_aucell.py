@@ -87,6 +87,7 @@ n_up
 
 _aucell = MethodMeta(
     name='aucell',
+    desc='AUCell',
     func=_func_aucell,
     stype='categorical',
     adj=False,

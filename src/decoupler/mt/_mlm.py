@@ -48,6 +48,7 @@ def _func_mlm(
 
 _mlm = MethodMeta(
     name='mlm',
+    desc='Multivariate Linear Model (MLM)',
     func=_func_mlm,
     stype='numerical',
     adj=True,

@@ -50,6 +50,7 @@ kwargs
 
 _udt = MethodMeta(
     name='udt',
+    desc='Univariate Decision Tree (UDT)',
     func=_func_udt,
     stype='numerical',
     adj=True,
