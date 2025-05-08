@@ -5,6 +5,7 @@ from anndata import AnnData
 import pandas as pd
 import numpy as np
 import scipy.sparse as sps
+import scipy.spatial as scs
 
 from decoupler._docs import docs
 from decoupler._log import _log
@@ -23,8 +24,7 @@ def get_obsm(
     Parameters
     ----------
     %(adata)s
-    key
-        ``.obsm`` key to extract.
+    %(key)s
 
     Returns
     -------
@@ -119,7 +119,7 @@ def _validate_mode(
         func = partial(np.median, axis=0)
     elif callable(mode):
         func = partial(np.apply_along_axis, func1d=mode, axis=0)
-    m = f'Using function {func.__name__} to aggregate observations'
+    m = f'Using function {func.func.__name__} to aggregate observations'
     _log(m, level='info', verbose=verbose)
     return func
 
@@ -197,6 +197,11 @@ def _psbulk(
             count = np.sum(profile)
             ncells[i] = ncell
             counts[i] = count
+            m = f'sample={smp}\tcells={ncell}\tcounts={count}'
+            _log(m, level='info', verbose=verbose)
+            if ncell == 0 or count == 0:
+                i +=1
+                continue
             # Get prop of non zeros
             prop = (profile.astype(bool)).mean(axis=0)
             # Pseudo-bulk
@@ -205,8 +210,6 @@ def _psbulk(
             props[i] = prop
             psbulk[i] = profile
             i += 1
-            m = f'{smp} number of cells={ncell}, number of counts={count}'
-            _log(m, level='info', verbose=verbose)
     else:
         for grp in groups:
             for smp in smples:
@@ -214,7 +217,9 @@ def _psbulk(
                 index = smp + '_' + grp
                 tmp = obs[(obs[sample_col] == smp) & (obs[groups_col] == grp)].drop_duplicates().values
                 if tmp.shape[0] == 0:
-                    tmp = np.full(tmp.shape[1], np.nan)
+                    tmp = obs[obs[sample_col] == smp].drop(columns=groups_col).drop_duplicates()
+                    tmp[groups_col] = grp
+                    tmp = tmp[obs.columns].values
                 new_obs.loc[index, :] = tmp
                 # Get cells from specific sample and group
                 profile = X[((obs[sample_col] == smp) & (obs[groups_col] == grp)).values]
@@ -225,16 +230,19 @@ def _psbulk(
                 count = np.sum(profile)
                 ncells[i] = ncell
                 counts[i] = count
+                m = f'group={grp}\tsample={smp}\tcells={ncell}\tcounts={count}'
+                _log(m, level='info', verbose=verbose)
+                if ncell == 0 or count == 0:
+                    i +=1
+                    continue
                 # Get prop of non zeros
                 prop = (profile.astype(bool)).mean(axis=0)
                 # Pseudo-bulk
-                profile = psbulk_profile(profile, mode=mode)
+                profile = mode(profile)
                 # Append
                 props[i] = prop
                 psbulk[i] = profile
                 i += 1
-                m = f'{grp} {smp} number of cells={ncell}, number of counts={count}'
-                _log(m, level='info', verbose=verbose)
     return psbulk, ncells, counts, props
 
 
@@ -261,17 +269,10 @@ def pseudobulk(
     assert isinstance(sample_col, str), 'sample_col must be a str'
     assert isinstance(groups_col, (str, None)), 'sample_col must be str or None'
     assert isinstance(mode, (str, dict)) or callable(mode), 'mode must be str, dict or callable'
-    #assert isinstance(min_cells, (int, float)) and min_cells > 0., 'min_cells must be numerical and bigger than 0'
-    #assert isinstance(min_counts, (int, float)) and min_counts > 0., 'min_counts must be numerical and bigger than 0'
-    #assert (min_prop is None) == (min_smpls is None), 'If min_prop is None, min_smpls must also be None (and vice versa)'
-    #assert min_prop is None or isinstance(min_prop, (int, float)) and 0. <= min_prop <= 1., \
-    #'min_props should be numerical and between 0 and 1'
-    #assert min_smpls is None or isinstance(min_smpls, (int, float)) and min_smpls > 0, \
-    #'min_smpls must be numerical and bigger than 0'
     # Extract data
-    X, _, _ = extract(adata, layer=layer, raw=raw, empty=empty, verbose=verbose)
+    X, _, var = extract(adata, layer=layer, raw=raw, empty=empty, verbose=verbose)
     obs = adata.obs.copy()
-    var = adata.var
+    var = adata.var.loc[var]
     # Validate X
     _validate_X(X=X, mode=mode, skip_checks=skip_checks)
     # Format inputs
@@ -281,7 +282,7 @@ def pseudobulk(
         obs=obs,
         verbose=verbose,
     )
-    n_cols = adata.shape[1]
+    n_cols = var.index.size
     new_obs = pd.DataFrame(columns=obs.columns)
     if type(mode) is dict:
         psbulks = []
@@ -322,8 +323,12 @@ def pseudobulk(
         )
         layers = {'psbulk_props': props}
     # Add QC metrics
-    new_obs['psbulk_n_cells'] = ncells
+    new_obs['psbulk_cells'] = ncells
     new_obs['psbulk_counts'] = counts
+    # Make cats
+    for col in new_obs.columns:
+        if not pd.api.types.is_numeric_dtype(new_obs[col]):
+            new_obs[col] = new_obs[col].astype('category')
     # Create new AnnData
     psbulk = AnnData(X=psbulk, obs=new_obs, var=var, layers=layers)
     # Place first element of mode dict as X
@@ -331,6 +336,44 @@ def pseudobulk(
         swap_layer(psbulk, layer_key=list(mode.keys())[0], X_layer_key=None, inplace=True)
     return psbulk
 
+
+def filter_samples(
+    adata: AnnData,
+    min_cells: int | float = 10,
+    min_counts: int | float = 1000,
+    inplace: bool = True,
+) -> None | np.ndarray:
+    """
+    Remove pseudobulked samples with insufficient number of cells and total counts.
+
+    Parameters
+    ----------
+    %(adata)s
+    %(min_cells)s
+    %(min_counts)s
+    %(inplace)s
+
+    Returns
+    -------
+    If ``inplace=False``, array of samples to be kept.
+    """
+    assert isinstance(adata, AnnData), 'adata must be AnnData'
+    cols = {'psbulk_cells', 'psbulk_counts'}
+    assert cols.issubset(adata.obs.columns), \
+    'psbulk_cells and psbulk_counts must be in obs, ' \
+    'run again decoupler.pp.pseudobulk'
+    assert isinstance(min_cells, (int, float)) and min_cells > 0., \
+    'min_cells must be numerical and bigger than 0'
+    assert isinstance(min_counts, (int, float)), \
+    'min_counts must be numerical'
+    msk_cells = adata.obs['psbulk_cells'] >= min_cells
+    msk_counts = adata.obs['psbulk_counts'] >= min_counts
+    msk = msk_cells & msk_counts
+    obs_names = adata.obs_names[msk]
+    if inplace:
+        adata._inplace_subset_obs(obs_names)
+    else:
+        return obs_names
 
 
 def _min_sample_size(
@@ -395,8 +438,9 @@ def filter_by_expr(
     min_count: int = 10,
     min_total_count: int = 15,
     large_n: int = 10,
-    min_prop: float = 0.7
-) -> np.ndarray:
+    min_prop: float = 0.7,
+    inplace: bool = True,
+) -> None | np.ndarray:
     """
     Determine which genes have sufficiently large counts to be retained in a statistical analysis.
 
@@ -417,10 +461,11 @@ def filter_by_expr(
         Number of samples per group that is considered to be "large".
     min_prop
         Minimum proportion of samples in the smallest group that express the gene.
+    %(inplace)s
 
     Returns
     -------
-    Array of genes to be kept.
+    If ``inplace=False``, array of genes to be kept.
     """
     # Validate
     assert isinstance(adata, AnnData), 'adata must be AnnData'
@@ -457,14 +502,19 @@ def filter_by_expr(
     # Merge msks
     msk = keep_cpm & keep_total_count
     genes = var_names[msk]
-    return genes
+    if inplace:
+        adata._inplace_subset_var(genes)
+    else:
+        return genes
+
 
 @docs.dedent
 def filter_by_prop(
     adata: AnnData,
     min_prop: float = 0.2,
     min_smpls: int = 2,
-) -> np.ndarray:
+    inplace: bool = True,
+) -> None | np.ndarray:
     """
     Determine which genes are expressed in a sufficient proportion of cells across samples.
 
@@ -478,10 +528,11 @@ def filter_by_prop(
         Minimum proportion of cells that express a gene in a sample.
     min_smpls
         Minimum number of samples with bigger or equal proportion of cells with expression than ``min_prop``.
+    %(inplace)s
 
     Returns
     -------
-    Array of genes to be kept.
+    If ``inplace=False``, array of genes to be kept.
     """
     # Validate
     assert isinstance(adata, AnnData), 'adata must be AnnData'
@@ -500,4 +551,58 @@ def filter_by_prop(
     # Set features to 0
     msk = nsmpls >= min_smpls
     genes = adata.var_names[msk].astype('U')
-    return genes
+    if inplace:
+        adata._inplace_subset_var(genes)
+    else:
+        return genes
+
+
+@docs.dedent
+def knn(
+    adata: AnnData,
+    key: str = 'spatial',
+    bw: float = 100,
+    max_nn: int = 100,
+    cutoff: float = 0.1,
+) -> None:
+    """
+    Adds K-Nearest Neighbors similarities based on spatial distances.
+
+    Parameters
+    ----------
+    %(adata)s
+    %(key)s
+    bw
+        Bandwith of kernel.
+    max_nn
+        Maximum number of nearest neighbors to consider.
+    cutoff
+        Values below this number are set to zero.
+    """
+    # Validate
+    assert isinstance(adata, AnnData), 'adata must be anndata.AnnData'
+    assert key in adata.obsm, \
+    f'adata.obsm must contain the spatial coordinates in adata.obsm["{key}"]'
+    assert isinstance(bw, (int, float)) and bw > 0, 'bw must be numeric and > 0'
+    assert isinstance(max_nn, int) and max_nn > 0, 'max_nn must be int and > 0'
+    assert isinstance(cutoff, (int, float)) and cutoff > 0, \
+    'cutoff must be numeric and > 0'
+    # Find NN and their eucl dists
+    coords = adata.obsm[key]
+    nobs = coords.shape[0]
+    tree = scs.KDTree(coords)
+    dist, idx = tree.query(coords, k=max_nn + 1, workers=4)
+    # Gaussian
+    dist = np.exp(-(dist ** 2.0) / (2.0 * bw ** 2.0))
+    if cutoff is not None:
+        dist = dist * (dist > cutoff)
+    # L1 norm
+    dist = dist / np.sum(np.abs(dist), axis=1).reshape(-1, 1)
+    # Build sparse matrix
+    krnl = sps.csr_matrix(
+        (dist.ravel(), (np.repeat(np.arange(nobs), max_nn + 1), idx.ravel())),
+        shape=(nobs, nobs)
+    )
+    krnl.eliminate_zeros()
+    # Store
+    adata.obsp[f'{key}_connectivities'] = krnl
