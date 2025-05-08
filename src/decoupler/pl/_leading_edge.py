@@ -66,7 +66,7 @@ def leading_edge(
     if sign > 0:
         le_c = c[set_rnks[set_rnks <= j]]
     else:
-        le_c = c[set_rnks[set_rnks >= j]]
+        le_c = np.flip(c[set_rnks[set_rnks >= j]])
     # Instance
     kwargs['ax'] = None
     bp = Plotter(**kwargs)
@@ -82,7 +82,7 @@ def leading_edge(
     ax.plot(rnks, es, color=color, linewidth=2)
     ax.axvline(rnks[j], linestyle='--', color=color)
     ax.axhline(0, linestyle='--', color=color)
-    ax.set_ylabel('Enrichment Score')
+    ax.set_ylabel('Enrichment\nScore')
     ax.set_title(name)
     # Plot gset mask
     ax = axes[1]
@@ -116,7 +116,7 @@ def leading_edge(
         zero_rnk = non_zero_rnks[-1] + 1
     ax.axvline(zero_rnk, linestyle='--', color="#C9D3DB")
     ax.set_xlabel('Rank')
-    ax.set_ylabel('Ranked metric')
+    ax.set_ylabel('Ranked\nmetric')
     # Remove spaces
     bp.fig.subplots_adjust(wspace=0, hspace=0)
     return bp._return(), le_c

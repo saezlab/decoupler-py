@@ -3,11 +3,13 @@ from matplotlib.figure import Figure
 import seaborn as sns
 from anndata import AnnData
 
+from decoupler._docs import docs
 from decoupler._Plotter import Plotter
 from decoupler.pp.data import extract
 from decoupler.pp.anndata import _min_sample_size, _ssize_tcount
 
 
+@docs.dedent
 def filter_by_expr(
     adata: AnnData,
     group: str | None = None,
@@ -20,16 +22,19 @@ def filter_by_expr(
     **kwargs,
 ) -> None | Figure:
     """
-    Plot to help determining the thresholds of the ``decoupler.filter_by_expr`` function.
+    Plot to help determining the thresholds of the ``decoupler.pp.filter_by_expr`` function.
 
     Parameters
     ----------
-    adata
-        AnnData obtained after running ``decoupler.get_pseudobulk``.
-    cmap
-        Colormap to use.
-    .. inheritdoc:: decoupler.pl._filter_by_expr
-    .. inheritdoc:: Plotter.__init__
+    %(adata)s
+    %(cmap)s
+    %(group)s
+    %(lib_size)s
+    %(min_count)s
+    %(min_total_count)s
+    %(large_n)s
+    %(min_prop_expr)s
+    %(plot)s
     """
     assert isinstance(adata, AnnData), 'adata must be AnnData'
     # Extract inputs
@@ -58,7 +63,7 @@ def filter_by_expr(
         y=sample_size,
         cmap=cmap,
         cbar=True,
-        cbar_kws=dict(shrink=.75, label='Number of features'),
+        cbar_kws=dict(shrink=.75, label='Number of genes'),
         discrete=(False, True),
         ax=bp.ax,
     )

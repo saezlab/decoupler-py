@@ -2,8 +2,11 @@ import matplotlib.pyplot as plt
 from matplotlib.axes._axes import Axes
 from matplotlib.figure import Figure
 
+from decoupler._docs import docs
+
 
 class Plotter:
+    @docs.dedent
     def __init__(
         self,
         ax: Axes | None = None,
@@ -17,21 +20,7 @@ class Plotter:
 
         Parameters
         ----------
-        ax
-            An existing :class:`matplotlib.axes._axes.Axes` instance to plot on. If ``None``,
-            a new figure and axes will be created.
-        figsize
-            Size of the figure in inches as (width, height).
-        dpi
-            Dots per inch for the figure resolution.
-        return_fig
-            If ``True``, plotting methods should return the figure object instead of showing it.
-        save
-            If set, path to save the plot automatically to a file.
-
-        Returns
-        -------
-        If ``return_fig=True``, returns :class:`matplotlib.figure.Figure` instance.
+        %(plot)s
         """
         # Validate
         assert isinstance(ax, Axes) or ax is None, \
