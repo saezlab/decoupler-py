@@ -6,6 +6,40 @@ import numba as nb
 
 from decoupler._docs import docs
 from decoupler._log import _log
+from decoupler._datatype import DataType
+from decoupler.pp.data import extract
+
+
+def read_gmt(
+    path: str,
+) -> pd.DataFrame:
+    """
+    Read a GMT file and return the feature sets as a network.
+
+    Parameters
+    ----------
+    path
+        Path to GMT file containing feature sets.
+
+    Returns
+    -------
+    Gene sets as ``pd.DataFrame``.
+    """
+    # Init empty df
+    df = []
+    # Read line per line
+    with open(path, 'r') as f:
+        for line in f.readlines():
+            line = line.rstrip().split()
+            # Extract gene set name
+            set_name = line[0]
+            # For each gene add an entry (skip link in [1])
+            genes = line[2:]
+            for gene in genes:
+                df.append([set_name, gene])
+    # Transform to df
+    df = pd.DataFrame(df, columns=['source', 'target'])
+    return df
 
 
 def _validate_net(
@@ -180,3 +214,106 @@ def _getset(
     off = srt + offsets[j]
     fset = cnct[srt:off]
     return fset
+
+
+@docs.dedent
+def shuffle_net(
+    net: pd.DataFrame,
+    target: str | None = None,
+    weight: str | None = None,
+    seed: int = 42,
+    same_seed: bool = True
+) -> pd.DataFrame:
+    """
+    Shuffle a network to make it random.
+
+    Shuffle a given net by targets, weight or both at the same time.
+
+    If only targets are shuffled, targets will change but the
+    distribution of weights for each set will be preserved.
+
+    If only weights are shuffled, targets will be the same but the
+    distribution of weights for each set will change.
+
+    If targets and weights are shuffled at the same time,
+    both targets and weight distribution will change for each set.
+
+    Parameters
+    ----------
+    %(net)s
+    target
+        Column name in net with target nodes. Set to None not to shuffle.
+    weight
+        Column name in net with weights. Set to None not to shuffle.
+    %(seed)s
+    same_seed : bool
+        Whether to share seed between targets and weights if both are not None.
+
+    Returns
+    -------
+    Shuffled network.
+    """
+    # Validate
+    assert isinstance(net, pd.DataFrame), 'net must be pandas.DataFrame'
+    assert isinstance(target, str) or target is None, 'target must be str or None'
+    if target:
+        assert target in net.columns, 'target must be in net.columns'
+    assert isinstance(weight, str) or weight is None, 'weight must be str or None'
+    if weight:
+        assert weight in net.columns, 'weight must be in net.columns'
+    assert target or weight, 'If target and weight are both None, nothing is shuffled'
+    assert isinstance(same_seed, bool), 'same_seed must be bool'
+    # Make copy of net
+    rnet = net.copy()
+    # Shuffle
+    if target is not None:
+        rng = default_rng(seed=seed)
+        rng.shuffle(rnet[target].values)
+    if weight is not None:
+        rng = default_rng(seed=seed + same_seed)
+        rng.shuffle(rnet[weight].values)
+    return rnet
+
+
+@docs.dedent
+def net_corr(
+    net: pd.DataFrame,
+    data: None | DataType = None,
+    tmin: int = 5,
+    **kwargs
+) -> pd.DataFrame:
+    """
+    Checks the correlation across the sources in a network.
+    If a mat is also provided, target features will be prunned to
+    match the ones in mat.
+
+    Parameters
+    ----------
+    %(net)s
+    %(data)s
+    %(tmin)s
+    kwargs
+        All other keyword arguments are passed to ``decoupler.pp.extract``
+
+    Returns
+    -------
+    Correlation pairs dataframe.
+    """
+    net = _validate_net(net, verbose=False)
+    # If mat is provided
+    if mat is not None:
+        # Extract sparse matrix and array of genes
+        _, _, c = extract(data=data, **kwargs)
+    else:
+        c = np.unique(net['target'].values).astype('U')
+    net = prune(features=c, net=net, tmin=tmin)
+    sources, targets, net = adjmat(features=c, net=net, verbose=False)
+    # Compute corr
+    corr = np.corrcoef(net, rowvar=False)
+    # Filter upper diagonal
+    corr = pd.DataFrame(np.triu(corr, k=1), index=sources, columns=sources).reset_index()
+    corr = corr.melt(id_vars='index').rename({'index': 'source1', 'variable': 'source2', 'value': 'corr'}, axis=1)
+    corr = corr[corr['corr'] != 0]
+    # Sort by abs value
+    corr = corr.iloc[np.argsort(np.abs(corr['corr'].values))[::-1]].reset_index(drop=True)
+    return corr
