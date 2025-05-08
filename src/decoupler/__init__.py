@@ -1,7 +1,7 @@
 from importlib.metadata import version
 
-from . import ds, mt, op, pl, pp, tl
+from . import bm, ds, mt, op, pl, pp, tl
 
-__all__ = ['ds', 'mt', 'op', 'pl', 'pp', 'tl']
+__all__ = ['bm', 'ds', 'mt', 'op', 'pl', 'pp', 'tl']
 
 __version__ = version('decoupler')
