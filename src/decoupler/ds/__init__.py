@@ -1,3 +1,4 @@
-from decoupler.ds._bulk import hsc_tgfb
-from decoupler.ds._scell import pbmc3k
-from decoupler.ds._toy import toy
+from decoupler.ds._bulk import hsctgfb, knocktf
+from decoupler.ds._scell import pbmc3k, covid5k
+from decoupler.ds._spatial import msvisium
+from decoupler.ds._toy import toy, toy_bench
