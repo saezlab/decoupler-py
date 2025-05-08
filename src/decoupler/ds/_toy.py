@@ -2,6 +2,10 @@ from typing import Tuple
 
 import numpy as np
 import pandas as pd
+from anndata import AnnData
+
+from decoupler._docs import docs
+from decoupler._log import _log
 
 
 def _fillval(
@@ -17,25 +21,31 @@ def _fillval(
     return arr
 
 
+@docs.dedent
 def toy(
     nobs: int = 30,
     nvar: int = 20,
+    bval: int | float = 2,
     seed: int = 42,
-    val: int | float = 2
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    verbose: bool = False,
+) -> Tuple[AnnData, pd.DataFrame]:
     """
-    Generate a toy mat and net for testing.
+    Generate a toy adata and net for testing.
 
     Parameters
     ----------
     nobs
         Number of samples to generate.
-    seed
-        Random seed to use.
+    nvar
+        Number of features to generate.
+    bvar
+        Background value to set features not associated to any source.
+    %(seed)s
+    %(verbose)s
 
     Returns
     -------
-    mat and net examples
+    AnnData and net examples.
     """
     # Network model
     net = pd.DataFrame([
@@ -49,12 +59,62 @@ def toy(
     rng = np.random.default_rng(seed=seed)
     n = int(nobs / 2)
     res = nobs % 2
-    row_a = _fillval(np.array([8, 8, 8, 8, 0, 0, 0, 0, 0, 0, 0, 0]), nvar=nvar, val=val)
-    row_b = _fillval(np.array([0, 0, 0, 0, 8, 8, 8, 8, 0, 0, 0, 0]), nvar=nvar, val=val)
+    row_a = _fillval(np.array([8, 8, 8, 8, 0, 0, 0, 0, 0, 0, 0, 0]), nvar=nvar, val=bval)
+    row_b = _fillval(np.array([0, 0, 0, 0, 8, 8, 8, 8, 0, 0, 0, 0]), nvar=nvar, val=bval)
     row_a = [row_a + np.abs(rng.normal(size=nvar)) for _ in range(n)]
     row_b = [row_b + np.abs(rng.normal(size=nvar)) for _ in range(n + res)]
-    mat = np.vstack([row_a, row_b])
+    adata = np.vstack([row_a, row_b])
     features = ['G{:02d}'.format(i + 1) for i in range(nvar)]
     samples = ['S{:02d}'.format(i + 1) for i in range(nobs)]
-    mat = pd.DataFrame(mat, index=samples, columns=features)
-    return mat, net
+    adata = pd.DataFrame(adata, index=samples, columns=features)
+    adata = AnnData(adata)
+    adata.obs['group'] = (['A'] * len(row_a)) + (['B'] * len(row_b))
+    adata.obs['group'] = adata.obs['group'].astype('category')
+    m = f'generated AnnData with shape={adata.shape}'
+    _log(m, level='info', verbose=verbose)
+    return adata, net
+
+
+@docs.dedent
+def toy_bench(
+    shuffle_r: float = 0.25,
+    seed: int = 42,
+    verbose: bool = False,
+    **kwargs
+):
+    """
+    Generate a toy adata and net for testing the benchmark pipeline.
+
+    Parameters
+    ----------
+    shuffle_r
+        Percentage of the ground truth to randomize.
+    %(seed)s
+    %(verbose)s
+    kwargs
+        All other keyword arguments are passed to ``decoupler.ds.toy``.
+
+    Returns
+    -------
+    AnnData and net examples.
+    """
+    # Validate
+    assert isinstance(shuffle_r, (int, float)) and 0.0 <= shuffle_r <= 1.0, \
+    'shuffle_r must be numeric and between 0 and 1'
+    # Get toy data
+    adata, net = toy(**kwargs)
+    # Add grount truth
+    adata.obs['source'] = [['T1', 'T2'] if g == 'A' else ['T3', 'T4'] for g in adata.obs['group']]
+    adata.obs['class'] = np.tile(['CA', 'CB'], int(np.ceil(adata.obs_names.size / 2)))[:adata.obs_names.size]
+    adata.obs['class'] = adata.obs['class'].astype('category')
+    adata.obs['type_p'] = 1.
+    # Shuffle a percentage of the samples
+    idxs = np.arange(adata.obs_names.size)
+    rng = np.random.default_rng(seed=seed)
+    n_shuffle = int(np.ceil(idxs.size * shuffle_r))
+    m = f'Shuffling {n_shuffle} observations ({shuffle_r * 100:.2f}%).'
+    _log(m, level='info', verbose=verbose)
+    idxs = rng.choice(idxs, n_shuffle, replace=False)
+    r_idxs = rng.choice(idxs, idxs.size, replace=False)
+    adata.X[r_idxs, :] = adata.X[idxs, :]
+    return adata, net
