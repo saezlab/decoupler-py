@@ -15,6 +15,7 @@ class MethodMeta:
     def __init__(
         self,
         name: str,
+        desc: str,
         func: Callable,
         stype: str,
         adj: bool,
@@ -25,6 +26,7 @@ class MethodMeta:
         params: str,
     ):
         self.name = name
+        self.desc = desc
         self.func = func
         self.stype = stype
         self.adj = adj
@@ -37,6 +39,7 @@ class MethodMeta:
     def meta(self) -> pd.DataFrame:
         meta = pd.DataFrame([{
             'name': self.name,
+            'desc': self.desc,
             'stype': self.stype,
             'weight': self.weight,
             'test': self.test,
@@ -45,19 +48,6 @@ class MethodMeta:
         }])
         return meta
 
-mparams = {
-    'aucell': 'aucell',
-    'gsea': 'gsea',
-    'gsva': 'gsva',
-    'mdt': 'mdt',
-    'mlm': 'mlm',
-    'ora': 'ora',
-    'udt': 'udt',
-    'ulm': 'ulm',
-    'viper': 'viper',
-    'waggr': 'waggr',
-    'zscore': 'zscore'
-}
 
 @docs.dedent
 class Method(MethodMeta):
@@ -71,9 +61,7 @@ class Method(MethodMeta):
     %(tmin)s
     %(raw)s
     %(empty)s
-    bsize
-        For large datasets in sparse format, this parameter controls how many observations are processed at once.
-        Increasing this value speeds up computation but uses more memory.
+    %(bsize)s
     %(verbose)s
     """
     def __init__(
@@ -82,6 +70,7 @@ class Method(MethodMeta):
     ):
         super().__init__(
             name=_method.name,
+            desc=_method.desc,
             func=_method.func,
             stype=_method.stype,
             adj=_method.adj,
@@ -122,15 +111,20 @@ class Method(MethodMeta):
         )
 
     def __repr__(self):
-        doc = f"""
-        Method
-        ------
-        Name: {self.name}
-        Type of enrichment statistic: {self.stype}
-        Models feature weights: {self.weight}
-        Performs statistical test: {self.test}
-        Range of values: {self.limits}
-        Reference: {self.reference}
-
-        """
+        doc = \
+f"""
+Method
+------
+Name: {self.name}
+Description: {self.desc}
+Type of enrichment statistic: {self.stype}
+Models feature weights: {self.weight}
+Performs statistical test: {self.test}
+Range of values: {self.limits}
+Reference: {self.reference}
+"""
         return doc
+
+
+def _show_methods(methods):
+    return pd.concat([method.meta() for method in methods]).reset_index(drop=True)
