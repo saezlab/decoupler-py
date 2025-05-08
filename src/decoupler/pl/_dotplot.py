@@ -72,18 +72,19 @@ def dotplot(
         labels,
         title=s,
         frameon=False,
-        bbox_to_anchor=(1.0, 0.9),
-        loc="upper left",
+        loc='lower left',
+        bbox_to_anchor=(1.05, 0.5),
+        alignment='left',
         labelspacing=1.
     )
     # Add colorbar
     clb = bp.fig.colorbar(
         scatter,
+        ax=bp.ax,
         shrink=0.25,
-        aspect=10,
+        aspect=5,
         orientation='vertical',
-        anchor=(1., 0.2),
-        location="right"
+        anchor=(0., 0.),
     )
     clb.ax.set_title(c, loc="left",)
     bp.ax.margins(x=0.25, y=0.1)
