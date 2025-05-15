@@ -1,11 +1,49 @@
-import anndata as ad
 import numpy as np
 import pytest
+
+import decoupler as dc
 
 
 @pytest.fixture
 def adata():
-    adata = ad.AnnData(X=np.array([[1.2, 2.3], [3.4, 4.5], [5.6, 6.7]]).astype(np.float32))
-    adata.layers["scaled"] = np.array([[0.1, 0.2], [0.3, 0.4], [0.5, 0.6]]).astype(np.float32)
-
+    adata, _ = dc.ds.toy(nobs=40, nvar=20, bval=2, seed=42, verbose=False)
     return adata
+
+
+@pytest.fixture
+def net():
+    _, net = dc.ds.toy(nobs=2, nvar=12, bval=2, seed=42, verbose=False)
+    net = dc.pp.prune(features=net['target'].unique(), net=net, tmin=3)
+    return net
+
+
+@pytest.fixture
+def unwnet(net):
+    return net.drop(columns=['weight'], inplace=False)
+
+
+@pytest.fixture
+def mat(
+    adata,
+):
+    return dc.pp.extract(data=adata)
+
+
+@pytest.fixture
+def idxmat(
+    mat,
+    net,
+):
+    X, obs, var = mat
+    sources, cnct, starts, offsets = dc.pp.idxmat(features=var, net=net, verbose=False)
+    return cnct, starts, offsets
+
+
+@pytest.fixture
+def adjmat(
+    mat,
+    net,
+):
+    X, obs, var = mat
+    sources, targets, adjmat = dc.pp.adjmat(features=var, net=net, verbose=False)
+    return adjmat
