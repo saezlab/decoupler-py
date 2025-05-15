@@ -4,7 +4,7 @@ requires = [ "hatchling" ]
 
 [project]
 name = "decoupler"
-version = "0.0.1"
+version = "1.10.0"
 description = "Python package to perform enrichment analysis from omics data."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -24,6 +24,15 @@ classifiers = [
 ]
 dependencies = [
   "anndata",
+  "numba",
+  "docrep",
+  "tqdm",
+  "xgboost",
+  "seaborn",
+  "requests",
+  "igraph",
+  "marsilea",
+  "adjustText",
   # for debug logging (referenced from the issue template)
   "session-info2",
 ]
@@ -50,6 +59,8 @@ optional-dependencies.doc = [
 optional-dependencies.test = [
   "coverage",
   "pytest",
+  "statsmodels",
+  "gseapy",
 ]
 # https://docs.pypi.org/project_metadata/#project-urls
 urls.Documentation = "https://decoupler.readthedocs.io/"
