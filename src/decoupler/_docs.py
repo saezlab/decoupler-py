@@ -142,6 +142,10 @@ _palette = """\
 palette
     Method for choosing the colors to use"""
 
+_y = """\
+y
+    Grouping variable to plot on y axis."""
+
 docs = DocstringProcessor(
     plot=_plot,
     net=_net,
@@ -174,4 +178,5 @@ docs = DocstringProcessor(
     df=_df,
     hue=_hue,
     palette=_palette,
+    y=_y,
 )
