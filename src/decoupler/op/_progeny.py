@@ -47,9 +47,9 @@ def progeny(
         .sort_values(['pathway', 'p_value'])
         .reset_index(drop=True)
     )
-    p = p.rename(columns={'pathway': 'source', 'genesymbol': 'target', 'p_value': 'pval'})
-    p = p[p['pval'] < thr_padj]
-    p = p[['source', 'target', 'weight', 'pval']]
+    p = p.rename(columns={'pathway': 'source', 'genesymbol': 'target', 'p_value': 'padj'})
+    p = p[p['padj'] < thr_padj]
+    p = p[['source', 'target', 'weight', 'padj']]
     m = f'progeny - filtered interactions for padj < {thr_padj}'
     _log(m, level='info', verbose=verbose)
     p = p.drop_duplicates(['source', 'target']).reset_index(drop=True)
