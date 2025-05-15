@@ -32,7 +32,7 @@ def _auc(
         max_auc = np.sum(np.diff(np.append(x_th, n_up)) * x_th)
         # Compute AUC
         x = row[fset]
-        x = np.sort(x[x < n_up])
+        x = np.sort(x[x <= n_up])
         y = np.arange(x.shape[0]) + 1
         x = np.append(x, n_up)
         # Update acts matrix
@@ -73,7 +73,7 @@ def _func_aucell(
             row = mat[i].toarray()[0]
         else:
             row = mat[i]
-        row = sts.rankdata(a=row, method='ordinal')
+        row = sts.rankdata(a=-row, method='ordinal')
         es[i] = _auc(row=row, cnct=cnct, starts=starts, offsets=offsets, n_up=n_up, nsrc=nsrc)
     return es, None
 
