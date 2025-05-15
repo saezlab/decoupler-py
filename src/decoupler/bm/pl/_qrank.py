@@ -45,10 +45,7 @@ def qrank(
     assert isinstance(thr_pval, float) and 0. <= thr_pval <= 1., \
     'thr_pval must be float and between 0 and 1'
     # Format
-    tmp = _format(df=df, cols=['1-qrank', 'pval'])
-    pmin = tmp[tmp['pval'] > 0.]['pval'].min()
-    tmp.loc[tmp['pval'] == 0., 'pval'] = pmin
-    tmp['-log10(pval)'] = -np.log10(tmp['pval'])
+    tmp = _format(df=df, cols=['1-qrank', '-log10(pval)'])
     # Instance
     bp = Plotter(**kwargs)
     # Plot
