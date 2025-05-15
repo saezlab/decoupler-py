@@ -89,8 +89,8 @@ def prune(
     Filtered net in long format.
     """
     # Validate
-    features = set(features)
     vnet = _validate_net(net, verbose=verbose)
+    features = set(features)
     assert isinstance(tmin, (int, float)) and tmin >= 0, 'tmin must be numeric and >= 0'
     # Find shared targets between mat and net
     msk = vnet['target'].isin(features)
@@ -127,10 +127,11 @@ def _order(
     adjmat: np.ndarray,
 ) -> np.ndarray:
     # Init empty madjmat
-    madjmat = np.zeros((features.shape[0], adjmat.shape[1]), dtype=np.float32)
+    madjmat = np.zeros((len(features), adjmat.shape[1]))
     # Create an index array for rows of features corresponding to targets
     features_dict = {gene: i for i, gene in enumerate(features)}
     idxs = [features_dict[gene] for gene in targets if gene in features_dict]
+    assert len(idxs) > 0, 'No overlap found between features and targets'
     # Populate madjmat using advanced indexing
     madjmat[idxs, :] = adjmat[: len(idxs), :]
     return madjmat
@@ -182,14 +183,15 @@ def idxmat(
     """
     # Transform targets to indxs
     table = {name: i for i, name in enumerate(features)}
-    net['target'] = [table[target] for target in net['target']]
+    net['idx_target'] = [table[target] for target in net['target']]
     # Find sets
     cnct = (
         net
         .groupby('source', observed=True)
-        ['target']
+        ['idx_target']
         .apply(lambda x: np.array(x, dtype=int))
     )
+    net.drop(columns=['idx_target'], inplace=True)
     sources = cnct.index.values.astype('U')
     # Flatten net and get offsets
     offsets = cnct.apply(lambda x: len(x)).values
@@ -219,8 +221,8 @@ def _getset(
 @docs.dedent
 def shuffle_net(
     net: pd.DataFrame,
-    target: str | None = None,
-    weight: str | None = None,
+    target: bool = True,
+    weight: bool = False,
     seed: int = 42,
     same_seed: bool = True
 ) -> pd.DataFrame:
@@ -242,12 +244,12 @@ def shuffle_net(
     ----------
     %(net)s
     target
-        Column name in net with target nodes. Set to None not to shuffle.
+        Whether to shuffle targets.
     weight
-        Column name in net with weights. Set to None not to shuffle.
+        Whether to shuffle weights.
     %(seed)s
     same_seed : bool
-        Whether to share seed between targets and weights if both are not None.
+        Whether to share seed when shuffling targets and weights.
 
     Returns
     -------
@@ -255,24 +257,22 @@ def shuffle_net(
     """
     # Validate
     assert isinstance(net, pd.DataFrame), 'net must be pandas.DataFrame'
-    assert isinstance(target, str) or target is None, 'target must be str or None'
-    if target:
-        assert target in net.columns, 'target must be in net.columns'
-    assert isinstance(weight, str) or weight is None, 'weight must be str or None'
-    if weight:
-        assert weight in net.columns, 'weight must be in net.columns'
-    assert target or weight, 'If target and weight are both None, nothing is shuffled'
+    assert isinstance(target, bool), 'target must be bool'
+    assert isinstance(weight, bool), 'weight must be bool'
+    assert target or weight, 'If target and weight are both False, nothing is shuffled'
     assert isinstance(same_seed, bool), 'same_seed must be bool'
+    assert 'target' in net.columns, 'target must be in net.columns'
+    assert 'weight' in net.columns, 'weight must be in net.columns'
     # Make copy of net
     rnet = net.copy()
     # Shuffle
-    if target is not None:
-        rng = default_rng(seed=seed)
-        rng.shuffle(rnet[target].values)
-    if weight is not None:
-        rng = default_rng(seed=seed + same_seed)
-        rng.shuffle(rnet[weight].values)
-    return rnet
+    if target:
+        rng = np.random.default_rng(seed=seed)
+        rng.shuffle(rnet['target'].values)
+    if weight:
+        rng = np.random.default_rng(seed=seed + int(not same_seed))
+        rng.shuffle(rnet['weight'].values)
+    return rnet.drop_duplicates(['source', 'target'], keep='first')
 
 
 @docs.dedent
