@@ -83,12 +83,12 @@ def _run(
         es = pd.DataFrame(es, index=obs, columns=sources)
     # Handle pvals and FDR correction
     if test:
-        _log(f'{name} - adjusting p-values by FDR', level='info', verbose=verbose)
         pv = np.vstack(pv)
         pv = pd.DataFrame(pv, index=obs, columns=sources)
-        pv.loc[:, :] = sts.false_discovery_control(pv.values, axis=1, method='bh')
+        if name != 'mlm':
+            _log(f'{name} - adjusting p-values by FDR', level='info', verbose=verbose)
+            pv.loc[:, :] = sts.false_discovery_control(pv.values, axis=1, method='bh')
     else:
         pv = None
     _log(f'{name} - done', level='info', verbose=verbose)
     return _return(name, data, es, pv, verbose=verbose)
-    
