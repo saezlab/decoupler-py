@@ -92,6 +92,11 @@ def auc(
     """
     Area Under the Curve.
     """
+    # Normalize to make comparable
+    norm = np.nanmax(np.abs(y_score), axis=1)
+    y_score = y_score / norm.reshape(-1, 1)
+    assert ((-1. <= y_score) & (y_score <= 1.)).all()
+    # Flatten and remove nans
     y_true, y_score = y_true.ravel(), y_score.ravel()
     msk_nan = ~np.isnan(y_score)
     y_true, y_score = y_true[msk_nan], y_score[msk_nan]
