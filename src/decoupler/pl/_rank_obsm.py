@@ -129,7 +129,7 @@ def rank_obsm(
     c = (h1 / .05 / h2)
     c.add_legends(side='right', stack_by='row', stack_size=3, align_legends='top')
     c.render()
-    if bp.return_fig or save is not None:
+    if bp.return_fig or bp.save is not None:
         plt.close()
     # Add borders
     hax = c.get_ax(board_name='h1', ax_name='h1')
