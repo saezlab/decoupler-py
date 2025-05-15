@@ -14,6 +14,7 @@ def _xgbr(
     y: np.ndarray,
     **kwargs,
 ) -> np.ndarray:
+    kwargs.setdefault('n_estimators', 10)
     # Init model
     reg = XGBRegressor(**kwargs)
     # Fit
