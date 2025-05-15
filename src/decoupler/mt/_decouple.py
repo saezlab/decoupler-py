@@ -3,6 +3,7 @@ import pandas as pd
 from decoupler._docs import docs
 from decoupler._datatype import DataType
 from decoupler.mt._methods import _methods
+from decoupler.mt._consensus import consensus
 
 
 @docs.dedent
@@ -11,6 +12,7 @@ def decouple(
     net: pd.DataFrame,
     methods: str | list = 'all',
     args: dict = dict(),
+    cons: bool = False,
     **kwargs
 ) -> dict | None:
     """
@@ -24,6 +26,8 @@ def decouple(
         List of methods to run.
     args
         Dictionary of dictionaries containing method-specific keyword arguments.
+    cons
+        Whether to get a consensus score across the used methods.
     %(tmin)s
     %(raw)s
     %(empty)s
@@ -37,7 +41,8 @@ def decouple(
             methods = _mdict.keys()
         else:
             methods = [methods]
-    assert set(methods).issubset(_mdict), \
+    methods = set(methods)
+    assert methods.issubset(_mdict), \
     f'methods={methods} must be in decoupler.\nUse decoupler.mt.show_methods to check which ones are available'
     assert all(k in methods for k in args), \
     f'All keys in args={args.keys()} must belong to a method in methods={methods}'
@@ -54,4 +59,8 @@ def decouple(
             }
             all_res = all_res | res
     if all_res:
+        if cons:
+            all_res['score_consensus'], all_res['padj_consensus'] = consensus(all_res)
         return all_res
+    elif cons:
+        consensus(data)
