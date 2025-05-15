@@ -14,13 +14,13 @@ def qrank(
     1 - quantile normalized rank
     """
     _validate_bool(y_true=y_true, y_score=y_score)
-    y_rank = sts.rankdata(-y_score, axis=1, nan_policy='omit', method='average')
+    y_rank = sts.rankdata(y_score, axis=1, nan_policy='omit', method='average')
     y_rank = y_rank / np.sum(~np.isnan(y_rank), axis=1).reshape(-1, 1)
     msk = y_true.astype(np.bool_)
-    score = 1 - y_rank[msk]
-    rest = 1 - y_rank[~msk]
+    score = y_rank[msk]
+    rest = y_rank[~msk]
     _, pval = sts.ranksums(score, rest, alternative='greater')
     score = np.nanmean(score)
-    return score, pval
+    return score, -np.log10(pval)
 
-rank.scores = ['1-qrank', 'pval']
+qrank.scores = ['1-qrank', '-log10(pval)']
