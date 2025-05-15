@@ -25,7 +25,7 @@ def _fillval(
 def toy(
     nobs: int = 30,
     nvar: int = 20,
-    bval: int | float = 2,
+    bval: int | float = 2.,
     seed: int = 42,
     verbose: bool = False,
 ) -> Tuple[AnnData, pd.DataFrame]:
@@ -47,6 +47,13 @@ def toy(
     -------
     AnnData and net examples.
     """
+    # Validate
+    assert isinstance(nobs, (int, float)) and nobs >= 2, \
+    'nobs must be numeric and >= 2'
+    assert isinstance(nvar, (int, float)) and nvar >= 12, \
+    'nvar must be numeric and >= 12'
+    assert isinstance(bval, (int, float)), \
+    'bval must be numeric'
     # Network model
     net = pd.DataFrame([
         ['T1', 'G01', 1], ['T1', 'G02', 1], ['T1', 'G03', 0.7],
@@ -59,8 +66,15 @@ def toy(
     rng = np.random.default_rng(seed=seed)
     n = int(nobs / 2)
     res = nobs % 2
-    row_a = _fillval(np.array([8, 8, 8, 8, 0, 0, 0, 0, 0, 0, 0, 0]), nvar=nvar, val=bval)
-    row_b = _fillval(np.array([0, 0, 0, 0, 8, 8, 8, 8, 0, 0, 0, 0]), nvar=nvar, val=bval)
+    row_a = np.array([8, 8, 8, 8, 0, 0, 0, 0, 0, 0, 0, 0])
+    row_b = np.array([0, 0, 0, 0, 8, 8, 8, 8, 0, 0, 0, 0])
+    if nvar > 12:
+        m = f'toy - adding background gene expresison for extra vars bval={bval}'
+        _log(m, level='info', verbose=verbose)
+        row_a = _fillval(row_a, nvar=nvar, val=bval)
+        row_b = _fillval(row_b, nvar=nvar, val=bval)
+    m = f'toy - adding random noise to .X with seed={seed}'
+    _log(m, level='info', verbose=verbose)
     row_a = [row_a + np.abs(rng.normal(size=nvar)) for _ in range(n)]
     row_b = [row_b + np.abs(rng.normal(size=nvar)) for _ in range(n + res)]
     adata = np.vstack([row_a, row_b])
@@ -70,7 +84,7 @@ def toy(
     adata = AnnData(adata)
     adata.obs['group'] = (['A'] * len(row_a)) + (['B'] * len(row_b))
     adata.obs['group'] = adata.obs['group'].astype('category')
-    m = f'generated AnnData with shape={adata.shape}'
+    m = f'toy - generated AnnData with shape={adata.shape}'
     _log(m, level='info', verbose=verbose)
     return adata, net
 
