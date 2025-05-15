@@ -13,15 +13,17 @@ def _func_zscore(
     flavor: str = 'RoKAI',
     verbose: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray]:
-    assert isinstance(flavor, str), 'flavor must be str'
+    assert isinstance(flavor, str) and flavor in ['KSEA', 'RoKAI'], \
+    'flavor must be str and KSEA or RoKAI'
     nobs, nvar = mat.shape
     nvar, nsrc = adj.shape
     m = f'zscore - calculating {nsrc} scores with flavor={flavor}'
     _log(m, level='info', verbose=verbose)
     stds = np.std(mat, axis=1, ddof=1)
-    mean_all = np.zeros(stds.shape)
     if flavor == 'RoKAI':
         mean_all = np.mean(mat, axis=1)
+    elif flavor == 'KSEA':
+        mean_all = np.zeros(stds.shape)
     n = np.sqrt(np.count_nonzero(adj, axis=0))
     mean = mat.dot(adj) / np.sum(np.abs(adj), axis=0)
     es = ((mean - mean_all.reshape(-1, 1)) * n) / stds.reshape(-1, 1)
