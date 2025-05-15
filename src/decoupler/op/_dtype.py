@@ -10,9 +10,10 @@ def _infer_dtypes(
             continue
         except ValueError:
             pass
+        if df[col].dtype == 'string':
+            df[col] = df[col].astype(str)
         lowered = df[col].str.lower()
         if lowered.isin(["true", "false"]).all():
             df[col] = lowered == "true"
             continue
-        df = df.convert_dtypes()
     return df
