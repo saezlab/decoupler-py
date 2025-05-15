@@ -11,7 +11,7 @@ from decoupler.op._dtype import _infer_dtypes
 @docs.dedent
 def collectri(
     organism: str = 'human',
-    split_complexes: bool = False,
+    remove_complexes: bool = False,
     license: str = 'academic',
     verbose: bool = False,
 ) -> pd.DataFrame:
@@ -26,8 +26,8 @@ def collectri(
     Parameters
     ----------
     %(organism)s
-    split_complexes
-        Whether to split complexes into subunits. By default complexes are kept as they are.
+    remove_complexes
+        Whether to remove complexes.
     %(license)s
 
     Returns
@@ -35,35 +35,22 @@ def collectri(
     Dataframe in long format containing target genes for each TF with their associated weights,
     and if available, the PMIDs supporting each interaction.
     """
-    # Validate
-    assert isinstance(split_complexes, bool), 'split_complexes must be bool'
-    # Download
-    url_ext = f'datasets=collectri&fields=references&license={license}'
-    url = URL_INT + url_ext
-    m = f'collectri - Accessing CollecTRI with {license} license'
-    _log(m, level='info', verbose=verbose)
-    ct = _download(url, sep='\t', verbose=verbose)
-    ct = ct[['source_genesymbol', 'target_genesymbol', 'is_inhibition', 'references']]
-    ct.loc[:, 'pmid'] = (
-        ct
-        .loc[~ct['references'].isna(), "references"]
-        .str.findall(r":(\d+)").apply(lambda x: ";".join(sorted(set(x))))
-    )
-    ct['weight'] = np.where(ct['is_inhibition'], -1, 1)
-    ct = ct.rename(columns={'source_genesymbol': 'source', 'target_genesymbol': 'target'})[['source', 'target', 'weight', 'pmid']]
+    url = 'https://zenodo.org/records/8192729/files/CollecTRI_regulons.csv?download=1'
+    ct = _download(url, verbose=verbose)
+    # Update resources
+    resources = []
+    for str_res in ct['resources']:
+        lst_res = str_res.replace('CollecTRI', '').split(';')
+        str_res = ';'.join(sorted([res.replace('_', '') for res in lst_res if res != '']))
+        resources.append(str_res)
+    ct['resources'] = resources
+    # Format references
+    ct['references'] = ct['references'].str.replace('CollecTRI:', '')
+    ct = ct.dropna()
+    if remove_complexes:
+        ct = ct[~ct['source'].isin(['AP1', 'NFKB'])]
     ct = _infer_dtypes(ct)
     if organism != 'human':
         ct = translate(ct, columns=['source', 'target'], target_organism=organism, verbose=verbose)
-    if not split_complexes:
-        updated_names = []
-        for gene in ct['source']:
-            ugene = gene.upper()
-            if ugene.startswith('JUN') or ugene.startswith('FOS'):
-                updated_names.append('AP1')
-            elif ugene.startswith('REL') or ugene.startswith('NFKB'):
-                updated_names.append('NFKB')
-            else:
-                updated_names.append(gene)
-        ct.loc[:, 'source'] = updated_names
     ct = ct.drop_duplicates(['source', 'target']).reset_index(drop=True)
     return ct
