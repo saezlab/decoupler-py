@@ -17,7 +17,7 @@ def _get_wts_posidxs(
     table: np.ndarray,
     penalty: int,
 ) -> Tuple[np.ndarray, np.ndarray]:
-    pos_idxs = np.zeros(idxs.shape[0])
+    pos_idxs = np.zeros(idxs.shape[0], dtype=np.int_)
     for j in nb.prange(idxs.shape[0]):
         p = pval1[j]
         if p > 0:
@@ -40,7 +40,7 @@ def _get_tmp_idxs(
 ) -> Tuple[np.ndarray, np.ndarray]:
     size = int(np.sum(~np.isnan(pval)) / 2)
     tmp = np.zeros((size, 2))
-    idxs = np.zeros((size, 2))
+    idxs = np.zeros((size, 2), dtype=np.int_)
     k = 0
     for i in nb.prange(pval.shape[0]):
         for j in range(pval.shape[1]):
@@ -62,6 +62,7 @@ def _fill_pval_mat(
     j: int,
     reg: np.ndarray,
     n_targets: int,
+    s1: np.ndarray,
     s2: np.ndarray,
 ) -> np.ndarray:
     n_fsets = reg.shape[1]
@@ -69,13 +70,15 @@ def _fill_pval_mat(
     for k in nb.prange(n_fsets):
         if k != j:
             k_msk = reg[:, k] != 0
-            if k_msk.sum() >= n_targets:
+            nhits = k_msk.sum()
+            if nhits > n_targets:
                 sum1 = np.sum(reg[:, k] * s2)
                 ss = np.sign(sum1)
                 if ss == 0:
                     ss = 1
-                ww = np.abs(reg[:, k]) / np.max(np.abs(reg[:, k]))
-                col[k] = np.abs(sum1) / np.sum(np.abs(reg[:, k])) * ss * np.sqrt(np.sum(ww**2))
+                sum2 = np.sum((1- np.abs(reg[k_msk, k])) * s1[k_msk])
+                ww = np.ones(nhits)
+                col[k] = (np.abs(sum1) + sum2 * (sum2 > 0)) / ww.size * ss * np.sqrt(ww.size)
     return col
 
 
@@ -98,7 +101,7 @@ def _get_inter_pvals(
         if tmp == 0:
             tmp = 1
         s2 = (sts.norm.ppf(s2/2 + 0.5) * tmp)
-        pval[j] = _fill_pval_mat(j, reg, n_targets, s2)
+        pval[j] = _fill_pval_mat(j=j, reg=reg, n_targets=n_targets, s1=s1, s2=s2)
     pval = 1 - sts.norm.cdf(pval)
     return pval
 
@@ -117,7 +120,7 @@ def _shadow_regulon(
     nes_i = nes_i[msk_sign]
     sub_net = net[:, msk_sign]
     # Init likelihood mat
-    wts = np.zeros(sub_net.shape, dtype=np.float32)
+    wts = np.zeros(sub_net.shape)
     wts[sub_net != 0] = 1.0
     if wts.shape[1] < 2:
         return None
@@ -129,8 +132,8 @@ def _shadow_regulon(
         return None
     pval1 = np.log10(tmp[:, 1]) - np.log10(tmp[:, 0])
     unique, counts = np.unique(idxs.flatten(), return_counts=True)
-    table = np.zeros(unique.max()+1, dtype=np.int64)
-    table[unique] = counts
+    table = np.zeros(int(unique.max()) + 1, dtype=np.int_)
+    table[unique.astype(np.int_)] = counts
     # Modify interactions based on sign of pval1
     wts, pos_idxs = _get_wts_posidxs(wts, idxs, pval1, table, penalty)
     # Select only regulators with positive pval1
@@ -149,8 +152,6 @@ def _aREA(
     if wts is None:
         wts = np.zeros(net.shape)
         wts[net != 0] = 1
-    # Normalize net between -1 and 1
-    net = net / np.max(np.abs(net), axis=0)
     wts = wts / np.max(wts, axis=0)
     nes = np.sqrt(np.sum(wts**2, axis=0))
     wts = (wts / np.sum(wts, axis=0))
@@ -200,10 +201,11 @@ def _func_viper(
             else:
                 sub_net, wts, idxs = shadow
             # Recompute activity with shadow regulons and update nes
-            tmp = aREA(ss_i.reshape(1, -1), sub_net, wts=wts)[0]
+            tmp = _aREA(ss_i.reshape(1, -1), sub_net, wts=wts)[0]
             nes[i, idxs] = tmp
     # Get pvalues
-    pvals = sts.norm.cdf(-np.abs(nes)) * 2
+    pvals = 2 * sts.norm.sf(np.abs(nes))
+    #pvals = sts.norm.cdf(-np.abs(nes)) * 2
     return nes, pvals
 
 
