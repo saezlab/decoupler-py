@@ -43,6 +43,7 @@ def hsctgfb(
 
 @docs.dedent
 def knocktf(
+    thr_fc: int | float | None = -1,
     verbose: bool = False,
 ) -> AnnData:
     """
@@ -78,6 +79,13 @@ def knocktf(
     obs = obs.rename(columns={'TF': 'source'}).assign(type_p=-1)
     # Make anndata
     adata = AnnData(X=adata, obs=obs)
+    # Filter by thr_fc
+    if thr_fc is not None:
+        msk = adata.obs['logFC'] < thr_fc
+        prc_keep = (msk.sum()/msk.size) * 100
+        m = f'filtering AnnData for thr_fc={thr_fc}, will keep {prc_keep:.2f}% of observations'
+        _log(m, level='info', verbose=verbose)
+        adata = adata[msk, :].copy()
     m = f'generated AnnData with shape={adata.shape}'
     _log(m, level='info', verbose=verbose)
     return adata
