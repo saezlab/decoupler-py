@@ -71,23 +71,20 @@ def _init_cdfs(
 
 
 @nb.njit(cache=True)
-def _apply_ecdf(
-    x: np.ndarray
-) -> np.ndarray:
-    v = np.sort(x)
-    n = len(x)
-    return np.searchsorted(v, x, side='right') / n
+def _ecdf(arr):
+    ecdf = np.searchsorted(np.sort(arr), arr, side='right') / len(arr)
+    return ecdf
 
 
 @nb.njit(parallel=True, cache=True)
 def _mat_ecdf(
     mat: np.ndarray
 ) -> np.ndarray:
-    D = mat.copy()
-    for j in nb.prange(mat.shape[1]):
-        D[:, j] = _apply_ecdf(mat[:, j])
+    D = np.zeros(mat.shape)
+    for j in range(mat.shape[1]):
+        D[:, j] = _ecdf(mat[:, j])
     return D
-
+    
 
 @nb.njit(cache=True)
 def _col_d(
@@ -139,61 +136,124 @@ def _density(
     mat: np.ndarray,
     kcdf: str | None,
 ) -> np.ndarray:
-    assert isinstance(kcdf, str) or kcdf is None, \
+    assert (isinstance(kcdf, str) and kcdf in ['gaussian', 'poisson']) or kcdf is None, \
     'kcdf must be gaussian, poisson or None'
     if kcdf == 'gaussian':
         mat = _mat_d(mat, gauss=True)
     elif kcdf == 'poisson':
+        assert mat.sum().is_integer(), \
+        f'when kcdf={kcdf} input data must be integers (e.g. 3, 4, etc.), not decimal values (e.g. 3.5, 4.9, etc.)'
         mat = _mat_d(mat, gauss=False)
-    else:
+    elif kcdf is None:
         mat = _mat_ecdf(mat)
     return mat
 
 
+@nb.njit(cache=True)
+def _rankdata(values):
+    n = len(values)
+    ranks = np.empty(n, dtype=np.int_)
+    indices = np.arange(n)
+    sorted_indices = np.empty(n, dtype=np.int_)
+    sorted_values = np.empty(n, dtype=values.dtype)
+    for i in range(n):
+        sorted_indices[i] = indices[i]
+        sorted_values[i] = values[i]
+    for i in range(n):
+        for j in range(i + 1, n):
+            vi, vj = sorted_values[i], sorted_values[j]
+            ii, ij = sorted_indices[i], sorted_indices[j]
+            if (vj < vi) or (vj == vi and ij > ii):
+                sorted_values[i], sorted_values[j] = vj, vi
+                sorted_indices[i], sorted_indices[j] = ij, ii
+    for rank, idx in enumerate(sorted_indices, 1):
+        ranks[idx] = rank
+    return ranks
+
+
+@nb.njit(cache=True)
+def _dos_srs(r):
+    mask = (r == 0)
+    p = len(r)
+    r_dense = r.astype(np.int_).copy()
+    if mask.any():
+        nzs = mask.sum()
+        r_dense[~mask] += nzs
+        cnt = 1
+        for i in range(p):
+            if mask[i]:
+                r_dense[i] = cnt
+                cnt += 1
+    dos = p - r_dense + 1
+    srs = np.empty(p)
+    if mask.any():
+        r_mod = r.copy()
+        for i in range(p):
+            if mask[i]:
+                r_mod[i] = 1
+            else:
+                r_mod[i] += 1
+        max_r = np.max(r_mod)
+        half_max = max_r / 2
+        for i in range(p):
+            srs[i] = abs(half_max - r_mod[i])
+    else:
+        half_p = p / 2
+        for i in range(p):
+            srs[i] = abs(half_p - r_dense[i])
+    return dos, srs
+
+
 @nb.njit(parallel=True, cache=True)
-def _order_rankstat(
+def _rankmat(
     mat: np.ndarray
 ) -> Tuple[np.ndarray, np.ndarray]:
     n_rows, n_cols = mat.shape
-    ord_mat = np.zeros((n_rows, n_cols), dtype=np.int_)
-    rst_mat = np.zeros((n_rows, n_cols))
+    dos_mat = np.zeros((n_rows, n_cols), dtype=np.int_)
+    srs_mat = np.zeros((n_rows, n_cols), dtype=np.int_)
     for i in nb.prange(n_rows):
-        ord = np.argsort(-mat[i, :]) + 1
-        rst = np.zeros(n_cols)
-        for j in range(n_cols):
-            rst[ord[j] - 1] = abs(n_cols - j - (n_cols // 2))
-        ord_mat[i, :] = ord
-        rst_mat[i, :] = rst
-    return ord_mat, rst_mat
+        r = _rankdata(mat[i, :])
+        dos_mat[i, :], srs_mat[i, :] = _dos_srs(r)
+    return dos_mat, srs_mat
 
 
 @nb.njit(cache=True)
 def _rnd_walk(
     gsetidx: np.ndarray,
     k: int,
-    generanking: np.ndarray,
-    rankstat: np.ndarray,
+    decordstat: np.ndarray,
+    symrnkstat: np.ndarray,
     n: int,
+    tau: int | float,
 ) -> Tuple[float, int]:
-    stepcdfingeneset = np.zeros(n, dtype=np.int_)
+    gsetrnk = np.empty(k, dtype=np.int_)
+    for i in range(k):
+        gsetrnk[i] = decordstat[gsetidx[i] - 1]
+    stepcdfingeneset = np.zeros(n)
     stepcdfoutgeneset = np.ones(n, dtype=np.int_)
     for i in range(k):
-        idx = gsetidx[i] - 1
-        stepcdfingeneset[idx] = rankstat[generanking[idx] - 1]
+        idx = gsetrnk[i] - 1
+        if tau == 1.0:
+            stepcdfingeneset[idx] = symrnkstat[gsetidx[i] - 1]
+        else:
+            stepcdfingeneset[idx] = symrnkstat[gsetidx[i] - 1] ** tau
         stepcdfoutgeneset[idx] = 0
+    # cumulative sums
     for i in range(1, n):
-        stepcdfingeneset[i] += stepcdfingeneset[i-1]
-        stepcdfoutgeneset[i] += stepcdfoutgeneset[i-1]
+        stepcdfingeneset[i] += stepcdfingeneset[i - 1]
+        stepcdfoutgeneset[i] += stepcdfoutgeneset[i - 1]
     walkstatpos = -np.inf
     walkstatneg = np.inf
-    walkstat = np.zeros(n)
-    for i in range(n):
-        wlkstat = (stepcdfingeneset[i] / stepcdfingeneset[-1]) - (stepcdfoutgeneset[i] / stepcdfoutgeneset[-1])
-        walkstat[i] = wlkstat
-        if wlkstat > walkstatpos:
-            walkstatpos = wlkstat
-        if wlkstat < walkstatneg:
-            walkstatneg = wlkstat
+    if stepcdfingeneset[n - 1] > 0 and stepcdfoutgeneset[n - 1] > 0:
+        walkstatpos = 0.0
+        walkstatneg = 0.0
+        for i in range(n):
+            wlkstat = (stepcdfingeneset[i] / stepcdfingeneset[n - 1]) - \
+                      (stepcdfoutgeneset[i] / stepcdfoutgeneset[n - 1])
+            if wlkstat > walkstatpos:
+                walkstatpos = wlkstat
+            if wlkstat < walkstatneg:
+                walkstatneg = wlkstat
     return walkstatpos, walkstatneg
 
 
@@ -204,10 +264,13 @@ def _score_geneset(
     rankstat: np.ndarray,
     maxdiff: bool,
     absrnk: bool,
+    tau: int | float,
 ) -> float:
     n = len(generanking)
     k = len(gsetidx)
-    walkstatpos, walkstatneg = _rnd_walk(gsetidx, k, generanking, rankstat, n)
+    walkstatpos, walkstatneg = _rnd_walk(
+        gsetidx=gsetidx, k=k, decordstat=generanking, symrnkstat=rankstat, n=n, tau=tau
+    )
     if maxdiff:
         if absrnk:
             es = walkstatpos - walkstatneg
@@ -218,38 +281,22 @@ def _score_geneset(
     return es
 
 
-@nb.njit(cache=True)
-def _match(
-    a: np.ndarray,
-    b: np.ndarray
-) -> np.ndarray:
-    max_b = np.max(b) if len(b) > 0 else 0
-    index_array = np.full(max_b + 1, -1)
-    for idx, value in enumerate(b):
-        if 0 <= value <= max_b:
-            index_array[value] = idx
-    result = np.full(len(a), -1)
-    for i in range(len(a)):
-        if 0 <= a[i] <= max_b:
-            result[i] = index_array[a[i]]
-    return result + 1
-
-
 @nb.njit(parallel=True, cache=True)
 def _ks_fset(
-    ordr: np.ndarray,
-    rst: np.ndarray,
+    dos: np.ndarray,
+    srs: np.ndarray,
     fset: np.ndarray,
     maxdiff: bool,
     absrnk: bool,
+    tau: int | float,
 ) -> np.ndarray:
-    n_samples, n_genes = ordr.shape
+    n_samples, n_genes = dos.shape
     res = np.zeros(n_samples)
-    for i in range(n_samples): #nb.prange
-        generanking = ordr[i]
-        rankstat = rst[i]
-        genesetsrankidx = _match(fset, generanking)
-        res[i] = _score_geneset(genesetsrankidx, generanking, rankstat, maxdiff, absrnk)
+    for i in nb.prange(n_samples):
+        generanking = dos[i]
+        rankstat = srs[i]
+        genesetsrankidx = fset
+        res[i] = _score_geneset(genesetsrankidx, generanking, rankstat, maxdiff, absrnk, tau)
     return res
 
 
@@ -261,6 +308,7 @@ def _func_gsva(
     kcdf: str | None = 'gaussian',
     maxdiff: bool = True,
     absrnk: bool = False,
+    tau: int | float = 1,
     verbose: bool = False,
 ) -> Tuple[np.ndarray, None]:
     if isinstance(mat, sps.csr_matrix):
@@ -272,15 +320,15 @@ def _func_gsva(
     # Compute density
     if mat.shape[0] > 1:
         mat = _density(mat, kcdf=kcdf)
-    ordr, rst = _order_rankstat(mat)
+    dos, srs = _rankmat(mat)
     # Compute GSVA
     nsrc = starts.size
     m = f'gsva - calculating {nsrc} scores with maxdiff={maxdiff}, absrnk={absrnk}'
     _log(m, level='info', verbose=verbose)
-    es = np.zeros((ordr.shape[0], nsrc))
+    es = np.zeros((dos.shape[0], nsrc))
     for j in tqdm(range(nsrc), disable=not verbose):
         fset = (_getset(cnct, starts, offsets, j) + 1).astype(int)
-        es[:, j] = _ks_fset(ordr, rst, fset, maxdiff, absrnk)
+        es[:, j] = _ks_fset(dos=dos, srs=srs, fset=fset, maxdiff=maxdiff, absrnk=absrnk, tau=tau)
     return es, None
 
 
