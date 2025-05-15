@@ -69,17 +69,20 @@ def _filter(
             prts.add(src)
             if src in srcs:
                 msk_exp[i] = True
+    n_exp = adata.shape[0]
+    m = f'benchmark - found {len(prts)} unique perturbed sources across {n_exp} experiments'
+    _log(m, level='info', verbose=verbose)
     r_exp = int((~msk_exp).sum())
-    m = f'benchmark - removing {r_exp} experiments without sources in net'
+    m = f'benchmark - removing {r_exp} experiments out of {n_exp} without sources in net'
     _log(m, level='info', verbose=verbose)
     adata = adata[msk_exp, :].copy()
     # Remove sources without experiments in obs
     if sfilt:
-        msk_src = np.isin(net['source'], prts)
-        net = net.loc[msk, :]
-        rsrc = net.loc[~msk, 'source'].values.size
-        m = f'benchmark - removing {rsrc} sources without experiments in obs'
+        msk_src = np.array([s in prts for s in net['source']])
+        rsrc = net.loc[~msk_src].groupby('source').size().index.size
+        m = f'benchmark - removing {rsrc} sources out of {srcs.size} without experiments in obs'
         _log(m, level='info', verbose=verbose)
+        net = net.loc[msk_src, :]
     adata.uns['p_sources'] = prts
     return adata, net
 

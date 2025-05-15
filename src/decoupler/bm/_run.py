@@ -272,6 +272,8 @@ def _eval_scores(
             )
     # Format df
     df = pd.DataFrame(df, columns=['groupby', 'group', 'source', 'method', 'metric', 'score'])
+    # Remove repeated columns
+    df = df.loc[:, df.nunique(dropna=False) > 1]
     return df
 
 
@@ -282,7 +284,7 @@ def benchmark(
     groupby: str | None = None,
     runby: str = 'expr',
     sfilt: bool = False,
-    thr: float = 0.05,
+    thr: float = 0.10,
     emin: int = 5,
     verbose: bool = False,
     kws_decouple: dict = dict(),
@@ -306,14 +308,18 @@ def benchmark(
     # Init default args
     kws_decouple.setdefault('tmin', 5)
     kws_decouple.setdefault('args', dict())
-    # Process
-    net = prune(features=adata.var_names, net=net, tmin=kws_decouple['tmin'], verbose=verbose)
-    adata, net = _filter(adata=adata, net=net, sfilt=sfilt, verbose=verbose)
-    _sign(adata=adata)
+    # Clean adata
+    for col in list(adata.obsm.keys()):
+        if col.startswith('score_') or col.startswith('padj_'):
+            del adata.obsm[col]
     # Run benchmark per net
     if isinstance(net, pd.DataFrame):
         m = f'benchmark - running benchmark for one network'
         _log(m, level='info', verbose=verbose)
+        # Process
+        net = prune(features=adata.var_names, net=net, tmin=kws_decouple['tmin'], verbose=verbose)
+        adata, net = _filter(adata=adata, net=net, sfilt=sfilt, verbose=verbose)
+        _sign(adata=adata)
         # Run benchmark
         decouple(data=adata, net=net, verbose=verbose, layer='tmp', **kws_decouple)
         df = _eval_scores(
@@ -331,10 +337,14 @@ def benchmark(
         _log(m, level='info', verbose=verbose)
         df = []
         for n_name in net:
+            nnet = net[n_name]
+            nnet = prune(features=adata.var_names, net=nnet, tmin=kws_decouple['tmin'], verbose=verbose)
+            ndata, nnet = _filter(adata=adata, net=nnet, sfilt=sfilt, verbose=verbose)
+            _sign(adata=ndata)
             # Run benchmark
-            decouple(data=adata, net=net, verbose=verbose, layer='tmp', **kws_decouple)
+            decouple(data=ndata, net=nnet, verbose=verbose, layer='tmp', **kws_decouple)
             tmp = _eval_scores(
-                adata=adata,
+                adata=ndata,
                 groupby=groupby,
                 runby=runby,
                 metrics=metrics,
