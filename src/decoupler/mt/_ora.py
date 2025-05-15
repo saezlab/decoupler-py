@@ -12,66 +12,98 @@ from decoupler._Method import MethodMeta, Method
 from decoupler.pp.net import _getset
 
 
+def _maxn() -> int:
+    l = 1; n = 2; h = float('inf')
+    while l < n:
+        if abs(math.lgamma(n+1) - math.lgamma(n) - math.log(n)) >= 1: h = n
+        else: l = n
+        n = (l + min(h, l * 3)) // 2
+    return n
+
+MAXN = _maxn()
+
 @nb.njit(cache=True)
-def _mlnTest2r(
+def _mlnTest2t(
     a: int,
     ab: int,
     ac: int,
     abcd: int,
-) -> float:    
-    if 0 > a or a > ab or a > ac or ab + ac > abcd + a:
-        raise ValueError('invalid contingency table')
+):
+    if 0 > a or a > ab or a > ac or ab + ac > abcd + a: raise ValueError('invalid contingency table')
+    if abcd > MAXN: raise OverflowError('the grand total of contingency table is too large')
     a_min = max(0, ab + ac - abcd)
     a_max = min(ab, ac)
-    if a_min == a_max:
-        return 0.
-    p0 = math.lgamma(ab + 1) + math.lgamma(ac + 1) + math.lgamma(abcd - ac + 1) + \
-    math.lgamma(abcd - ab + 1) - math.lgamma(abcd + 1)
-    pa = math.lgamma(a + 1) + math.lgamma(ab - a + 1) + math.lgamma(ac - a + 1) + \
-    math.lgamma(abcd - ab - ac + a + 1)
-    if ab * ac > a * abcd:
-        sl = 0.
-        for i in range(a - 1, a_min - 1, -1):
-            sl_new = sl + math.exp(
-                pa - math.lgamma(i + 1) - math.lgamma(ab - i + 1) - \
-                math.lgamma(ac - i + 1) - math.lgamma(abcd - ab - ac + i + 1)
-            )
-            if sl_new == sl:
-                break
-            sl = sl_new
-        return -math.log(1. - max(0, math.exp(p0 - pa) * sl))
-    else:
-        sr = 1.
+    if a_min == a_max: return 0.
+    p0 = math.lgamma(ab + 1) + math.lgamma(ac + 1) + math.lgamma(abcd - ac + 1) + math.lgamma(abcd - ab + 1) - math.lgamma(abcd + 1)
+    pa = math.lgamma(a + 1) + math.lgamma(ab - a + 1) + math.lgamma(ac - a + 1) + math.lgamma(abcd - ab - ac + a + 1)
+    st = 1.
+    if ab * ac < a * abcd:
+        for i in range(min(a - 1, int(round(ab * ac / abcd))), a_min - 1, -1):
+            pi = math.lgamma(i + 1) + math.lgamma(ab - i + 1) + math.lgamma(ac - i + 1) + math.lgamma(abcd - ab - ac + i + 1)
+            if pi < pa: continue
+            st_new = st + math.exp(pa - pi)
+            if st_new == st: break
+            st = st_new
         for i in range(a + 1, a_max + 1):
-            sr_new = sr + math.exp(
-                pa - math.lgamma(i + 1) - math.lgamma(ab - i + 1) - \
-                math.lgamma(ac - i + 1) - math.lgamma(abcd - ab - ac + i + 1)
-            )
-            if sr_new == sr:
-                break
-            sr = sr_new
-        return max(0, pa - p0 - math.log(sr))
+            pi = math.lgamma(i + 1) + math.lgamma(ab - i + 1) + math.lgamma(ac - i + 1) + math.lgamma(abcd - ab - ac + i + 1)
+            st_new = st + math.exp(pa - pi)
+            if st_new == st: break
+            st = st_new
+    else:
+        for i in range(a - 1, a_min - 1, -1):
+            pi = math.lgamma(i + 1) + math.lgamma(ab - i + 1) + math.lgamma(ac - i + 1) + math.lgamma(abcd - ab - ac + i + 1)
+            st_new = st + math.exp(pa - pi)
+            if st_new == st: break
+            st = st_new
+        for i in range(max(a + 1, int(round(ab * ac / abcd))), a_max + 1):
+            pi = math.lgamma(i + 1) + math.lgamma(ab - i + 1) + math.lgamma(ac - i + 1) + math.lgamma(abcd - ab - ac + i + 1)
+            if pi < pa: continue
+            st_new = st + math.exp(pa - pi)
+            if st_new == st: break
+            st = st_new
+    return max(0, pa - p0 - math.log(st))
 
 
 @nb.njit(cache=True)
-def _test1r(
+def _test1t(
     a: int,
     b: int,
     c: int,
     d: int,
 ) -> float:
     # https://github.com/painyeph/FishersExactTest/blob/master/fisher.py
-    return math.exp(-_mlnTest2r(a, a + b, a + c, a + b + c + d))
+    return math.exp(-_mlnTest2t(a, a + b, a + c, a + b + c + d))
+
+
+@nb.njit(cache=True)
+def _oddsr(
+    a: int,
+    b: int,
+    c: int,
+    d: int,
+    ha_corr: int | float = 0.5,
+    log: bool = True,
+):
+    # Haldane-Anscombe correction
+    a += ha_corr
+    b += ha_corr
+    c += ha_corr
+    d += ha_corr
+    r = (a * d) / (b * c)
+    if log and r != 0.:
+        r = math.log(r)
+    return r
 
 
 @nb.njit(parallel=True, cache=True)
-def _stsora(
+def _runora(
     row: np.ndarray,
     ranks: np.ndarray,
     cnct: np.ndarray,
     starts: np.ndarray,
     offsets: np.ndarray,
     n_bg: int | None,
+    ha_corr: int | float = 0.5,
 ) -> Tuple[float, float]:
     nvar = row.size
     nsrc = starts.size
@@ -83,7 +115,6 @@ def _stsora(
     for j in nb.prange(nsrc):
         # Extract feature set
         fset = _getset(cnct=cnct, starts=starts, offsets=offsets, j=j)
-        nset = fset.size
         fset = set(fset)
         # Build table
         set_a = row.intersection(fset)
@@ -98,9 +129,8 @@ def _stsora(
             d = len(set_d)
         else:
             d = n_bg - a - b - c
-        # Haldane-Anscombe correction
-        es[j] = ((a + 0.5) * (n_bg - nset + 0.5)) / ((nset + 0.5) * (nvar - a + 0.5))
-        pv[j] = _test1r(a, b, c, d)
+        es[j] = _oddsr(a=a, b=b, c=c, d=d, ha_corr=ha_corr, log=True)
+        pv[j] = _test1t(a=a, b=b, c=c, d=d)
     return es, pv
 
 
@@ -111,7 +141,8 @@ def _func_ora(
     offsets: np.ndarray,
     n_up: int | float | None = None,
     n_bm: int | float = 0,
-    n_bg: int | float | None = None,
+    n_bg: int | float | None = 20_000,
+    ha_corr: int | float = 0.5,
     verbose: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray]:
     nobs, nvar = mat.shape
@@ -121,7 +152,6 @@ def _func_ora(
         m = f'ora - setting n_up={n_up}' 
         _log(m, level='info', verbose=verbose)
     if n_bg is None:
-        #n_bg = int(np.max(cnct) + 1)
         n_bg = 0
         m = f'ora - not using n_bg, a feature specific background will be used instead' 
         _log(m, level='info', verbose=verbose)
@@ -141,7 +171,7 @@ def _func_ora(
         # Find ranks
         row = sts.rankdata(row, method='ordinal')
         row = ranks[(row > n_up) | (row < n_bm)]
-        es[i], pv[i] = _stsora(row=row, ranks=ranks, cnct=cnct, starts=starts, offsets=offsets, n_bg=n_bg)
+        es[i], pv[i] = _runora(row=row, ranks=ranks, cnct=cnct, starts=starts, offsets=offsets, n_bg=n_bg, ha_corr=ha_corr)
     return es, pv
 
 
