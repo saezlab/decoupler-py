@@ -1,6 +1,7 @@
 import logging
 
 import numpy as np
+import scipy.stats as sts
 import pytest
 
 import decoupler as dc
@@ -59,3 +60,40 @@ def test_toy(
     assert nvar == adata.n_vars
     print(adata.X[:, -1].ravel())
     assert ((bval - 1) < np.mean(adata.X[:, -1].ravel()) < (bval + 1)) or nvar == 12
+
+
+@pytest.mark.parametrize(
+    'shuffle_r,seed,nobs,nvar,is_diff',
+    [
+        [0.0, 1, 20, 31, True],
+        [0.1, 2, 36, 41, True],
+        [0.9, 3, 49, 21, False],
+        [1.0, 4, 18, 41, False],
+        
+    ]
+)
+def test_toy_bench(
+    net,
+    shuffle_r,
+    seed,
+    nobs,
+    nvar,
+    is_diff,
+):
+    adata, bmnet = dc.ds.toy_bench(shuffle_r=shuffle_r, seed=seed, nobs=nobs, nvar=nvar)
+    assert (net == bmnet).values.all()
+    assert adata.n_obs == nobs
+    assert adata.n_vars == nvar
+    msk = adata.obs['group'] == 'A'
+    a_adata = adata[msk, :].copy()
+    b_adata = adata[~msk, :].copy()
+    for j in adata.var_names[:8]:
+        a = a_adata[:, j].X.ravel()
+        b = b_adata[:, j].X.ravel()
+        stat, pval = sts.ranksums(a, b)
+        if is_diff:
+            assert pval < 0.05
+        else:
+            assert pval > 0.05
+
+    
