@@ -95,6 +95,7 @@ def msvisium(
     adata = adata[meta.index, :].copy()
     adata.obs = adata.obs.join(meta, how='right')
     adata.obs['niches'] = adata.obs['niches'].astype('category')
+    adata.obs.index.name = None
     # Filter vars
     msk_var = adata.X.getnnz(axis=0) > 9
     adata = adata[:, msk_var].copy()

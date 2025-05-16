@@ -65,6 +65,8 @@ def knocktf(
     -------
     AnnData object.
     """
+    assert isinstance(thr_fc, (int, float)) or thr_fc is None, \
+    'thr_fc must be numeric or None'
     # Download
     url = (
         'https://zenodo.org/record/7035528/'
