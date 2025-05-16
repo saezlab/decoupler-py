@@ -2,6 +2,8 @@ from typing import Tuple
 
 import pandas as pd
 import numpy as np
+import scipy.stats as sts
+from tqdm.auto import tqdm
 import numba as nb
 
 from decoupler._docs import docs
@@ -280,11 +282,12 @@ def net_corr(
     net: pd.DataFrame,
     data: None | DataType = None,
     tmin: int = 5,
+    verbose: bool = False,
     **kwargs
 ) -> pd.DataFrame:
     """
     Checks the correlation across the sources in a network.
-    If a mat is also provided, target features will be prunned to
+    If data is also provided, target features will be prunned to
     match the ones in mat.
 
     Parameters
@@ -292,6 +295,7 @@ def net_corr(
     %(net)s
     %(data)s
     %(tmin)s
+    %(verbose)s
     kwargs
         All other keyword arguments are passed to ``decoupler.pp.extract``
 
@@ -299,21 +303,32 @@ def net_corr(
     -------
     Correlation pairs dataframe.
     """
-    net = _validate_net(net, verbose=False)
+    net = _validate_net(net, verbose=verbose)
     # If mat is provided
-    if mat is not None:
+    if data is not None:
         # Extract sparse matrix and array of genes
+        kwargs.setdefault('verbose', verbose)
         _, _, c = extract(data=data, **kwargs)
     else:
         c = np.unique(net['target'].values).astype('U')
     net = prune(features=c, net=net, tmin=tmin)
-    sources, targets, net = adjmat(features=c, net=net, verbose=False)
+    sources, targets, adj = adjmat(features=c, net=net, verbose=False)
     # Compute corr
-    corr = np.corrcoef(net, rowvar=False)
-    # Filter upper diagonal
-    corr = pd.DataFrame(np.triu(corr, k=1), index=sources, columns=sources).reset_index()
-    corr = corr.melt(id_vars='index').rename({'index': 'source1', 'variable': 'source2', 'value': 'corr'}, axis=1)
-    corr = corr[corr['corr'] != 0]
-    # Sort by abs value
-    corr = corr.iloc[np.argsort(np.abs(corr['corr'].values))[::-1]].reset_index(drop=True)
+    corr = []
+    for i, s_a in enumerate(tqdm(sources[:-1], disable=not verbose)):
+        idx = np.arange(i + 1)
+        A = np.delete(adj, idx, axis=1)
+        b = adj[:, i].reshape(-1, 1)
+        r, p = sts.pearsonr(A, b)
+        for j, s_b in enumerate(sources[i + 1:]):
+            corr.append([s_a, s_b, r[j], p[j]])
+    corr = pd.DataFrame(corr, columns=['source_a', 'source_b', 'corr', 'pval'])
+    corr['padj'] = sts.false_discovery_control(corr['pval'])
+    corr['abs_corr'] = corr['corr'].abs()
+    corr = (
+        corr
+        .sort_values(['padj', 'pval', 'abs_corr'], ascending=[False, True, True])
+        .reset_index(drop=True)
+        .drop(columns=['abs_corr'])
+    )
     return corr
