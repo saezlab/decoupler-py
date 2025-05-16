@@ -42,11 +42,6 @@ def _extract(
                 mat = data.layers[layer].astype(float)
             else:
                 mat = data.X.astype(float)
-    else:
-        raise AssertionError(
-            'mat must be an AnnData instance, a DataFrame (samples x features)\n\
-            or a list of [matrix, samples, features]'
-        )
     return mat, row, col
 
 
