@@ -1,10 +1,21 @@
 import logging
+import tempfile
 
+import pandas as pd
 import numpy as np
 import pytest
 
 import decoupler as dc
 
+
+def test_read_gmt():
+    gmt = 'S1\tlink\tG1\tG2\tG3\nS2\tlink\tG2\tG3\tG4\tG5\tG6'
+    with tempfile.NamedTemporaryFile(mode='w+', suffix='.txt', delete=True) as tmp:
+        tmp.write(gmt)
+        tmp.flush()
+        gmt = dc.pp.read_gmt(tmp.name)
+    assert isinstance(gmt, pd.DataFrame)
+    assert {'source', 'target'}.issubset(gmt.columns)
 
 
 @pytest.mark.parametrize('verbose', [True, False])
@@ -150,6 +161,17 @@ def test_idxmat(
     assert cnct.size == offsets.sum()
 
 
+@pytest.mark.parametrize('j', [0, 1, 2, 3])
+def test_getset(
+    idxmat,
+    j,
+):
+    cnct, starts, offsets = idxmat
+    fset = dc.pp.net._getset(cnct=cnct, starts=starts, offsets=offsets, j=j)
+    assert isinstance(fset, np.ndarray)
+    assert fset.size == offsets[j]
+
+
 @pytest.mark.parametrize('seed', [1, 2, 3])
 def test_shuffle_net(
     net,
@@ -180,3 +202,21 @@ def test_shuffle_net(
     assert inter.size > 0
     assert not all(t_tw_net.loc[s].issubset(t_net.loc[s]) for s in inter)
     assert all(t_stw_net.loc[s].issubset(t_net.loc[s]) for s in inter)
+
+
+def test_net_corr(
+    adata,
+    net,
+):
+    n_src = net['source'].unique().size
+    corr = dc.pp.net_corr(net=net, data=None, tmin=0)
+    assert isinstance(corr, pd.DataFrame)
+    cols = {'source_a', 'source_b', 'corr', 'pval', 'padj'}
+    assert cols.issubset(corr.columns)
+    assert (corr['source_a'] != corr['source_b']).all()
+    n_pairs = n_src * (n_src - 1) // 2
+    assert corr.shape[0] == n_pairs
+    corr = dc.pp.net_corr(net=net, data=adata, tmin=0)
+    assert isinstance(corr, pd.DataFrame)
+    n_pairs = n_src * (n_src - 1) // 2
+    assert corr.shape[0] == n_pairs
