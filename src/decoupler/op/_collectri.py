@@ -16,7 +16,7 @@ def collectri(
     verbose: bool = False,
 ) -> pd.DataFrame:
     """
-    CollecTRI gene regulatory network.
+    CollecTRI gene regulatory network :cite:p:`collectri`.
 
     Wrapper to access CollecTRI gene regulatory network. CollecTRI is a
     comprehensive resource containing a curated collection of transcription
@@ -29,6 +29,7 @@ def collectri(
     remove_complexes
         Whether to remove complexes.
     %(license)s
+    %(verbose)s
 
     Returns
     -------

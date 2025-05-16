@@ -107,7 +107,7 @@ def translate(
     columns: str | list = ['source', 'target', 'genesymbol'],
     target_organism: str = 'mouse',
     min_evidence: int | float = 3,
-    one_to_many: int | float = 1,
+    one_to_many: int | float = 5,
     verbose: bool = False,
 ) -> pd.DataFrame:
     """

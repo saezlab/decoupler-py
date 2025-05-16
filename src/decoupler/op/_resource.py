@@ -1,3 +1,6 @@
+import json
+
+import requests
 import pandas as pd
 
 from decoupler._docs import docs
@@ -8,10 +11,11 @@ from decoupler.op._dtype import _infer_dtypes
 
 
 def show_resources(
-) -> list:
+) -> pd.DataFrame:
     """
-    Shows available resources in Omnipath. For more information visit the
-    official website for [Omnipath](https://omnipathdb.org/).
+    Shows available resources in Omnipath :cite:p:`omnipath`.
+    For more information visit the official
+    [website](https://omnipathdb.org/).
 
     Returns
     -------
@@ -19,7 +23,12 @@ def show_resources(
     """
     ann = pd.read_csv('https://omnipathdb.org/queries/annotations', sep='\t')
     ann = ann.set_index('argument').loc['databases'].str.split(';')['values']
-    return ann
+    url = 'https://omnipathdb.org/resources'
+    response = requests.get(url)
+    lcs = response.json()
+    df = pd.DataFrame(ann, columns=['name'])
+    df['license'] = [lcs[a]['license']['purpose'] if a in lcs else None for a in ann]
+    return df
 
 
 @docs.dedent
@@ -30,12 +39,11 @@ def resource(
     verbose: bool = False,
 ):
     """
-    Wrapper to access resources inside Omnipath.
+    Wrapper to access resources inside Omnipath :cite:p:`omnipath`.
 
     This wrapper allows to easly query different prior knowledge resources. To
     check available resources run ``decoupler.op.show_resources()``. For more
-    information visit the official website for
-    [Omnipath](https://omnipathdb.org/).
+    information visit the official [website](https://omnipathdb.org/).
 
     Parameters
     ----------
@@ -43,6 +51,7 @@ def resource(
         Name of the resource to query.
     %(organism)s
     %(license)s
+    %(verbose)s
     kwargs
         Passed to ``decoupler.op.translate``.
 
@@ -52,7 +61,7 @@ def resource(
     """
     # Validate
     assert isinstance(name, str), 'name must be str'
-    names = show_resources()
+    names = set(show_resources()['name'])
     assert name in names, f'name must be one of these: {names}'
     assert isinstance(organism, str), 'organism must be str'
     assert isinstance(license, str) and license in ['academic', 'commercial', 'nonprofit'], \

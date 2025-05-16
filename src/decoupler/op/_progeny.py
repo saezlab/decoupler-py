@@ -15,7 +15,7 @@ def progeny(
     verbose: bool = False,
 ) -> pd.DataFrame:
     """
-    Pathway RespOnsive GENes for activity inference (PROGENy).
+    Pathway RespOnsive GENes for activity inference (PROGENy) :cite:p:`progeny`.
 
     Wrapper to access PROGENy model gene weights. Each pathway is defined with
     a collection of target genes, each interaction has an associated p-value
@@ -29,14 +29,17 @@ def progeny(
     thr_padj
         Significance threshold to trim interactions.
     %(license)s
+    %(verbose)s
 
     Returns
     -------
     Dataframe in long format containing target genes for each pathway with their associated weights and p-values.
     """
     # Validate
-    assert isinstance(top, (int, float)) and top > 0, 'top must be numeric and > 0'
-    assert isinstance(thr_padj, float) and 1 >= thr_padj >= 0, 'thr_padj must be numeric and between 0 and 1'
+    assert isinstance(top, (int, float)) and top > 0, \
+    'top must be numeric and > 0'
+    assert isinstance(thr_padj, (int, float)) and 0. <= thr_padj <= 1., \
+    'thr_padj must be numeric and between 0 and 1'
     # Download
     p = resource(name='PROGENy', organism=organism, license=license, verbose=verbose)
     p = (

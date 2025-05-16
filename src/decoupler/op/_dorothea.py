@@ -12,12 +12,12 @@ from decoupler.op._dtype import _infer_dtypes
 def dorothea(
     organism: str = 'human',
     levels: str | list = ['A', 'B', 'C'],
-    weight_dict: dict | None = None,
+    dict_weights: dict | None = None,
     license: str = 'academic',
     verbose: bool = False,
 ) -> pd.DataFrame:
     """
-    DoRothEA gene regulatory network.
+    DoRothEA gene regulatory network :cite:p:`dorothea`.
 
     Wrapper to access DoRothEA gene regulatory network. DoRothEA is a
     comprehensive resource containing a curated collection of transcription
@@ -31,11 +31,12 @@ def dorothea(
     levels
         List of confidence levels to return. Goes from A to D, A being the
         most confident and D being the less.
-    weight_dict
+    dict_weights
         Dictionary of values to divide the mode of regulation (-1 or 1),
         one for each confidence level. Bigger values will generate weights
         close to zero.
     %(license)s
+    %(verbose)s
 
     Returns
     -------
@@ -45,10 +46,10 @@ def dorothea(
     if isinstance(levels, str):
         levels = [levels]
     assert all(l in {'A', 'B', 'C', 'D'} for l in levels), 'levels can only contain any of these values: A, B, C, and/or D'
-    assert isinstance(weight_dict, dict) or weight_dict is None, 'weight_dict must be dict or None'
-    if weight_dict:
-        assert all(k in levels for k in weight_dict), f'weight_dict keys must be in levels={levels}'
-        weights = weight_dict
+    assert isinstance(dict_weights, dict) or dict_weights is None, 'dict_weights must be dict or None'
+    if dict_weights:
+        assert all(k in levels for k in dict_weights), f'dict_weights keys must be in levels={levels}'
+        weights = dict_weights
     else:
         weights = {'A': 1, 'B': 2, 'C': 3, 'D': 4}
         weights = {k: weights[k] for k in weights if k in levels}
