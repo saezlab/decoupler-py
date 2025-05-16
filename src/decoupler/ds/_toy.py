@@ -91,7 +91,7 @@ def toy(
 
 @docs.dedent
 def toy_bench(
-    shuffle_r: float = 0.25,
+    shuffle_r: float = 0.10,
     seed: int = 42,
     verbose: bool = False,
     **kwargs
@@ -124,11 +124,12 @@ def toy_bench(
     adata.obs['type_p'] = 1.
     # Shuffle a percentage of the samples
     idxs = np.arange(adata.obs_names.size)
-    rng = np.random.default_rng(seed=seed)
     n_shuffle = int(np.ceil(idxs.size * shuffle_r))
-    m = f'Shuffling {n_shuffle} observations ({shuffle_r * 100:.2f}%).'
-    _log(m, level='info', verbose=verbose)
-    idxs = rng.choice(idxs, n_shuffle, replace=False)
-    r_idxs = rng.choice(idxs, idxs.size, replace=False)
-    adata.X[r_idxs, :] = adata.X[idxs, :]
+    if n_shuffle > 0:
+        rng = np.random.default_rng(seed=seed)
+        m = f'Shuffling {n_shuffle} observations ({shuffle_r * 100:.2f}%).'
+        _log(m, level='info', verbose=verbose)
+        idxs = rng.choice(idxs, n_shuffle, replace=False)
+        r_idxs = rng.choice(idxs, idxs.size, replace=False)
+        adata.X[r_idxs, :] = adata.X[idxs, :]
     return adata, net
