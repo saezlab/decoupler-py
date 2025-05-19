@@ -7,14 +7,14 @@ from decoupler._docs import docs
 
 
 @docs.dedent
-def rank_sources_groups(
+def rankby_group(
     adata: AnnData,
     groupby: str,
     reference: str | list = 'rest',
     method: str = 't-test_overestim_var',
 ) -> pd.DataFrame:
     """
-    Rank sources for characterizing groups.
+    Rank features for characterizing groups.
 
     Parameters
     ----------
@@ -29,7 +29,7 @@ def rank_sources_groups(
 
     Returns
     -------
-    DataFrame with differential source score between groups.
+    DataFrame with different features between groups.
     """
     assert isinstance(adata, AnnData), 'adata must be anndata.AnnData'
     assert isinstance(groupby, str) and groupby in adata.obs.columns, \

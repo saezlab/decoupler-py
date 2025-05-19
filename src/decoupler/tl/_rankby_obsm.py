@@ -38,7 +38,7 @@ def _input_rank_obsm(
 
 
 @docs.dedent
-def rank_obsm(
+def rankby_obsm(
     adata: AnnData,
     key: str,
     uns_key: str | None = 'rank_obsm',
