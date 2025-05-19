@@ -26,6 +26,7 @@ def toy(
     nobs: int = 30,
     nvar: int = 20,
     bval: int | float = 2.,
+    pstime: bool = False,
     seed: int = 42,
     verbose: bool = False,
 ) -> Tuple[AnnData, pd.DataFrame]:
@@ -40,6 +41,8 @@ def toy(
         Number of features to generate.
     bvar
         Background value to set features not associated to any source.
+    pstime
+        Whether to add simulated pseudotime.
     %(seed)s
     %(verbose)s
 
@@ -84,6 +87,13 @@ def toy(
     adata = AnnData(adata)
     adata.obs['group'] = (['A'] * len(row_a)) + (['B'] * len(row_b))
     adata.obs['group'] = adata.obs['group'].astype('category')
+    if pstime:
+        m = f'toy - Adding simulated pseudotime'
+        _log(m, level='info', verbose=verbose)
+        pst = np.arange(adata.n_obs)
+        pst = pst / pst.max()
+        adata.X[:, :8] = adata.X[:, :8] + (adata.X[:, :8] * pst.reshape(-1, 1))
+        adata.obs['pstime'] = pst
     m = f'toy - generated AnnData with shape={adata.shape}'
     _log(m, level='info', verbose=verbose)
     return adata, net

@@ -28,12 +28,12 @@ def test_fillval(
 
 
 @pytest.mark.parametrize(
-    'nobs,nvar,bval,seed,verbose',
+    'nobs,nvar,bval,pstime,seed,verbose',
     [
-        [10, 15, 2, 42, False],
-        [2, 12, 2, 42, False],
-        [100, 50, 0, 0, True],
-        [10, 500, 0, 0, True],
+        [10, 15, 2, True, 42, False],
+        [2, 12, 2, False, 42, False],
+        [100, 50, 0, False, 0, True],
+        [10, 500, 0, True, 0, True],
         
     ]
 )
@@ -41,13 +41,13 @@ def test_toy(
     nobs,
     nvar,
     bval,
+    pstime,
     seed,
     verbose,
     caplog,
 ):
     with caplog.at_level(logging.INFO):
-        adata, net = dc.ds.toy(nobs=nobs, nvar=nvar, bval=bval, seed=seed, verbose=verbose)
-
+        adata, net = dc.ds.toy(nobs=nobs, nvar=nvar, bval=bval, pstime=pstime, seed=seed, verbose=verbose)
     if verbose:
         assert len(caplog.text) > 0
     else:
@@ -58,8 +58,10 @@ def test_toy(
     assert all(adata[msk, 4:8].X.mean(0) < adata[~msk, 4:8].X.mean(0))
     assert nobs == adata.n_obs
     assert nvar == adata.n_vars
-    print(adata.X[:, -1].ravel())
     assert ((bval - 1) < np.mean(adata.X[:, -1].ravel()) < (bval + 1)) or nvar == 12
+    if pstime:
+        assert 'pstime' in adata.obs.columns
+        assert ((0. <= adata.obs['pstime']) & (adata.obs['pstime'] <= 1.)).all()
 
 
 @pytest.mark.parametrize(
