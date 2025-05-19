@@ -6,23 +6,24 @@ import decoupler as dc
 
 
 @pytest.mark.parametrize(
-    'order,label,nbins',
+    'names,order,label,nbins',
     [
-        ['pstime', None, 10],
-        ['pstime', None, 35],
-        ['f_order', None, 10],
-        ['pstime', 'group', 14],
+        [None, 'pstime', None, 10],
+        ['G05', 'pstime', None, 35],
+        [['G05'], 'f_order', None, 10],
+        [['G01', 'G06', 'G10'], 'pstime', 'group', 14],
     ]
 )
 def test_bin_order(
     tdata,
+    names,
     order,
     label,
     nbins,
 ):
     rng = np.random.default_rng(seed=42)
     tdata.obs.loc[:, 'f_order'] = rng.random(tdata.n_obs)
-    df = dc.pp.bin_order(adata=tdata, order=order, label=label, nbins=nbins)
+    df = dc.pp.bin_order(adata=tdata, names=names, order=order, label=label, nbins=nbins)
     assert isinstance(df, pd.DataFrame)
     cols = {'name', 'order', 'value'}
     assert cols.issubset(df.columns)

@@ -612,6 +612,7 @@ def knn(
 def bin_order(
     adata: AnnData,
     order: str,
+    names: str | list = None,
     label: str | None = None,
     nbins: int = 100,
 ) -> pd.DataFrame:
@@ -622,6 +623,8 @@ def bin_order(
     ----------
     %(adata)s
     %(order)s
+    names
+        Name of features to bin.
     label
         The name of the column in ``adata.obs`` to consider for coloring the grouping. By default ``None``.
     nbins
@@ -635,15 +638,20 @@ def bin_order(
     assert isinstance(adata, AnnData), 'adata must be anndata.AnnData'
     assert isinstance(order, str) and order in adata.obs.columns, \
     'order must be str and in adata.obs.columns'
+    assert isinstance(names, (str, list)) or names is None, \
+    'names must be str, list or None'
     assert (isinstance(label, str) and label in adata.obs.columns) or label is None, \
     'label must be str and in adata.obs.columns, or None'
     assert nbins > 1 and isinstance(nbins, int), 'nbins should be higher than 1 and be an integer'
     # Get vars and ordinal variable
-    X = adata.X
+    if names is None:
+        names = adata.var_names
+    elif isinstance(names, str):
+        names = [names]
+    X = adata[:, names].X
     if sps.issparse(X):
         X = X.toarray()
     y = adata.obs[order].values
-    names = adata.var_names
     # Normalize to 0 and 1
     y = np.abs(y) / np.abs(y).max()
     # Make windows
@@ -660,10 +668,10 @@ def bin_order(
             adata.uns[f'{label}_colors'] = [to_hex(cmap(i)) for i in adata.obs[label].sort_values().cat.codes.unique()]
         cols += ['label', 'color']
     dfs = []
-    for name in names:
+    for i, name in enumerate(names):
         # Assign to windows based on order
         df = pd.DataFrame()
-        df['value'] = X[:, names == name].ravel()
+        df['value'] = X[:, i].ravel()
         df['name'] = name
         df['order'] = y
         df['window'] = pd.cut(df['order'], bins=bin_edges, labels=False, include_lowest=True, right=True)
