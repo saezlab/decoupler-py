@@ -96,7 +96,7 @@ def covid5k(
     url_var = os.path.join(url_base, f'{id_ebi}.aggregated_counts.mtx_rows.gz')
     var = pd.read_csv(url_var, sep='\t', header=None, usecols=[0], index_col=0)
     var['name'] = ensmbl_to_symbol(var.index)
-    msk_var = ~(var['name'].isna() | var['name'].duplicated(keep='first'))
+    msk_var = ~(var['name'].isna() | var['name'].duplicated(keep='first')).values
     var = var.loc[msk_var].reset_index(drop=True).set_index('name')
     var.index.name = None
     X = X[:, msk_var]
@@ -106,7 +106,7 @@ def covid5k(
     obs = pd.read_csv(url_obs, sep='\t')[cols].set_index('id')
     obs = obs.rename(columns={'inferred_cell_type_-_ontology_labels': 'celltype'})
     obs.index.name = None
-    msk_obs = (~obs['celltype'].isna())
+    msk_obs = (~obs['celltype'].isna()).values
     obs = obs.loc[msk_obs]
     X = X[msk_obs, :]
     # Make AnnData
@@ -124,6 +124,46 @@ def covid5k(
     # Make categorical
     for col in adata.obs.columns:
         adata.obs[col] = adata.obs[col].astype('category')
+    m = f'generated AnnData with shape={adata.shape}'
+    _log(m, level='info', verbose=verbose)
+    return adata
+
+
+@docs.dedent
+def erygast1k(
+    verbose: bool = False,
+) -> ad.AnnData:
+    """
+    Downloads single-cell RNA-seq data of the erythroid lineage
+    during gastrulation in mouse :cite:`erygast`.
+
+    Parameters
+    ----------
+    %(verbose)s
+
+    Returns
+    -------
+    AnnData object.
+    """
+    # How to process from scvelo:
+    """
+    url = 'https://ndownloader.figshare.com/files/27686871'
+    adata = dc.ds._scell._download_anndata(url, verbose=True)
+    adata.var = adata.var.drop(columns=['MURK_gene', 'Δm', 'scaled Δm'])
+    del adata.layers
+    rng = np.random.default_rng(seed=42)
+    idx = rng.choice(adata.obs_names, 801, replace=False)
+    adata = adata[idx, :].copy()
+    msk_var = adata.X.getnnz(axis=0) >= 25
+    adata = adata[:, msk_var].copy()
+    sc.pp.normalize_total(adata, target_sum=1e4)
+    sc.pp.log1p(adata)
+    del adata.var
+    adata.write('adata.h5ad')
+    """
+    # Download
+    url = "https://zenodo.org/records/15462498/files/adata.h5ad?download=1"
+    adata = _download_anndata(url, verbose=verbose)
     m = f'generated AnnData with shape={adata.shape}'
     _log(m, level='info', verbose=verbose)
     return adata

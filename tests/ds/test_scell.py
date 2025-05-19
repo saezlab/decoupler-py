@@ -24,6 +24,7 @@ def test_download_anndata(
 
 
 def test_pbmc3k():
+    warnings.filterwarnings("ignore", module="anndata")
     adata = dc.ds.pbmc3k()
     assert isinstance(adata, ad.AnnData)
     assert adata.raw is None
@@ -44,3 +45,17 @@ def test_covid5k():
     assert cols.issubset(adata.obs.columns)
     for col in cols:
         assert isinstance(adata.obs[col].dtype, pd.CategoricalDtype)
+
+
+def test_erygast1k():
+    adata = dc.ds.erygast1k()
+    assert isinstance(adata, ad.AnnData)
+    assert adata.raw is None
+    assert isinstance(adata.obs, pd.DataFrame)
+    cols = {'sample', 'stage', 'sequencing.batch', 'theiler', 'celltype'}
+    assert cols.issubset(adata.obs.columns)
+    for col in cols:
+        assert isinstance(adata.obs[col].dtype, pd.CategoricalDtype)
+    keys = {'X_pca', 'X_umap'}
+    assert keys.issubset(adata.obsm.keys())
+    
