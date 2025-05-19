@@ -606,3 +606,75 @@ def knn(
     krnl.eliminate_zeros()
     # Store
     adata.obsp[f'{key}_connectivities'] = krnl
+
+
+@docs.dedent
+def bin_order(
+    adata: AnnData,
+    order: str,
+    label: str | None = None,
+    nbins: int = 100,
+) -> pd.DataFrame:
+    """
+    Bins features along a continuous, ordered process such as pseudotime.
+
+    Parameters
+    ----------
+    %(adata)s
+    %(order)s
+    label
+        The name of the column in ``adata.obs`` to consider for coloring the grouping. By default ``None``.
+    nbins
+        Number of bins to use.
+
+    Returns
+    -------
+    DataFrame with sources binned alng a continous ordered proess.
+    """
+    # Validate
+    assert isinstance(adata, AnnData), 'adata must be anndata.AnnData'
+    assert isinstance(order, str) and order in adata.obs.columns, \
+    'order must be str and in adata.obs.columns'
+    assert (isinstance(label, str) and label in adata.obs.columns) or label is None, \
+    'label must be str and in adata.obs.columns, or None'
+    assert nbins > 1 and isinstance(nbins, int), 'nbins should be higher than 1 and be an integer'
+    # Get vars and ordinal variable
+    X = adata.X
+    if sps.issparse(X):
+        X = X.toarray()
+    y = adata.obs[order].values
+    names = adata.var_names
+    # Normalize to 0 and 1
+    y = np.abs(y) / np.abs(y).max()
+    # Make windows
+    bin_edges = np.linspace(0, 1, nbins + 1)
+    bin_midpoints = (bin_edges[:-1] + bin_edges[1:]) / 2
+    # Prepare label colors
+    cols = ['name', 'midpoint', 'value']
+    if label is not None:
+        adata.obs[label] = pd.Categorical(adata.obs[label])
+        if f'{label}_colors' not in adata.uns.keys():
+            from matplotlib.colors import to_hex
+            import matplotlib.pyplot as plt
+            cmap = plt.get_cmap('tab10')
+            adata.uns[f'{label}_colors'] = [to_hex(cmap(i)) for i in adata.obs[label].sort_values().cat.codes.unique()]
+        cols += ['label', 'color']
+    dfs = []
+    for name in names:
+        # Assign to windows based on order
+        df = pd.DataFrame()
+        df['value'] = X[:, names == name].ravel()
+        df['name'] = name
+        df['order'] = y
+        df['window'] = pd.cut(df['order'], bins=bin_edges, labels=False, include_lowest=True, right=True)
+        df['midpoint'] = df['window'].map(lambda x: bin_midpoints[int(x)])
+        if label is not None:
+            df['label'] = adata.obs[label].values
+            df['color'] = [adata.uns[f'{label}_colors'][i] for i in adata.obs[label].cat.codes]
+        df = df.sort_values('order')
+        dfs.append(df)
+    df = pd.concat(dfs)
+    df = df[cols]
+    df = df.rename(columns={'midpoint': 'order'}).reset_index(drop=True)
+    df['order'] = df['order'] / df['order'].max()
+    return df

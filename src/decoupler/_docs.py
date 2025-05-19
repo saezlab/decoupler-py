@@ -146,6 +146,10 @@ _y = """\
 y
     Grouping variable to plot on y axis."""
 
+_order = """\
+order
+    The name of the column in ``adata.obs`` to consider for ordering."""
+
 docs = DocstringProcessor(
     plot=_plot,
     net=_net,
@@ -179,4 +183,5 @@ docs = DocstringProcessor(
     hue=_hue,
     palette=_palette,
     y=_y,
+    order=_order,
 )

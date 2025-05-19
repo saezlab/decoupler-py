@@ -11,6 +11,12 @@ def adata():
 
 
 @pytest.fixture
+def tdata():
+    tdata, _ = dc.ds.toy(nobs=40, nvar=20, bval=2, seed=42, verbose=False, pstime=True)
+    return tdata
+
+
+@pytest.fixture
 def net():
     _, net = dc.ds.toy(nobs=2, nvar=12, bval=2, seed=42, verbose=False)
     net = dc.pp.prune(features=net['target'].unique(), net=net, tmin=3)

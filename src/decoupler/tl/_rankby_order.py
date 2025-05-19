@@ -22,8 +22,7 @@ def rankby_order(
     Parameters
     ----------
     %(adata)s
-    order
-        The name of the column in ``adata.obs`` to consider for ordering.
+    %(order)s
     thr_padj
         Threshold used to assign significance after FDR correction.
     %(seed)s
