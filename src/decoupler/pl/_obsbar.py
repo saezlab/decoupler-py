@@ -44,6 +44,7 @@ def obsbar(
     )
     # Instance
     bp = Plotter(**kwargs)
+    # Plot
     sns.barplot(
         data=data,
         y=y,
