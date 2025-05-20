@@ -7,6 +7,7 @@ from matplotlib.lines import Line2D
 import matplotlib.pyplot as plt
 import igraph as ig
 
+from decoupler._docs import docs
 from decoupler._Plotter import Plotter
 
 
@@ -171,7 +172,8 @@ def _gcolors(
     g.vs['color'] = color
     return is_cmap
 
-    
+
+@docs.dedent
 def network(
     net,
     data: pd.DataFrame = None,
@@ -179,8 +181,8 @@ def network(
     sources: int | list | str = 5,
     targets: int | list | str = 10,
     by_abs=True,
-    node_size=5,
-    label_size=2.5,
+    size_node=5,
+    size_label=2.5,
     s_cmap='RdBu_r',
     t_cmap='viridis',
     vcenter=False,
@@ -196,38 +198,38 @@ def network(
 
     Parameters
     ----------
-    net : DataFrame
-        Network dataframe with ``source`` and ``target`` columns (``weight`` is optional).
-    obs : None, DataFrame
+    %(net)s
+    data
         Input of enrichment analysis, needs to be a one row dataframe with targets as features. Used to filter net.
-    act : None, DataFrame
+    score
         Ouput of enrichment analysis, needs to be a one row dataframe with sources as features. Used to filter net.
-    n_sources : str, list, int
+    sources
         Number of top sources to plot or list of source names.
-    n_targets : str, list, int
+    targets
         Number of top targets to plot or list of target names.
-    by_abs : bool
+    by_abs
         Whether to consider the absolute value when sorting for ``n_sources`` and ``n_targets``.
-    node_size : float
+    size_node
         Size of the nodes in the plot.
-    label_size : int
+    size_label
         Size of the labels in the plot.
-    s_cmap : str
+    s_cmap
         Color or colormap to use to color sources.
-    t_cmap : str
+    t_cmap
         Color or colormap to use to color targets.
-    vcenter : bool
+    vcenter
         Whether to center colors around 0.
-    c_pos_w : str
+    c_pos_w
         Color for edges with positive weights. If no weights are available, they are set to positive by default.
-    c_neg_w : str
+    c_neg_w
         Color for edges with negative weights.
-    s_label : str
+    s_label
         Label to place in the source colorbar.
-    t_label : str
+    t_label
         Label to place in the target colorbar.
-    layout : str
+    layout
         Layout to use to order the nodes. Check ``igraph`` documentation for more options.
+    %(plot)s
     """
     assert isinstance(net, pd.DataFrame), 'net must be pd.DataFrame'
     assert (data is None) == (score is None), 'data and score must either both be None'
@@ -237,7 +239,6 @@ def network(
         trgs = net['target'].unique().astype('U')
         data = pd.DataFrame(np.ones((1, trgs.size)), index=['0'], columns=trgs)
         t_cmap = 'white'
-        
     # Filter
     fdata, fscore, fnet = _filter(
         data=data,
@@ -267,7 +268,7 @@ def network(
     bp = Plotter(**kwargs)
     bp.fig.delaxes(bp.ax)
     # Plot
-    gs = matplotlib.gridspec.GridSpec(6, 3) #height_ratios=[1, 1, 1, 1, 1, 1, 0.1]
+    gs = matplotlib.gridspec.GridSpec(6, 3)
     ax1 = bp.fig.add_subplot(gs[:-1, :])
     ax2 = bp.fig.add_subplot(gs[-1, 0])
     ax3 = bp.fig.add_subplot(gs[-1, 1])
@@ -276,8 +277,8 @@ def network(
         g,
         target=ax1,
         layout=layout,
-        vertex_size=(node_size * bp.dpi) / (bp.figsize[0] * bp.figsize[0]),
-        vertex_label_size=(label_size * bp.dpi) / (bp.figsize[0] * bp.figsize[0]),
+        vertex_size=(size_node * bp.dpi) / (bp.figsize[0] * bp.figsize[0]),
+        vertex_size_label=(size_label * bp.dpi) / (bp.figsize[0] * bp.figsize[0]),
         bbox_inches='tight',
     )
     if is_cmap:
@@ -293,7 +294,6 @@ def network(
                     markeredgecolor='black', markersize=10)
     circle = Line2D([0], [0], marker='o', color='w', label='Target', markerfacecolor='white',
                     markeredgecolor='black', markersize=10)
-    from matplotlib.patches import FancyArrowPatch
     line1 = Line2D((0, 0), (1, 0), color=c_pos_w, lw=2, marker='>',)
     line2 = Line2D((0, 0), (1, 0), color=c_neg_w, lw=2, marker='>',)
     handles = [square, circle, line1, line2]
