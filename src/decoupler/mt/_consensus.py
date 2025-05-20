@@ -6,6 +6,8 @@ import scipy.stats as sts
 import numba as nb
 from anndata import AnnData
 
+from decoupler._docs import docs
+from decoupler._log import _log
 from decoupler.mt._gsea import _std
 from decoupler.mt._run import _return
 
@@ -60,6 +62,7 @@ def _mean_zscores(
 
 def consensus(
     result: dict | AnnData,
+    verbose: bool = False,
 ) -> Tuple[pd.DataFrame, pd.DataFrame] | None:
     """
     Consensus score across methods.
@@ -68,6 +71,7 @@ def consensus(
     ----------
     result
         Results from ``decoupler.mt.decouple``.
+    %(verbose)s
 
     Returns
     -------
@@ -86,11 +90,14 @@ def consensus(
         scores = [result[k].values for k in keys]
         obs_names = result[keys[0]].index
         var_names = result[keys[0]].columns
+    names = {k.split('_')[1] for k in keys}
+    m = f'consensus - running consensus using methods={names}'
+    _log(m, level='info', verbose=verbose)
     scores = np.array(scores)
     # Compute mean z-scores
     es = _mean_zscores(scores)
     # Compute p-vals
-    pv = sts.norm.cdf(-np.abs(es)) * 2
+    pv = 2 * sts.norm.sf(np.abs(es))
     # FDR
     pv = sts.false_discovery_control(pv, axis=1, method='bh')
     # Transform to df
