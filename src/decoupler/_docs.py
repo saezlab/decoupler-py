@@ -150,6 +150,14 @@ _order = """\
 order
     The name of the column in ``adata.obs`` to consider for ordering."""
 
+_label = """\
+label
+    The name of the column in ``adata.obs`` to consider for coloring the grouping. By default ``None``."""
+
+_nbins = """\
+nbins
+    Number of bins to use."""
+
 docs = DocstringProcessor(
     plot=_plot,
     net=_net,
@@ -184,4 +192,6 @@ docs = DocstringProcessor(
     palette=_palette,
     y=_y,
     order=_order,
+    label=_label,
+    nbins=_nbins,
 )

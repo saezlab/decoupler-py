@@ -30,6 +30,11 @@ def get_obsm(
     -------
     New AnnData object with values of the provided key in ``.obsm`` in ``X``.
     """
+    # Validate
+    assert isinstance(adata, AnnData), 'adata must be anndata.AnnData'
+    assert isinstance(key, str), 'key must be str'
+    assert key in adata.obsm, f'key={key} must be in adata.obsm'
+    # Generate new AnnData
     obs = adata.obs
     var = pd.DataFrame(index=adata.obsm[key].columns)
     uns = adata.uns
@@ -48,7 +53,7 @@ def get_obsm(
 def swap_layer(
     adata: AnnData,
     key: str,
-    X_key: str = 'X',
+    X_key: str | None = 'X',
     inplace: bool = False,
 ) -> None | AnnData:
     """
@@ -57,18 +62,25 @@ def swap_layer(
     Parameters
     ----------
     %(adata)s
-    key : str
+    key
         ``adata.AnnData.layers`` key to place in ``adata.AnnData.X``.
-    X_key : str, None
+    X_key
         ``adata.AnnData.layers`` key where to move and store the original ``adata.AnnData.X``.
         If None, the original ``adata.AnnData.X`` is discarded.
-    inplace : bool
+    inplace
         If ``False``, return a copy. Otherwise, do operation inplace and return ``None``.
 
     Returns
     -------
     If ``inplace=False``, new ``AnnData`` object.
     """
+    # Validate
+    assert isinstance(adata, AnnData), 'adata must be anndata.AnnData'
+    assert isinstance(key, str), 'key must be str'
+    assert key in adata.layers, f'key={key} must be in adata.layers'
+    assert isinstance(X_key, str) or X_key is None, 'X_key must be str or None'
+    assert isinstance(inplace, bool), 'inplace must be bool'
+    # Move layers
     cdata = None
     if inplace:
         if X_key is not None:
@@ -625,10 +637,8 @@ def bin_order(
     %(order)s
     names
         Name of features to bin.
-    label
-        The name of the column in ``adata.obs`` to consider for coloring the grouping. By default ``None``.
-    nbins
-        Number of bins to use.
+    %(label)s
+    %(nbins)s
 
     Returns
     -------

@@ -5,6 +5,7 @@ from decoupler.pl._filter_by_prop import filter_by_prop
 from decoupler.pl._leading_edge import leading_edge
 from decoupler.pl._network import network
 from decoupler.pl._obsbar import obsbar
+from decoupler.pl._order_targets import order_targets
 from decoupler.pl._order import order
 from decoupler.pl._rank_obsm import rank_obsm
 from decoupler.pl._filter_samples import filter_samples
