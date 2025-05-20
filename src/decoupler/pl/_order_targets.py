@@ -146,7 +146,7 @@ def order_targets(
         yticklabels.extend(list(neg_names)[::-1])
         cbar_mappable = ScalarMappable(cmap=neg_cmap, norm=Normalize(vmin=vmin, vmax=vmax))
         pos = ax.get_position().bounds
-        cax = bp.fig.add_axes([0.95, pos[1], 0.05, (pos[3] / 2) - .025])
+        cax = bp.fig.add_axes([0.97, pos[1], 0.05, (pos[3] / 2) - .025])
         cax.grid(axis='y', visible=False)
         bp.fig.colorbar(cbar_mappable, cax=cax, aspect=5, shrink=0.5, label='- target\nvalues', location='right')
     ax.axhline(y=neg_names.size, c='black', lw=1)
@@ -157,7 +157,7 @@ def order_targets(
         cbar_mappable = ScalarMappable(cmap=pos_cmap, norm=Normalize(vmin=vmin, vmax=vmax))
         pos = ax.get_position().bounds
         #  (left, bottom, width, height)
-        cax = bp.fig.add_axes([0.95, pos[1] + (pos[3] / 2) + .025, 0.05, (pos[3] / 2) - .025])
+        cax = bp.fig.add_axes([0.97, pos[1] + (pos[3] / 2) + .025, 0.05, (pos[3] / 2) - .025])
         cax.grid(axis='y', visible=False)
         bp.fig.colorbar(cbar_mappable, cax=cax, aspect=5, shrink=0.5, label='+ target\nvalues', location='right')
     # Plot labels
