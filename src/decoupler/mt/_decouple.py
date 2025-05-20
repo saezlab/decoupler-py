@@ -46,6 +46,8 @@ def decouple(
     f'methods={methods} must be in decoupler.\nUse decoupler.mt.show_methods to check which ones are available'
     assert all(k in methods for k in args), \
     f'All keys in args={args.keys()} must belong to a method in methods={methods}'
+    kwargs = kwargs.copy()
+    kwargs.setdefault('verbose', False)
     # Run each method
     all_res = {}
     for name in methods:
@@ -60,7 +62,7 @@ def decouple(
             all_res = all_res | res
     if all_res:
         if cons:
-            all_res['score_consensus'], all_res['padj_consensus'] = consensus(all_res)
+            all_res['score_consensus'], all_res['padj_consensus'] = consensus(all_res, verbose=kwargs['verbose'])
         return all_res
     elif cons:
-        consensus(data)
+        consensus(data, verbose=kwargs['verbose'])
