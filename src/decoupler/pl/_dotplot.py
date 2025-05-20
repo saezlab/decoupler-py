@@ -4,9 +4,11 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.colors import TwoSlopeNorm
 
+from decoupler._docs import docs
 from decoupler._Plotter import Plotter
 
 
+@docs.dedent
 def dotplot(
     df: pd.DataFrame,
     x: str,
@@ -21,6 +23,23 @@ def dotplot(
     """
     Plot results of enrichment analysis as dots.
 
+    Parameters
+    ----------
+    df
+        DataFrame containing enrichment results.
+    x
+        Name of the column containing values to place on the x-axis.
+    y
+        Name of the column containing values to place on the y-axis.
+    c
+        Name of the column containing values to use for coloring.
+    s
+        Name of the column containing values to use for setting the size of the dots.
+    scale
+        Scale of the dots.
+    %(cmap)s
+    %(vcenter)s
+    %(plot)s
     """
     # Validate
     assert isinstance(df, pd.DataFrame), 'df must be a pd.DataFrame'
