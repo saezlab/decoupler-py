@@ -35,6 +35,7 @@ def _tensor_scores(
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, list]:
     # Get unique methods
     has_test = {m.name: m.test for m in _methods}
+    has_test = has_test | {'consensus': True}
     mthds = [k.replace('score_', '') for k in adata.obsm if k.startswith('score_')]
     # Extract dimensions
     exps = adata.obs_names
@@ -128,8 +129,6 @@ def _metric(
     verbose: bool,
     **kwargs
 ) -> dict:
-    m = f'benchmark - measuring {metric} on n_expr={y_score.shape[0]} and n_sources={y_score.shape[1]}'
-    _log(m, level='info', verbose=verbose)
     f = dict_metric[metric]
     if metric == 'fscore':
         y_score = y_sign
@@ -153,7 +152,8 @@ def _metric_scores(
     **kwargs
 ) -> None:
     if runby == 'expr':
-        m = f'benchmark - evaluating by experiment'
+        m = ('benchmark - evaluating by experiment on:\n' +
+        f'n_expr={score.shape[0]}, n_sources={score.shape[1]} across metrics={metrics}')
         _log(m, level='info', verbose=verbose)
         for m in range(len(mthds)):
             mth = mthds[m]
@@ -306,6 +306,7 @@ def benchmark(
     groupby = _validate_groupby(obs=adata.obs, groupby=groupby, runby=runby)
     assert isinstance(emin, int) and emin > 0, 'emin must be int and > 0'
     # Init default args
+    kws_decouple = kws_decouple.copy()
     kws_decouple.setdefault('tmin', 5)
     kws_decouple.setdefault('args', dict())
     # Clean adata
