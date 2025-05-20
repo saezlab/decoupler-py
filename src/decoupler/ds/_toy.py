@@ -101,7 +101,7 @@ def toy(
 
 @docs.dedent
 def toy_bench(
-    shuffle_r: float = 0.10,
+    shuffle_r: float = 0.25,
     seed: int = 42,
     verbose: bool = False,
     **kwargs
