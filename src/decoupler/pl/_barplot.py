@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 import seaborn as sns
 
+from decoupler._docs import docs
 from decoupler._Plotter import Plotter
 
 
@@ -33,6 +34,7 @@ def _set_limits(
     return vmin, vcenter, vmax
 
 
+@docs.dedent
 def barplot(
     data: pd.DataFrame,
     name: str,
@@ -57,18 +59,18 @@ def barplot(
         Number of top sources to plot.
     vertical
         Whether to plot the bars verticaly or horizontaly.
-    cmap
-        Colormap to use.
-    vmin
-        The value representing the lower limit of the color scale.
-    vcenter
-        The value representing the center of the color scale.
-    vmax
-        The value representing the upper limit of the color scale.
-    .. inheritdoc:: Plotter.__init__
+    %(cmap)s
+    %(vmin)s
+    %(vcenter)s
+    %(vmax)s
+    %(plot)s
     """
-    # Instance
-    bp = Plotter(**kwargs)
+    # Validate
+    assert isinstance(data, pd.DataFrame), 'data must be pandas.DataFrame'
+    assert isinstance(name, str) and name in data.index, \
+    'name must be str and in data.index'
+    assert isinstance(top, int) and top > 0, 'top must be int and > 0'
+    assert isinstance(vertical, bool), 'vertical must be bool'
     # Process df
     df = data.loc[[name]]
     df.index.name = None
@@ -77,13 +79,15 @@ def barplot(
     df['abs_score'] = df['score'].abs()
     df = df.sort_values('abs_score', ascending=False)
     df = df.head(top).sort_values('score', ascending=False)
-    if vertical:
+    if not vertical:
         x, y = 'score', 'source'
     else:
         x, y = 'source', 'score'
+    # Instance
+    bp = Plotter(**kwargs)
     # Plot
     sns.barplot(data=df, x=x, y=y, ax=bp.ax)
-    if vertical:
+    if not vertical:
         sizes = np.array([bar.get_width() for bar in bp.ax.containers[0]])
         bp.ax.set_xlabel('Score')
         bp.ax.set_ylabel('')
