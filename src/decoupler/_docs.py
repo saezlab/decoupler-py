@@ -158,6 +158,18 @@ _nbins = """\
 nbins
     Number of bins to use."""
 
+_vmin = """\
+vmin
+    The value representing the lower limit of the color scale."""
+
+_vcenter = """\
+vcenter
+    The value representing the center of the color scale."""
+
+_vmax = """\
+vmax
+    The value representing the upper limit of the color scale."""
+
 docs = DocstringProcessor(
     plot=_plot,
     net=_net,
@@ -194,4 +206,7 @@ docs = DocstringProcessor(
     order=_order,
     label=_label,
     nbins=_nbins,
+    vmin=_vmin,
+    vcenter=_vcenter,
+    vmax=_vmax,
 )

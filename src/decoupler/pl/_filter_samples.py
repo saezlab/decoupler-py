@@ -5,9 +5,11 @@ from matplotlib.figure import Figure
 import seaborn as sns
 from anndata import AnnData
 
+from decoupler._docs import docs
 from decoupler._Plotter import Plotter
 
 
+@docs.dedent
 def filter_samples(
     adata: AnnData,
     groupby: str | list,
@@ -21,17 +23,14 @@ def filter_samples(
 
     Parameters
     ----------
-    adata
-        AnnData obtained after running ``decoupler.get_pseudobulk``.
+    %(adata)s
     groupby
         Name or nomes of the ``adata.obs`` column/s to group by.
     log
         If set, log10 transform the ``psbulk_n_cells`` and ``psbulk_counts`` columns during visualization.
-    min_cells
-        Threshold used to filter samples with few number of cells. 
-    min_counts
-        Threshold used to filter samples with few total counts.
-    .. inheritdoc:: Plotter.__init__
+    %(min_cells)s
+    %(min_counts)s
+    %(plot)s
     """
     # Validate
     assert isinstance(adata, AnnData), 'adata must be AnnData'
@@ -40,9 +39,9 @@ def filter_samples(
     assert all(col in adata.obs.columns for col in ['psbulk_cells', 'psbulk_counts']), \
     'psbulk_* columns not present in adata.obs, this function should be used after running decoupler.pp.pseudobulk'
     assert isinstance(groupby, (str, list)), 'groupby must be str or list'
-    if isinstance(groupby, list):
-        assert all(col in adata.obs for col in groupby), 'columns in groupby must be in adata.obs'
-        assert kwargs.get('ax') is None, 'when groupby is list, ax must be None'
+    if isinstance(groupby, str):
+        groupby = [groupby]
+    assert all(col in adata.obs for col in groupby), 'columns in groupby must be in adata.obs'
     # Extract obs
     df = adata.obs.copy()
     # Transform to log10
@@ -52,10 +51,10 @@ def filter_samples(
         df['psbulk_counts'] = np.log10(df['psbulk_counts'] + 1)
         label_x, label_y = r'$\log_{10}$ ' + label_x, r'$\log_{10}$ ' + label_y
         min_cells, min_counts = np.log10(min_cells), np.log10(min_counts)
-        
     # Plot
-    if type(groupby) is list:
+    if len(groupby) > 1:
         # Instance
+        assert kwargs.get('ax') is None, 'when groupby is list, ax must be None'
         kwargs['ax'] = None
         bp = Plotter(**kwargs)
         bp.fig.delaxes(bp.ax)
@@ -73,6 +72,7 @@ def filter_samples(
             ax.axhline(y=min_counts, linestyle='--', color="black")
     else:
         # Instance
+        groupby = groupby[0]
         bp = Plotter(**kwargs)
         bp.ax.grid(zorder=0)
         bp.ax.set_axisbelow(True)

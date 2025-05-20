@@ -155,6 +155,7 @@ def _sample_group_by(
         groups = None
         # Get number of obs
         n_rows = len(smples)
+        gsize = 0
     else:
         # Check if extra grouping is needed
         if type(group) is list:
@@ -170,7 +171,8 @@ def _sample_group_by(
         groups = np.unique(obs[group].values)
         # Get number of obs
         n_rows = len(smples) * len(groups)
-    m = f'Generating {n_rows} profiles: {smples.size} samples x {groups.size} groups'
+        gsize = groups.size
+    m = f'Generating {n_rows} profiles: {smples.size} samples x {gsize} groups'
     _log(m, level='info', verbose=verbose)
     return obs, group, smples, groups, n_rows
 
@@ -279,7 +281,7 @@ def pseudobulk(
     # Validate
     assert isinstance(adata, AnnData), 'adata must be an AnnData instance'
     assert isinstance(sample_col, str), 'sample_col must be a str'
-    assert isinstance(groups_col, (str, None)), 'sample_col must be str or None'
+    assert isinstance(groups_col, str) or groups_col is None, 'sample_col must be str or None'
     assert isinstance(mode, (str, dict)) or callable(mode), 'mode must be str, dict or callable'
     # Extract data
     X, _, var = extract(adata, layer=layer, raw=raw, empty=empty, verbose=verbose)
