@@ -33,12 +33,12 @@ def hallmark(
     url = 'https://static.omnipathdb.org/tables/msigdb-hallmark.tsv.gz'
     hm = _download(url, sep='\t', compression='gzip', verbose=verbose)
     hm = hm[['geneset', 'genesymbol']]
-    hm = hm.rename(columns={'geneset': 'source', 'genesymbol': 'target'})
-    hm['source'] = hm['source'].str.replace('HALLMARK_', '')
-    hm['target'] = hm['target'].str.replace('COMPLEX:', '')
-    hm = hm.explode('target')
+    hm['geneset'] = hm['geneset'].str.replace('HALLMARK_', '')
+    hm['genesymbol'] = hm['genesymbol'].str.replace('COMPLEX:', '').str.split('_')
+    hm = hm.explode('genesymbol')
     hm = _infer_dtypes(hm)
     if organism != 'human':
-        hm = translate(hm, columns=['source', 'target'], target_organism=organism, verbose=verbose)
+        hm = translate(hm, columns=['genesymbol'], target_organism=organism, verbose=verbose)
+    hm = hm.rename(columns={'geneset': 'source', 'genesymbol': 'target'})
     hm = hm.drop_duplicates(['source', 'target']).reset_index(drop=True)
     return hm
