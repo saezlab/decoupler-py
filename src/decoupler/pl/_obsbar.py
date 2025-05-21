@@ -11,7 +11,8 @@ from decoupler._Plotter import Plotter
 def obsbar(
     adata: AnnData,
     y: str,
-    hue: str | None,
+    hue: str | None = None,
+    kw_barplot: dict = dict(),
     **kwargs
 ) -> None | Figure:
     """
@@ -24,6 +25,8 @@ def obsbar(
         Column name in ``adata.obs`` to plot in y axis.
     hue
         Column name in ``adata.obs`` to color bars.
+    kw_barplot
+        Keyword arguments passed to ``seaborn.barplot``.
     %(plot)s
     """
     # Validate
@@ -51,7 +54,8 @@ def obsbar(
         x='size',
         hue=hue,
         ax=bp.ax,
+        **kw_barplot
     )
-    if hue is not None:
+    if hue is not None and y != hue:
         bp.ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), frameon=False, title=hue)
     return bp._return()
