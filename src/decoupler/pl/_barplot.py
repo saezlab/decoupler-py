@@ -55,8 +55,7 @@ def barplot(
         DataFrame in wide format containing enrichment scores (contrasts, sources).
     name
         Name of the contrast (row) to plot.
-    top
-        Number of top sources to plot.
+    %(top)s
     vertical
         Whether to plot the bars verticaly or horizontaly.
     %(cmap)s

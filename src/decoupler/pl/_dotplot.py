@@ -15,6 +15,7 @@ def dotplot(
     y: str,
     c: str,
     s: str,
+    top: int | float = 10,
     scale: int | float = 0.15,
     cmap: str = 'RdBu_r',
     vcenter: int | float | None = None,
@@ -35,6 +36,7 @@ def dotplot(
         Name of the column containing values to use for coloring.
     s
         Name of the column containing values to use for setting the size of the dots.
+    %(top)s
     scale
         Scale of the dots.
     %(cmap)s
@@ -47,8 +49,13 @@ def dotplot(
     assert isinstance(y, str) and y in df.columns, 'y must be str and in df.columns'
     assert isinstance(c, str) and c in df.columns, 'c must be str and in df.columns'
     assert isinstance(s, str) and s in df.columns, 's must be str and in df.columns'
+    assert isinstance(top, (int, float)) and top > 0, 'top must be numerical and > 0'
     assert isinstance(scale, (int, float)), 'scale must be numerical'
     assert isinstance(vcenter, (int, float)) or vcenter is None, 'vcenter must be numeric or None'
+    # Filter by top
+    df = df.copy()
+    df['abs_x_col'] = df[x].abs()
+    df = df.sort_values('abs_x_col', ascending=False).head(top)
     # Extract from df
     x_vals = df[x].values
     y_vals = df[y].values

@@ -174,6 +174,10 @@ _data_plot = """\
 data
     DataFrame containing feature-level statistics. Feature names must be in ``df.index``."""
 
+_top = """\
+top
+    Number of top sources to plot."""
+
 docs = DocstringProcessor(
     plot=_plot,
     net=_net,
@@ -214,4 +218,5 @@ docs = DocstringProcessor(
     vcenter=_vcenter,
     vmax=_vmax,
     data_plot=_data_plot,
+    top=_top,
 )
