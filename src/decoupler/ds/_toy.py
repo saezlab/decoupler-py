@@ -88,6 +88,7 @@ def toy(
     adata.obs['group'] = (['A'] * len(row_a)) + (['B'] * len(row_b))
     adata.obs['group'] = adata.obs['group'].astype('category')
     adata.obs['sample'] = rng.choice(['S01', 'S02', 'S03'], size=adata.n_obs, replace=True)
+    adata.obs['sample'] = adata.obs['sample'].astype('category')
     if pstime:
         m = f'toy - Adding simulated pseudotime'
         _log(m, level='info', verbose=verbose)
