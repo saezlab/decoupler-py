@@ -96,6 +96,21 @@ def test_pseudobulk(
         assert set(mode.keys()).issubset(pdata.layers.keys())
 
 
+@pytest.mark.parametrize('inplace', [True, False])
+def test_filter_samples(
+    pdata,
+    inplace,
+):
+    f_pdata = pdata.copy()
+    res = dc.pp.filter_samples(adata=f_pdata, min_counts=90, min_cells=4, inplace=inplace)
+    if inplace:
+        assert res is None
+        assert f_pdata.shape[0] < pdata.shape[0]
+    else:
+        assert isinstance(res, list)
+        assert len(res) < pdata.shape[0]
+
+
 @pytest.mark.parametrize(
     'names,order,label,nbins',
     [

@@ -419,7 +419,7 @@ def filter_samples(
     msk_cells = adata.obs['psbulk_cells'] >= min_cells
     msk_counts = adata.obs['psbulk_counts'] >= min_counts
     msk = msk_cells & msk_counts
-    obs_names = adata.obs_names[msk]
+    obs_names = adata.obs_names[msk].to_list()
     if inplace:
         adata._inplace_subset_obs(obs_names)
     else:
