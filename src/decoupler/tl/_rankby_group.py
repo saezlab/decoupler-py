@@ -96,14 +96,20 @@ def rankby_group(
         # Tranform to df
         result = pd.DataFrame(
             result,
-            columns=['group', 'reference', 'names', 'statistic', 'meanchange', 'pvals']
+            columns=['group', 'reference', 'name', 'stat', 'meanchange', 'pval']
         )
         # Correct pvalues by FDR
-        result.loc[np.isnan(result['pvals']), 'pvals'] = 1
-        result['pvals_adj'] = sts.false_discovery_control(result['pvals'].values, method='bh')
+        result['pval'] = result['pval'].fillna(1)
+        result['padj'] = sts.false_discovery_control(result['pval'], method='bh')
         # Sort and save
-        result = result.sort_values('statistic', ascending=False)
+        result['abs_stat'] = result['stat'].abs()
+        result = result.sort_values(['padj', 'pval', 'stat'], ascending=[True, True, False])
+        result = result.drop(columns=['abs_stat'])
         results.append(result)
     # Merge
     results = pd.concat(results)
+    # Convert to categorical
+    results['group'] = results['group'].astype('category')
+    results['reference'] = results['reference'].astype('category')
+    results['name'] = results['name'].astype('category')
     return results.reset_index(drop=True)
