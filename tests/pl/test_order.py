@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 import pytest
 
@@ -22,3 +23,4 @@ def test_order(
     df = dc.pp.bin_order(adata=tdata, names=['G12', 'G01', 'G07', 'G04'], order='pstime', label=label)
     fig = dc.pl.order(df=df, mode=mode, return_fig=True)
     assert isinstance(fig, Figure)
+    plt.close(fig)

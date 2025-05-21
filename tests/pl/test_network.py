@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 import pytest
 
@@ -73,3 +74,4 @@ def test_network(
         return_fig=True
     )
     assert isinstance(fig, Figure)
+    plt.close(fig)

@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 import pytest
 
@@ -21,3 +22,4 @@ def test_obsbar(
 ):
     fig = dc.pl.obsbar(adata=adata, y=y, hue=hue, kw_barplot=kw, return_fig=True)
     assert isinstance(fig, Figure)
+    plt.close(fig)

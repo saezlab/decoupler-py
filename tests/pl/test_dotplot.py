@@ -1,4 +1,5 @@
 import pandas as pd
+import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 import pytest
 
@@ -28,3 +29,4 @@ def test_dotplot(
 ):
     fig = dc.pl.dotplot(df=df, x='x', y='y', c='c', s='s', vcenter=vcenter, return_fig=True)
     assert isinstance(fig, Figure)
+    plt.close(fig)

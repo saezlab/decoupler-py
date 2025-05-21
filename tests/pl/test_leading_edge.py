@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 import pytest
 
@@ -28,3 +29,4 @@ def test_leading_edge(
     fig, le = dc.pl.leading_edge(df=df, net=net, stat=stat, name=name, return_fig=True)
     assert isinstance(le, np.ndarray)
     assert isinstance(fig, Figure)
+    plt.close(fig)

@@ -1,4 +1,5 @@
 import pandas as pd
+import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 import pytest
 
@@ -33,3 +34,4 @@ def test_barplot(
 ):
     fig = dc.pl.barplot(data=df, name=name, top=top, vertical=vertical, return_fig=True)
     assert isinstance(fig, Figure)
+    plt.close(fig)

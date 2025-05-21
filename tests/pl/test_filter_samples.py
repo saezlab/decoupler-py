@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 import pytest
 
@@ -19,3 +20,4 @@ def test_filter_samples(
 ):
     fig = dc.pl.filter_samples(adata=pdata, groupby=groupby, log=log, return_fig=True)
     assert isinstance(fig, Figure)
+    plt.close(fig)

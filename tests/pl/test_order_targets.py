@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 import pytest
 
@@ -34,3 +35,4 @@ def test_order_targets(
         return_fig=True,
     )
     assert isinstance(fig, Figure)
+    plt.close(fig)
