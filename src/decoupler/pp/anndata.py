@@ -36,11 +36,17 @@ def get_obsm(
     assert key in adata.obsm, f'key={key} must be in adata.obsm'
     # Generate new AnnData
     obs = adata.obs
-    var = pd.DataFrame(index=adata.obsm[key].columns)
+    X_obsm = adata.obsm[key]
+    if isinstance(X_obsm, pd.DataFrame):
+        var = pd.DataFrame(index=X_obsm.columns)
+        X = X_obsm.values
+    else:
+        var = pd.DataFrame(index=[f'{i}' for i in range(X_obsm.shape[1])])
+        X = X_obsm
     uns = adata.uns
     obsm = adata.obsm
     odata = AnnData(
-        X=adata.obsm[key].values,
+        X=X,
         obs=obs,
         var=var,
         uns=uns,

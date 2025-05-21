@@ -1,9 +1,26 @@
 import pandas as pd
 import numpy as np
 import pytest
+from anndata import AnnData
 
 import decoupler as dc
 
+
+@pytest.mark.parametrize(
+    'key',
+    ['X_pca', 'X_umap', 'score_ulm', 'padj_ulm']
+)
+def test_get_obsm(
+    tdata_obsm,
+    key,
+):
+    obsm = dc.pp.get_obsm(adata=tdata_obsm, key=key)
+    assert isinstance(obsm, AnnData)
+    assert obsm.n_obs == tdata_obsm.n_obs
+    assert obsm.n_vars == tdata_obsm.obsm[key].shape[1]
+    assert (obsm.obs == tdata_obsm.obs).values.all()
+    assert (obsm.X == tdata_obsm.obsm[key]).all().all()
+    
 
 @pytest.mark.parametrize(
     'names,order,label,nbins',

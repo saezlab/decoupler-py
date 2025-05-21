@@ -7,6 +7,12 @@ import decoupler as dc
 
 
 @pytest.fixture
+def rng():
+    rng = np.random.default_rng(seed=42)
+    return rng
+
+
+@pytest.fixture
 def adata():
     adata, _ = dc.ds.toy(nobs=40, nvar=20, bval=2, seed=42, verbose=False)
     return adata
@@ -21,18 +27,20 @@ def tdata():
 @pytest.fixture
 def tdata_obsm(
     tdata,
+    net,
+    rng,
 ):
     sc.tl.pca(tdata)
-    sc.pp.neighbors(tdata, n_neighbors=5)
-    sc.tl.umap(tdata)
+    tdata.obsm['X_umap'] = tdata.obsm['X_pca'][:, :2] + rng.random(tdata.obsm['X_pca'][:, :2].shape)
+    dc.mt.ulm(data=tdata, net=net, tmin=0)
     return tdata
 
 
 @pytest.fixture
 def pdata(
     adata,
+    rng,
 ):
-    rng = np.random.default_rng(seed=42)
     adata.X = adata.X.round() * (rng.random(adata.shape) > 0.75)
     return dc.pp.pseudobulk(adata=adata, sample_col='sample', groups_col='group')
 
