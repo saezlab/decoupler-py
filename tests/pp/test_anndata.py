@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import scipy.sparse as sps
 import pytest
 from anndata import AnnData
 
@@ -43,32 +44,56 @@ def test_swap_layer(
 
 
 @pytest.mark.parametrize(
-    'groups_col,mode',
+    'groups_col,mode,sparse,empty',
     [
-        [None, 'sum'],
-        [None, 'mean'],
-        ['group', 'median'],
-        ['group', lambda x: np.max(x) - np.min(x)]
+        [None, 'sum', False, True],
+        [None, 'mean', True, True],
+        ['group', 'median', False, False],
+        ['group', lambda x: np.max(x) - np.min(x), True, True],
+        ['group', dict(sum=np.sum, mean=np.mean), False, False],
     ]
 )
 def test_pseudobulk(
     adata,
     groups_col,
     mode,
+    sparse,
+    empty,
 ):
+    adata = adata.copy()
+    if empty:
+        adata.X[:, 3] = 0.
+        adata.layers['counts'][:, 3] = 0.
+    if sparse:
+        adata.X = sps.csr_matrix(adata.X)
+    if mode == 'sum':
+        layer = 'counts'
+    else:
+        layer = None
     pdata = dc.pp.pseudobulk(
         adata=adata,
         sample_col='sample',
         groups_col=groups_col,
         mode=mode,
-        skip_checks=True,
+        empty=empty,
+        layer=layer,
+        skip_checks=False,
     )
     assert isinstance(pdata, AnnData)
+    assert pdata.shape[0] < adata.shape[0]
+    if empty:
+        assert pdata.shape[1] < adata.shape[1]
+    else:
+        assert pdata.shape[1] == adata.shape[1]
     obs_cols = {'psbulk_cells', 'psbulk_counts'}
     assert obs_cols.issubset(pdata.obs.columns)
     assert 'psbulk_props' in pdata.layers
     prop = pdata.layers['psbulk_props']
     assert ((0. <= prop) & (prop <= 1.)).all()
+    if sparse:
+        assert isinstance(pdata.X, np.ndarray)
+    if isinstance(mode, dict):
+        assert set(mode.keys()).issubset(pdata.layers.keys())
 
 
 @pytest.mark.parametrize(

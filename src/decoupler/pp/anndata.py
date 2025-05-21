@@ -279,10 +279,40 @@ def pseudobulk(
     verbose: bool = False,
 ) -> AnnData:
     """
+    Summarizes omic profiles across cells, grouped by sample and optionally by group categories.
+
+    By default this function expects raw integer counts as input and sums them per sample and group (``mode='sum'``),
+    but other modes are available.
+
+    This function produces some quality control metrics to assess if is necessary to filter some samples or features.
+    The number of cells that belong to each sample is stored in ``adata.obs['psbulk_n_cells']``,
+    the total sum of counts per sample in ``.obs['psbulk_counts']``,
+    and the proportion of cells that have a non-zero value for a given feature in ``.layers['psbulk_props']``.
 
     Parameters
     ----------
     %(adata)s
+    sample_col
+        Column of ``adata.obs`` where to extract the samples names.
+    groups_col
+        Column of ``adata.obs`` where to extract the groups names. Can be set to ``None`` to ignore groups.
+    %(layer)s
+    %(raw)s
+    %(empty)s
+    mode
+        How to perform the pseudobulk. Available options are ``sum``, ``mean`` or ``median``. It also accepts callback
+        functions, like lambda, to perform custom aggregations. Additionally, it is also possible to provide a dictionary of
+        different callback functions, each one stored in a different resulting `.layer`.
+        In this case, the result of the first callback function of the dictionary is stored in ``.X`` by default. To switch
+        between layers check ``decoupler.swap_layer``.
+    skip_checks
+        Whether to skip input checks. Set to ``True`` when working with positive and negative data, or when counts are not
+        integers and ``mode='sum'``.
+    %(verbose)s
+
+    Returns
+    -------
+    New AnnData object containing summarized pseudobulk profiles by sample and optionally by group.
     """
     # Validate
     assert isinstance(adata, AnnData), 'adata must be an AnnData instance'
@@ -308,7 +338,7 @@ def pseudobulk(
         psbulks = []
         for l_name in mode:
             func = mode[l_name]
-            func = _validate_mode(mode=mode, verbose=verbose)
+            func = _validate_mode(mode=func, verbose=verbose)
             psbulk, ncells, counts, props = _psbulk(
                 n_rows=n_rows,
                 n_cols=n_cols,
@@ -353,7 +383,7 @@ def pseudobulk(
     psbulk = AnnData(X=psbulk, obs=new_obs, var=var, layers=layers)
     # Place first element of mode dict as X
     if type(mode) is dict:
-        swap_layer(psbulk, layer_key=list(mode.keys())[0], X_layer_key=None, inplace=True)
+        swap_layer(psbulk, key=list(mode.keys())[0], X_key=None, inplace=True)
     return psbulk
 
 
