@@ -52,7 +52,7 @@ class MethodMeta:
 @docs.dedent
 class Method(MethodMeta):
     """
-    Enrichment Method Class
+    {0}
 
     Parameters
     ----------
@@ -81,7 +81,11 @@ class Method(MethodMeta):
             params=_method.params
         )
         self._method = _method
-        self.__doc__ = f"{self.__doc__}\n\nMethod parameters\n-----------------\n{self.params}\n\n"
+        header = self.__doc__.format(self._method.desc)
+        args = self.params
+        if args == '':
+            args = 'None'
+        self.__doc__ = f"{header}\n\nMethod parameters\n-----------------\n{args}\n\n"
 
 
     def __call__(
