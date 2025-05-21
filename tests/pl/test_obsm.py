@@ -1,4 +1,8 @@
 import pandas as pd
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
 import pytest
 
 import decoupler as dc
@@ -30,4 +34,14 @@ def test_obsm(
     titles,
     cmap_obs,
 ):
-    dc.pl.obsm(tdata_obsm_ranked, names=names, nvar=nvar, dendrogram=dendrogram, titles=titles, cmap_obs=cmap_obs)
+    fig = dc.pl.obsm(
+        tdata_obsm_ranked,
+        names=names,
+        nvar=nvar,
+        dendrogram=dendrogram,
+        titles=titles,
+        cmap_obs=cmap_obs,
+        return_fig=True
+    )
+    assert isinstance(fig, Figure)
+    plt.close(fig)
