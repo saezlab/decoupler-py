@@ -107,8 +107,63 @@ def test_filter_samples(
         assert res is None
         assert f_pdata.shape[0] < pdata.shape[0]
     else:
-        assert isinstance(res, list)
-        assert len(res) < pdata.shape[0]
+        assert isinstance(res, np.ndarray)
+        assert res.size < pdata.shape[0]
+
+
+def test_filter_by_expr(
+    pdata,
+):
+    dc_var = dc.pp.filter_by_expr(
+        adata=pdata, group='group', lib_size=None, min_count=10, min_total_count=10, large_n=10, min_prop=0.7, inplace=False
+    )
+    eg_var = np.array(["G07", "G02", "G08", "G01", "G06"])
+    assert set(dc_var) == set(eg_var)
+    dc_var = dc.pp.filter_by_expr(
+        adata=pdata, group='group', lib_size=None, min_count=7, min_total_count=10, large_n=10, min_prop=0.7, inplace=False
+    )
+    eg_var = np.array(["G05", "G07", "G02", "G08", "G01", "G06"])
+    assert set(dc_var) == set(eg_var)
+    dc_var = dc.pp.filter_by_expr(
+        adata=pdata, group='group', lib_size=None, min_count=7, min_total_count=10, large_n=0, min_prop=0.1, inplace=False
+    )
+    eg_var = np.array(["G04", "G05", "G03", "G07", "G17", "G02", "G14", "G08", "G20", "G01", "G06", "G19"])
+    assert set(dc_var) == set(eg_var)
+    dc_var = dc.pp.filter_by_expr(
+        adata=pdata, group='group', lib_size=1, min_count=3, min_total_count=10, large_n=0, min_prop=0.1, inplace=False
+    )
+    eg_var = np.array([
+        "G04", "G05", "G03", "G07", "G18", "G17", "G02", "G14", "G16", "G08", "G13", "G20", "G01", "G15", "G06", "G19"
+    ])
+    assert set(dc_var) == set(eg_var)
+
+
+@pytest.mark.parametrize('inplace', [True, False])
+def test_filter_by_prop(
+    pdata,
+    inplace,
+):
+    f_pdata = pdata.copy()
+    res = dc.pp.filter_by_prop(adata=f_pdata, inplace=inplace)
+    if inplace:
+        assert res is None
+        assert f_pdata.shape[1] < pdata.shape[1]
+    else:
+        assert isinstance(res, np.ndarray)
+        assert res.size < pdata.shape[1]
+
+
+@pytest.mark.parametrize('key', ['X_pca', 'score_ulm'])
+def test_knn(
+    tdata_obsm,
+    key,
+):
+    k_adata = tdata_obsm.copy()
+    res = dc.pp.knn(adata=k_adata, key=key)
+    assert res is None
+    k = f'{key}_connectivities'
+    assert k in k_adata.obsp
+    assert isinstance(k_adata.obsp[k], sps.csr_matrix)
 
 
 @pytest.mark.parametrize(

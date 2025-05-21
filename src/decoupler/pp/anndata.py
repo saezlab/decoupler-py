@@ -423,7 +423,7 @@ def filter_samples(
     if inplace:
         adata._inplace_subset_obs(obs_names)
     else:
-        return obs_names
+        return np.array(obs_names, dtype='U')
 
 
 def _min_sample_size(
@@ -600,11 +600,11 @@ def filter_by_prop(
     nsmpls = np.sum(props >= min_prop, axis=0)
     # Set features to 0
     msk = nsmpls >= min_smpls
-    genes = adata.var_names[msk].astype('U')
+    genes = adata.var_names[msk]
     if inplace:
         adata._inplace_subset_var(genes)
     else:
-        return genes
+        return np.array(genes, dtype='U')
 
 
 @docs.dedent
@@ -641,7 +641,8 @@ def knn(
     coords = adata.obsm[key]
     nobs = coords.shape[0]
     tree = scs.KDTree(coords)
-    dist, idx = tree.query(coords, k=max_nn + 1, workers=4)
+    max_nn = np.min([max_nn + 1, adata.n_obs])
+    dist, idx = tree.query(coords, k=max_nn, workers=4)
     # Gaussian
     dist = np.exp(-(dist ** 2.0) / (2.0 * bw ** 2.0))
     if cutoff is not None:
@@ -650,7 +651,7 @@ def knn(
     dist = dist / np.sum(np.abs(dist), axis=1).reshape(-1, 1)
     # Build sparse matrix
     krnl = sps.csr_matrix(
-        (dist.ravel(), (np.repeat(np.arange(nobs), max_nn + 1), idx.ravel())),
+        (dist.ravel(), (np.repeat(np.arange(nobs), max_nn), idx.ravel())),
         shape=(nobs, nobs)
     )
     krnl.eliminate_zeros()
