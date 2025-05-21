@@ -81,7 +81,11 @@ def rankby_obsm(
             else:
                 # ANOVA
                 x = [group[y_var].dropna().values for _, group in df.groupby(x_var, observed=True)]
-                stat, pval = sts.f_oneway(*x)
+                # At least n=2 per group else skip
+                if all(len(g) >= 2 for g in x):
+                    stat, pval = sts.f_oneway(*x)
+                else:
+                    stat, pval = None, 1.
             row = [y_var, x_var, stat, pval]
             res.append(row)
     res = pd.DataFrame(res, columns=['obsm', 'obs', 'stat', 'pval'])
