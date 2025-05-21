@@ -15,6 +15,7 @@ def rng():
 @pytest.fixture
 def adata():
     adata, _ = dc.ds.toy(nobs=40, nvar=20, bval=2, seed=42, verbose=False)
+    adata.layers['counts'] = adata.X.round()
     return adata
 
 

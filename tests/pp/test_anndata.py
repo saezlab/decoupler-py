@@ -20,6 +20,26 @@ def test_get_obsm(
     assert obsm.n_vars == tdata_obsm.obsm[key].shape[1]
     assert (obsm.obs == tdata_obsm.obs).values.all()
     assert (obsm.X == tdata_obsm.obsm[key]).all().all()
+
+
+def test_swap_layer(
+    adata,
+):
+    ldata = adata.copy()
+    res = dc.pp.swap_layer(adata=ldata, key='counts', X_key=None, inplace=True)
+    assert res is None
+    assert ldata.X.sum().is_integer()
+    assert list(ldata.layers.keys()) == ['counts']
+    ldata = adata.copy()
+    res = dc.pp.swap_layer(adata=ldata, key='counts', X_key=None, inplace=False)
+    assert isinstance(res, AnnData)
+    assert res.X.sum().is_integer()
+    assert list(res.layers.keys()) == ['counts']
+    res = dc.pp.swap_layer(adata=ldata, key='counts', X_key='X', inplace=False)
+    assert isinstance(res, AnnData)
+    assert res.X.sum().is_integer()
+    assert list(res.layers.keys()) == ['counts', 'X']
+    assert (ldata.X == res.layers['X']).all()
     
 
 @pytest.mark.parametrize(
