@@ -82,11 +82,12 @@ def toy(
     row_b = [row_b + np.abs(rng.normal(size=nvar)) for _ in range(n + res)]
     adata = np.vstack([row_a, row_b])
     features = ['G{:02d}'.format(i + 1) for i in range(nvar)]
-    samples = ['S{:02d}'.format(i + 1) for i in range(nobs)]
+    samples = ['C{:02d}'.format(i + 1) for i in range(nobs)]
     adata = pd.DataFrame(adata, index=samples, columns=features)
     adata = AnnData(adata)
     adata.obs['group'] = (['A'] * len(row_a)) + (['B'] * len(row_b))
     adata.obs['group'] = adata.obs['group'].astype('category')
+    adata.obs['sample'] = rng.choice(['S01', 'S02', 'S03'], size=adata.n_obs, replace=True)
     if pstime:
         m = f'toy - Adding simulated pseudotime'
         _log(m, level='info', verbose=verbose)

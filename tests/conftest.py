@@ -22,8 +22,7 @@ def pdata(
 ):
     rng = np.random.default_rng(seed=42)
     adata.X = adata.X.round() * (rng.random(adata.shape) > 0.75)
-    adata.obs['sample_id'] = rng.choice(['s1', 's2', 's3'], size=adata.n_obs, replace=True)
-    return dc.pp.pseudobulk(adata=adata, sample_col='sample_id', groups_col='group')
+    return dc.pp.pseudobulk(adata=adata, sample_col='sample', groups_col='group')
 
 
 @pytest.fixture

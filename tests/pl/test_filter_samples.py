@@ -9,7 +9,7 @@ import decoupler as dc
     [
         ['group', True],
         [['group'], True],
-        [['sample_id', 'group'], True],
+        [['sample', 'group'], True],
     ]
 )
 def test_filter_samples(
