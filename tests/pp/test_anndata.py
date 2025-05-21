@@ -114,6 +114,44 @@ def test_filter_samples(
 def test_filter_by_expr(
     pdata,
 ):
+    """
+    names_v <- c(
+      'G11', 'G04', 'G05', 'G03', 'G07', 'G18', 'G17','G02','G10', 'G14',
+      'G09', 'G16', 'G08', 'G13', 'G20', 'G01', 'G12', 'G15', 'G06', 'G19'
+    )
+    names_o <- c(
+      'S01_A', 'S02_A', 'S03_A', 'S01_B', 'S02_B', 'S03_B'
+    )
+    data <- c(
+    0., 0., 2., 0., 2., 0., 2.,17., 0., 3., 0., 3., 0., 3., 3.,18., 0., 0., 1., 0.,
+    0.,35., 3.,44., 2., 6., 7.,26., 3., 6., 0., 6., 1., 5., 5.,24., 1., 3., 4., 5.,
+    2., 0., 0.,10., 1., 4., 6.,25., 1., 5., 0., 2., 0., 3., 8.,35., 2., 2., 0.,13.,
+    2., 0., 9., 1., 9., 3., 3., 0., 1., 4., 0., 0.,19., 0., 0., 0., 0., 3., 8., 4.,
+    0., 1., 8., 1.,19., 0., 7., 2., 0., 7., 1., 2.,24., 3.,10., 3., 0., 5.,17., 2.,
+    2., 0.,34., 4.,42., 3., 3., 1., 3.,10., 1., 0.,28., 6., 9., 0., 3., 4.,17., 5.
+    )
+    data <- matrix(data = data, byrow = TRUE, nrow = length(names_o))
+    rownames(data) <- names_o
+    colnames(data) <- names_v
+    data <- t(data)
+    group <- c('A', 'A', 'A', 'B', 'B', 'B')
+    msk <- filterByExpr(
+      y=data, group = group, lib.size = NULL, min.count = 10,
+      min.total.count = 10, large.n = 10, min.prop = 0.7)
+    rownames(data)[msk]
+    msk <- filterByExpr(
+      y=data, group = group, lib.size = NULL, min.count = 7,
+      min.total.count = 10, large.n = 10, min.prop = 0.7)
+    rownames(data)[msk]
+    msk <- filterByExpr(
+      y=data, group = group, lib.size = NULL, min.count = 7,
+      min.total.count = 10, large.n = 0, min.prop = 0.1)
+    rownames(data)[msk]
+    msk <- filterByExpr(
+      y=data, group = group, lib.size = 1, min.count = 3,
+      min.total.count = 10, large.n = 0, min.prop = 0.1)
+    rownames(data)[msk]
+    """
     dc_var = dc.pp.filter_by_expr(
         adata=pdata, group='group', lib_size=None, min_count=10, min_total_count=10, large_n=10, min_prop=0.7, inplace=False
     )
