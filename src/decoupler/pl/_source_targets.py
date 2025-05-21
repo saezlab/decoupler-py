@@ -3,15 +3,17 @@ import numpy as np
 from matplotlib.figure import Figure
 import adjustText as at
 
+from decoupler._docs import docs
 from decoupler._Plotter import Plotter
 from decoupler.pp.net import _validate_net
 
 
+@docs.dedent
 def source_targets(
     data: pd.DataFrame,
+    net: pd.DataFrame,
     x: str,
     y: str,
-    net: pd.DataFrame,
     name: str,
     top: int = 5,
     thr_x: float = 0.,
@@ -23,11 +25,40 @@ def source_targets(
     **kwargs,
 ) -> None | Figure:
     """
+    Plots target features of a given source as a scatter plot.
+
+    Parameters
+    ----------
+    df
+        DataFrame containing feature-level statistics. Feature names must be in ``df.index``.
+    %(net)s
+    x
+        Name of the column containing values to place on the x-axis.
+    y
+        Name of the column containing values to place on the y-axis.
+    name
+        Name of the source to plot.
+    top
+        Number of top features based on the product of x and y to label.
+    thr_x
+        Value were to place a baseline for the x-axis.
+    thr_y
+        Value were to place a baseline for the y-axis.
+    max_x
+        Maximum value to plot on x-axis.
+    max_y
+        Maximum value to plot on y-axis.
+    color_pos
+        Color to plot positively associated features.
+    color_neg
+        Color to plot negatively associated features.
+    %(plot)s
     """
     # Validate inputs
     m = f'data must be a pd.DataFrame containing the columns {x} and {y}'
     assert isinstance(data, pd.DataFrame), m
     assert {x, y}.issubset(data.columns.union(net.columns)), m
+    assert not pd.api.types.is_numeric_dtype(data.index), 'data index must be features in net'
     assert isinstance(net, pd.DataFrame), \
     f'net must be a pd.DataFrame containing the columns {x} and {y}'
     assert isinstance(name, str), 'name must be a str'
