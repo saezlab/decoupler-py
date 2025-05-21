@@ -7,7 +7,7 @@ from decoupler.pl._network import network
 from decoupler.pl._obsbar import obsbar
 from decoupler.pl._order_targets import order_targets
 from decoupler.pl._order import order
-from decoupler.pl._rank_obsm import rank_obsm
+from decoupler.pl._obsm import obsm
 from decoupler.pl._filter_samples import filter_samples
 from decoupler.pl._source_targets import source_targets
 from decoupler.pl._volcano import volcano

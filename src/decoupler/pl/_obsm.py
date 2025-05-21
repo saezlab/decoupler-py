@@ -56,11 +56,13 @@ def _input(
     stats = stats.pivot(index='obs', columns='obsm', values='padj')
     stats.index.name = None
     stats.columns.name = None
-    return obsm, stats
+    if names is None:
+        names = stats.index
+    return obsm, stats, names
 
 
 @docs.dedent
-def rank_obsm(
+def obsm(
     adata: AnnData,
     key: str = 'rank_obsm',
     names: str | list | None = None,
@@ -70,10 +72,33 @@ def rank_obsm(
     titles: list = ['Scores', 'Stats'],
     cmap_stat: str = 'Purples',
     cmap_obsm: str = 'BrBG',
-    cmap_obs: dict | None = None,
+    cmap_obs: dict = dict(),
     **kwargs
 ) -> None | Figure:
     """
+    Plot metadata associations with features in ``adata.obsm``.
+
+    Parameters
+    ----------
+    %(adata)s
+    key
+        Name of ``adata.uns`` key storing ``decoupler.tl.rank_obsm`` results.
+    names
+        Which metadata covariates to show.
+    nvar
+        How many features from ``adata.obsm`` to show.
+    dendogram
+        Whether to sort and plot samples using a dendogram.
+    thr_sign
+        Threshold of significance for the adjusted p-values.
+    titles
+        List of titles to place for the metadata heatmap and ``obsm`` features.
+    cmap_stat
+        Colormap for metadata statistics.
+    cmap_obsm
+        Colormap for ``obsm`` features.
+    cmap_obs
+        Dictionary of colormaps containing a palette for each metadata covariate being plotted.
     %(plot)s
     """
     assert isinstance(dendrogram, bool), 'dendrogram must be bool'
@@ -81,10 +106,10 @@ def rank_obsm(
     'thr_sign must be float and between 0 and 1'
     assert isinstance(titles, list) and len(titles) == 2, \
     'titles must be list and with 2 elements'
-    assert isinstance(cmap_obs, dict) or cmap_obs is None, \
-    'cmap_obs must be dict or None'
+    assert isinstance(cmap_obs, dict), \
+    'cmap_obs must be dict'
     # Extract
-    obsm, stats = _input(adata=adata, uns_key=key, names=names, nvar=nvar)
+    obsm, stats, names = _input(adata=adata, uns_key=key, names=names, nvar=nvar)
     # Instance
     kwargs['ax'] = None
     bp = Plotter(**kwargs)
@@ -106,23 +131,22 @@ def rank_obsm(
         h2.add_dendrogram("left")
     h2.add_bottom(mp.Labels(obsm.columns))
     # Add obs legends
-    if names is None:
-        names = stats.index
     for name in names:
         is_numeric = pd.api.types.is_numeric_dtype(adata.obs[name])
         if is_numeric:
-            if cmap_obs is None:
+            if name not in cmap_obs:
                 cmap = 'viridis'
             else:
-                cmap = {name: cmap_obs[name]}
+                cmap = cmap_obs[name]
             colors = mp.ColorMesh(adata.obs[name], cmap=cmap, label=name)
         else:
             cats = adata.obs[name].sort_values().unique()
-            if cmap_obs is None:
+            if name not in cmap_obs:
                 tab10 = plt.get_cmap('tab10')
                 palette = {k: tab10(i) for i, k in enumerate(cats)}
             else:
-                palette = {name: cmap_obs[name]}
+                c_cmap = plt.get_cmap(cmap_obs[name])
+                palette = {k: c_cmap(i) for i, k in enumerate(cats)}
             colors = mp.Colors(adata.obs[name], palette=palette, label=name)
         h2.add_right(colors, pad=0.1, size=0.1)
     # Build plot

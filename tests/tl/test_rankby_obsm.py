@@ -1,18 +1,6 @@
-import pandas as pd
 import pytest
-import scanpy as sc
 
 import decoupler as dc
-
-
-@pytest.fixture
-def tdata(
-    tdata,
-):
-    sc.tl.pca(tdata)
-    sc.pp.neighbors(tdata, n_neighbors=5)
-    sc.tl.umap(tdata)
-    return tdata
 
 
 @pytest.mark.parametrize(
@@ -24,7 +12,7 @@ def tdata(
     ]
 )
 def test_rankby_obsm(
-    tdata,
+    tdata_obsm,
     key,
     uns_key,
 ):

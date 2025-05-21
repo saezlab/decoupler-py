@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+import scanpy as sc
 
 import decoupler as dc
 
@@ -13,6 +14,16 @@ def adata():
 @pytest.fixture
 def tdata():
     tdata, _ = dc.ds.toy(nobs=40, nvar=20, bval=2, seed=42, verbose=False, pstime=True)
+    return tdata
+
+
+@pytest.fixture
+def tdata_obsm(
+    tdata,
+):
+    sc.tl.pca(tdata)
+    sc.pp.neighbors(tdata, n_neighbors=5)
+    sc.tl.umap(tdata)
     return tdata
 
 
