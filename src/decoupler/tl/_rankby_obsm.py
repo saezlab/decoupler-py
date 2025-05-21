@@ -23,9 +23,13 @@ def _input_rank_obsm(
         .replace('umap', 'UMAP')
     )
     df = adata.obsm[key]
-    ncol = df.shape[1]
-    digits = len(str(ncol))
-    y_vars = [f"{name_col}{str(i).zfill(digits)}" for i in range(1, ncol + 1)]
+    if isinstance(df, pd.DataFrame):
+        y_vars = df.std(ddof=1, axis=0).sort_values(ascending=False).index
+        df = df.loc[:, y_vars].values
+    else:
+        ncol = df.shape[1]
+        digits = len(str(ncol))
+        y_vars = [f"{name_col}{str(i).zfill(digits)}" for i in range(1, ncol + 1)]
     df = pd.DataFrame(
         data=df,
         index=adata.obs_names,
