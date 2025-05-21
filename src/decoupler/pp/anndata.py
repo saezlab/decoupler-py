@@ -136,7 +136,7 @@ def _validate_mode(
     elif mode == 'median':
         func = partial(np.median, axis=0)
     elif callable(mode):
-        func = partial(np.apply_along_axis, func1d=mode, axis=0)
+        func = partial(np.apply_along_axis, mode, 0)
     m = f'Using function {func.func.__name__} to aggregate observations'
     _log(m, level='info', verbose=verbose)
     return func

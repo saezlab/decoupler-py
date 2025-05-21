@@ -40,7 +40,36 @@ def test_swap_layer(
     assert res.X.sum().is_integer()
     assert list(res.layers.keys()) == ['counts', 'X']
     assert (ldata.X == res.layers['X']).all()
-    
+
+
+@pytest.mark.parametrize(
+    'groups_col,mode',
+    [
+        [None, 'sum'],
+        [None, 'mean'],
+        ['group', 'median'],
+        ['group', lambda x: np.max(x) - np.min(x)]
+    ]
+)
+def test_pseudobulk(
+    adata,
+    groups_col,
+    mode,
+):
+    pdata = dc.pp.pseudobulk(
+        adata=adata,
+        sample_col='sample',
+        groups_col=groups_col,
+        mode=mode,
+        skip_checks=True,
+    )
+    assert isinstance(pdata, AnnData)
+    obs_cols = {'psbulk_cells', 'psbulk_counts'}
+    assert obs_cols.issubset(pdata.obs.columns)
+    assert 'psbulk_props' in pdata.layers
+    prop = pdata.layers['psbulk_props']
+    assert ((0. <= prop) & (prop <= 1.)).all()
+
 
 @pytest.mark.parametrize(
     'names,order,label,nbins',
