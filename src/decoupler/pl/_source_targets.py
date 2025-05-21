@@ -29,8 +29,7 @@ def source_targets(
 
     Parameters
     ----------
-    df
-        DataFrame containing feature-level statistics. Feature names must be in ``df.index``.
+    %(data_plot)s
     %(net)s
     x
         Name of the column containing values to place on the x-axis.

@@ -170,6 +170,10 @@ _vmax = """\
 vmax
     The value representing the upper limit of the color scale."""
 
+_data_plot = """\
+data
+    DataFrame containing feature-level statistics. Feature names must be in ``df.index``."""
+
 docs = DocstringProcessor(
     plot=_plot,
     net=_net,
@@ -209,4 +213,5 @@ docs = DocstringProcessor(
     vmin=_vmin,
     vcenter=_vcenter,
     vmax=_vmax,
+    data_plot=_data_plot,
 )

@@ -28,16 +28,14 @@ def volcano(
 
     Parameters
     ----------
-    data
-        Results of DEA in long format.
+    %(data_plot)s
     x
         Column name of ``data`` storing the change statitsics.
     y
         Column name of ``data`` storing the associated p-values.
-    net
-        DataFrame containing 'source' and 'target' columns, and an optional 'weight' column.
+    %(net)s
     name
-        Name of the 'source' to subset ``net``.
+        Name of the source to subset ``net``.
     top
         Number of top differentially abundant features to show.
     thr_stat
@@ -54,7 +52,7 @@ def volcano(
         Color to plot significant negative features.
     color_null
         Color to plot rest of the genes.
-    .. inheritdoc:: Plotter.__init__
+    %(plot)s
     """
     # Validate inputs
     m = f'data must be a pd.DataFrame containing the columns {x} and {y}'

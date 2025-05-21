@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import pytest
 import scanpy as sc
 
@@ -34,6 +35,22 @@ def pdata(
     rng = np.random.default_rng(seed=42)
     adata.X = adata.X.round() * (rng.random(adata.shape) > 0.75)
     return dc.pp.pseudobulk(adata=adata, sample_col='sample', groups_col='group')
+
+
+@pytest.fixture
+def deg():
+    deg = pd.DataFrame(
+        data = [
+            [1, 0.5],
+            [-2, 0.25],
+            [3, 0.125],
+            [-4, 0.05],
+            [5, 0.025],
+        ],
+        columns=['stat', 'padj'],
+        index=['G01', 'G02', 'G03', 'G04', 'G05']
+    )
+    return deg
 
 
 @pytest.fixture
