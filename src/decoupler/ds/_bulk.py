@@ -36,6 +36,8 @@ def hsctgfb(
     # Format obs
     adata.obs['condition'] = ['control' if '-Ctrl' in sample_id else 'treatment' for sample_id in adata.obs.index]
     adata.obs['sample_id'] = [sample_id.split('_')[0] for sample_id in adata.obs.index]
+    adata.obs['condition'] = adata.obs['condition'].astype('category')
+    adata.obs['sample_id'] = adata.obs['sample_id'].astype('category')
     m = f'generated AnnData with shape={adata.shape}'
     _log(m, level='info', verbose=verbose)
     return adata
