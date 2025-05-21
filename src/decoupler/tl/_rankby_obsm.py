@@ -45,7 +45,9 @@ def rankby_obsm(
 ) -> None | pd.DataFrame:
     """
     Ranks features in ``adata.obsm`` by the significance of their association with metadata in ``adata.obs``.
+
     For categorical variables it uses ANOVA, for continous Spearman's correlation.
+
     The obtained p-values are corrected by Benjamini-Hochberg.
 
     Parameters

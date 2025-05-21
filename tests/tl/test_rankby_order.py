@@ -12,7 +12,8 @@ def test_rankby_order(
     neg_genes = {'G01', 'G02', 'G03', 'G04'}
     pos_genes = {'G05', 'G06', 'G07', 'G08'}
     gt_genes = neg_genes | pos_genes
-    pd_genes = set(df[df['padj'] < 0.05]['name'])
+    pd_genes = set(df[df['padj'] < 0.01]['name'])
+    assert len(gt_genes) > 3
     assert gt_genes == pd_genes
     msk = df['name'].isin(gt_genes)
     assert df[~msk]['impr'].mean() < df[msk]['impr'].mean()
@@ -21,7 +22,8 @@ def test_rankby_order(
     tdata.X = sps.csr_matrix(tdata.X)
     df = dc.tl.rankby_order(tdata, order='pstime')
     assert isinstance(df, pd.DataFrame)
-    pd_genes = set(df[df['padj'] < 0.05]['name'])
+    pd_genes = set(df[df['padj'] < 0.01]['name'])
+    assert len(gt_genes) > 3
     assert gt_genes == pd_genes
     msk = df['name'].isin(gt_genes)
     assert df[~msk]['impr'].mean() < df[msk]['impr'].mean()
