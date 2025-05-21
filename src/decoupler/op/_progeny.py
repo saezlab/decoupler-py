@@ -21,6 +21,23 @@ def progeny(
     a collection of target genes, each interaction has an associated p-value
     and weight. The top significant interactions per pathway are returned.
 
+    Here is a brief description of each pathway:
+
+    - **Androgen**: involved in the growth and development of the male reproductive organs
+    - **EGFR**: regulates growth, survival, migration, apoptosis, proliferation, and differentiation in mammalian cells
+    - **Estrogen**: promotes the growth and development of the female reproductive organs
+    - **Hypoxia**: promotes angiogenesis and metabolic reprogramming when O2 levels are low
+    - **JAK-STAT**: involved in immunity, cell division, cell death, and tumor formation
+    - **MAPK**: integrates external signals and promotes cell growth and proliferation
+    - **NFkB**: regulates immune response, cytokine production and cell survival
+    - **p53**: regulates cell cycle, apoptosis, DNA repair and tumor suppression
+    - **PI3K**: promotes growth and proliferation
+    - **TGFb**: involved in development, homeostasis, and repair of most tissues
+    - **TNFa**: mediates haematopoiesis, immune surveillance, tumour regression and protection from infection
+    - **Trail**: induces apoptosis
+    - **VEGF**: mediates angiogenesis, vascular permeability, and cell migration
+    - **WNT**: regulates organ morphogenesis during development and tissue repair
+
     Parameters
     ----------
     %(organism)s
