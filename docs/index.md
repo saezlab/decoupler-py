@@ -3,13 +3,10 @@
 ```
 
 ```{toctree}
-:hidden: true
-:maxdepth: 1
+:maxdepth: 2
 
 api.md
+notebooks/index
 changelog.md
-contributing.md
 references.md
-
-notebooks/example
 ```

@@ -25,8 +25,10 @@
 [badge-adown]: https://static.pepy.tech/badge/decoupler
 [badge-stars]: https://img.shields.io/github/stars/saezlab/decoupler-py?style=flat&logo=github&color=yellow
 
-Python package to perform enrichment analysis from omics data.
-decoupler is a python package containing different enrichment statistical methods to extract biologically driven scores from omics data within a unified framework. This is its faster and memory efficient Python implementation, a deprecated version in R can be found [here](https://github.com/saezlab/decoupler).
+`decoupler` is a python package from the [scverse][] ecosystem containing different enrichment statistical
+methods to extract biologically driven scores
+from omics data within a unified framework. This is its faster and memory efficient Python implementation,
+a deprecated version in R can be found [here](https://github.com/saezlab/decoupler).
 
 ## Getting started
 
@@ -77,6 +79,7 @@ to infer biological activities from omics data. Bioinformatics Advances.
 
 [uv]: https://github.com/astral-sh/uv
 [scverse discourse]: https://discourse.scverse.org/
+[scverse]: https://scverse.org/
 [issue tracker]: https://github.com/saezlab/decoupler-py/issues
 [tests]: https://github.com/saezlab/decoupler-py/actions/workflows/test.yaml
 [documentation]: https://decoupler-py.readthedocs.io
@@ -86,4 +89,3 @@ to infer biological activities from omics data. Bioinformatics Advances.
 [down]: https://pepy.tech/project/decoupler
 [conda]: https://anaconda.org/conda-forge/decoupler-py
 [codecoverage]: https://codecov.io/gh/saezlab/decoupler-py
-
