@@ -6,6 +6,7 @@ import scipy.sparse as sps
 from tqdm.auto import tqdm
 import numba as nb
 
+from decoupler._docs import docs
 from decoupler._log import _log
 from decoupler._Method import MethodMeta, Method
 from decoupler.pp.net import _getset
@@ -54,6 +55,7 @@ def _validate_n_up(
     return n_up
 
 
+@docs.dedent
 def _func_aucell(
     mat: np.ndarray,
     cnct: np.ndarray,
@@ -62,6 +64,31 @@ def _func_aucell(
     n_up: int | float | None = None,
     verbose: bool = False,
 ) -> Tuple[np.ndarray, None]:
+    """
+    Area Under the Curve for set enrichment within single cells (AUCell) :cite:`aucell`.
+
+    Given a ranked list of features per observation, AUCell calculates the AUC by measuring how early the features in
+    the set appear in this ranking. Specifically, the enrichment score :math:`ES` is:
+
+    .. math::
+    
+       {ES}_{i, F} = \int_0^1 {RecoveryCurve}_{i, F}(r_i) \, dr
+    
+    Where:
+    
+    - :math:`i` is the obervation  
+    - :math:`F` is the feature set  
+    - :math:`{RecoveryCurve}_{i, F}(r_i)` is the proportion of features from :math:`F` recovered in the top :math:`r_i`-fraction of the ranked list for observation :math:`i`
+
+    %(notest)s
+
+    %(params)s
+    n_up
+        Number of features to include in the AUC calculation.
+        If ``None``, the top 5% of features based on their magnitude are selected.
+
+    %(returns)s
+    """
     nobs, nvar = mat.shape
     nsrc = starts.size
     n_up = _validate_n_up(nvar, n_up)
@@ -78,13 +105,6 @@ def _func_aucell(
     return es, None
 
 
-params = """\
-n_up
-    Number of features to include in the AUC calculation.
-    If ``None``, the top 5% of features based on their magnitude are selected.
-"""
-
-
 _aucell = MethodMeta(
     name='aucell',
     desc='AUCell',
@@ -95,6 +115,5 @@ _aucell = MethodMeta(
     test=False,
     limits=(0, 1),
     reference='https://doi.org/10.1038/nmeth.4463',
-    params=params,
 )
 aucell = Method(_method=_aucell)

@@ -2,3 +2,13 @@
 div.cell_output table.dataframe {
     font-size: 0.8em;
 }
+
+/* Adjust the logo size */
+.logo img {
+    width: 50%;   /* or any percentage you want */
+    height: auto; /* maintain aspect ratio */
+}
+
+img.no-scaled-link {
+    background: transparent !important;
+}

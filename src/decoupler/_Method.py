@@ -9,9 +9,6 @@ from decoupler.mt._run import _run
 
 
 class MethodMeta:
-    """
-    A Class used to store Method Metadata
-    """
     def __init__(
         self,
         name: str,
@@ -23,7 +20,6 @@ class MethodMeta:
         test: bool,
         limits: tuple,
         reference: str,
-        params: str,
     ):
         self.name = name
         self.desc = desc
@@ -34,7 +30,6 @@ class MethodMeta:
         self.test = test
         self.limits = limits
         self.reference = reference
-        self.params = params
 
     def meta(self) -> pd.DataFrame:
         meta = pd.DataFrame([{
@@ -49,21 +44,8 @@ class MethodMeta:
         return meta
 
 
-@docs.dedent
+#@docs.dedent
 class Method(MethodMeta):
-    """
-    {0}
-
-    Parameters
-    ----------
-    %(data)s
-    %(net)s
-    %(tmin)s
-    %(raw)s
-    %(empty)s
-    %(bsize)s
-    %(verbose)s
-    """
     def __init__(
         self,
         _method: MethodMeta,
@@ -78,15 +60,9 @@ class Method(MethodMeta):
             test=_method.test,
             limits=_method.limits,
             reference=_method.reference,
-            params=_method.params
         )
         self._method = _method
-        header = self.__doc__.format(self._method.desc)
-        args = self.params
-        if args == '':
-            args = 'None'
-        self.__doc__ = f"{header}\n\nMethod parameters\n-----------------\n{args}\n\n"
-
+        self.__doc__ = self.func.__doc__
 
     def __call__(
         self,
@@ -113,21 +89,6 @@ class Method(MethodMeta):
             verbose=verbose,
             **kwargs,
         )
-
-    def __repr__(self):
-        doc = \
-f"""
-Method
-------
-Name: {self.name}
-Description: {self.desc}
-Type of enrichment statistic: {self.stype}
-Models feature weights: {self.weight}
-Performs statistical test: {self.test}
-Range of values: {self.limits}
-Reference: {self.reference}
-"""
-        return doc
 
 
 def _show_methods(methods):

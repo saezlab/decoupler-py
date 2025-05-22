@@ -4,6 +4,7 @@ import numpy as np
 import numba as nb
 import scipy.stats as sts
 
+from decoupler._docs import docs
 from decoupler._log import _log
 from decoupler._Method import MethodMeta, Method
 
@@ -25,11 +26,64 @@ def _tval(X, y, inv, df):
     return t.astype(nb.f4)
 
 
+@docs.dedent
 def _func_mlm(
     mat: np.ndarray,
     adj: np.ndarray,
     verbose: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray]:
+    r"""
+    Multivariate Linear Model (MLM) :cite:`decoupler`.
+
+    This approach uses the molecular features from one observation as the population of samples
+    and it fits a linear model with with multiple covariates, which are the weights of all feature sets :math:`F`.
+
+    .. math::
+
+        y^i = \beta_0 + \beta_1 x_{1}^{i} + \beta_2 x_{2}^{i} + \cdots + \beta_p x_{p}^{i} + \varepsilon
+
+    Where:
+
+    - :math:`y^i` is the observed feature statistic (e.g. gene expression, :math:`log_{2}FC`, etc.) for feature :math:`i`
+    - :math:`x_{p}^{i}` is the weight of feature :math:`i` in feature set :math:`F_p`. For unweighted sets, membership in the set is indicated by 1, and non-membership by 0.
+    - :math:`\beta_0` is the intercept
+    - :math:`\beta_p` is the slope coefficient for feature set :math:`F_p`
+    - :math:`\varepsilon` is the error term for feature :math:`i`
+
+    .. figure:: /_static/images/mlm.png
+       :alt: Multivariate Linear Model (MLM) schematic.
+       :align: center
+       :width: 75%
+
+       Multivariate Linear Model (MLM) scheme.
+       In this example, the observed gene expression of :math:`Sample_1` is predicted using
+       the interaction weights of two pathways, :math:`P_1` and :math:`P_2`.
+       For :math:`P2`, since its target genes that have negative weights are lowly expressed,
+       and its positive target genes are highly expressed,
+       the relationship between the two variables is positive so the obtained :math:`ES` score is positive.
+       Scores can be interpreted as active when positive, repressive when negative, and inconclusive when close to 0.
+
+    The enrichment score :math:`ES` for each :math:`F` is then calculated as the t-value of the slope coefficients.
+
+    .. math::
+
+        ES = t_{\beta_1} = \frac{\hat{\beta}_1}{\mathrm{SE}(\hat{\beta}_1)}
+
+    Where:
+
+    - :math:`t_{\beta_1}` is the t-value of the slope
+    - :math:`\mathrm{SE}(\hat{\beta}_1)` is the standard error of the slope
+
+    Next, :math:`p_{value}` are obtained by evaluating the two-sided survival function
+    (:math:`sf`) of the Student’s t-distribution.
+
+    .. math::
+
+        p_{value} = 2 \times \mathrm{sf}(|ES|, \text{df})
+
+    %(params)s
+    %(returns)s
+    """
     # Get dims
     n_features, n_fsets = adj.shape
     # Add intercept
@@ -56,6 +110,5 @@ _mlm = MethodMeta(
     test=True,
     limits=(-np.inf, +np.inf),
     reference='https://doi.org/10.1093/bioadv/vbac016',
-    params='',
 )
 mlm = Method(_method=_mlm)

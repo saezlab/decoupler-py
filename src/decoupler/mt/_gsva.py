@@ -7,6 +7,7 @@ import scipy.sparse as sps
 from tqdm.auto import tqdm
 import numba as nb
 
+from decoupler._docs import docs
 from decoupler._log import _log
 from decoupler._Method import MethodMeta, Method
 from decoupler.pp.net import _getset
@@ -300,6 +301,7 @@ def _ks_fset(
     return res
 
 
+@docs.dedent
 def _func_gsva(
     mat: np.ndarray,
     cnct: np.ndarray,
@@ -311,6 +313,70 @@ def _func_gsva(
     tau: int | float = 1,
     verbose: bool = False,
 ) -> Tuple[np.ndarray, None]:
+    r"""
+    Gene Set Variation Analysis (GSVA) :cite:`gsva`.
+
+    Each feature is first transformed and smoothed using a kernel density estimation method:
+    
+    - Gaussian
+    - Poisson
+    - Empirical cumulative distribution function
+
+    Features are then ranked based on a continuous metric (e.g., expression value, score, or correlation).
+    
+    Then, a score for each feature in a set is computed by walking down the ranked list,
+    increasing a running-sum statistic when a feature belongs to the set and decreasing it otherwise.
+
+    .. math::
+    
+       \delta(F, i) = 
+       \begin{cases}
+       \frac{|r_i|}{\sum\limits_{j \in F} |r_j|} & \text{if feature } i \in F \\
+       -\frac{1}{l} & \text{if feature } i \notin F
+       \end{cases}
+
+    Where:
+
+    - :math:`F` is a feature set
+    - :math:`r` is the ranking of the feature statistics in descending order
+    - :math:`r_i` is the value for feature :math:`i`
+    - :math:`r_j` is the value for feature :math:`j` in :math:`F`
+    - :math:`k` is the number of features in :math:`F`
+    - :math:`N` is the total number of features in :math:`r`
+    - :math:`l=N-k` is the number of features not in :math:`F` but present in :math:`r`
+
+    For each feature, the function :math:`\delta(F,i)` is applied and stored as a sequence :math:`L`.
+
+    .. math::
+
+        L = \delta(F, i)\text{ for i} = \text{1, 2, ... , N}
+
+    The enrichment score :math:`ES` is computed as the sum of the maximum positive and maximum negative deviations
+    of the running-sum statistic from zero.
+
+    .. math::
+
+        ES = \max_{1 \leq i \leq N} L_i + \min_{1 \leq i \leq N} L_i
+
+    %(notest)s
+
+    %(params)s
+    kcdf
+        Which kernel to use during the non-parametric estimation of the cumulative distribution function.
+        Options are gaussian, poisson or None.
+    mx_diff
+        Changes how the enrichment statistic (ES) is calculated.
+        If ``True`` (default), ES is calculated as the difference between the maximum positive and
+        negative random walk deviations.
+        If ``False``, ES is calculated as the maximum positive to 0.
+    abs_rnk : bool
+        Used when ``mx_diff=True``. If ``False`` (default), the enrichment statistic (ES) is calculated taking the magnitude
+        difference between the largest positive and negative random walk deviations.
+        If ``True``, feature sets with features enriched on either extreme (high or low)
+        will be regarded as 'highly' activated.
+
+    %(returns)s
+    """
     if isinstance(mat, sps.csr_matrix):
         m = f'gsva - Converting sparse matrix to dense format before density transformation'
         _log(m, level='info', verbose=verbose)
@@ -332,18 +398,6 @@ def _func_gsva(
     return es, None
 
 
-params = """\
-kcdf
-    Which kernel to use during the non-parametric estimation of the cumulative distribution function.
-    Options are gaussian, poisson or None.
-mx_diff
-    Changes how the enrichment statistic (ES) is calculated. If ``True`` (default), ES is calculated as the difference between
-    the maximum positive and negative random walk deviations. If ``False``, ES is calculated as the maximum positive to 0.
-abs_rnk : bool
-    Used when ``mx_diff=True``. If ``False`` (default), the enrichment statistic (ES) is calculated taking the magnitude
-    difference between the largest positive and negative random walk deviations. If ``True``, feature sets with features
-    enriched on either extreme (high or low) will be regarded as 'highly' activated."""
-
 _gsva = MethodMeta(
     name='gsva',
     desc='Gene Set Variation Analysis (GSVA)',
@@ -354,6 +408,5 @@ _gsva = MethodMeta(
     test=False,
     limits=(-1, +1),
     reference='https://doi.org/10.1186/1471-2105-14-7',
-    params=params,
 )
 gsva = Method(_method=_gsva)

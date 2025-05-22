@@ -3,10 +3,11 @@
 ```
 
 ```{toctree}
-:maxdepth: 2
+:maxdepth: 1
+:hidden: true
 
-api.md
+api
 notebooks/index
-changelog.md
-references.md
+changelog
+references
 ```

@@ -5,6 +5,7 @@ import scipy.sparse as sps
 from tqdm.auto import tqdm
 from xgboost import XGBRegressor
 
+from decoupler._docs import docs
 from decoupler._log import _log
 from decoupler._Method import MethodMeta, Method
 
@@ -27,12 +28,31 @@ def _xgbr(
     return es
 
 
+@docs.dedent
 def _func_udt(
     mat: np.ndarray,
     adj: np.ndarray,
     verbose: bool = False,
     **kwargs,
 ) -> Tuple[np.ndarray, None]:
+    """
+    Univariate Decision Tree (UDT) :cite:`decoupler`.
+
+    This approach uses the molecular features from one observation as the population of samples
+    and it fits a gradient boosted decision trees model with a single covariate,
+    which is the feature weights of a set :math:`F`.
+    It uses the implementation provided by ``xgboost`` :cite:`xgboost`.
+
+    The enrichment score :math:`ES` is then calculated as the coefficient of determination :math:`R^2`.
+
+    %(notest)s
+
+    %(params)s
+
+    kwargs
+        All other keyword arguments are passed to ``xgboost.XGBRegressor``.
+    %(returns)s
+    """
     nobs = mat.shape[0]
     nvar, nsrc = adj.shape
     m = f'udt - fitting {nsrc} univariate decision tree models (XGBoost) of {nvar} targets across {nobs} observations' 
@@ -45,10 +65,6 @@ def _func_udt(
     return es, None
 
 
-params = """\
-kwargs
-    All other keyword arguments are passed to xgboost.XGBRegressor"""
-
 _udt = MethodMeta(
     name='udt',
     desc='Univariate Decision Tree (UDT)',
@@ -59,6 +75,5 @@ _udt = MethodMeta(
     test=False,
     limits=(0, 1),
     reference='https://doi.org/10.1093/bioadv/vbac016',
-    params=params,
 )
 udt = Method(_method=_udt)

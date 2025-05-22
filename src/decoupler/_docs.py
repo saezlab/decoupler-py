@@ -178,6 +178,30 @@ _top = """\
 top
     Number of top sources to plot."""
 
+_yestest = """\
+Finally, the obtained :math:`p_{value}` are adjusted by Benjamini-Hochberg correction."""
+
+_notest = """\
+This method does not perform statistical testing on :math:`ES` and therefore does not return :math:`p_{value}`."""
+
+_returns = """\
+Returns
+-------
+
+Enrichment scores :math:`ES` and, if applicable, adjusted :math:`p_{value}` by Benjamini-Hochberg.
+"""
+
+_params = f"""\
+Parameters
+----------
+{_data}
+{_net}
+{_tmin}
+{_raw}
+{_empty}
+{_bsize}
+{_verbose}"""
+
 docs = DocstringProcessor(
     plot=_plot,
     net=_net,
@@ -219,4 +243,8 @@ docs = DocstringProcessor(
     vmax=_vmax,
     data_plot=_data_plot,
     top=_top,
+    params=_params,
+    yestest=_yestest,
+    notest=_notest,
+    returns=_returns,
 )

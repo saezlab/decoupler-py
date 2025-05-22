@@ -3,16 +3,30 @@ from typing import Tuple
 import numpy as np
 import scipy.stats as sts
 
+from decoupler._docs import docs
 from decoupler._log import _log
 from decoupler._Method import MethodMeta, Method
 
 
+@docs.dedent
 def _func_zscore(
     mat: np.ndarray,
     adj: np.ndarray,
     flavor: str = 'RoKAI',
     verbose: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Z-score (ZSCORE) :cite:`zscore`.
+
+    %(yestest)s
+
+    %(params)s
+
+    flavor
+        Which flavor to use when calculating the z-score, either KSEA or RoKAI.
+
+    %(returns)s
+    """
     assert isinstance(flavor, str) and flavor in ['KSEA', 'RoKAI'], \
     'flavor must be str and KSEA or RoKAI'
     nobs, nvar = mat.shape
@@ -41,6 +55,5 @@ _zscore = MethodMeta(
     test=True,
     limits=(-np.inf, +np.inf),
     reference='https://doi.org/10.1038/s41467-021-21211-6',
-    params='',
 )
 zscore = Method(_method=_zscore)

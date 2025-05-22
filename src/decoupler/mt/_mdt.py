@@ -5,6 +5,7 @@ import scipy.sparse as sps
 from tqdm.auto import tqdm
 from xgboost import XGBRegressor
 
+from decoupler._docs import docs
 from decoupler._log import _log
 from decoupler._Method import MethodMeta, Method
 
@@ -24,12 +25,30 @@ def _xgbr(
     return es
 
 
+@docs.dedent
 def _func_mdt(
     mat: np.ndarray,
     adj: np.ndarray,
     verbose: bool = False,
     **kwargs,
 ) -> Tuple[np.ndarray, None]:
+    r"""
+    Multivariate Decision Trees (MDT) :cite:`decoupler`.
+
+    This approach uses the molecular features from one observation as the population of samples
+    and it fits a gradient boosted decision trees model with multiple covariates,
+    which are the weights of all feature sets :math:`F`. It uses the implementation provided by ``xgboost`` :cite:`xgboost`.
+
+    The enrichment score :math:`ES` for each :math:`F` is then calculated as the importance of each covariate in the model.
+    
+    %(notest)s
+
+    %(params)s
+
+    kwargs
+        All other keyword arguments are passed to ``xgboost.XGBRegressor``.
+    %(returns)s
+    """
     nobs = mat.shape[0]
     nvar, nsrc = adj.shape
     m = f'mdt - fitting {nsrc} multivariate decision tree models (XGBoost) of {nvar} targets across {nobs} observations'
@@ -40,9 +59,6 @@ def _func_mdt(
         es[i, :] = _xgbr(x=adj, y=obs, **kwargs)
     return (es, None)
 
-params = """\
-kwargs
-    All other keyword arguments are passed to xgboost.XGBRegressor"""
 
 _mdt = MethodMeta(
     name='mdt',
@@ -54,6 +70,5 @@ _mdt = MethodMeta(
     test=False,
     limits=(0, 1),
     reference='https://doi.org/10.1093/bioadv/vbac016',
-    params=params,
 )
 mdt = Method(_method=_mdt)

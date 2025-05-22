@@ -151,6 +151,7 @@ def _stsgsea(
     return es, nes, pv
 
 
+@docs.dedent
 def _func_gsea(
     mat: np.ndarray,
     cnct: np.ndarray,
@@ -160,6 +161,73 @@ def _func_gsea(
     seed: int | float = 42,
     verbose: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray]:
+    r"""
+    Gene Set Enrichment Analysis (GSEA) :cite:`gsea`.
+
+    Features are ranked based on a continuous statistic (e.g., expression, score, or correlation).
+    The enrichment score (ES) for a feature set is computed by walking down the ranked list and increasing a running-sum
+    statistic when a feature is in the set, and decreasing it when it is not.
+
+    .. math::
+    
+       \delta(F, i) = 
+       \begin{cases}
+       \frac{|r_i|}{\sum\limits_{j \in F} |r_j|} & \text{if feature } i \in F \\
+       -\frac{1}{l} & \text{if feature } i \notin F
+       \end{cases}
+
+    Where:
+
+    - :math:`F` is a feature set
+    - :math:`r` is the ranking of the feature statistics in descending order
+    - :math:`r_i` is the value for feature :math:`i`
+    - :math:`r_j` is the value for feature :math:`j` in :math:`F`
+    - :math:`k` is the number of features in :math:`F`
+    - :math:`N` is the total number of features in :math:`r`
+    - :math:`l=N-k` is the number of features not in :math:`F` but present in :math:`r`
+
+    For each feature, the function :math:`\delta(F,i)` is applied and stored as a sequence :math:`L`.
+
+    .. math::
+
+        L = \delta(F, i)\text{ for i} = \text{1, 2, ... , N}
+
+    The enrichment score :math:`ES` corresponds to the maximum deviation from zero of this running sum.
+
+    .. math::
+
+        ES = L_{arg max |L|}
+
+    When multiple random permutations are done, statistical significance is assessed via empirical testing.
+
+    .. math::
+
+        p_{value}=\frac{ES_{rand} \geq ES}{P}
+
+    Where:
+
+    - :math:`ES_{rand}` are the enrichment scores of the random permutations
+    - :math:`P` is the total number of permutations
+
+    Additionaly, :math:`ES` is updated to a normalized enrichment score :math:`NES`.
+
+    .. math::
+
+        NES = \begin{cases} \frac{ES}{\mu_{+}} & \text{if } ES > 0 \\ \frac{ES}{\mu_{-}} & \text{if } ES < 0  \end{cases}
+
+    Where:
+
+    - :math:`\mu{+}` is the mean of positive values in :math:`ES_{rand}`
+    - :math:`\mu{-}` is the mean of negative values in :math:`ES_{rand}`
+
+    Finally, the obtained math:`p_value` are adjusted by Benjamini-Hochberg correction. 
+
+    %(params)s
+    %(times)s
+    %(seed)s
+
+    %(returns)s
+    """
     nobs, nvar = mat.shape
     assert isinstance(times, (int, float)) and times >= 0, 'times must be numeric and >= 0'
     assert isinstance(seed, (int, float)) and seed >= 0, 'seed must be numeric and >= 0'
@@ -194,10 +262,6 @@ def _func_gsea(
     return es, pv
 
 
-params = docs.dedent("""\
-%(times)s
-%(seed)s""")
-
 _gsea = MethodMeta(
     name='gsea',
     desc='Gene Set Enrichment Analysis (GSEA)',
@@ -208,6 +272,5 @@ _gsea = MethodMeta(
     test=True,
     limits=(-np.inf, +np.inf),
     reference='https://doi.org/10.1073/pnas.0506580102',
-    params=params,
 )
 gsea = Method(_method=_gsea)

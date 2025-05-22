@@ -5,6 +5,7 @@ import scipy.stats as sts
 from tqdm.auto import tqdm
 import numba as nb
 
+from decoupler._docs import docs
 from decoupler._log import _log
 from decoupler._Method import MethodMeta, Method
 
@@ -170,6 +171,7 @@ def _aREA(
     return nes
 
 
+@docs.dedent
 def _func_viper(
     mat: np.ndarray,
     adj: np.ndarray,
@@ -179,6 +181,24 @@ def _func_viper(
     penalty: int | float = 20,
     verbose: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Virtual Inference of Protein-activity by Enriched Regulon analysis (VIPER) :cite:`viper`.
+
+    %(yestest)s
+
+    %(params)s
+    
+    pleiotropy
+        Whether correction for pleiotropic regulation should be performed.
+    reg_sign
+        If ``pleiotropy``, p-value threshold for considering significant regulators.
+    n_targets
+        If ``pleiotropy``, integer indicating the minimal number of overlaping targets to consider for analysis.
+    penalty
+        If ``pleiotropy``, number higher than 1 indicating the penalty for the pleiotropic interactions. 1 = no penalty.
+
+    %(returns)s
+    """
     # Get number of batches
     n_samples = mat.shape[0]
     n_features, n_fsets = adj.shape
@@ -205,20 +225,8 @@ def _func_viper(
             nes[i, idxs] = tmp
     # Get pvalues
     pvals = 2 * sts.norm.sf(np.abs(nes))
-    #pvals = sts.norm.cdf(-np.abs(nes)) * 2
     return nes, pvals
 
-
-params = """\
-pleiotropy
-    Whether correction for pleiotropic regulation should be performed.
-reg_sign
-    If ``pleiotropy``, p-value threshold for considering significant regulators.
-n_targets
-    If ``pleiotropy``, integer indicating the minimal number of overlaping targets to consider for analysis.
-penalty
-    If ``pleiotropy``, number higher than 1 indicating the penalty for the pleiotropic interactions. 1 = no penalty.
-"""
 
 _viper = MethodMeta(
     name='viper',
@@ -230,6 +238,5 @@ _viper = MethodMeta(
     test=True,
     limits=(-np.inf, +np.inf),
     reference='https://doi.org/10.1038/ng.3593',
-    params=params,
 )
 viper = Method(_method=_viper)

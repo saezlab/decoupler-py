@@ -7,6 +7,7 @@ import scipy.sparse as sps
 from tqdm.auto import tqdm
 import numba as nb
 
+from decoupler._docs import docs
 from decoupler._log import _log
 from decoupler._Method import MethodMeta, Method
 from decoupler.pp.net import _getset
@@ -134,6 +135,7 @@ def _runora(
     return es, pv
 
 
+@docs.dedent
 def _func_ora(
     mat: np.ndarray,
     cnct: np.ndarray,
@@ -145,6 +147,61 @@ def _func_ora(
     ha_corr: int | float = 0.5,
     verbose: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray]:
+    r"""
+    Over Representation Analysis (ORA) :cite:`ora`.
+
+    This approach first creates a contingency table.
+
+    .. list-table:: 2×2 Contingency Table
+       :header-rows: 1
+       :widths: 20 20 20
+
+       * -
+         - :math:`\in F`
+         - :math:`\notin F`
+       * - :math:`\in Sign. features`
+         - :math:`a`
+         - :math:`b`
+       * - :math:`\notin Sign. features`
+         - :math:`c`
+         - :math:`d`
+
+    Where:
+
+    - :math:`a` is the number of features that are both significant and in :math:`F`
+    - :math:`b` is the number of features that are signficiant but not in :math:`F`
+    - :math:`c` is the number of features that are not signficiant but in :math:`F`
+    - :math:`d` is the number of features that are not signficiant and not in :math:`F`
+
+    .. figure:: /_static/images/ora.png
+       :alt: Over Representation Analysis (ORA) schematic.
+       :align: center
+       :width: 75%
+
+       Over Representation Analysis (ORA) scheme.
+    
+    The statistic is calculated as the Odds Ratio :math:`OR` with Haldane-Anscombe correction.
+
+    .. math::
+        
+        \text{OR} = \log{\frac{\frac{a + 0.5}{b + 0.5}}{\frac{c + 0.5}{d + 0.5}}}
+
+    And the :math:`p_{value}` is obtained afer computing a two-tailed Fisher’s exact test with the same table.
+
+    %(yestest)s
+
+    %(params)s
+
+    n_up
+        Number of top-ranked features, based on their magnitude, to select as observed features.
+        If ``None``, the top 5% of positive features are selected.
+    n_bm
+        Number of bottom-ranked features, based on their magnitude, to select as observed features.
+    n_bg
+        Number indicating the background size.
+
+    %(returns)s
+    """
     nobs, nvar = mat.shape
     nsrc = starts.size
     if n_up is None:
@@ -175,16 +232,6 @@ def _func_ora(
     return es, pv
 
 
-params = """\
-n_up
-    Number of top-ranked features, based on their magnitude, to select as observed features.
-    If ``None``, the top 5% of positive features are selected.
-n_bm
-    Number of bottom-ranked features, based on their magnitude, to select as observed features.
-n_bg
-    Number indicating the background size. If ``None``, is `` mat - (n_up | n_bm)``.
-"""
-
 _ora = MethodMeta(
     name='ora',
     desc='Over Representation Analysis (ORA)',
@@ -195,6 +242,5 @@ _ora = MethodMeta(
     test=True,
     limits=(-np.inf, +np.inf),
     reference='https://doi.org/10.2307/2340521',
-    params=params,
 )
 ora = Method(_method=_ora)

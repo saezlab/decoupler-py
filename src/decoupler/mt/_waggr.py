@@ -137,6 +137,7 @@ def _perm(
     return nes, pvals
 
 
+@docs.dedent
 def _func_waggr(
     mat: np.ndarray,
     adj: np.ndarray,
@@ -145,6 +146,22 @@ def _func_waggr(
     seed: int | float = 42,
     verbose: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Weighted Aggregate (WAGGR) :cite:`decoupler`.
+
+    %(yestest)s
+
+    %(params)s
+    
+    fun
+        Function to compute enrichment statistic from omics readouts (``x``) and feature weights (``w``).
+        Provided function must contain ``x`` and ``w`` arguments and ouput a single float.
+        By default, 'wmean' and 'wsum' are implemented.
+    %(times)s
+    %(seed)s
+
+    %(returns)s
+    """
     assert isinstance(fun, str) or callable(fun), 'fun must be str or callable'
     if isinstance(fun, str):
         assert fun in _fun_dict, 'when fun is str, it must be wmean or wsum'
@@ -169,15 +186,6 @@ def _func_waggr(
     return es, pv
 
 
-params = docs.dedent("""\
-fun
-    Function to compute enrichment statistic from omics readouts (``x``) and feature weights (``w``).
-    Provided function must contain ``x`` and ``w`` arguments and ouput a single float.
-    By default, 'wmean' and 'wsum' are implemented.
-%(times)s
-%(seed)s
-""")
-
 _waggr = MethodMeta(
     name='waggr',
     desc='Weighted Aggregate (WAGGR)',
@@ -188,6 +196,5 @@ _waggr = MethodMeta(
     test=True,
     limits=(-np.inf, +np.inf),
     reference='https://doi.org/10.1093/bioadv/vbac016',
-    params=params,
 )
 waggr = Method(_method=_waggr)

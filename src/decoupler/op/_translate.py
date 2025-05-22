@@ -114,6 +114,16 @@ def translate(
     Translates gene symbols from human to a target organism using the HCOP database.
     Check which organisms are available with ``decoupler.op.show_organisms``.
 
+    HCOP is a composite database combining data from various orthology resources.
+    It provides a comprehensive set of orthologs among human, mouse, and rat, among many other species.
+
+    If you use this function, please reference the original HCOP paper:
+    - Yates, B., Gray, K.A., Jones, T.E. and Bruford, E.A., 2021. Updates to HCOP: the HGNC comparison of orthology
+    predictions tool. Briefings in Bioinformatics, 22(6), p.bbab155.
+
+    For more information, please visit the HCOP website: https://www.genenames.org/tools/hcop/,
+    or alternatively check the bulk download FTP links page: https://ftp.ebi.ac.uk/pub/databases/genenames/hcop/
+
     Parameters
     ----------
     %(net)s
@@ -126,18 +136,6 @@ def translate(
         orthology resources supporting the interaction.
     one_to_many
         Maximum number of orthologs allowed per gene.
-
-    Details
-    -------
-    HCOP is a composite database combining data from various orthology resources.
-    It provides a comprehensive set of orthologs among human, mouse, and rat, among many other species.
-
-    If you use this function, please reference the original HCOP paper:
-    - Yates, B., Gray, K.A., Jones, T.E. and Bruford, E.A., 2021. Updates to HCOP: the HGNC comparison of orthology
-    predictions tool. Briefings in Bioinformatics, 22(6), p.bbab155.
-
-    For more information, please visit the HCOP website: https://www.genenames.org/tools/hcop/,
-    or alternatively check the bulk download FTP links page: https://ftp.ebi.ac.uk/pub/databases/genenames/hcop/
 
     Returns
     -------
