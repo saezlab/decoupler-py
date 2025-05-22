@@ -6,7 +6,7 @@
 :maxdepth: 1
 :hidden: true
 
-api
+api/index
 notebooks/index
 changelog
 references

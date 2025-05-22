@@ -387,6 +387,7 @@ def pseudobulk(
     return psbulk
 
 
+@docs.dedent
 def filter_samples(
     adata: AnnData,
     min_cells: int | float = 10,

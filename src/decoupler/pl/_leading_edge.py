@@ -7,11 +7,13 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.colors import TwoSlopeNorm
 
+from decoupler._docs import docs
 from decoupler._Plotter import Plotter
 from decoupler.pp.net import prune
 from decoupler.mt._gsea import _esrank
 
 
+@docs.dedent
 def leading_edge(
     df: pd.DataFrame,
     net: pd.DataFrame,
@@ -23,6 +25,19 @@ def leading_edge(
 ) -> Tuple[None | Figure, np.ndarray]:
     """
     Plot the running score of GSEA.
+
+    Parameters
+    ----------
+    %(data_plot)s
+    %(net)s
+    stat
+        Column with the ranking statistic, for example t-values or :math:`log_{2}FCs`.
+    name
+        Which source to plot.
+    %(cmap)s
+    color
+        Color to plot the running-sum statistic.
+    %(plot)s
     """
     class MidpointNormalize(matplotlib.colors.Normalize):
         def __init__(self, vmin=None, vmax=None, vcenter=None, clip=False):

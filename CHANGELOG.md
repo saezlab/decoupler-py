@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning][].
 
 ## 2.0.0
 
-Major update to accomodate the scverse :cite:`scverse` template.
+Major update to accomodate the scverse template.
 
 All functions have been rewritten to follow the new API, errors when running previous versions (`1.X.X`) are expected if `decoupler >= 2.0.0` is installed.
 
@@ -20,8 +20,8 @@ All functions have been rewritten to follow the new API, errors when running pre
   - Use `decoupler.mt.<method_name>` to call a method
   - `min_n` argument has been renamed `tmin`
   - New argument `bsize` allows to run a method with batches in case excessive memory usage is an issue
-  - :math:`p_{values}` of the enrichment scores are now corrected by Benjamini-Hochberg
-  - `mdt` and `udt` are now based on `xgboost` instead of `sklearn` for better scalability. `udt` statistic is now the coefficient of determination :math:`R^2` instead of the importance of a single decision tree.
+  - $p_{values}$ of the enrichment scores are now corrected by Benjamini-Hochberg
+  - `mdt` and `udt` are now based on `xgboost` instead of `sklearn` for better scalability. `udt` statistic is now the coefficient of determination $R^2$ instead of the importance of a single decision tree.
   - `ora` now returns the odds ratio of the contingency table as a statistic, and computes a two-sided Fisher exact test instead of a one-sided one
   - `viper` now correctly estimates shadow regulons when network weights are values other than -1 or +1
   - `wsum` and `wmean` are deprecated, instead now the method `waggr` allows to run both methods and any custom function. This makes it easier to quickly test new enrichment methods without having to deal with `decoupler`'s implementation
@@ -40,7 +40,7 @@ All functions have been rewritten to follow the new API, errors when running pre
       - `plot_associations` to `obsm`
       - `plot_targets` to `source_targets`
 - Preprocessing functions are now in the new `pp` module
-  - Renamed `check_corr` to `net_corr`, now also returns adjusted :math:`p_{values}`
+  - Renamed `check_corr` to `net_corr`, now also returns adjusted $p_{values}$
   - Renamed `get_acts` to `get_obsm`
   - Renamed `get_pseudobulk` to `pseudobulk`. Now it does not automatically remove low quality samples, this is now done with the function `filter_samples`
   - Deprecated `get_contrast`, `get_top_targets` and `format_contrast_results`. `PyDESeq2` should be used instead

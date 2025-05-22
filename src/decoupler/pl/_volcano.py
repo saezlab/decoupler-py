@@ -3,10 +3,12 @@ import numpy as np
 from matplotlib.figure import Figure
 import adjustText as at
 
+from decoupler._docs import docs
 from decoupler._Plotter import Plotter
 from decoupler.pp.net import _validate_net
 
 
+@docs.dedent
 def volcano(
     data: pd.DataFrame,
     x: str,
