@@ -1,0 +1,5 @@
+# OmniPath
+```{toctree}
+licenses
+orthologs
+```

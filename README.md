@@ -1,55 +1,96 @@
-# decoupler - Ensemble of methods to infer biological activities <img src="https://github.com/saezlab/decoupleR/blob/master/inst/figures/logo.svg?raw=1" align="right" width="120" class="no-scaled-link" />
-<!-- badges: start -->
-[![main](https://github.com/saezlab/decoupler-py/actions/workflows/ci.yml/badge.svg)](https://github.com/saezlab/decoupler-py/actions)
-[![GitHub issues](https://img.shields.io/github/issues/saezlab/decoupler-py.svg)](https://github.com/saezlab/decoupler-py/issues/)
-[![Documentation Status](https://readthedocs.org/projects/decoupler-py/badge/?version=latest)](https://decoupler-py.readthedocs.io/en/latest/?badge=latest)
-[![codecov](https://codecov.io/gh/saezlab/decoupler-py/branch/main/graph/badge.svg?token=TM0P29KKN5)](https://codecov.io/gh/saezlab/decoupler-py)
-[![Downloads](https://static.pepy.tech/badge/decoupler)](https://pepy.tech/project/decoupler)
+# decoupler - Ensemble of methods to infer enrichment scores
+<img src="https://github.com/saezlab/decoupleR/blob/master/inst/figures/logo.svg?raw=1" align="right" width="120" class="no-scaled-link" />
+   
 
-[![Conda Recipe](https://img.shields.io/badge/recipe-decoupler--py-green.svg)](https://anaconda.org/conda-forge/decoupler-py)
-[![Conda page](https://img.shields.io/conda/vn/conda-forge/decoupler-py.svg)](https://anaconda.org/conda-forge/decoupler-py)
-[![Conda downloads](https://img.shields.io/conda/dn/conda-forge/decoupler-py.svg)](https://anaconda.org/conda-forge/decoupler-py)
-<!-- badges: end -->
+[![Tests][badge-tests]][tests]
+[![Documentation][badge-docs]][documentation]
 
-`decoupler` is a package containing different enrichment statistical methods to extract biologically driven scores from omics data within a unified framework.
-This is its faster and memory efficient Python implementation, for the R version go [here](https://github.com/saezlab/decoupleR).
+[![Issues][badge-issues]][issue tracker]
+[![Coverage][badge-coverage]][codecoverage]
+[![Stars][badge-stars]](https://github.com/scverse/anndata/stargazers)
 
-For further information and example tutorials, please check our [documentation](https://decoupler-py.readthedocs.io/en/latest/index.html).
+[![PyPI][badge-pypi]][pypi]
+[![Downloads month][badge-mdown]][down]
+[![Downloads all][badge-adown]][down]
 
-If you have any question or problem do not hesitate to open an [issue](https://github.com/saezlab/decoupler-py/issues).
+[![Conda version][badge-condav]][conda]
+[![Conda downloads][badge-condad]][conda]
+
+[badge-tests]: https://img.shields.io/github/actions/workflow/status/saezlab/decoupler-py/test.yaml?branch=main
+[badge-docs]: https://img.shields.io/readthedocs/decoupler-py
+[badge-condav]: https://img.shields.io/conda/vn/conda-forge/decoupler-py.svg
+[badge-condad]: https://img.shields.io/conda/dn/conda-forge/decoupler-py.svg
+[badge-issues]: https://img.shields.io/github/issues/saezlab/decoupler-py
+[badge-coverage]: https://codecov.io/gh/saezlab/decoupler-py/branch/main/graph/badge.svg
+[badge-pypi]: https://img.shields.io/pypi/v/decoupler.svg
+[badge-mdown]: https://static.pepy.tech/badge/decoupler/month
+[badge-adown]: https://static.pepy.tech/badge/decoupler
+[badge-stars]: https://img.shields.io/github/stars/saezlab/decoupler-py?style=flat&logo=github&color=yellow
+
+`decoupler` is a python package containing different enrichment statistical
+methods to extract biologically driven scores
+from omics data within a unified framework. This is its faster and memory efficient Python implementation,
+a deprecated version in R can be found [here](https://github.com/saezlab/decoupler).
+
+It is a package from the [scverse][] ecosystem {cite:p}`scverse`,
+designed for easy interoperability with `anndata`, `scanpy` {cite:p}`scanpy` and other related packages.
+
+## Getting started
+
+Please refer to the [documentation][],
+in particular, the [API documentation][].
 
 ## Installation
 
-`decoupler` can be installed from `pip` (lightweight installation)::
-```
+You need to have Python 3.10 or newer installed on your system.
+If you don't have Python installed, we recommend installing [uv][].
+
+There are several alternative options to install decoupler:
+
+1. Install the latest stable version from [PyPI][pypi]:
+
+```bash
 pip install decoupler
 ```
 
-It can also be installed from `conda` and `mamba` (this includes extra dependencies):
-```
-mamba create -n=decoupler conda-forge::decoupler-py
-```
+2. Install the latest stable version from [conda-forge][conda] using mamba or conda:
 
-Alternatively, to stay up-to-date with the newest unreleased version, install from source: 
-```
-pip install git+https://github.com/saezlab/decoupler-py.git
+```bash
+mamba create -n=dcp conda-forge::decoupler-py
 ```
 
-## scverse
-`decoupler` is part of the [scverse](https://scverse.org) ecosystem, a collection of tools for single-cell omics data analysis in python.
-For more information check the link.
+3. Install the latest development version:
 
-## License
-Enrichment methods inside decoupler can be used for academic or commercial purposes, except `viper` which holds a non-commercial license. 
+```bash
+pip install git+https://github.com/saezlab/decoupler-py.git@main
+```
 
-The data redistributed by OmniPath does not have a single license, each original resource has its own. By default, `decoupler`
-assumes an academic license, but commercial or nonprofit licenses can be specified in the `license` parameter of `decoupler`'s OmniPath functions.
-[Here](https://omnipathdb.org/info) one can find the license information of all the resources in OmniPath.
+## Release notes
+
+See the [changelog][].
+
+## Contact
+
+For questions and help requests, you can reach out in the [scverse discourse][].
+If you found a bug, please use the [issue tracker][].
 
 ## Citation
 
-Badia-i-Mompel P., Vélez Santiago J., Braunger J., Geiss C., Dimitrov D.,
+> Badia-i-Mompel P., Vélez Santiago J., Braunger J., Geiss C., Dimitrov D.,
 Müller-Dott S., Taus P., Dugourd A., Holland C.H., Ramirez Flores R.O.
 and Saez-Rodriguez J. 2022. decoupleR: Ensemble of computational methods
 to infer biological activities from omics data. Bioinformatics Advances.
 <https://doi.org/10.1093/bioadv/vbac016>
+
+[uv]: https://github.com/astral-sh/uv
+[scverse discourse]: https://discourse.scverse.org/
+[scverse]: https://scverse.org/
+[issue tracker]: https://github.com/saezlab/decoupler-py/issues
+[tests]: https://github.com/saezlab/decoupler-py/actions/workflows/test.yaml
+[documentation]: https://decoupler-py.readthedocs.io
+[changelog]: https://decoupler-py.readthedocs.io/en/latest/changelog.html
+[api documentation]: https://decoupler-py.readthedocs.io/en/latest/api.html
+[pypi]: https://pypi.org/project/decoupler
+[down]: https://pepy.tech/project/decoupler
+[conda]: https://anaconda.org/conda-forge/decoupler-py
+[codecoverage]: https://codecov.io/gh/saezlab/decoupler-py

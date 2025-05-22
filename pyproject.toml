@@ -1,105 +1,149 @@
 [build-system]
-requires = ["poetry_core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+build-backend = "hatchling.build"
+requires = [ "hatchling" ]
 
-[tool.poetry]
+[project]
 name = "decoupler"
-version = "1.9.2"
-description = "Ensemble of methods to infer biological activities from omics data"
-license = "gpl-3.0-only"
-authors = [
-    "Pau Badia i Mompel <pau.badia@uni-heidelberg.de>"
-]
-packages = [
-    { include = "decoupler" }
-]
-classifiers = [
-    "Development Status :: 5 - Production/Stable",
-    "Intended Audience :: Developers",
-    "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
-    "Operating System :: OS Independent",
-    "Programming Language :: Python",
-    "Natural Language :: English",
-    "Topic :: Scientific/Engineering :: Bio-Informatics"
-]
-keywords = [
-    "systems biology", "molecular biology", "signaling network",
-    "transcriptomics", "modeling", "mechanistic modeling",
-    "activity inference", "molecular network", "omics",
-    "biomedicine", "molecular footprint", "molecular signature"
-]
-repository = "https://github.com/saezlab/decoupler-py"
-homepage = "https://decoupler.readthedocs.io/"
-documentation = "https://decoupler.readthedocs.io/"
+version = "2.0.0"
+description = "Python package to perform enrichment analysis from omics data."
 readme = "README.md"
+license = { file = "LICENSE" }
+maintainers = [
+  { name = "Pau Badia i Mompel", email = "pau.badia@uni-heidelberg.de" },
+]
+authors = [
+  { name = "Pau Badia i Mompel" },
+]
+requires-python = ">=3.10"
+classifiers = [
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+  "anndata",
+  "numba",
+  "docrep",
+  "tqdm",
+  "xgboost",
+  "seaborn",
+  "requests",
+  "igraph",
+  "marsilea",
+  "adjustText",
+  # for debug logging (referenced from the issue template)
+  "session-info2",
+]
+optional-dependencies.dev = [
+  "pre-commit",
+  "twine>=4.0.2",
+]
+optional-dependencies.doc = [
+  "docutils>=0.8,!=0.18.*,!=0.19.*",
+  "ipykernel",
+  "ipython",
+  "myst-nb>=1.1",
+  "pandas",
+  # Until pybtex >0.24.0 releases: https://bitbucket.org/pybtex-devs/pybtex/issues/169/
+  "setuptools",
+  "sphinx>=4",
+  "sphinx-autodoc-typehints",
+  "sphinx-book-theme>=1",
+  "sphinx-copybutton",
+  "sphinx-tabs",
+  "sphinxcontrib-bibtex>=1",
+  "sphinxext-opengraph",
+]
+optional-dependencies.test = [
+  "coverage",
+  "pytest",
+  "statsmodels",
+  "gseapy",
+  "scanpy",
+]
+# https://docs.pypi.org/project_metadata/#project-urls
+urls.Documentation = "https://decoupler.readthedocs.io/"
+urls.Homepage = "https://github.com/PauBadiaM/decoupler"
+urls.Source = "https://github.com/PauBadiaM/decoupler"
 
-[tool.poetry.urls]
-"Bug Tracker" = "https://github.com/saezlab/decoupler-py/issues"
+[tool.hatch.envs.default]
+installer = "uv"
+features = [ "dev" ]
 
-[[tool.poetry.source]]
-name = "pypi-public"
-url = "https://pypi.org/simple/"
+[tool.hatch.envs.docs]
+features = [ "doc" ]
+scripts.build = "sphinx-build -M html docs docs/_build {args}"
+scripts.open = "python -m webbrowser -t docs/_build/html/index.html"
+scripts.clean = "git clean -fdX -- {args:docs}"
 
-[tool.poetry.dependencies]
-python = ">=3.11"
-tqdm = "^4.66.4"
-typing-extensions = "^4.12.2"
-numba = "^0.61.0"
-numpy = "^2"
-pandas = "^2.2.2"
-liana = { version = "^1.5.0", optional = true }
-scikit-learn = { version = "^1.5.0", optional = true }
-igraph = { version = "^0.11.5", optional = true }
-adjusttext = { version = "^1.1.1", optional = true }
-pydeseq2 = { version = "<0.5.0", optional = true }
-marsilea = { version = "^0.4.5", optional = true }
-pybiomart = { version = "^0.2.0", optional = true }
+[[tool.hatch.envs.hatch-test.matrix]]
+python = [ "3.10", "3.13" ]
+[tool.hatch.envs.hatch-test]
+features = [ "test" ]
 
-[tool.poetry.group.dev.dependencies]
-pytest = ">=6.0"
-bump2version = "*"
-pytest-cov = "^5.0.0"
-scanpy = "^1.10.1"
-psutil = "^5.9.8"
-flake8-pyproject = {git = "https://github.com/john-hen/Flake8-pyproject.git"}
-sphinx = "^7.3.7"
-nbsphinx = "^0.9.4"
+[tool.ruff]
+line-length = 120
+src = [ "src" ]
+extend-include = [ "*.ipynb" ]
 
-[tool.poetry.extras]
-full = ['liana', 'scikit-learn', 'igraph', 'adjusttext', 'pydeseq2', 'marsilea', 'pybiomart']
+format.docstring-code-format = true
+
+lint.select = [
+  "B",      # flake8-bugbear
+  "BLE",    # flake8-blind-except
+  "C4",     # flake8-comprehensions
+  "D",      # pydocstyle
+  "E",      # Error detected by Pycodestyle
+  "F",      # Errors detected by Pyflakes
+  "I",      # isort
+  "RUF100", # Report unused noqa directives
+  "TID",    # flake8-tidy-imports
+  "UP",     # pyupgrade
+  "W",      # Warning detected by Pycodestyle
+]
+lint.ignore = [
+  "B008", # Errors from function calls in argument defaults. These are fine when the result is immutable.
+  "D100", # Missing docstring in public module
+  "D104", # Missing docstring in public package
+  "D105", # __magic__ methods are often self-explanatory, allow missing docstrings
+  "D107", # Missing docstring in __init__
+  # Disable one in each pair of mutually incompatible rules
+  "D203", # We don’t want a blank line before a class docstring
+  "D213", # <> We want docstrings to start immediately after the opening triple quote
+  "D400", # first line should end with a period [Bug: doesn’t work with single-line docstrings]
+  "D401", # First line should be in imperative mood; try rephrasing
+  "E501", # line too long -> we accept long comment lines; formatter gets rid of long code lines
+  "E731", # Do not assign a lambda expression, use a def -> lambda expression assignments are convenient
+  "E741", # allow I, O, l as variable names -> I is the identity matrix
+]
+lint.per-file-ignores."*/__init__.py" = [ "F401" ]
+lint.per-file-ignores."docs/*" = [ "I" ]
+lint.per-file-ignores."tests/*" = [ "D" ]
+lint.pydocstyle.convention = "numpy"
 
 [tool.pytest.ini_options]
-testpaths = [
-  "decoupler/tests",
-]
+testpaths = [ "tests" ]
 xfail_strict = true
 addopts = [
-    # "-Werror",  # if 3rd party libs raise DeprecationWarnings, just use filterwarnings below
-    "--import-mode=importlib",  # allow using test files with same name
-]
-filterwarnings = [
-    # "ignore:.*U.*mode is deprecated:DeprecationWarning",
+  "--import-mode=importlib", # allow using test files with same name
 ]
 
-[tool.flake8]
-extend-select = ["CE101"]
-ignore = [
-  "D200", "D202", "D401", "D105",
-  "W503", "W504",
-  "E731", "E131", "E251", "E303"
+[tool.coverage.run]
+source = [ "decoupler" ]
+omit = [
+  "**/test_*.py",
 ]
-per-file-ignores = [
-    "docs/src/conf.py:D100",
-    "tests/*:D100,D101,D102",
-    "*/__init__.py:F401"
-]
-max-line-length = 80
-count = true
-exclude = [
-    ".git",
-    "__pycache__",
-    "build",
-    "docs/_build",
-    "dist"
+
+[tool.cruft]
+skip = [
+  "tests",
+  "src/**/__init__.py",
+  "src/**/basic.py",
+  "docs/api.md",
+  "docs/changelog.md",
+  "docs/references.bib",
+  "docs/references.md",
+  "docs/notebooks/example.ipynb",
 ]
