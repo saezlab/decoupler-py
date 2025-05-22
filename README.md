@@ -25,10 +25,13 @@
 [badge-adown]: https://static.pepy.tech/badge/decoupler
 [badge-stars]: https://img.shields.io/github/stars/saezlab/decoupler-py?style=flat&logo=github&color=yellow
 
-`decoupler` is a python package from the [scverse][] ecosystem containing different enrichment statistical
+`decoupler` is a python package containing different enrichment statistical
 methods to extract biologically driven scores
 from omics data within a unified framework. This is its faster and memory efficient Python implementation,
 a deprecated version in R can be found [here](https://github.com/saezlab/decoupler).
+
+It is a package from the [scverse][] ecosystem {cite:p}`scverse`,
+designed for easy interoperability with `anndata`, `scanpy` {cite:p}`scanpy` and other related packages.
 
 ## Getting started
 
