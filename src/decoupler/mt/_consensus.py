@@ -60,6 +60,7 @@ def _mean_zscores(
     return cons
 
 
+@docs.dedent
 def consensus(
     result: dict | AnnData,
     verbose: bool = False,

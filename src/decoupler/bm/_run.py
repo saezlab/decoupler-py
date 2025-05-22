@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from anndata import AnnData
 
+from decoupler._docs import docs
 from decoupler._log import _log
 from decoupler.pp.net import prune
 from decoupler.mt._methods import _methods
@@ -277,6 +278,7 @@ def _eval_scores(
     return df
 
 
+@docs.dedent
 def benchmark(
     adata: AnnData,
     net: pd.DataFrame | dict,
@@ -295,6 +297,24 @@ def benchmark(
 
     Parameters
     ----------
+    %(adata)s
+    %(net)s
+    metrics
+        Which metrics to use to evaluate classification performance.
+    groupby
+        Whether to group experiments by a metadata column in ``anndata.AnnData.obs``.
+    runby
+        Whether to evaluate performances at the experiment (``"expr"``) or at the source (``"source"``) level.
+    sfilt
+        Whether to fitler out sources in net for which there are not perturbation data.
+    thr
+        Threshold of significance.
+        Methods that generate no p-value will be consider significant if the ``thr`` > :math:`1 - quantile`
+    emin
+        Minimum number of experiments per group.
+    %(verbose)s
+    kws_decouple
+        Keyword arguments to pass to ``decoupler.mt.decouple``.
 
     Returns
     -------

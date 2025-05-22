@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 
+from decoupler._docs import docs
 from decoupler.bm.pl._format import _format
 
 
@@ -17,6 +18,7 @@ def _hmean(
     return h
 
 
+@docs.dedent
 def hmean(
     df: pd.DataFrame,
     metrics: str | list = ['auc', 'fscore', 'qrank'],
