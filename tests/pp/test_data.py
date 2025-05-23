@@ -21,6 +21,14 @@ def test_extract(
     adata.layers['counts'] = adata.X.round()
     X, obs, var = dc.pp.extract(data=adata, layer='counts')
     assert float(np.sum(X)).is_integer()
+    sadata = adata.copy()
+    sadata.X = sps.coo_matrix(sadata.X)
+    X, obs, var = dc.pp.extract(data=sadata)
+    assert isinstance(X, sps.csr_matrix)
+    eadata = adata.copy()
+    eadata.X[5, :] = 0.
+    X, obs, var = dc.pp.extract(data=eadata, empty=True)
+    assert X.shape[0] < eadata.shape[0]
     nadata = adata.copy()
     nadata.X = nadata.X * -1
     adata.raw = nadata

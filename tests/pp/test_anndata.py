@@ -41,13 +41,20 @@ def test_swap_layer(
     assert res.X.sum().is_integer()
     assert list(res.layers.keys()) == ['counts', 'X']
     assert (ldata.X == res.layers['X']).all()
+    res = dc.pp.swap_layer(adata=ldata, key='counts', X_key='X', inplace=True)
+    assert res is None
+    assert 'X' in ldata.layers
 
 
 @pytest.mark.parametrize(
     'groups_col,mode,sparse,empty',
     [
         [None, 'sum', False, True],
+        [None, 'sum', True, True],
         [None, 'mean', True, True],
+        ['sample', 'sum', False, True],
+        ['sample', 'sum', False, False],
+        [['dose', 'group'], 'sum', False, True],
         ['group', 'median', False, False],
         ['group', lambda x: np.max(x) - np.min(x), True, True],
         ['group', dict(sum=np.sum, mean=np.mean), False, False],
@@ -59,11 +66,15 @@ def test_pseudobulk(
     mode,
     sparse,
     empty,
+    rng,
 ):
     adata = adata.copy()
+    adata.obs['dose'] = rng.choice(['low', 'medium', 'high'], size=adata.n_obs, replace=True)
     if empty:
         adata.X[:, 3] = 0.
         adata.layers['counts'][:, 3] = 0.
+        adata.X[5, :] = 0.
+        adata.layers['counts'][5, :] = 0.
     if sparse:
         adata.X = sps.csr_matrix(adata.X)
     if mode == 'sum':
@@ -174,6 +185,15 @@ def test_filter_by_expr(
         "G04", "G05", "G03", "G07", "G18", "G17", "G02", "G14", "G16", "G08", "G13", "G20", "G01", "G15", "G06", "G19"
     ])
     assert set(dc_var) == set(eg_var)
+    pdata.X = sps.csr_matrix(pdata.X)
+    dc_var = dc.pp.filter_by_expr(
+        adata=pdata, group='group', lib_size=1, min_count=3, min_total_count=10, large_n=0, min_prop=0.1, inplace=False
+    )
+    assert set(dc_var) == set(eg_var)
+    dc.pp.filter_by_expr(
+        adata=pdata, group='group', lib_size=1, min_count=3, min_total_count=10, large_n=0, min_prop=0.1, inplace=True
+    )
+    assert set(pdata.var_names) == set(eg_var)
 
 
 @pytest.mark.parametrize('inplace', [True, False])
@@ -219,9 +239,10 @@ def test_bin_order(
     order,
     label,
     nbins,
+    rng,
 ):
-    rng = np.random.default_rng(seed=42)
     tdata.obs.loc[:, 'f_order'] = rng.random(tdata.n_obs)
+    tdata.X = sps.csr_matrix(tdata.X)
     df = dc.pp.bin_order(adata=tdata, names=names, order=order, label=label, nbins=nbins)
     assert isinstance(df, pd.DataFrame)
     cols = {'name', 'order', 'value'}
