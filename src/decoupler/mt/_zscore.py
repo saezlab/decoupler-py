@@ -73,7 +73,7 @@ def _func_zscore(
     n = np.sqrt(np.count_nonzero(adj, axis=0))
     mean = mat.dot(adj) / np.sum(np.abs(adj), axis=0)
     es = ((mean - mean_all.reshape(-1, 1)) * n) / stds.reshape(-1, 1)
-    pv = 2 * sts.norm.sf(np.abs(z))
+    pv = 2 * sts.norm.sf(np.abs(es))
     return es, pv
 
 
