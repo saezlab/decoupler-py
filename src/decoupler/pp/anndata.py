@@ -238,6 +238,7 @@ def _psbulk(
                 tmp = obs[(obs[sample_col] == smp) & (obs[groups_col] == grp)].drop_duplicates().values
                 if tmp.shape[0] == 0:
                     tmp = obs[obs[sample_col] == smp].drop(columns=groups_col).drop_duplicates()
+                    tmp = tmp.head(1)  # Remove extra repeated cat variables
                     tmp[groups_col] = grp
                     tmp = tmp[obs.columns].values
                 new_obs.loc[index, :] = tmp
@@ -273,7 +274,7 @@ def pseudobulk(
     groups_col: str | None,
     layer: str | None = None,
     raw: bool = False,
-    empty: bool = True,
+    empty: bool = False,
     mode: str | Callable | dict = 'sum',
     skip_checks: bool = False,
     verbose: bool = False,
