@@ -20,10 +20,11 @@ def df():
 
 
 @pytest.mark.parametrize(
-    'name,top,vertical',
+    'name,top,vertical,vcenter',
     [
-        ['C1', 2, True],
-        ['C2', 10, False],
+        ['C1', 2, True, None],
+        ['C2', 10, False, -3],
+        ['C2', 10, False, 10],
     ]
 )
 def test_barplot(
@@ -31,6 +32,7 @@ def test_barplot(
     name,
     top,
     vertical,
+    vcenter,
 ):
     fig = dc.pl.barplot(data=df, name=name, top=top, vertical=vertical, return_fig=True)
     assert isinstance(fig, Figure)

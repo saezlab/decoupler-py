@@ -13,6 +13,7 @@ import decoupler as dc
         ['T3', 'group', -20, 15],
         ['T4', 'group', -1, 20],
         ['T5', 'group', -2, 14],
+        ['T5', 'group', None, None],
     ]
 )
 def test_order_targets(

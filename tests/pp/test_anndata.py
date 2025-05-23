@@ -54,6 +54,7 @@ def test_swap_layer(
         [None, 'mean', True, True],
         ['sample', 'sum', False, True],
         ['sample', 'sum', False, False],
+        ['sample', 'sum', True, False],
         [['dose', 'group'], 'sum', False, True],
         ['group', 'median', False, False],
         ['group', lambda x: np.max(x) - np.min(x), True, True],
@@ -73,8 +74,9 @@ def test_pseudobulk(
     if empty:
         adata.X[:, 3] = 0.
         adata.layers['counts'][:, 3] = 0.
-        adata.X[5, :] = 0.
-        adata.layers['counts'][5, :] = 0.
+        msk = adata.obs['sample'] == 'S01'
+        adata.X[msk, :] = 0.
+        adata.layers['counts'][msk, :] = 0.
     if sparse:
         adata.X = sps.csr_matrix(adata.X)
     if mode == 'sum':

@@ -152,6 +152,9 @@ def _metric_scores(
     verbose: bool,
     **kwargs
 ) -> None:
+    assert isinstance(metrics, (str, list)), 'metrics must be str or list'
+    if isinstance(metrics, str):
+        metrics = [metrics]
     if runby == 'expr':
         m = ('benchmark - evaluating by experiment on:\n' +
         f'n_expr={score.shape[0]}, n_sources={score.shape[1]} across metrics={metrics}')
