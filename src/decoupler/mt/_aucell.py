@@ -64,7 +64,7 @@ def _func_aucell(
     n_up: int | float | None = None,
     verbose: bool = False,
 ) -> Tuple[np.ndarray, None]:
-    """
+    r"""
     Area Under the Curve for set enrichment within single cells (AUCell) :cite:`aucell`.
 
     Given a ranked list of features per observation, AUCell calculates the AUC by measuring how early the features in
