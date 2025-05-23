@@ -91,7 +91,7 @@ def consensus(
     - :math:`z_{i}^{(m)}` is the z-score from method :math:`m`.
 
     A two-sided :math:`p_{value}` is then calculated from the consensus score using
-    the survival function of the standard normal distribution.
+    the survival function :math:`sf` of the standard normal distribution.
 
     .. math::
 
