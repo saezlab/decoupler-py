@@ -318,11 +318,11 @@ def pseudobulk(
     # Validate
     assert isinstance(adata, AnnData), 'adata must be an AnnData instance'
     assert isinstance(sample_col, str), 'sample_col must be a str'
-    assert isinstance(groups_col, str) or groups_col is None, 'sample_col must be str or None'
+    assert isinstance(groups_col, (str, list)) or groups_col is None, 'groups_col must be str or None'
     assert isinstance(mode, (str, dict)) or callable(mode), 'mode must be str, dict or callable'
     # Extract data
-    X, _, var = extract(adata, layer=layer, raw=raw, empty=empty, verbose=verbose)
-    obs = adata.obs.copy()
+    X, obs, var = extract(adata, layer=layer, raw=raw, empty=empty, verbose=verbose)
+    obs = adata.obs.loc[obs].copy()
     var = adata.var.loc[var]
     # Validate X
     _validate_X(X=X, mode=mode, skip_checks=skip_checks)
