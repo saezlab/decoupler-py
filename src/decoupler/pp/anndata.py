@@ -233,15 +233,6 @@ def _psbulk(
     else:
         for grp in groups:
             for smp in smples:
-                # Write new meta-data
-                index = smp + '_' + grp
-                tmp = obs[(obs[sample_col] == smp) & (obs[groups_col] == grp)].drop_duplicates().values
-                if tmp.shape[0] == 0:
-                    tmp = obs[obs[sample_col] == smp].drop(columns=groups_col).drop_duplicates()
-                    tmp = tmp.head(1)  # Remove extra repeated cat variables
-                    tmp[groups_col] = grp
-                    tmp = tmp[obs.columns].values
-                new_obs.loc[index, :] = tmp
                 # Get cells from specific sample and group
                 profile = X[((obs[sample_col] == smp) & (obs[groups_col] == grp)).values]
                 if isinstance(X, sps.csr_matrix):
@@ -253,6 +244,15 @@ def _psbulk(
                 counts[i] = count
                 m = f'group={grp}\tsample={smp}\tcells={ncell}\tcounts={count}'
                 _log(m, level='info', verbose=verbose)
+                # Write new meta-data
+                index = smp + '_' + grp
+                tmp = obs[(obs[sample_col] == smp) & (obs[groups_col] == grp)].drop_duplicates().values
+                if tmp.shape[0] == 0:
+                    tmp = obs[obs[sample_col] == smp].drop(columns=groups_col).drop_duplicates()
+                    tmp = tmp.head(1)  # Remove extra repeated cat variables
+                    tmp[groups_col] = grp
+                    tmp = tmp[obs.columns].values
+                new_obs.loc[index, :] = tmp
                 if ncell == 0 or count == 0:
                     i +=1
                     continue
