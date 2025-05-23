@@ -198,7 +198,7 @@ def _func_gsea(
 
         ES = L_{arg max |L|}
 
-    When multiple random permutations are done, statistical significance is assessed via empirical testing.
+    When multiple random permutations are done (``times > 1``), statistical significance is assessed via empirical testing.
 
     .. math::
 
@@ -220,7 +220,7 @@ def _func_gsea(
     - :math:`\mu{+}` is the mean of positive values in :math:`ES_{rand}`
     - :math:`\mu{-}` is the mean of negative values in :math:`ES_{rand}`
 
-    Finally, the obtained math:`p_value` are adjusted by Benjamini-Hochberg correction. 
+    %(yestest)s
 
     %(params)s
     %(times)s

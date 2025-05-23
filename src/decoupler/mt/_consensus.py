@@ -65,8 +65,39 @@ def consensus(
     result: dict | AnnData,
     verbose: bool = False,
 ) -> Tuple[pd.DataFrame, pd.DataFrame] | None:
-    """
+    r"""
     Consensus score across methods.
+
+    For each method, enrichment scores are split into positive and negative subsets
+    and transformed independently into z-scores.
+    
+    1. Subset values based on sign (direction).
+    2. Mirror each subset into positive and negative values with the same magnitude.
+    3. Compute z-scores for each subset: :math:`z_i = \frac{x_i - \mu}{\sigma}`.
+    4. Restore the original signs to the z-scored values
+
+    This transformation ensures comparability across methods while preserving the
+    biological interpretation of activation (positive) and inhibition (negative).
+    The final consensus enrichment score :math:`ES` is computed as the mean of
+    these signed z-scores across methods.
+
+    .. math::
+
+        ES = \frac{\sum_{m=1}^{M} z_{i}^{(m)}}{M} 
+
+    Where:
+
+    - :math:`M` is the number of methods
+    - :math:`z_{i}^{(m)}` is the z-score from method :math:`m`.
+
+    A two-sided :math:`p_{value}` is then calculated from the consensus score using
+    the survival function of the standard normal distribution.
+
+    .. math::
+
+        p = 2 \times \mathrm{sf}\bigl(\lvert \mathrm{ES} \rvert \bigr)
+
+    %(yestest)s
 
     Parameters
     ----------

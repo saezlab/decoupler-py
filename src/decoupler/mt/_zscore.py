@@ -15,8 +15,40 @@ def _func_zscore(
     flavor: str = 'RoKAI',
     verbose: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray]:
-    """
+    r"""
     Z-score (ZSCORE) :cite:`zscore`.
+
+    This approach computes the mean value of the molecular features for known targets,
+    optionally subtracts the overall mean of all measured features,
+    and normalizes the result by the standard deviation of all features and the square
+    root of the number of targets.
+    
+    This formulation was originally introduced in KSEA, which explicitly includes the
+    subtraction of the global mean to compute the enrichment score :math:`ES`.
+
+    .. math::
+
+        ES = \frac{(\mu_s-\mu_p) \times \sqrt m }{\sigma}
+
+    Where:
+
+    - :math:`\mu_s` is the mean of targets
+    - :math:`\mu_p` is the mean of all features
+    - :math:`m` is the number of targets
+    - :math:`\sigma` is the standard deviation of all features
+    
+    However, in the RoKAI implementation, this global mean subtraction was omitted.
+
+    .. math::
+
+        ES = \frac{\mu_s \times \sqrt m }{\sigma}
+
+    A two-sided :math:`p_{value}` is then calculated from the consensus score using
+    the survival function :math:`sf` of the standard normal distribution.
+
+    .. math::
+
+        p = 2 \times \mathrm{sf}\bigl(\lvert \mathrm{ES} \rvert \bigr)
 
     %(yestest)s
 
@@ -41,7 +73,7 @@ def _func_zscore(
     n = np.sqrt(np.count_nonzero(adj, axis=0))
     mean = mat.dot(adj) / np.sum(np.abs(adj), axis=0)
     es = ((mean - mean_all.reshape(-1, 1)) * n) / stds.reshape(-1, 1)
-    pv = sts.norm.cdf(-np.abs(es))
+    pv = 2 * sts.norm.sf(np.abs(z))
     return es, pv
 
 

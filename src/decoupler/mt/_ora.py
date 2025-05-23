@@ -176,7 +176,7 @@ def _func_ora(
     .. figure:: /_static/images/ora.png
        :alt: Over Representation Analysis (ORA) schematic.
        :align: center
-       :width: 75%
+       :width: 100%
 
        Over Representation Analysis (ORA) scheme.
     

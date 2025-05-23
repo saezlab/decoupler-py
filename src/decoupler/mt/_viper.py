@@ -181,9 +181,100 @@ def _func_viper(
     penalty: int | float = 20,
     verbose: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray]:
-    """
+    r"""
     Virtual Inference of Protein-activity by Enriched Regulon analysis (VIPER) :cite:`viper`.
 
+    This approach first ranks features based on their absolute values and computes a one-tail score.
+
+    .. math::
+
+        \begin{align}
+        w &= \frac{w}{max(|w|)} \\
+        l_{orig} &= 1_{w \neq 0} \\
+        l &= \frac{l_{orig}}{\sum_{i=1}^{k} \frac{l_i}{max(l_{orig})}max(l_{orig})} \\
+        q^{norm} &= \Phi^{-1}(2|q-0.5| + (1 + max(|q-0.5|))) \\
+        S_1 &= \sum_{i=1}^{k}q_i^{norm}l_i(1-|w_i|) \\
+        \end{align}
+        
+    Where:
+
+    - :math:`w \in [-1, +1]` is a vector of interaction weights across features
+    - :math:`l \in [0, 1]` is a vector of interaction likelihoods across features
+    - :math:`q \in [0, 1]` is a vector of quantiles based on the molecular readouts across features
+    - :math:`k` is the number of features in :math:`q`
+    - :math:`\Phi^{-1}` is is the inverse of the cumulative distribution function of the standard normal distribution
+    - :math:`q^{norm} \in [-\infty,+\infty]` are the z-scores of the deviation of quantiles from 0.5
+
+    :math:`S_1` encodes for the magnitude of the enrichment score, irrespective of the interaction signs in ``net``.
+
+    Then, :math:`q` are z-transformed and weighted by their interaction strength and likelihood.
+
+    .. math::
+
+        S_2 = \sum_{i=1}^{k}w_il_i(\Phi^{-1}(q_i))
+
+    In this case, :math:`S_2` takes the direction (sign) of interactions into consideration.
+
+    Afterwards, a summary score :math:`S_3` is obtained.
+
+    .. math::
+
+        S_3 = 
+        \begin{cases}
+        (|S_2| + S_1)  \times \mathrm{sgn}(S_2) & \text{if } S_1 > 0 \\
+        S_2 & \text{if } S_1 < 0
+        \end{cases}
+
+    An enrichment score :math:`ES` is obtained by comparing :math:`S_3` to a
+    null model generated through an analytical approach that shuffles features.
+
+    .. math::
+
+        ES = S_3\sqrt{\sum_{i=1}^{k}l_{orig,i}^{2}}
+        
+    Together with a :math:`p_{value}`
+
+    .. math::
+
+        p_{value} = \Phi(ES)
+
+    Additionaly, computing multiple sources simultaneously, a pleiotropic correction is employed.
+
+    In brief, all possible pairs of sources AB are generated under two conditions:
+    
+    1. both A and B are significantly enriched (p < ``reg_sign=0.05``)
+    2. they share at least ``n_targets=10`` features
+
+    Subsequently, a :math:`ES` and its associated :math:`p_{value}` is computed for
+    both A (:math:`pA`) and B (:math:`pB`) based only on the shared features.
+    Then the pleiotropy score (:math:`PS`) is computed.
+
+    .. math::
+
+        PS = 
+        \begin{cases}
+        \frac{1}{(1+|\log_{10}(pB) - \log_{10}(pA)|)^{\frac{20}{n_a}}} \text{ if } pA < pB \\
+        \frac{1}{(1+|\log_{10}(pA) - \log_{10}(pB)|)^{\frac{20}{n_b}}} \text{ if } pA > pB
+        \end{cases}
+    
+    Where:
+
+    - :math:`n_a` is the number of test pairs involving the source A
+    - :math:`n_b` is the number of test pairs involving the source B
+
+    This score is used to update :math:`l_{orig}`.
+
+    .. math::
+
+        l_{orig, i} = 
+        \begin{cases}
+        PS \times 1_{\{i \in A\}} \text{ if } pA < pB \\
+        PS \times 1_{\{i \in B\}} \text{ if } pA > pB
+        \end{cases}
+
+    A new :math:`ES` and :math:`p_{value}` are calculated following all
+    the previous steps but using the updated :math:`l_{orig}`
+    
     %(yestest)s
 
     %(params)s

@@ -146,8 +146,54 @@ def _func_waggr(
     seed: int | float = 42,
     verbose: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray]:
-    """
+    r"""
     Weighted Aggregate (WAGGR) :cite:`decoupler`.
+
+    This approach aggregates the molecular features :math:`x_i` from one observation :math:`i` with
+    the feature weights :math:`w` of a given feature set :math:`j` into an enrichment score :math:`ES`.
+
+    This method can use any aggregation function, which by default is the weighted mean.
+
+    .. math::
+
+        ES = \frac{\sum_{i=1}^{n} w_i x_i}{\sum_{i=1}^{n} w_i}
+
+    Another simpler option is the weighted sum.
+
+    .. math::
+
+        ES = \sum_{i=1}^{n} w_i x_i
+
+    Alternatively, this method can also take any defined function :math:`f` as long at it aggregates :math:`x_i` and
+    :math:`w` into a single :math:`ES`.
+
+    .. math::
+
+        ES = f(w_i, x_i)
+
+    This functionality makes it relatively easy to implement and try new enrichment methods.
+
+    When multiple random permutations are done (``times > 1``), statistical significance is assessed via empirical testing.
+
+    .. math::
+
+        p_{value}=\frac{ES_{rand} \geq ES}{P}
+
+    Where:
+
+    - :math:`ES_{rand}` are the enrichment scores of the random permutations
+    - :math:`P` is the total number of permutations
+
+    Additionaly, :math:`ES` is updated to a normalized enrichment score :math:`NES`.
+
+    .. math::
+
+        NES = \frac{ES - \mu(ES_{rand})}{\sigma(ES_{rand})}
+
+    Where:
+
+    - :math:`\mu` is the mean
+    - :math:`\sigma` is the standard deviation
 
     %(yestest)s
 

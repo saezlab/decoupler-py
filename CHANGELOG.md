@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning][].
 
 ## 2.0.0
 
-Major update to accomodate the scverse template.
+Major update to accomodate the scverse template {cite}`scverse`.
 
 All functions have been rewritten to follow the new API, errors when running previous versions (`1.X.X`) are expected if `decoupler >= 2.0.0` is installed.
 
