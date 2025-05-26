@@ -53,7 +53,7 @@ There are several alternative options to install decoupler:
 pip install decoupler
 ```
 
-2. Install the latest stable version from [conda-forge][conda] using mamba or conda:
+2. Install the latest stable version from [conda-forge][conda] using mamba or conda (pay attention to the `-py` suffix at the end):
 
 ```bash
 mamba create -n=dcp conda-forge::decoupler-py
