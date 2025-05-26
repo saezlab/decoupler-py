@@ -140,9 +140,11 @@ def order_targets(
     ax.grid(axis='y', visible=False)
     ax.set_ylabel('Targets')
     yticklabels = []
+    # Find minmax
+    omin, omax = df_ftr['order'].min(), df_ftr['order'].max()
     # Add neg targets
     if neg_names.size > 0:
-        img = ax.imshow(mat.loc[neg_names], extent=[0, 1, 0, neg_names.size], aspect='auto', cmap=neg_cmap, vmin=vmin, vmax=vmax)
+        img = ax.imshow(mat.loc[neg_names], extent=[omin, omax, 0, neg_names.size], aspect='auto', cmap=neg_cmap, vmin=vmin, vmax=vmax)
         yticklabels.extend(list(neg_names)[::-1])
         cbar_mappable = ScalarMappable(cmap=neg_cmap, norm=Normalize(vmin=vmin, vmax=vmax))
         pos = ax.get_position().bounds
@@ -152,22 +154,22 @@ def order_targets(
     ax.axhline(y=neg_names.size, c='black', lw=1)
     # Add pos targets
     if pos_names.size > 0:
-        img = ax.imshow(mat.loc[pos_names], extent=[0, 1, neg_names.size, neg_names.size + pos_names.size], aspect='auto', cmap='Reds', vmin=vmin, vmax=vmax)
+        img = ax.imshow(mat.loc[pos_names], extent=[omin, omax, neg_names.size, neg_names.size + pos_names.size], aspect='auto', cmap='Reds', vmin=vmin, vmax=vmax)
         yticklabels.extend(list(pos_names)[::-1])
         cbar_mappable = ScalarMappable(cmap=pos_cmap, norm=Normalize(vmin=vmin, vmax=vmax))
         pos = ax.get_position().bounds
-        #  (left, bottom, width, height)
         cax = bp.fig.add_axes([0.97, pos[1] + (pos[3] / 2) + .025, 0.05, (pos[3] / 2) - .025])
         cax.grid(axis='y', visible=False)
         bp.fig.colorbar(cbar_mappable, cax=cax, aspect=5, shrink=0.5, label='+ target\nvalues', location='right')
     # Plot labels
     ax.set_ylim(0, n_names)
     if has_cbar:
-        ax.imshow(colors, aspect='auto', extent=[0, 1, n_names, 1.1 * n_names], zorder=2)
+        ax.imshow(colors, aspect='auto', extent=[omin, omax, n_names, 1.1 * n_names], zorder=2)
         ax.axhline(y=n_names, c='black', lw=1)
         ax.set_ylim(0, 1.1 * n_names)
     # Format plot
     ax.set_yticks(np.arange(n_names) + 0.5)
     ax.set_yticklabels(yticklabels)
+    ax.set_xlim(omin, omax)
     bp.fig.subplots_adjust(hspace=0)
     return bp._return()

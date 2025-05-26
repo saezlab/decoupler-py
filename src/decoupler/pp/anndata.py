@@ -707,10 +707,9 @@ def bin_order(
     if sps.issparse(X):
         X = X.toarray()
     y = adata.obs[order].values
-    # Normalize to 0 and 1
-    y = np.abs(y) / np.abs(y).max()
     # Make windows
-    bin_edges = np.linspace(0, 1, nbins + 1)
+    ymin, ymax = y.min(), y.max()
+    bin_edges = np.linspace(start=ymin, stop=ymax, num=nbins + 1)
     bin_midpoints = (bin_edges[:-1] + bin_edges[1:]) / 2
     # Prepare label colors
     cols = ['name', 'midpoint', 'value']
@@ -739,5 +738,4 @@ def bin_order(
     df = pd.concat(dfs)
     df = df[cols]
     df = df.rename(columns={'midpoint': 'order'}).reset_index(drop=True)
-    df['order'] = df['order'] / df['order'].max()
     return df

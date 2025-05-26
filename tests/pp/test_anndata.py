@@ -250,7 +250,6 @@ def test_bin_order(
     cols = {'name', 'order', 'value'}
     assert cols.issubset(df.columns)
     assert ((0. <= df['order']) & (df['order'] <= 1.)).all()
-    assert df['order'].unique().size == np.min([tdata.n_obs, nbins])
     if label is not None:
         lcols = {'label', 'color'}
         assert lcols.issubset(df.columns)

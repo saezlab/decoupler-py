@@ -53,7 +53,7 @@ def order(
             bp.ax.imshow(
                 colors,
                 aspect='auto',
-                extent=[0, xmax, 1.05 * ymax, 1.2 * ymax],
+                extent=[xmin, xmax, 1.05 * ymax, 1.2 * ymax],
                 transform=bp.ax.transData,
                 zorder=2
             )
@@ -75,9 +75,9 @@ def order(
             .groupby(['name', 'order'], as_index=False)['value'].mean()
             .pivot(index='name', columns='order', values='value')
         )
-        img = bp.ax.imshow(mat, extent=[0, xmax, 0, n_names], aspect='auto', **kw_order)
+        img = bp.ax.imshow(mat, extent=[xmin, xmax, 0, n_names], aspect='auto', **kw_order)
         if has_cbar:
-            bp.ax.imshow(colors, aspect='auto', extent=[0, xmax, n_names, 1.1 * n_names], zorder=2)
+            bp.ax.imshow(colors, aspect='auto', extent=[xmin, xmax, n_names, 1.1 * n_names], zorder=2)
             bp.ax.axhline(y=n_names, c='black', lw=1)
             bp.ax.set_ylim(0, 1.1 * n_names)
         bp.fig.colorbar(img, ax=bp.ax, shrink=0.5, label='Mean value', location='top')
@@ -85,5 +85,5 @@ def order(
         bp.ax.set_yticklabels(np.flip(mat.index))
         bp.ax.grid(axis='y', visible=False)
         bp.ax.set_xlabel('order')
-    bp.ax.set_xlim(0, 1)
+    bp.ax.set_xlim(xmin, xmax)
     return bp._return()
