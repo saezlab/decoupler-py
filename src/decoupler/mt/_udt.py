@@ -1,9 +1,12 @@
+import warnings
 from typing import Tuple
 
 import numpy as np
 import scipy.sparse as sps
 from tqdm.auto import tqdm
-from xgboost import XGBRegressor
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=FutureWarning, module="xgboost")
+    from xgboost import XGBRegressor
 
 from decoupler._docs import docs
 from decoupler._log import _log

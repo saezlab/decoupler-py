@@ -1,8 +1,12 @@
+import warnings
+
 import pandas as pd
 import scipy.stats as sts
 import scipy.sparse as sps
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=FutureWarning, module="xgboost")
+    from xgboost import XGBRegressor
 from anndata import AnnData
-from xgboost import XGBRegressor
 
 from decoupler._docs import docs
 from decoupler.pp.data import extract
