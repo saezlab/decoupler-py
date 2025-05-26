@@ -1,4 +1,5 @@
 import pandas as pd
+import scipy.sparse as sps
 import pytest
 
 import decoupler as dc
@@ -27,10 +28,14 @@ def test_benchmark(
     thr,
     emin,
     mnet,
+    rng,
 ):
     dc.mt.ulm(data=bdata, net=net, tmin=0)
     if mnet:
         net = {'w_net': net, 'unw_net': net.drop(columns=['weight'])}
+        bdata = bdata.copy()
+        bdata.obs['source'] = rng.choice(['x', 'y', 'z'], size=bdata.n_obs, replace=True)
+        bdata.X = sps.csr_matrix(bdata.X)
     df = dc.bm.benchmark(
         adata=bdata,
         net=net,
@@ -49,5 +54,6 @@ def test_benchmark(
     )
     assert isinstance(df, pd.DataFrame)
     cols = {'method', 'metric', 'score'}
-    print(df.columns)
     assert cols.issubset(df.columns)
+    hdf = dc.bm.metric.hmean(df, metrics=metrics)
+    assert isinstance(hdf, pd.DataFrame)

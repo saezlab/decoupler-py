@@ -63,16 +63,13 @@ def auprc(
     # Compute prc
     ps = tps + fps
     msk = ps != 0
-    if pi0 > 0 and pi0 < 1:
-        # Siblini W., Fréry J., He-Guelton L., Oblé F., Wang YQ. (2020) Master
-        # Your Metrics with Calibration. In: Berthold M., Feelders A., Krempl G.
-        # (eds) Advances in Intelligent Data Analysis XVIII. IDA 2020. Lecture
-        # Notes in Computer Science, vol 12080. Springer, Cham
-        pi = np.sum(y_true) / y_true.size
-        ratio = pi * (1 - pi0) / (pi0 * (1 - pi))
-        prc = tps[msk] / (tps[msk] + ratio * fps[msk])
-    else:
-        prc = np.divide(tps[msk], ps[msk])
+    # Siblini W., Fréry J., He-Guelton L., Oblé F., Wang YQ. (2020) Master
+    # Your Metrics with Calibration. In: Berthold M., Feelders A., Krempl G.
+    # (eds) Advances in Intelligent Data Analysis XVIII. IDA 2020. Lecture
+    # Notes in Computer Science, vol 12080. Springer, Cham
+    pi = np.sum(y_true) / y_true.size
+    ratio = pi * (1 - pi0) / (pi0 * (1 - pi))
+    prc = tps[msk] / (tps[msk] + ratio * fps[msk])
     # Compute rcl
     rcl = tps / tps[-1]
     # Flip and add limits
