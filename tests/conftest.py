@@ -49,6 +49,7 @@ def pdata(
 @pytest.fixture
 def bdata():
     adata, _ = dc.ds.toy_bench(nobs=100, nvar=20, bval=2, seed=42, verbose=False)
+    adata.obs['bm_group'] = adata.obs.apply(lambda x: [x['sample'], x['group']], axis=1)
     return adata
 
 

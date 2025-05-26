@@ -5,14 +5,16 @@ import decoupler as dc
 
 
 @pytest.mark.parametrize(
-    'metrics,groupby,runby,sfilt,thr,emin',
+    'metrics,groupby,runby,sfilt,thr,emin,mnet',
     [
-        ['auc', None, 'expr', False, 0.05, 5],
-        ['auc', None, 'expr', True, 0.05, 5],
-        [['auc'], None, 'expr', False, 0.05, 5],
-        [['auc', 'fscore'], 'group', 'expr', False, 0.05, 5],
-        [['auc', 'fscore', 'qrank'], None, 'source', False, 0.05, 2],
-        [['auc', 'fscore', 'qrank'], 'group', 'source', False, 0.05, 1],
+        ['auc', None, 'expr', False, 0.05, 5, False],
+        ['auc', None, 'expr', True, 0.05, 5, False],
+        [['auc'], None, 'expr', False, 0.05, 5, False],
+        [['auc', 'fscore'], 'group', 'expr', False, 0.05, 5, False],
+        [['auc', 'fscore', 'qrank'], None, 'source', False, 0.05, 2, False],
+        [['auc', 'fscore', 'qrank'], 'group', 'source', False, 0.05, 1, False],
+        [['auc', 'fscore', 'qrank'], 'bm_group', 'expr', True, 0.05, 5, False],
+        [['auc', 'fscore', 'qrank'], 'source', 'expr', True, 0.05, 5, False],
     ]
 )
 def test_benchmark(
@@ -24,7 +26,11 @@ def test_benchmark(
     sfilt,
     thr,
     emin,
+    mnet,
 ):
+    dc.mt.ulm(data=bdata, net=net, tmin=0)
+    if mnet:
+        net = {'w_net': net, 'unw_net': net.drop(columns=['weight'])}
     df = dc.bm.benchmark(
         adata=bdata,
         net=net,
@@ -37,8 +43,9 @@ def test_benchmark(
         kws_decouple={
             'cons': True,
             'tmin': 3,
-            'methods': ['ulm', 'zscore']
+            'methods': ['ulm', 'zscore', 'aucell']
         },
+        verbose=True
     )
     assert isinstance(df, pd.DataFrame)
     cols = {'method', 'metric', 'score'}

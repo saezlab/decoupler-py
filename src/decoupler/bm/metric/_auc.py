@@ -94,6 +94,8 @@ def auc(
     """
     # Normalize to make comparable
     norm = np.nanmax(np.abs(y_score), axis=1)
+    msk = norm == 0.
+    norm[msk] = 1.
     y_score = y_score / norm.reshape(-1, 1)
     assert ((-1. <= y_score) & (y_score <= 1.)).all()
     # Flatten and remove nans
