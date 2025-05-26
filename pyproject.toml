@@ -27,6 +27,7 @@ dependencies = [
   "numba",
   "docrep",
   "tqdm",
+  "ipywidgets",
   "xgboost",
   "seaborn",
   "requests",
