@@ -84,6 +84,9 @@ python = [ "3.10", "3.13" ]
 [tool.hatch.envs.hatch-test]
 features = [ "test" ]
 
+[tool.hatch.envs.hatch-test.env-vars]
+NUMBA_JIT_COVERAGE = "1"
+
 [tool.ruff]
 line-length = 120
 src = [ "src" ]
