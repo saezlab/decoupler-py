@@ -40,6 +40,12 @@ def hmean(
     -------
     Dataframe containing the harmonic mean per metric.
     """
+    # Validate
+    assert isinstance(df, pd.DataFrame), 'df must be pandas.DataFrame'
+    assert isinstance(metrics, (str, list)), 'metrics must be str or list'
+    if isinstance(metrics, str):
+        metrics = [metrics]
+    # Run
     d_metrics = {
         'auc': {
             'name': 'H(auroc, auprc)',
@@ -63,7 +69,6 @@ def hmean(
         # Compute harmonic mean
         name = d_metrics[metric]['name']
         tmp[name] = _hmean(tmp[cols[0]], tmp[cols[1]], beta=beta)
-        #tmp = tmp.drop(columns=cols)
         if i == 0:
             hdf.append(tmp)
         else:
