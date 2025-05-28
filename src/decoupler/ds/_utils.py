@@ -27,7 +27,12 @@ def ensmbl_to_symbol(
         'ensembl" interface = "default" ><Attribute name = "ensembl_gene_id" /><Attribute name ='
         '"external_gene_name" /></Dataset></Query>'
     )
-    # Send a GET request to the URL
-    response = requests.get(url)
+    # Try different mirrors
+    response = requests.get(url.format(miror='www'))
+    if 'Service unavailable' in response.text:
+        response = requests.get(url.format(miror='useast'))
+    if 'Service unavailable' in response.text:
+        response = requests.get(url.format(miror='asia'))
+    assert not 'Service unavailable' in response.text, 'ensembl servers are down, try again later'
     eids = pd.read_csv(io.StringIO(response.text), sep='\t', header=None, index_col=0)[1].to_dict()
     return [eids[g] if g in eids else None for g in genes]
