@@ -95,7 +95,7 @@ def covid5k(
     # Download var
     url_var = os.path.join(url_base, f'{id_ebi}.aggregated_counts.mtx_rows.gz')
     var = pd.read_csv(url_var, sep='\t', header=None, usecols=[0], index_col=0)
-    var['name'] = ensmbl_to_symbol(var.index)
+    var['name'] = ensmbl_to_symbol(genes=var.index.to_list(), organism='hsapiens_gene_ensembl')
     msk_var = ~(var['name'].isna() | var['name'].duplicated(keep='first')).values
     var = var.loc[msk_var].reset_index(drop=True).set_index('name')
     var.index.name = None
