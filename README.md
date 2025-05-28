@@ -47,19 +47,25 @@ If you don't have Python installed, we recommend installing [uv][].
 
 There are several alternative options to install decoupler:
 
-1. Install the latest stable version from [PyPI][pypi]:
+1. Install the latest stable release from [PyPI][pypi] with minimal dependancies:
 
 ```bash
 pip install decoupler
 ```
 
-2. Install the latest stable version from [conda-forge][conda] using mamba or conda (pay attention to the `-py` suffix at the end):
+2. Install the latest stable full release from [PyPI][pypi] with extra dependancies:
+
+```bash
+pip install decoupler[full]
+```
+
+3. Install the latest stable version from [conda-forge][conda] using mamba or conda (pay attention to the `-py` suffix at the end):
 
 ```bash
 mamba create -n=dcp conda-forge::decoupler-py
 ```
 
-3. Install the latest development version:
+4. Install the latest development version:
 
 ```bash
 pip install git+https://github.com/saezlab/decoupler-py.git@main

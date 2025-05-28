@@ -4,10 +4,8 @@ from typing import Tuple
 import numpy as np
 import scipy.sparse as sps
 from tqdm.auto import tqdm
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", category=FutureWarning, module="xgboost")
-    from xgboost import XGBRegressor
 
+from decoupler._odeps import xgboost, _check_import
 from decoupler._docs import docs
 from decoupler._log import _log
 from decoupler._Method import MethodMeta, Method
@@ -19,7 +17,7 @@ def _xgbr(
     **kwargs,
 ) -> np.ndarray:
     # Init model
-    reg = XGBRegressor(**kwargs)
+    reg = xgboost.XGBRegressor(**kwargs)
     # Fit
     y = y.reshape(-1, 1)
     reg = reg.fit(x, y)
@@ -52,6 +50,7 @@ def _func_mdt(
         All other keyword arguments are passed to ``xgboost.XGBRegressor``.
     %(returns)s
     """
+    _check_import(xgboost)
     nobs = mat.shape[0]
     nvar, nsrc = adj.shape
     m = f'mdt - fitting {nsrc} multivariate decision tree models (XGBoost) of {nvar} targets across {nobs} observations'

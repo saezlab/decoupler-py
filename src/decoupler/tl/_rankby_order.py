@@ -8,6 +8,7 @@ import scipy.sparse as sps
 from anndata import AnnData
 import dcor
 
+from decoupler._odeps import dcor, _check_import
 from decoupler._docs import docs
 from decoupler.pp.data import extract
 
@@ -62,6 +63,7 @@ def rankby_order(
     df['name'] = adata.var_names
     # Fit
     if stat == 'dcor':
+        _check_import(dcor)
         f = dcor.independence.distance_correlation_t_test
     elif stat == 'pearsonr':
         f = sts.pearsonr

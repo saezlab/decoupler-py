@@ -27,16 +27,17 @@ dependencies = [
   "numba",
   "docrep",
   "tqdm",
-  "ipywidgets",
-  "xgboost",
-  "seaborn",
   "requests",
-  "igraph",
   "marsilea",
   "adjustText",
-  "dcor",
   # for debug logging (referenced from the issue template)
   "session-info2",
+]
+optional-dependencies.full = [
+  "igraph",
+  "xgboost",
+  "ipywidgets",
+  "dcor",
 ]
 optional-dependencies.dev = [
   "pre-commit",

@@ -1,5 +1,3 @@
-from typing import TYPE_CHECKING
-
 import matplotlib
 import matplotlib.cm
 import matplotlib.colors
@@ -8,36 +6,9 @@ import numpy as np
 import pandas as pd
 from matplotlib.lines import Line2D
 
+from decoupler._odeps import ig, Graph, _check_import
 from decoupler._docs import docs
 from decoupler._Plotter import Plotter
-
-# Handle optional igraph dependency
-try:
-    import igraph as ig
-
-    HAS_IGRAPH = True
-    if TYPE_CHECKING:
-        from igraph import Graph
-    else:
-        Graph = ig.Graph
-except ImportError:
-    ig = None
-    HAS_IGRAPH = False
-    if TYPE_CHECKING:
-        from typing import Any as Graph
-    else:
-        Graph = None
-
-
-def _check_igraph() -> None:
-    """Check if igraph is available and raise informative error if not."""
-    if not HAS_IGRAPH:
-        raise ImportError(
-            "igraph is not installed. Please install it using:\n"
-            "  pip install igraph\n"
-            "or install decoupler with plotting dependencies:\n"
-            "  pip install 'decoupler[plot]'"
-        )
 
 
 def _src_idxs(
@@ -158,7 +129,6 @@ def _net_2_g(
     net: pd.DataFrame,
 ) -> Graph:
     # Unify network
-    _check_igraph()
     v_dict, types = _dict_types(data=data, score=score)
     # Transform net to edges
     edges = _net_2_elist(net=net, v_dict=v_dict)
@@ -262,8 +232,7 @@ def network(
     """
     assert isinstance(net, pd.DataFrame), "net must be pd.DataFrame"
     assert (data is None) == (score is None), "data and score must either both be None"
-    if ig is None:
-        raise ImportError("igraph is not installed. Please install it using `pip install igraph`.")
+    _check_import(ig)
     if data is None:
         srcs = net["source"].unique().astype("U")
         score = pd.DataFrame(np.ones((1, srcs.size)), index=["0"], columns=srcs)
