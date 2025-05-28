@@ -65,6 +65,10 @@ optional-dependencies.test = [
   "statsmodels",
   "gseapy",
   "scanpy",
+  "igraph",
+  "xgboost",
+  "ipywidgets",
+  "dcor"
 ]
 # https://docs.pypi.org/project_metadata/#project-urls
 urls.Documentation = "https://decoupler.readthedocs.io/"
