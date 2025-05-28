@@ -81,6 +81,7 @@ def source_targets(
     # Filter by net shared targets
     vnet = _validate_net(net)
     snet = vnet[vnet['source'] == name]
+    assert snet.shape[0] > 0, f'name={name} must be in net["source"]'
     df = pd.merge(df, snet, on=['target'], how='inner').set_index('target')
     # Filter by limits
     msk_x = np.abs(df[x]) < np.abs(max_x)

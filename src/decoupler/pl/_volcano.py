@@ -91,6 +91,7 @@ def volcano(
     if net is not None:
         vnet = _validate_net(net)
         snet = vnet[vnet['source'] == name]
+        assert snet.shape[0] > 0, f'name={name} must be in net["source"]'
         df = df[df.index.isin(snet['target'])]
     # Filter by limits
     msk_stat = np.abs(df['stat']) < np.abs(max_stat)

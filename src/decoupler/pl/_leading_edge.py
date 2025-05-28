@@ -61,6 +61,7 @@ def leading_edge(
     # Transform net
     snet = prune(features=c, net=net, tmin=0, verbose=False)
     snet = snet[snet['source'] == name]
+    assert snet.shape[0] > 0, f'name={name} must be in net["source"]'
     # Sort features
     idx = np.argsort(-m)
     m = m[idx]

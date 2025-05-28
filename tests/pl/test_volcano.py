@@ -7,12 +7,13 @@ import decoupler as dc
 
 
 @pytest.mark.parametrize(
-    'use_net,name',
+    'use_net,name,a_err',
     [
-        [False, None],
-        [True, 'T1'],
-        [True, 'T2'],
-        [True, 'T3'],
+        [False, None, False],
+        [True, 'T1', False],
+        [True, 'T2', False],
+        [True, 'T3', False],
+        [True, 'T10', True],
     ]
 )
 def test_volcano(
@@ -20,10 +21,15 @@ def test_volcano(
     net,
     use_net,
     name,
+    a_err,
 ):
     if not use_net:
         net = None
         name = None
-    fig = dc.pl.volcano(data=deg, x='stat', y='padj', net=net, name=name, return_fig=True)
-    assert isinstance(fig, Figure)
-    plt.close(fig)
+    if not a_err:
+        fig = dc.pl.volcano(data=deg, x='stat', y='padj', net=net, name=name, return_fig=True)
+        assert isinstance(fig, Figure)
+        plt.close(fig)
+    else:
+        with pytest.raises(AssertionError):
+            dc.pl.volcano(data=deg, x='stat', y='padj', net=net, name=name, return_fig=True)
