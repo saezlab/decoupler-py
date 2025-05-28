@@ -70,6 +70,7 @@ def test_pseudobulk(
     rng,
 ):
     adata = adata.copy()
+    adata.obs['sample'] = adata.obs['sample'].astype('object')
     adata.obs['dose'] = rng.choice(['low', 'medium', 'high'], size=adata.n_obs, replace=True)
     if empty:
         adata.X[:, 3] = 0.
@@ -98,6 +99,7 @@ def test_pseudobulk(
         assert pdata.shape[1] < adata.shape[1]
     else:
         assert pdata.shape[1] == adata.shape[1]
+    assert not pdata.obs['sample'].str.contains('_').any()
     obs_cols = {'psbulk_cells', 'psbulk_counts'}
     assert obs_cols.issubset(pdata.obs.columns)
     assert 'psbulk_props' in pdata.layers

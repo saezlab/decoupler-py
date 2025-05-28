@@ -154,7 +154,9 @@ def _sample_group_by(
     # Handle list columns
     ocols = obs.select_dtypes(include='object').columns
     for ocol in ocols:
-        obs[ocol] = obs[ocol].str.join('_')
+        has_list = any(isinstance(x, list) for x in obs[ocol].values)
+        if has_list:
+            obs[ocol] = obs[ocol].str.join('_')
     if group is None:
         # Filter extra columns in obs
         cols = obs.groupby(sample, observed=True).nunique(dropna=False).eq(other=1).all(axis=0)
