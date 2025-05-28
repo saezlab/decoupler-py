@@ -45,7 +45,6 @@ def ensmbl_to_symbol(
         response = requests.get(url.format(miror='useast', organism=organism))
     if any(msg in response.text for msg in ['Service unavailable', 'Gateway Time-out']):
         response = requests.get(url.format(miror='asia', organism=organism))
-    print(response.text)
     assert not any(msg in response.text for msg in ['Service unavailable', 'Gateway Time-out']), \
     'ensembl servers are down, try again later'
     eids = pd.read_csv(io.StringIO(response.text), sep='\t', header=None, index_col=0)[1].to_dict()
