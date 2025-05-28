@@ -31,13 +31,12 @@ dependencies = [
   "xgboost",
   "seaborn",
   "requests",
+  "igraph",
   "marsilea",
   "adjustText",
+  "dcor",
   # for debug logging (referenced from the issue template)
   "session-info2",
-]
-optional-dependencies.plot = [
-  "igraph",
 ]
 optional-dependencies.dev = [
   "pre-commit",
@@ -58,7 +57,6 @@ optional-dependencies.doc = [
   "sphinx-tabs",
   "sphinxcontrib-bibtex>=1",
   "sphinxext-opengraph",
-  "igraph",
 ]
 optional-dependencies.test = [
   "coverage",
@@ -66,7 +64,6 @@ optional-dependencies.test = [
   "statsmodels",
   "gseapy",
   "scanpy",
-  "igraph",
 ]
 # https://docs.pypi.org/project_metadata/#project-urls
 urls.Documentation = "https://decoupler.readthedocs.io/"

@@ -1,23 +1,24 @@
 import warnings
 
 import pandas as pd
+import numpy as np
+from tqdm.auto import tqdm
 import scipy.stats as sts
 import scipy.sparse as sps
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", category=FutureWarning, module="xgboost")
-    from xgboost import XGBRegressor
 from anndata import AnnData
+import dcor
 
 from decoupler._docs import docs
 from decoupler.pp.data import extract
+
 
 
 @docs.dedent
 def rankby_order(
     adata: AnnData,
     order: str,
-    thr_padj: int | float = 0.05,
-    seed: int = 42,
+    stat: str = 'dcor',
+    verbose: bool = False,
     **kwargs
 ) -> pd.DataFrame:
     """
@@ -27,40 +28,66 @@ def rankby_order(
     ----------
     %(adata)s
     %(order)s
-    thr_padj
-        Threshold used to assign significance after FDR correction.
-    %(seed)s
+    stat
+        Which statistic to compute.
+        Must be one of these:
+        
+        - ``dcor`` (distance correlation from ``dcor.independence.distance_correlation_t_test``)
+        - ``pearsonr`` (Pearson's R from ``scipy.stats.pearsonr``)
+        - ``spearmanr`` (Spearman's R from ``scipy.stats.spearmanr``)
+        - ``kendalltau`` (Kendall's Tau from ``scipy.stats.kendalltau``)
+
+    %(verbose)s
+    kwargs
+        Key arguments passed to the selected ``stat`` function.
 
     Returns
     -------
-    DataFrame with features associated with the ordering variable. For each feature the following statistics are reported:
-    - importance of the ``XGBRegressor``
-    - Pearson correlation coefficient
-    - the sign of the association, 0 if the correltation is non-significant, and +1 or -1 depending on the correlation sign.
+    DataFrame with features associated with the ordering variable.
     """
+    # Validate
+    assert isinstance(adata, AnnData), 'adata must be anndata.AnnData'
+    assert isinstance(order, str) and order in adata.obs.columns, 'order must be str and in adata.obs.columns'
+    stats = {'dcor', 'pearsonr', 'spearmanr', 'kendalltau'}
+    assert (isinstance(stat, str) and stat in stats) or callable(stat), \
+    f'stat must be str and one of these {stats}, or a function that returns statistic and pvalue'
     # Get vars and ordinal variable
     X = adata.X
     if sps.issparse(X):
         X = X.toarray()
-    y = adata.obs[order].values
-    # Fit
-    reg = XGBRegressor(random_state=seed, **kwargs).fit(X, y)
+    X = X.astype(float)
+    y = adata.obs[order].values.astype(float)
+    # Init
     df = pd.DataFrame()
     df['name'] = adata.var_names
-    df['impr'] = reg.feature_importances_
-    df['corr'], df['pval'] = sts.pearsonr(X, y.reshape(-1, 1), axis=0)
-    df['padj'] = sts.false_discovery_control(df['pval'])
-    df = df.sort_values('impr', ascending=False).reset_index(drop=True)
-    # Find direction of change
-    sign = []
-    for corr, padj in zip(df['corr'], df['padj']):
-        if padj < thr_padj:
-            if corr > 0:
-                s = 1
-            else:
-                s = -1
+    # Fit
+    if stat == 'dcor':
+        f = dcor.independence.distance_correlation_t_test
+    elif stat == 'pearsonr':
+        f = sts.pearsonr
+    elif stat == 'spearmanr':
+        f = sts.spearmanr
+    elif stat == 'kendalltau':
+        f = sts.kendalltau
+    else:
+        f = stat
+    ss = []
+    ps = []
+    for i in tqdm(range(X.shape[1]), disable=not verbose):
+        x = X[:, i]
+        if not np.all(x == x[0]):
+            res = f(x, y)
+            s = res.statistic
+            p = res.pvalue
         else:
             s = 0
-        sign.append(s)
-    df['sign'] = sign
+            p = 1
+        ss.append(s)
+        ps.append(p)
+    df['stat'] = ss
+    df['pval'] = ps
+    df['padj'] = sts.false_discovery_control(df['pval'])
+    df['abs_stat'] = df['stat'].abs()
+    df = df.sort_values(['padj', 'pval', 'abs_stat'], ascending=[True, True, False]).reset_index(drop=True)
+    df = df.drop(columns='abs_stat')
     return df
