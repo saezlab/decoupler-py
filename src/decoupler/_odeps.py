@@ -30,15 +30,16 @@ def _check_import(
 
 # Handle optional dependencies
 ig = _try_import("igraph")
-try:
+if ig is not None:
     if TYPE_CHECKING:
         from igraph import Graph
     else:
         Graph = ig.Graph
-except ImportError:
+else:
     if TYPE_CHECKING:
         from typing import Any as Graph
     else:
         Graph = None
+
 xgboost = _try_import("xgboost")
 dcor = _try_import("dcor")
