@@ -78,7 +78,6 @@ jobs:
           MPLBACKEND: agg
           PLATFORM: ${{ matrix.os }}
           DISPLAY: :42
-          NUMBA_DISABLE_JIT: 1
         run: uvx hatch run ${{ matrix.env.name }}:run-cov
       - name: generate coverage report
         run: uvx hatch run ${{ matrix.env.name }}:coverage xml
