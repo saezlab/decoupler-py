@@ -9,7 +9,7 @@ def _try_import(
     try:
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=FutureWarning, module=name)
-        module = __import__(name, fromlist=[""])
+            module = __import__(name, fromlist=[""])
         return module
     except ImportError:
         return None
