@@ -90,7 +90,9 @@ def _func_ulm(
     %(yestest)s
 
     %(tval)s
+
     %(params)s
+
     %(returns)s
     """
     # Get degrees of freedom
