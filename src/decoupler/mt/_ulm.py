@@ -89,9 +89,8 @@ def _func_ulm(
 
     %(yestest)s
 
-    %(tval)s
-
     %(params)s
+    %(tval)s
 
     %(returns)s
     """

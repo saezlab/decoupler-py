@@ -16,7 +16,6 @@
     mt.mlm
     mt.ora
     mt.udt
-    mt.udt
     mt.ulm
     mt.viper
     mt.waggr

@@ -88,9 +88,9 @@ def _func_mlm(
 
         p_{value} = 2 \times \mathrm{sf}(|ES|, \text{df})
     
-    %(tval)s
 
     %(params)s
+    %(tval)s
 
     %(returns)s
     """
