@@ -35,6 +35,7 @@ def _tval(
 def _func_ulm(
     mat: np.ndarray,
     adj: np.ndarray,
+    tval: bool = True,
     verbose: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray]:
     r"""
@@ -88,8 +89,8 @@ def _func_ulm(
 
     %(yestest)s
 
+    %(tval)s
     %(params)s
-
     %(returns)s
     """
     # Get degrees of freedom
@@ -100,9 +101,14 @@ def _func_ulm(
     # Compute R value for all
     r = _cor(adj, mat.T)
     # Compute t-value
-    es = _tval(r, df)
+    t = _tval(r, df)
     # Compute p-value
-    pv = sts.t.sf(abs(es), df) * 2
+    pv = sts.t.sf(abs(t), df) * 2
+    if tval:
+        es = t
+    else:
+        # Compute coef
+        es = r * (np.std(mat.T, ddof=1, axis=0).reshape(-1, 1) / np.std(adj, ddof=1, axis=0))
     return es, pv
 
 

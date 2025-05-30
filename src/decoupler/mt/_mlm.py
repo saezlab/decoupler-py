@@ -10,7 +10,12 @@ from decoupler._Method import MethodMeta, Method
 
 
 @nb.njit(parallel=True, cache=True)
-def _tval(X, y, inv, df):
+def _fit(
+    X: np.ndarray,
+    y: np.ndarray,
+    inv: np.ndarray,
+    df: float,
+) -> np.ndarray:
     X = np.ascontiguousarray(X)
     n_samples = y.shape[1]
     n_fsets = X.shape[1]
@@ -22,14 +27,16 @@ def _tval(X, y, inv, df):
     se = np.zeros((n_samples, n_fsets))
     for i in nb.prange(n_samples):
         se[i] = np.sqrt(np.diag(sse[i] * inv))
-    t = coef.T / se
-    return t.astype(nb.f4)
+    coef = coef.T
+    tval = coef / se
+    return coef[:, 1:], tval[:, 1:]
 
 
 @docs.dedent
 def _func_mlm(
     mat: np.ndarray,
     adj: np.ndarray,
+    tval: bool = True,
     verbose: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray]:
     r"""
@@ -80,7 +87,8 @@ def _func_mlm(
     .. math::
 
         p_{value} = 2 \times \mathrm{sf}(|ES|, \text{df})
-
+    
+    %(tval)s
     %(params)s
     %(returns)s
     """
@@ -94,9 +102,14 @@ def _func_mlm(
     m = f'mlm - fitting {n_fsets} multivariate models of {n_features} observations with {df} degrees of freedom'
     _log(m, level='info', verbose=verbose)
     # Compute tval
-    es = _tval(adj, mat.T, inv, df)[:, 1:]
+    coef, t = _fit(adj, mat.T, inv, df)
     # Compute pval
-    pv = 2 * (1 - sts.t.cdf(x=np.abs(es), df=df))
+    pv = 2 * (1 - sts.t.cdf(x=np.abs(t), df=df))
+    # Return coef or tval
+    if tval:
+        es = t
+    else:
+        es = coef
     return es, pv
 
 

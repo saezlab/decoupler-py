@@ -191,6 +191,10 @@ Returns
 Enrichment scores :math:`ES` and, if applicable, adjusted :math:`p_{value}` by Benjamini-Hochberg.
 """
 
+_tval = """\
+tval
+    Whether to return the t-value (``tval=True``) the coefficient of the fitted model (``tval=False``)."""
+
 _params = f"""\
 Parameters
 ----------
@@ -247,4 +251,5 @@ docs = DocstringProcessor(
     yestest=_yestest,
     notest=_notest,
     returns=_returns,
+    tval=_tval,
 )
