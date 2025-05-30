@@ -40,12 +40,16 @@ def ensmbl_to_symbol(
     assert isinstance(genes, list), 'genes must be list'
     assert isinstance(organism, str), f'organism must be str'
     # Try different mirrors
-    response = requests.get(url.format(miror='www', organism=organism))
+    response = requests.get(url.format(miror='www', organism=organism), timeout=5)
     if any(msg in response.text for msg in ['Service unavailable', 'Gateway Time-out']):
-        response = requests.get(url.format(miror='useast', organism=organism))
+        response = requests.get(url.format(miror='useast', organism=organism), timeout=5)
     if any(msg in response.text for msg in ['Service unavailable', 'Gateway Time-out']):
-        response = requests.get(url.format(miror='asia', organism=organism))
-    assert not any(msg in response.text for msg in ['Service unavailable', 'Gateway Time-out']), \
-    'ensembl servers are down, try again later'
-    eids = pd.read_csv(io.StringIO(response.text), sep='\t', header=None, index_col=0)[1].to_dict()
+        response = requests.get(url.format(miror='asia', organism=organism), timeout=5)
+    if not any(msg in response.text for msg in ['Service unavailable', 'Gateway Time-out']):
+        eids = pd.read_csv(io.StringIO(response.text), sep='\t', header=None, index_col=0)[1].to_dict()
+    elif organism in ['hsapiens_gene_ensembl', 'mmusculus_gene_ensembl']:
+        url = f'https://zenodo.org/records/15551885/files/{organism}.csv.gz?download=1'
+        eids = pd.read_csv(url, index_col=0, compression='gzip')['symbol'].to_dict()
+    else:
+        assert False, 'ensembl servers are down, try again later'
     return [eids[g] if g in eids else None for g in genes]
