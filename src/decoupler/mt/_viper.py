@@ -19,7 +19,7 @@ def _get_wts_posidxs(
     penalty: int,
 ) -> Tuple[np.ndarray, np.ndarray]:
     pos_idxs = np.zeros(idxs.shape[0], dtype=np.int_)
-    for j in nb.prange(idxs.shape[0]):
+    for j in range(idxs.shape[0]):
         p = pval1[j]
         if p > 0:
             x_idx, y_idx = idxs[j]
@@ -43,7 +43,7 @@ def _get_tmp_idxs(
     tmp = np.zeros((size, 2))
     idxs = np.zeros((size, 2), dtype=np.int_)
     k = 0
-    for i in nb.prange(pval.shape[0]):
+    for i in range(pval.shape[0]):
         for j in range(pval.shape[1]):
             if i <= j:
                 x = pval[i, j]

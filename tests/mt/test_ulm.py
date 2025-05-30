@@ -37,20 +37,26 @@ def test_tval():
     assert np.allclose(-0.49811675, t)
 
 
+@pytest.mark.parametrize('tval', [True, False])
 def test_func_ulm(
     mat,
     adjmat,
+    tval,
 ):
     X, obs, var = mat
-    dc_es, dc_pv = dc.mt._ulm._func_ulm(mat=X, adj=adjmat)
+    dc_es, dc_pv = dc.mt._ulm._func_ulm(mat=X, adj=adjmat, tval=tval)
     st_es, st_pv = np.zeros(dc_es.shape), np.zeros(dc_pv.shape)
     for i in range(st_es.shape[0]):
         for j in range(st_es.shape[1]):
-            x = X[i, :]
-            y = adjmat[:, j]
-            slope, _, _, st_pv[i, j], std_err = sts.linregress(x, y)
-            st_es[i, j] = slope / std_err
+            x = adjmat[:, j]
+            y = X[i, :]
+            res = sts.linregress(x, y)
+            slope = res.slope
+            st_pv[i, j] = res.pvalue
+            std_err = res.stderr
+            if tval:
+                st_es[i, j] = slope / std_err
+            else:
+                st_es[i, j] = slope
     assert np.allclose(dc_es, st_es)
     assert np.allclose(dc_pv, st_pv)
-    
-    

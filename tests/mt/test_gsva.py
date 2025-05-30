@@ -39,23 +39,23 @@ t(GSVA::gsva(gsvaPar, verbose=TRUE))
 
 
 def test_init_cdfs():
-    cdfs = dc.mt._gsva._init_cdfs()
+    cdfs = dc.mt._gsva._init_cdfs.py_func()
     assert np.min(cdfs) == 0.5
     assert np.max(cdfs) == 1.0
     assert np.all(np.diff(cdfs) >= 0)
 
 
 def test_ppois():
-    assert dc.mt._gsva._ppois(1000, 3) == 1.
-    assert np.isclose(dc.mt._gsva._ppois(100, 75), 0.9975681)
-    assert np.isclose(dc.mt._gsva._ppois(300000, 300000), 0.5004856)
-    assert dc.mt._gsva._ppois(1, 1000) == 0.
+    assert dc.mt._gsva._ppois.py_func(1000, 3) == 1.
+    assert np.isclose(dc.mt._gsva._ppois.py_func(100, 75), 0.9975681)
+    assert np.isclose(dc.mt._gsva._ppois.py_func(300000, 300000), 0.5004856)
+    assert dc.mt._gsva._ppois.py_func(1, 1000) == 0.
 
 
 def test_norm_cdf():
-    assert np.isclose(dc.mt._gsva._norm_cdf(np.array([1, 2, 3], dtype=float), mu=0.0, sigma=1.0),
+    assert np.isclose(dc.mt._gsva._norm_cdf.py_func(np.array([1, 2, 3], dtype=float), mu=0.0, sigma=1.0),
                       np.array([0.8413447, 0.9772499, 0.9986501])).all()
-    assert np.isclose(dc.mt._gsva._norm_cdf(np.array([0, 9, 1], dtype=float), mu=0.0, sigma=1.0),
+    assert np.isclose(dc.mt._gsva._norm_cdf.py_func(np.array([0, 9, 1], dtype=float), mu=0.0, sigma=1.0),
                       np.array([0.5, 1., 0.8413447])).all()
 
 
@@ -85,7 +85,7 @@ def test_rankdata():
         0.75, 0.75, 0.25, 0.75, 0.25, 0.25, 0.5,
         1., 0.5, 0.5, 0.5, 0.75
     ])
-    dc_rnk = dc.mt._gsva._rankdata(arr)
+    dc_rnk = dc.mt._gsva._rankdata.py_func(arr)
     gv_rnk = np.array([
         11, 20, 10, 17, 4, 16, 9, 19, 15, 14, 3, 13, 2, 1, 8, 18, 7, 6, 5, 12
     ])
@@ -96,7 +96,7 @@ def test_dos_srs():
     arr = np.array([
         11, 20, 10, 17, 4, 16, 9, 19, 15, 14, 3, 13, 2, 1, 8, 18, 7, 6, 5, 12
     ])
-    dc_dos, dc_srs = dc.mt._gsva._dos_srs(arr)
+    dc_dos, dc_srs = dc.mt._gsva._dos_srs.py_func(arr)
     gv_dos = np.array([10, 1, 11, 4, 17, 5, 12, 2, 6, 7, 18, 8, 19, 20, 13, 3, 14, 15, 16, 9])
     gv_srs = np.array([1, 10, 0, 7, 6, 6, 1, 9, 5, 4, 7, 3, 8, 9, 2, 8, 3, 4, 5, 2])
     assert (dc_dos == gv_dos).all()

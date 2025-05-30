@@ -4,6 +4,23 @@ import pytest
 import decoupler as dc
 
 
+@pytest.mark.parametrize('sel', [np.array([0., 0., 0., 0.]), np.array([1., 3., 8., 2.])])
+def test_zscore(
+    sel,
+):
+    z = dc.mt._consensus._zscore.py_func(sel=sel)
+    assert isinstance(z, np.ndarray)
+    assert z.size  == sel.size
+
+
+def test_mean_zscores(
+    rng,
+):
+    scores = rng.normal(size=(2, 5, 10))
+    es = dc.mt._consensus._mean_zscores.py_func(scores=scores)
+    assert scores.shape[1:] == es.shape
+    
+
 def test_consensus(
     adata,
     net,

@@ -37,7 +37,7 @@ def _mean_zscores(
     # Extract dims
     n_methods, n_samples, n_ftrs = x.shape
     # Init empty cons scores
-    cons = np.zeros((n_samples, n_ftrs), dtype=nb.f4)
+    cons = np.zeros((n_samples, n_ftrs))
     # For each sample
     for i in nb.prange(n_samples):
         sample = x[:, i, :]

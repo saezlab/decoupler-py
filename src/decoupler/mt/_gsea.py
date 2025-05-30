@@ -142,7 +142,7 @@ def _stsgsea(
         # Get decending penalty
         dec = 1.0 / (nvar - fset.size)
         # Get msk
-        set_msk = np.zeros(nvar, dtype=nb.bool_)
+        set_msk = np.zeros(nvar, dtype=np.bool_)
         set_msk[fset] = True
         set_msk = set_msk[idx]
         # Compute es per feature

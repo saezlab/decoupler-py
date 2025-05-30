@@ -4,6 +4,17 @@ import pytest
 import decoupler as dc
 
 
+def test_funcs(
+    rng
+):
+    x = np.array([1, 2, 3, 4], dtype=float)
+    w = rng.random(x.size)
+    es = dc.mt._waggr._wsum.py_func(x=x, w=w)
+    assert isinstance(es, float)
+    es = dc.mt._waggr._wmean.py_func(x=x, w=w)
+    assert isinstance(es, float)
+
+
 @pytest.mark.parametrize(
     'fun,times,seed',
     [

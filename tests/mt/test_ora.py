@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 import scipy.stats as sts
 import pytest
@@ -20,11 +22,13 @@ def test_table(
     c,
     d,
 ):
-    dc_es = dc.mt._ora._oddsr(a=a, b=b, c=c, d=d, ha_corr=0., log=False)
-    dc_pv = dc.mt._ora._test1t(a=a, b=b, c=c, d=d)
+    dc_es = dc.mt._ora._oddsr.py_func(a=a, b=b, c=c, d=d, ha_corr=0., log=False)
+    dc_pv = dc.mt._ora._test1t.py_func(a=a, b=b, c=c, d=d)
     st_es, st_pv = sts.fisher_exact([[a, b],[c, d]])
     assert np.isclose(dc_es, st_es)
     assert np.isclose(dc_pv, st_pv)
+    nb_pv = math.exp(-dc.mt._ora._mlnTest2t.py_func(a, a + b, a + c, a + b + c + d))
+    assert np.isclose(dc_pv, nb_pv)
 
 
 def test_func_ora(

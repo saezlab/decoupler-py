@@ -27,6 +27,24 @@ rnks <- AUCell::AUCell_buildRankings(t(mat), plotStats=FALSE)
 t(AUCell::AUCell_calcAUC(gs, rnks, aucMaxRank=3)@assays@data$AUC)
 """
 
+def test_auc(
+    mat,
+    idxmat,
+):
+    X, obs, var = mat
+    cnct, starts, offsets = idxmat
+    row = X[0]
+    es = dc.mt._aucell._auc.py_func(
+        row=row,
+        cnct=cnct,
+        starts=starts,
+        offsets=offsets,
+        n_up=2,
+        nsrc=offsets.size
+    )
+    assert isinstance(es, np.ndarray)
+    assert es.size == offsets.size
+
 
 def test_func_aucell(
     mat,

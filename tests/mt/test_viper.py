@@ -41,6 +41,14 @@ t(viper::viper(eset=t(mat), regulon=gs, minsize=1, eset.filter=F, pleiotropy=T, 
 """
 
 
+def test_get_tmp_idxs(
+    rng,
+):
+    pval = rng.random((5, 5))
+    np.fill_diagonal(pval, np.nan)
+    dc.mt._viper._get_tmp_idxs.py_func(pval)
+
+
 def test_func_viper(
     adata,
     net,
