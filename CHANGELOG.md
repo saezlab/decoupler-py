@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning][].
 [keep a changelog]: https://keepachangelog.com/en/1.0.0/
 [semantic versioning]: https://semver.org/spec/v2.0.0.html
 
-## 2.0.0
+## 2.0.3
 
 Major update to accomodate the scverse template {cite}`scverse`.
 
@@ -22,6 +22,7 @@ All functions have been rewritten to follow the new API, errors when running pre
   - New argument `bsize` allows to run a method with batches in case excessive memory usage is an issue
   - $p_{values}$ of the enrichment scores are now corrected by Benjamini-Hochberg
   - `mdt` and `udt` are now based on `xgboost` instead of `sklearn` for better scalability. `udt` statistic is now the coefficient of determination $R^2$ instead of the importance of a single decision tree.
+  - `mlm` and `ulm` now include a `tval` parameter, which allows returning either the t-value of the slope or the slope itself as the enrichment statistic
   - `ora` now returns the odds ratio of the contingency table as a statistic, and computes a two-sided Fisher exact test instead of a one-sided one
   - `viper` now correctly estimates shadow regulons when network weights are values other than -1 or +1
   - `wsum` and `wmean` are deprecated, instead now the method `waggr` allows to run both methods and any custom function. This makes it easier to quickly test new enrichment methods without having to deal with `decoupler`'s implementation
