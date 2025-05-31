@@ -2,6 +2,7 @@ import math
 
 import numpy as np
 import scipy.stats as sts
+import scipy.sparse as sps
 import pytest
 
 import decoupler as dc
@@ -31,6 +32,28 @@ def test_table(
     assert np.isclose(dc_pv, nb_pv)
 
 
+def test_runora(
+    mat,
+    idxmat,
+):
+    X, obs, var = mat
+    cnct, starts, offsets = idxmat
+    row = sts.rankdata(X[0], method='ordinal')
+    ranks = np.arange(row.size, dtype=np.int_)
+    row = ranks[(row > 2) | (row < 0)]
+    es, pv = dc.mt._ora._runora.py_func(
+        row=row,
+        ranks=ranks,
+        cnct=cnct,
+        starts=starts,
+        offsets=offsets,
+        n_bg=0,
+        ha_corr=0.5,
+    )
+    assert isinstance(es, np.ndarray)
+    assert isinstance(pv, np.ndarray)
+
+
 def test_func_ora(
     mat,
     idxmat,
@@ -40,13 +63,13 @@ def test_func_ora(
     n_up = 3
     ha_corr = 1
     dc_es, dc_pv = dc.mt._ora._func_ora(
-        mat=X,
+        mat=sps.csr_matrix(X),
         cnct=cnct,
         starts=starts,
         offsets=offsets,
         n_up=n_up,
         n_bm=0,
-        n_bg=0,
+        n_bg=None,
         ha_corr=1,
     )
     st_es, st_pv = np.zeros(dc_es.shape), np.zeros(dc_pv.shape)

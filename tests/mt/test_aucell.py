@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import scipy.sparse as sps
 import pytest
 
 import decoupler as dc
@@ -54,6 +55,7 @@ def test_func_aucell(
     cnct, starts, offsets = idxmat
     obs = np.array(['S01', 'S02', 'S29', 'S30'])
     X = np.vstack((X[:2, :], X[-2:, :]))
+    X = sps.csr_matrix(X)
     ac_es = pd.DataFrame(
         data=np.array([
             [0.6666667, 0.3333333, 0, 0, 0],
@@ -73,6 +75,3 @@ def test_func_aucell(
         
     )
     assert np.isclose(dc_es, ac_es.values).all()
-
-
-

@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import scipy.sparse as sps
 import pytest
 
 import decoupler as dc
@@ -37,6 +38,127 @@ gsvaPar <- GSVA::gsvaParam(t(mat), gs, kcdf='none', maxDiff=FALSE, absRanking=FA
 t(GSVA::gsva(gsvaPar, verbose=TRUE))
 """
 
+
+def test_erf(
+    rng,
+):
+    x = rng.normal(size=10)
+    e = dc.mt._gsva._erf.py_func(x=x)
+    assert isinstance(e, np.ndarray)
+
+@pytest.mark.parametrize(
+    'k,lam',
+    [
+        [-3, 10],
+        [0, 5],
+        [3, 50],
+    ]
+)
+def test_poisson_pmf(
+    k,
+    lam,
+):
+    p = dc.mt._gsva._poisson_pmf.py_func(k=k, lam=lam)
+    assert isinstance(p, float)
+
+
+def test_ecdf(
+    rng
+):
+    arr = rng.normal(size=10)
+    e = dc.mt._gsva._ecdf.py_func(arr)
+    assert isinstance(e, np.ndarray)
+
+
+def test_mat_ecdf(
+    rng
+):
+    arr = rng.normal(size=(5, 10))
+    e = dc.mt._gsva._mat_ecdf.py_func(arr)
+    assert isinstance(e, np.ndarray)
+
+
+@pytest.mark.parametrize('gauss', [True, False])
+def test_col_d(
+    rng,
+    gauss,
+):
+    x = rng.normal(loc=5, size=20)
+    pre_cdf = dc.mt._gsva._init_cdfs()
+    arr = dc.mt._gsva._col_d.py_func(
+        x=x,
+        gauss=gauss,
+        pre_cdf=pre_cdf
+    )
+    assert isinstance(arr, np.ndarray)
+
+
+@pytest.mark.parametrize('gauss', [True, False])
+def test_mat_d(
+    rng,
+    gauss,
+):
+    x = rng.normal(loc=5, size=(5, 15))
+    d = dc.mt._gsva._mat_d.py_func(mat=x, gauss=gauss)
+    assert isinstance(d, np.ndarray)
+
+
+def test_dos_srs(
+    rng,
+):
+    r = np.array(15)
+    rng.shuffle(r)
+    dos, srs = dc.mt._gsva._dos_srs.py_func(r=r)
+    assert isinstance(dos, np.ndarray)
+    assert isinstance(srs, np.ndarray)
+
+
+def test_rankmat(
+    rng,
+):
+    mat = rng.normal(size=(5, 15))
+    dos_mat, srs_mat = dc.mt._gsva._rankmat.py_func(mat=mat)
+    assert isinstance(dos_mat, np.ndarray)
+    assert isinstance(srs_mat, np.ndarray)
+
+
+@pytest.mark.parametrize(
+    "gsetidx, decordstat, symrnkstat, n, tau",
+    [
+        (np.array([1, 3]), np.array([3, 1, 2, 4]), np.array([0.9, 0.1, 0.8, 0.2]), 4, 1.0),
+        (np.array([2, 4]), np.array([1, 3, 2, 4]), np.array([0.5, 0.4, 0.6, 0.3]), 4, 2.0),
+        (np.array([1]),    np.array([2, 1, 3]),     np.array([1.0, 0.5, 0.2]),      3, 0.5),
+    ]
+)
+def test_rnd_walk(gsetidx, decordstat, symrnkstat, n, tau):
+    k = len(gsetidx)
+    pos, neg = dc.mt._gsva._rnd_walk.py_func(
+        gsetidx=gsetidx,
+        k=k,
+        decordstat=decordstat,
+        symrnkstat=symrnkstat,
+        n=n,
+        tau=tau,
+    )
+    assert isinstance(pos, float)
+    assert isinstance(neg, float)
+    assert -1.0 <= neg <= 1.0
+    assert -1.0 <= pos <= 1.0
+
+
+@pytest.mark.parametrize(
+    "gsetidx, generanking, rankstat, maxdiff, absrnk, tau, expected_range",
+    [
+        (np.array([1, 3]), np.array([3, 1, 2, 4]), np.array([0.9, 0.1, 0.8, 0.2]), True, True, 1.0, (0.0, 2.0)),
+        (np.array([2, 4]), np.array([1, 3, 2, 4]), np.array([0.5, 0.4, 0.6, 0.3]), True, False, 2.0, (-2.0, 2.0)),
+        (np.array([1]),    np.array([2, 1, 3]),     np.array([1.0, 0.5, 0.2]),      False, True, 0.5, (-1.0, 1.0)),
+    ]
+)
+def test_score_geneset(gsetidx, generanking, rankstat, maxdiff, absrnk, tau, expected_range):
+    es = dc.mt._gsva._score_geneset.py_func(gsetidx, generanking, rankstat, maxdiff, absrnk, tau)
+    assert isinstance(es, float)
+    assert expected_range[0] <= es <= expected_range[1]
+    
 
 def test_init_cdfs():
     cdfs = dc.mt._gsva._init_cdfs.py_func()
@@ -150,6 +272,7 @@ def test_func_gsva(
     X = np.vstack((X[:2, :], X[-2:, :]))
     if kcdf == 'poisson':
         X = X.round()
+    X = sps.csr_matrix(X)
     dc_es, _ = dc.mt._gsva._func_gsva(
         mat=X,
         cnct=cnct,
@@ -159,6 +282,4 @@ def test_func_gsva(
         maxdiff=maxdiff,
         absrnk=absrnk,
     )
-    print(dc_es)
-    print(gv_es)
     assert np.isclose(dc_es, gv_es).all()
