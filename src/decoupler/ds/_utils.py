@@ -40,11 +40,11 @@ def ensmbl_to_symbol(
     assert isinstance(genes, list), 'genes must be list'
     assert isinstance(organism, str), f'organism must be str'
     # Try different mirrors
-    response = requests.get(url.format(miror='www', organism=organism), timeout=5)
+    response = requests.get(url.format(miror='www', organism=organism))
     if any(msg in response.text for msg in ['Service unavailable', 'Gateway Time-out']):
-        response = requests.get(url.format(miror='useast', organism=organism), timeout=5)
+        response = requests.get(url.format(miror='useast', organism=organism))
     if any(msg in response.text for msg in ['Service unavailable', 'Gateway Time-out']):
-        response = requests.get(url.format(miror='asia', organism=organism), timeout=5)
+        response = requests.get(url.format(miror='asia', organism=organism))
     if not any(msg in response.text for msg in ['Service unavailable', 'Gateway Time-out']):
         eids = pd.read_csv(io.StringIO(response.text), sep='\t', header=None, index_col=0)[1].to_dict()
     elif organism in ['hsapiens_gene_ensembl', 'mmusculus_gene_ensembl']:
