@@ -6,7 +6,6 @@ from tqdm.auto import tqdm
 import scipy.stats as sts
 import scipy.sparse as sps
 from anndata import AnnData
-import dcor
 
 from decoupler._odeps import dcor, _check_import
 from decoupler._docs import docs
