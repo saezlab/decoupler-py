@@ -232,7 +232,7 @@ def network(
     """
     assert isinstance(net, pd.DataFrame), "net must be pd.DataFrame"
     assert (data is None) == (score is None), "data and score must either both be None"
-    _check_import(ig)
+    _check_import(ig, 'igraph')
     if data is None:
         srcs = net["source"].unique().astype("U")
         score = pd.DataFrame(np.ones((1, srcs.size)), index=["0"], columns=srcs)

@@ -16,13 +16,13 @@ def _try_import(
 
 
 def _check_import(
-    module: types.ModuleType
+    module: types.ModuleType,
+    name: str,
 ) -> None:
     if module is None:
-        name = module.__name__
         raise ImportError(
             f"{name} is not installed. Please install it using:\n"
-            f"  pip install {name}"
+            f"  pip install {name}\n"
             "or install decoupler with full dependencies:\n"
             "  pip install 'decoupler[full]'"
         )

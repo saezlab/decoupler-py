@@ -54,7 +54,7 @@ def _func_udt(
         All other keyword arguments are passed to ``xgboost.XGBRegressor``.
     %(returns)s
     """
-    _check_import(xgboost)
+    _check_import(xgboost, 'xgboost')
     nobs = mat.shape[0]
     nvar, nsrc = adj.shape
     m = f'udt - fitting {nsrc} univariate decision tree models (XGBoost) of {nvar} targets across {nobs} observations' 

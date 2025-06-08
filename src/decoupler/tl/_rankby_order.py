@@ -62,7 +62,7 @@ def rankby_order(
     df['name'] = adata.var_names
     # Fit
     if stat == 'dcor':
-        _check_import(dcor)
+        _check_import(dcor, 'dcor')
         f = dcor.independence.distance_correlation_t_test
     elif stat == 'pearsonr':
         f = sts.pearsonr
