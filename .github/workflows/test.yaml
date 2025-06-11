@@ -43,7 +43,7 @@ jobs:
                 | {
                     name: .key,
                     label: (if (.key | contains("pre")) then .key + " (PRE-RELEASE DEPENDENCIES)" else .key end),
-                    python: .value.python
+                    python: .value.python | sub("3[.]13"; "3.13.3"),  # https://github.com/numba/numba/issues/10101
                   }
               )')
           echo "envs=${ENVS_JSON}" | tee $GITHUB_OUTPUT
