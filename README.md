@@ -16,16 +16,16 @@
 [![Conda version][badge-condav]][conda]
 [![Conda downloads][badge-condad]][conda]
 
-[badge-tests]: https://img.shields.io/github/actions/workflow/status/saezlab/decoupler-py/test.yaml?branch=main
-[badge-docs]: https://img.shields.io/readthedocs/decoupler-py
+[badge-tests]: https://img.shields.io/github/actions/workflow/status/scverse/decoupler/test.yaml?branch=main
+[badge-docs]: https://img.shields.io/readthedocs/decoupler
 [badge-condav]: https://img.shields.io/conda/vn/conda-forge/decoupler-py.svg
 [badge-condad]: https://img.shields.io/conda/dn/conda-forge/decoupler-py.svg
-[badge-issues]: https://img.shields.io/github/issues/saezlab/decoupler-py
-[badge-coverage]: https://codecov.io/gh/saezlab/decoupler-py/branch/main/graph/badge.svg
+[badge-issues]: https://img.shields.io/github/issues/scverse/decoupler
+[badge-coverage]: https://codecov.io/gh/scverse/decoupler/branch/main/graph/badge.svg
 [badge-pypi]: https://img.shields.io/pypi/v/decoupler.svg
 [badge-mdown]: https://static.pepy.tech/badge/decoupler/month
 [badge-adown]: https://static.pepy.tech/badge/decoupler
-[badge-stars]: https://img.shields.io/github/stars/saezlab/decoupler-py?style=flat&logo=github&color=yellow
+[badge-stars]: https://img.shields.io/github/stars/scverse/decoupler?style=flat&logo=github&color=yellow
 
 `decoupler` is a python package containing different enrichment statistical
 methods to extract biologically driven scores
@@ -68,7 +68,7 @@ mamba create -n=dcp conda-forge::decoupler-py
 4. Install the latest development version:
 
 ```bash
-pip install git+https://github.com/saezlab/decoupler-py.git@main
+pip install git+https://github.com/scverse/decoupler.git@main
 ```
 
 ## Release notes
@@ -91,12 +91,12 @@ to infer biological activities from omics data. Bioinformatics Advances.
 [uv]: https://github.com/astral-sh/uv
 [scverse discourse]: https://discourse.scverse.org/
 [scverse]: https://scverse.org/
-[issue tracker]: https://github.com/saezlab/decoupler-py/issues
-[tests]: https://github.com/saezlab/decoupler-py/actions/workflows/test.yaml
-[documentation]: https://decoupler-py.readthedocs.io
-[changelog]: https://decoupler-py.readthedocs.io/en/latest/changelog.html
-[api documentation]: https://decoupler-py.readthedocs.io/en/latest/api.html
+[issue tracker]: https://github.com/scverse/decoupler/issues
+[tests]: https://github.com/scverse/decoupler/actions/workflows/test.yaml
+[documentation]: https://decoupler.readthedocs.io
+[changelog]: https://decoupler.readthedocs.io/en/latest/changelog.html
+[api documentation]: https://decoupler.readthedocs.io/en/latest/api.html
 [pypi]: https://pypi.org/project/decoupler
 [down]: https://pepy.tech/project/decoupler
 [conda]: https://anaconda.org/conda-forge/decoupler-py
-[codecoverage]: https://codecov.io/gh/saezlab/decoupler-py
+[codecoverage]: https://codecov.io/gh/scverse/decoupler
