@@ -9,7 +9,7 @@ description = "Python package to perform enrichment analysis from omics data."
 readme = "README.md"
 license = { file = "LICENSE" }
 maintainers = [
-  { name = "Pau Badia i Mompel", email = "pau.badia@uni-heidelberg.de" },
+  { name = "Pau Badia i Mompel", email = "paubim@stanford.edu" },
 ]
 authors = [
   { name = "Pau Badia i Mompel" },
@@ -72,8 +72,8 @@ optional-dependencies.test = [
 ]
 # https://docs.pypi.org/project_metadata/#project-urls
 urls.Documentation = "https://decoupler.readthedocs.io/"
-urls.Homepage = "https://github.com/PauBadiaM/decoupler"
-urls.Source = "https://github.com/PauBadiaM/decoupler"
+urls.Homepage = "https://github.com/scverse/decoupler"
+urls.Source = "https://github.com/scverse/decoupler"
 
 [tool.hatch.envs.default]
 installer = "uv"
