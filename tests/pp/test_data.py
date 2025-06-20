@@ -22,7 +22,7 @@ def test_extract(
     X, obs, var = dc.pp.extract(data=adata, layer='counts')
     assert float(np.sum(X)).is_integer()
     sadata = adata.copy()
-    sadata.X = sps.coo_matrix(sadata.X)
+    sadata.X = sps.csc_matrix(sadata.X)
     X, obs, var = dc.pp.extract(data=sadata)
     assert isinstance(X, sps.csr_matrix)
     eadata = adata.copy()
