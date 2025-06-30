@@ -27,13 +27,24 @@
 [badge-adown]: https://static.pepy.tech/badge/decoupler
 [badge-stars]: https://img.shields.io/github/stars/scverse/decoupler?style=flat&logo=github&color=yellow
 
-`decoupler` is a python package containing different enrichment statistical
-methods to extract biologically driven scores
-from omics data within a unified framework. This is its faster and memory efficient Python implementation,
+`decoupler` is a scverse core package containing different enrichment statistical
+methods to extract biologically driven scores from omics data within a unified framework.
+This is its faster and memory efficient Python implementation,
 a deprecated version in R can be found [here](https://github.com/saezlab/decoupler).
 
-It is a package from the [scverse][] ecosystem {cite:p}`scverse`,
-designed for easy interoperability with `anndata`, `scanpy` {cite:p}`scanpy` and other related packages.
+[//]: # (numfocus-fiscal-sponsor-attribution)
+
+decoupler is part of the scverse® project ([website](https://scverse.org), [governance](https://scverse.org/about/roles)) and is fiscally sponsored by [NumFOCUS](https://numfocus.org/).
+If you like scverse® and want to support our mission, please consider making a tax-deductible [donation](https://numfocus.org/donate-to-scverse) to help the project pay for developer time, professional services, travel, workshops, and a variety of other needs.
+
+<div align="center">
+<a href="https://numfocus.org/project/scverse">
+  <img
+    src="https://raw.githubusercontent.com/numfocus/templates/master/images/numfocus-logo.png"
+    width="200"
+  >
+</a>
+</div>
 
 ## Getting started
 
