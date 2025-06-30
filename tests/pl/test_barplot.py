@@ -1,7 +1,7 @@
-import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
+import pandas as pd
 import pytest
+from matplotlib.figure import Figure
 
 import decoupler as dc
 
@@ -13,19 +13,19 @@ def df():
             [1, -2, 3, -4],
             [5, -6, 7, -8],
         ],
-        index=['C1', 'C2'],
-        columns=[f'TF{i}' for i in range(4)]
+        index=["C1", "C2"],
+        columns=[f"TF{i}" for i in range(4)],
     )
     return df
 
 
 @pytest.mark.parametrize(
-    'name,top,vertical,vcenter',
+    "name,top,vertical,vcenter",
     [
-        ['C1', 2, True, None],
-        ['C2', 10, False, -3],
-        ['C2', 10, False, 10],
-    ]
+        ["C1", 2, True, None],
+        ["C2", 10, False, -3],
+        ["C2", 10, False, 10],
+    ],
 )
 def test_barplot(
     df,

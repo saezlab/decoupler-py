@@ -1,16 +1,16 @@
-from typing import Tuple, Callable
+from collections.abc import Callable
 
-import pandas as pd
 import numpy as np
-from anndata import AnnData
+import pandas as pd
 import scipy.sparse as sps
 import scipy.stats as sts
+from anndata import AnnData
 from tqdm.auto import tqdm
 
-from decoupler._log import _log
 from decoupler._datatype import DataType
-from decoupler.pp.net import prune, adjmat, idxmat
+from decoupler._log import _log
 from decoupler.pp.data import extract
+from decoupler.pp.net import adjmat, idxmat, prune
 
 
 def _return(
@@ -19,20 +19,20 @@ def _return(
     es: pd.DataFrame,
     pv: pd.DataFrame,
     verbose: bool = False,
-) -> Tuple[pd.DataFrame, pd.DataFrame] | AnnData | None:
+) -> tuple[pd.DataFrame, pd.DataFrame] | AnnData | None:
     if isinstance(data, AnnData):
         if data.obs_names.size != es.index.size:
-            m = 'Provided AnnData contains empty observations, returning repaired object'
-            _log(m, level='warn', verbose=verbose)
+            m = "Provided AnnData contains empty observations, returning repaired object"
+            _log(m, level="warn", verbose=verbose)
             data = data[es.index, :].copy()
-            data.obsm[f'score_{name}'] = es
+            data.obsm[f"score_{name}"] = es
             if pv is not None:
-                data.obsm[f'padj_{name}'] = pv
+                data.obsm[f"padj_{name}"] = pv
             return data
         else:
-            data.obsm[f'score_{name}'] = es
+            data.obsm[f"score_{name}"] = es
             if pv is not None:
-                data.obsm[f'padj_{name}'] = pv
+                data.obsm[f"padj_{name}"] = pv
             return None
     else:
         return es, pv
@@ -51,9 +51,9 @@ def _run(
     empty: bool = True,
     bsize: int | float = 250_000,
     verbose: bool = False,
-    **kwargs
-) -> Tuple[pd.DataFrame, pd.DataFrame] | AnnData | None:
-    _log(f'{name} - Running {name}', level='info', verbose=verbose)
+    **kwargs,
+) -> tuple[pd.DataFrame, pd.DataFrame] | AnnData | None:
+    _log(f"{name} - Running {name}", level="info", verbose=verbose)
     # Process data
     mat, obs, var = extract(data, layer=layer, raw=raw, empty=empty, verbose=verbose)
     sparse = sps.issparse(mat)
@@ -85,10 +85,10 @@ def _run(
     if test:
         pv = np.vstack(pv)
         pv = pd.DataFrame(pv, index=obs, columns=sources)
-        if name != 'mlm':
-            _log(f'{name} - adjusting p-values by FDR', level='info', verbose=verbose)
-            pv.loc[:, :] = sts.false_discovery_control(pv.values, axis=1, method='bh')
+        if name != "mlm":
+            _log(f"{name} - adjusting p-values by FDR", level="info", verbose=verbose)
+            pv.loc[:, :] = sts.false_discovery_control(pv.values, axis=1, method="bh")
     else:
         pv = None
-    _log(f'{name} - done', level='info', verbose=verbose)
+    _log(f"{name} - done", level="info", verbose=verbose)
     return _return(name, data, es, pv, verbose=verbose)

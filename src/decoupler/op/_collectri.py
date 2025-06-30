@@ -1,18 +1,16 @@
-import numpy as np
 import pandas as pd
 
 from decoupler._docs import docs
-from decoupler._log import _log
-from decoupler._download import URL_INT, _download
-from decoupler.op._translate import translate
+from decoupler._download import _download
 from decoupler.op._dtype import _infer_dtypes
+from decoupler.op._translate import translate
 
 
 @docs.dedent
 def collectri(
-    organism: str = 'human',
+    organism: str = "human",
     remove_complexes: bool = False,
-    license: str = 'academic',
+    license: str = "academic",
     verbose: bool = False,
 ) -> pd.DataFrame:
     """
@@ -36,22 +34,22 @@ def collectri(
     Dataframe in long format containing target genes for each TF with their associated weights,
     and if available, the PMIDs supporting each interaction.
     """
-    url = 'https://zenodo.org/records/8192729/files/CollecTRI_regulons.csv?download=1'
+    url = "https://zenodo.org/records/8192729/files/CollecTRI_regulons.csv?download=1"
     ct = _download(url, verbose=verbose)
     # Update resources
     resources = []
-    for str_res in ct['resources']:
-        lst_res = str_res.replace('CollecTRI', '').split(';')
-        str_res = ';'.join(sorted([res.replace('_', '') for res in lst_res if res != '']))
+    for str_res in ct["resources"]:
+        lst_res = str_res.replace("CollecTRI", "").split(";")
+        str_res = ";".join(sorted([res.replace("_", "") for res in lst_res if res != ""]))
         resources.append(str_res)
-    ct['resources'] = resources
+    ct["resources"] = resources
     # Format references
-    ct['references'] = ct['references'].str.replace('CollecTRI:', '')
+    ct["references"] = ct["references"].str.replace("CollecTRI:", "")
     ct = ct.dropna()
     if remove_complexes:
-        ct = ct[~ct['source'].isin(['AP1', 'NFKB'])]
+        ct = ct[~ct["source"].isin(["AP1", "NFKB"])]
     ct = _infer_dtypes(ct)
-    if organism != 'human':
-        ct = translate(ct, columns=['source', 'target'], target_organism=organism, verbose=verbose)
-    ct = ct.drop_duplicates(['source', 'target']).reset_index(drop=True)
+    if organism != "human":
+        ct = translate(ct, columns=["source", "target"], target_organism=organism, verbose=verbose)
+    ct = ct.drop_duplicates(["source", "target"]).reset_index(drop=True)
     return ct

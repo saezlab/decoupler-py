@@ -1,14 +1,11 @@
-from typing import Tuple
-
+import numba as nb
 import numpy as np
-import scipy.stats as sts
 import scipy.sparse as sps
 from tqdm.auto import tqdm
-import numba as nb
 
 from decoupler._docs import docs
 from decoupler._log import _log
-from decoupler._Method import MethodMeta, Method
+from decoupler._Method import Method, MethodMeta
 from decoupler.pp.net import _getset
 
 
@@ -19,7 +16,7 @@ def _std(
 ) -> float:
     N = arr.shape[0]
     m = np.mean(arr)
-    var = np.sum((arr - m)**2) / (N - ddof)
+    var = np.sum((arr - m) ** 2) / (N - ddof)
     sd = np.sqrt(var)
     return sd
 
@@ -43,7 +40,7 @@ def _esrank(
     rnks: np.ndarray,
     set_msk: np.ndarray,
     dec: float,
-) -> Tuple[float, int, np.ndarray]:
+) -> tuple[float, int, np.ndarray]:
     # Init empty
     mx_value = 0.0
     cum_sum = 0.0
@@ -54,8 +51,8 @@ def _esrank(
     es = np.zeros(rnks.size)
     # Compute norm
     sum_set = np.sum(np.abs(row[set_msk]))
-    if sum_set == 0.:
-        return 0., 0, np.zeros(rnks.size)
+    if sum_set == 0.0:
+        return 0.0, 0, np.zeros(rnks.size)
     # Compute ES
     for i in rnks:
         if set_msk[i]:
@@ -89,19 +86,19 @@ def _nesrank(
     set_msk: np.ndarray,
     dec: float,
     es: float,
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     # Keep old set_msk upstream
     set_msk = set_msk.copy()
     # Compute null
     times, nvar = ridx.shape
     if times == 0:
-        return 0., 1.
+        return 0.0, 1.0
     null = np.zeros(times)
     for i in range(times):
         null[i], _, _ = _esrank(row=row, rnks=rnks, set_msk=set_msk[ridx[i]], dec=dec)
     # Compute NES
-    pos_null_msk = null >= 0.
-    neg_null_msk = null < 0.
+    pos_null_msk = null >= 0.0
+    neg_null_msk = null < 0.0
     pos_null_sum = pos_null_msk.sum()
     neg_null_sum = neg_null_msk.sum()
     if (es >= 0) and (pos_null_sum > 0):
@@ -125,7 +122,7 @@ def _stsgsea(
     starts: np.ndarray,
     offsets: np.ndarray,
     ridx: np.ndarray,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     # Sort features
     idx = np.argsort(-row)
     row = row[idx]
@@ -160,7 +157,7 @@ def _func_gsea(
     times: int | float = 1000,
     seed: int | float = 42,
     verbose: bool = False,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     r"""
     Gene Set Enrichment Analysis (GSEA) :cite:`gsea`.
 
@@ -229,16 +226,16 @@ def _func_gsea(
     %(returns)s
     """
     nobs, nvar = mat.shape
-    assert isinstance(times, (int, float)) and times >= 0, 'times must be numeric and >= 0'
-    assert isinstance(seed, (int, float)) and seed >= 0, 'seed must be numeric and >= 0'
+    assert isinstance(times, (int, float)) and times >= 0, "times must be numeric and >= 0"
+    assert isinstance(seed, (int, float)) and seed >= 0, "seed must be numeric and >= 0"
     times, seed = int(times), int(seed)
     # Compute
     nsrc = starts.size
-    m = f'gsea - calculating {nsrc} scores across {nobs} observations'
-    _log(m, level='info', verbose=verbose)
+    m = f"gsea - calculating {nsrc} scores across {nobs} observations"
+    _log(m, level="info", verbose=verbose)
     if times > 1:
-        m = f'gsea - comparing estimates against {times} random permutations'
-        _log(m, level='info', verbose=verbose)
+        m = f"gsea - comparing estimates against {times} random permutations"
+        _log(m, level="info", verbose=verbose)
         ridx = _ridx(times=times, nvar=nvar, seed=seed)
     else:
         ridx = _ridx(times=times, nvar=nvar, seed=None)
@@ -263,14 +260,14 @@ def _func_gsea(
 
 
 _gsea = MethodMeta(
-    name='gsea',
-    desc='Gene Set Enrichment Analysis (GSEA)',
+    name="gsea",
+    desc="Gene Set Enrichment Analysis (GSEA)",
     func=_func_gsea,
-    stype='numerical',
+    stype="numerical",
     adj=False,
     weight=False,
     test=True,
     limits=(-np.inf, +np.inf),
-    reference='https://doi.org/10.1073/pnas.0506580102',
+    reference="https://doi.org/10.1073/pnas.0506580102",
 )
 gsea = Method(_method=_gsea)

@@ -4,9 +4,7 @@ import pytest
 import decoupler as dc
 
 
-@pytest.mark.parametrize(
-    'flavor', ['KSEA', 'RoKAI']
-)
+@pytest.mark.parametrize("flavor", ["KSEA", "RoKAI"])
 def test_func_zscore(
     mat,
     adjmat,

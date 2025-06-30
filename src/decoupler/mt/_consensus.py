@@ -1,9 +1,7 @@
-from typing import Tuple
-
+import numba as nb
 import numpy as np
 import pandas as pd
 import scipy.stats as sts
-import numba as nb
 from anndata import AnnData
 
 from decoupler._docs import docs
@@ -64,7 +62,7 @@ def _mean_zscores(
 def consensus(
     result: dict | AnnData,
     verbose: bool = False,
-) -> Tuple[pd.DataFrame, pd.DataFrame] | None:
+) -> tuple[pd.DataFrame, pd.DataFrame] | None:
     r"""
     Consensus score across methods.
 
@@ -110,29 +108,29 @@ def consensus(
     Consensus enrichment scores and p-values.
     """
     # Validate
-    assert isinstance(result, (dict, AnnData)), 'scores must be dict or anndata.AnnData'
+    assert isinstance(result, (dict, AnnData)), "scores must be dict or anndata.AnnData"
     # Transform to mat
     if isinstance(result, AnnData):
-        keys = [k for k in result.obsm if 'score_' in k]
+        keys = [k for k in result.obsm if "score_" in k]
         scores = [result.obsm[k].values for k in keys]
         obs_names = result.obs_names
         var_names = result.obsm[keys[0]].columns
     else:
-        keys = [k for k in result if 'score_' in k]
+        keys = [k for k in result if "score_" in k]
         scores = [result[k].values for k in keys]
         obs_names = result[keys[0]].index
         var_names = result[keys[0]].columns
-    names = {k.split('_')[1] for k in keys}
-    m = f'consensus - running consensus using methods={names}'
-    _log(m, level='info', verbose=verbose)
+    names = {k.split("_")[1] for k in keys}
+    m = f"consensus - running consensus using methods={names}"
+    _log(m, level="info", verbose=verbose)
     scores = np.array(scores)
     # Compute mean z-scores
     es = _mean_zscores(scores)
     # Compute p-vals
     pv = 2 * sts.norm.sf(np.abs(es))
     # FDR
-    pv = sts.false_discovery_control(pv, axis=1, method='bh')
+    pv = sts.false_discovery_control(pv, axis=1, method="bh")
     # Transform to df
     es = pd.DataFrame(es, columns=var_names, index=obs_names)
     pv = pd.DataFrame(pv, columns=var_names, index=obs_names)
-    return _return(name='consensus', data=result, es=es, pv=pv, verbose=False)
+    return _return(name="consensus", data=result, es=es, pv=pv, verbose=False)
