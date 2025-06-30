@@ -57,7 +57,7 @@ def _func_udt(
     _check_import(xgboost, 'xgboost')
     nobs = mat.shape[0]
     nvar, nsrc = adj.shape
-    m = f'udt - fitting {nsrc} univariate decision tree models (XGBoost) of {nvar} targets across {nobs} observations' 
+    m = f'udt - fitting {nsrc} univariate decision tree models (XGBoost) of {nvar} targets across {nobs} observations'
     _log(m, level='info', verbose=verbose)
     es = np.zeros(shape=(nobs, nsrc))
     for i in tqdm(range(nobs), disable=not verbose):

@@ -24,7 +24,7 @@ def test_replace_subunits(
     lst,
     my_dict,
     one_to_many,
-):  
+):
     res = dc.op._translate._replace_subunits(
         lst=lst, my_dict=my_dict, one_to_many=one_to_many
     )
@@ -51,9 +51,3 @@ def test_translate(
     assert isinstance(t_net, pd.DataFrame)
     assert cols.issubset(t_net.columns)
     assert net.shape[0] != t_net.shape[0]
-
-
-
-
-
-

@@ -31,7 +31,7 @@ def rankby_order(
     stat
         Which statistic to compute.
         Must be one of these:
-        
+
         - ``dcor`` (distance correlation from ``dcor.independence.distance_correlation_t_test``)
         - ``pearsonr`` (Pearson's R from ``scipy.stats.pearsonr``)
         - ``spearmanr`` (Spearman's R from ``scipy.stats.spearmanr``)

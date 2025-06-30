@@ -195,7 +195,7 @@ def _func_viper(
         q^{norm} &= \Phi^{-1}(2|q-0.5| + (1 + max(|q-0.5|))) \\
         S_1 &= \sum_{i=1}^{k}q_i^{norm}l_i(1-|w_i|) \\
         \end{align}
-        
+
     Where:
 
     - :math:`w \in [-1, +1]` is a vector of interaction weights across features
@@ -219,7 +219,7 @@ def _func_viper(
 
     .. math::
 
-        S_3 = 
+        S_3 =
         \begin{cases}
         (|S_2| + S_1)  \times \mathrm{sgn}(S_2) & \text{if } S_1 > 0 \\
         S_2 & \text{if } S_1 < 0
@@ -231,7 +231,7 @@ def _func_viper(
     .. math::
 
         ES = S_3\sqrt{\sum_{i=1}^{k}l_{orig,i}^{2}}
-        
+
     Together with a :math:`p_{value}`
 
     .. math::
@@ -241,7 +241,7 @@ def _func_viper(
     Additionaly, computing multiple sources simultaneously, a pleiotropic correction is employed.
 
     In brief, all possible pairs of sources AB are generated under two conditions:
-    
+
     1. both A and B are significantly enriched (p < ``reg_sign=0.05``)
     2. they share at least ``n_targets=10`` features
 
@@ -251,12 +251,12 @@ def _func_viper(
 
     .. math::
 
-        PS = 
+        PS =
         \begin{cases}
         \frac{1}{(1+|\log_{10}(pB) - \log_{10}(pA)|)^{\frac{20}{n_a}}} \text{ if } pA < pB \\
         \frac{1}{(1+|\log_{10}(pA) - \log_{10}(pB)|)^{\frac{20}{n_b}}} \text{ if } pA > pB
         \end{cases}
-    
+
     Where:
 
     - :math:`n_a` is the number of test pairs involving the source A
@@ -266,7 +266,7 @@ def _func_viper(
 
     .. math::
 
-        l_{orig, i} = 
+        l_{orig, i} =
         \begin{cases}
         PS \times 1_{\{i \in A\}} \text{ if } pA < pB \\
         PS \times 1_{\{i \in B\}} \text{ if } pA > pB
@@ -274,11 +274,11 @@ def _func_viper(
 
     A new :math:`ES` and :math:`p_{value}` are calculated following all
     the previous steps but using the updated :math:`l_{orig}`
-    
+
     %(yestest)s
 
     %(params)s
-    
+
     pleiotropy
         Whether correction for pleiotropic regulation should be performed.
     reg_sign

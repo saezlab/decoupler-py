@@ -72,6 +72,6 @@ def test_func_aucell(
         starts=starts,
         offsets=offsets,
         n_up=3,
-        
+
     )
     assert np.isclose(dc_es, ac_es.values).all()

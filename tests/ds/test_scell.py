@@ -58,4 +58,4 @@ def test_erygast1k():
         assert isinstance(adata.obs[col].dtype, pd.CategoricalDtype)
     keys = {'X_pca', 'X_umap'}
     assert keys.issubset(adata.obsm.keys())
-    
+

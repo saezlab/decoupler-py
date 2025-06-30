@@ -198,7 +198,7 @@ def _func_waggr(
     %(yestest)s
 
     %(params)s
-    
+
     fun
         Function to compute enrichment statistic from omics readouts (``x``) and feature weights (``w``).
         Provided function must contain ``x`` and ``w`` arguments and ouput a single float.

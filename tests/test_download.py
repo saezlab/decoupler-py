@@ -18,7 +18,7 @@ import decoupler as dc
              'acc=GSM8563697&format=file&file=GSM8563697%' +
              '5FCO37%5Ftissue%5Fpositions%5Flist%2Ecsv%2Egz'),
             dict(sep=',', compression='gzip')
-        ], 
+        ],
     ]
 )
 def test_download(

@@ -27,7 +27,7 @@ All functions have been rewritten to follow the new API, errors when running pre
   - `viper` now correctly estimates shadow regulons when network weights are values other than -1 or +1
   - `wsum` and `wmean` are deprecated, instead now the method `waggr` allows to run both methods and any custom function. This makes it easier to quickly test new enrichment methods without having to deal with `decoupler`'s implementation
 - Databases from Omnipath can now be accessed through the new `op` module
-  - Use `decoupler.op.<resource_name>` to access a database  
+  - Use `decoupler.op.<resource_name>` to access a database
   - Removed the `omnipath` package as a dependancy
   - Fixed `collectri` to the publication version instead of the OmniPath one
   - Made `progeny` only return significant genes by default instead of the top N genes per pathway
@@ -63,7 +63,7 @@ All functions have been rewritten to follow the new API, errors when running pre
   - Added `obsbar` to plot size of metadata columns in `anndata.AnnData.obs`
   - Added `order` to plot sources or features along a continous process such as a trajectory
   - Added `order_targets` to plot the targets of a given source along a continous process
-  - 
+  -
 - New preprocessing functions in the `pp` module
   - Added two functions to format networks, `adjmat` to return an adjacency matrix, and `idxmax` to return a list of sets
   - Added `filter_samples` to filter pseudobulk profiles after running `pseudobulk`

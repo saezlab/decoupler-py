@@ -3,7 +3,7 @@ import pytest
 
 import decoupler as dc
 
-    
+
 def test_infer_dtypes():
     df = pd.DataFrame(
         data = [
@@ -22,4 +22,4 @@ def test_infer_dtypes():
     assert pd.api.types.is_bool_dtype(idf['d'])
     assert pd.api.types.is_numeric_dtype(idf['e'])
 
-    
+

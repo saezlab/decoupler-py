@@ -29,7 +29,7 @@ def test_fit(
     print(coef.shape, t.shape)
     assert coef.shape == (n_samples, n_fsets)
     assert t.shape == (n_samples, n_fsets)
-    
+
 
 @pytest.mark.parametrize('tval', [True, False])
 def test_func_mlm(

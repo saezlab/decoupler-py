@@ -92,7 +92,7 @@ def _translate(
     map_dict: dict,
     column: str,
     one_to_many: int,
-):  
+):
     map_data = _generate_orthologs(resource, column, map_dict, one_to_many)
     resource = resource.merge(map_data, left_on=column, right_index=True, how="left")
     resource[column] = resource["orthology_target"]

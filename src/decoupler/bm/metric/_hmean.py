@@ -79,4 +79,4 @@ def hmean(
     hdf['score'] = hdf[h_cols].mean(axis=1, numeric_only=True)
     hdf['score'] = (hdf['score'] - hdf['score'].min()) / (hdf['score'].max() - hdf['score'].min())
     return hdf
-        
+

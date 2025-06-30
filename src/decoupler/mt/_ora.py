@@ -179,11 +179,11 @@ def _func_ora(
        :width: 100%
 
        Over Representation Analysis (ORA) scheme.
-    
+
     The statistic is calculated as the Odds Ratio :math:`OR` with Haldane-Anscombe correction.
 
     .. math::
-        
+
         \text{OR} = \log{\frac{\frac{a + 0.5}{b + 0.5}}{\frac{c + 0.5}{d + 0.5}}}
 
     And the :math:`p_{value}` is obtained afer computing a two-tailed Fisher’s exact test with the same table.
@@ -206,16 +206,16 @@ def _func_ora(
     nsrc = starts.size
     if n_up is None:
         n_up = int(np.max([np.ceil(0.05 * nvar), 2]))
-        m = f'ora - setting n_up={n_up}' 
+        m = f'ora - setting n_up={n_up}'
         _log(m, level='info', verbose=verbose)
     if n_bg is None:
         n_bg = 0
-        m = f'ora - not using n_bg, a feature specific background will be used instead' 
+        m = f'ora - not using n_bg, a feature specific background will be used instead'
         _log(m, level='info', verbose=verbose)
     assert isinstance(n_up, (int, float)) and n_up > 0, 'n_up must be numeric and > 0'
     assert isinstance(n_bm, (int, float)) and n_bm >= 0, 'n_bm must be numeric and positive'
     assert isinstance(n_bg, (int, float)) and n_bg >= 0, 'n_bg must be numeric and positive'
-    m = f'ora - calculating {nsrc} scores across {nobs} observations with n_up={n_up}, n_bm={n_bm}, n_bg={n_bg}' 
+    m = f'ora - calculating {nsrc} scores across {nobs} observations with n_up={n_up}, n_bm={n_bm}, n_bg={n_bg}'
     _log(m, level='info', verbose=verbose)
     es = np.zeros((nobs, nsrc))
     pv = np.zeros((nobs, nsrc))

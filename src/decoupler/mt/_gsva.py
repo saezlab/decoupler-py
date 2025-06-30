@@ -85,7 +85,7 @@ def _mat_ecdf(
     for j in range(mat.shape[1]):
         D[:, j] = _ecdf(mat[:, j])
     return D
-    
+
 
 @nb.njit(cache=True)
 def _col_d(
@@ -317,19 +317,19 @@ def _func_gsva(
     Gene Set Variation Analysis (GSVA) :cite:`gsva`.
 
     Each feature is first transformed and smoothed using a kernel density estimation method:
-    
+
     - Gaussian
     - Poisson
     - Empirical cumulative distribution function
 
     Features are then ranked based on a continuous metric (e.g., expression value, score, or correlation).
-    
+
     Then, a score for each feature in a set is computed by walking down the ranked list,
     increasing a running-sum statistic when a feature belongs to the set and decreasing it otherwise.
 
     .. math::
-    
-       \delta(F, i) = 
+
+       \delta(F, i) =
        \begin{cases}
        \frac{|r_i|}{\sum\limits_{j \in F} |r_j|} & \text{if feature } i \in F \\
        -\frac{1}{l} & \text{if feature } i \notin F
