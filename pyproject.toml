@@ -23,22 +23,16 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
+  "adjusttext",
   "anndata",
-  "numba",
   "docrep",
-  "tqdm",
-  "requests",
   "marsilea",
-  "adjustText",
-  "scipy<1.16.0"  # https://github.com/statsmodels/statsmodels/issues/9584
+  "numba",
+  "requests",
+  "scipy<1.16", # https://github.com/statsmodels/statsmodels/issues/9584
   # for debug logging (referenced from the issue template)
   "session-info2",
-]
-optional-dependencies.full = [
-  "igraph",
-  "xgboost",
-  "ipywidgets",
-  "dcor",
+  "tqdm",
 ]
 optional-dependencies.dev = [
   "pre-commit",
@@ -60,16 +54,22 @@ optional-dependencies.doc = [
   "sphinxcontrib-bibtex>=1",
   "sphinxext-opengraph",
 ]
+optional-dependencies.full = [
+  "dcor",
+  "igraph",
+  "ipywidgets",
+  "xgboost",
+]
 optional-dependencies.test = [
   "coverage",
-  "pytest",
-  "statsmodels",
+  "dcor",
   "gseapy",
-  "scanpy",
   "igraph",
-  "xgboost",
   "ipywidgets",
-  "dcor"
+  "pytest",
+  "scanpy",
+  "statsmodels",
+  "xgboost",
 ]
 # https://docs.pypi.org/project_metadata/#project-urls
 urls.Documentation = "https://decoupler.readthedocs.io/"

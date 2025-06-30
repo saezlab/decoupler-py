@@ -38,7 +38,7 @@ def rankby_group(
     methods = {'wilcoxon', 't-test', 't-test_overestim_var'}
     assert isinstance(method, str) and method in methods, \
     f'method must be one of: {methods}'
-    
+
     # Get tf names
     features = adata.var_names
     # Generate mask for group samples

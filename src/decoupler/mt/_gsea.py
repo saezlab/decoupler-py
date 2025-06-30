@@ -169,8 +169,8 @@ def _func_gsea(
     statistic when a feature is in the set, and decreasing it when it is not.
 
     .. math::
-    
-       \delta(F, i) = 
+
+       \delta(F, i) =
        \begin{cases}
        \frac{|r_i|}{\sum\limits_{j \in F} |r_j|} & \text{if feature } i \in F \\
        -\frac{1}{l} & \text{if feature } i \notin F

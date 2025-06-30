@@ -22,7 +22,7 @@ def _func_zscore(
     optionally subtracts the overall mean of all measured features,
     and normalizes the result by the standard deviation of all features and the square
     root of the number of targets.
-    
+
     This formulation was originally introduced in KSEA, which explicitly includes the
     subtraction of the global mean to compute the enrichment score :math:`ES`.
 
@@ -36,7 +36,7 @@ def _func_zscore(
     - :math:`\mu_p` is the mean of all features
     - :math:`m` is the number of targets
     - :math:`\sigma` is the standard deviation of all features
-    
+
     However, in the RoKAI implementation, this global mean subtraction was omitted.
 
     .. math::

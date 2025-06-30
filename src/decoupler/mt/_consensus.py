@@ -70,7 +70,7 @@ def consensus(
 
     For each method, enrichment scores are split into positive and negative subsets
     and transformed independently into z-scores.
-    
+
     1. Subset values based on sign (direction).
     2. Mirror each subset into positive and negative values with the same magnitude.
     3. Compute z-scores for each subset: :math:`z_i = \frac{x_i - \mu}{\sigma}`.
@@ -83,7 +83,7 @@ def consensus(
 
     .. math::
 
-        ES = \frac{\sum_{m=1}^{M} z_{i}^{(m)}}{M} 
+        ES = \frac{\sum_{m=1}^{M} z_{i}^{(m)}}{M}
 
     Where:
 

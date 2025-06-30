@@ -71,13 +71,13 @@ def _func_aucell(
     the set appear in this ranking. Specifically, the enrichment score :math:`ES` is:
 
     .. math::
-    
+
        {ES}_{i, F} = \int_0^1 {RecoveryCurve}_{i, F}(r_i) \, dr
-    
+
     Where:
-    
-    - :math:`i` is the obervation  
-    - :math:`F` is the feature set  
+
+    - :math:`i` is the obervation
+    - :math:`F` is the feature set
     - :math:`{RecoveryCurve}_{i, F}(r_i)` is the proportion of features from :math:`F` recovered in the top :math:`r_i`-fraction of the ranked list for observation :math:`i`
 
     %(notest)s
@@ -92,7 +92,7 @@ def _func_aucell(
     nobs, nvar = mat.shape
     nsrc = starts.size
     n_up = _validate_n_up(nvar, n_up)
-    m = f'aucell - calculating {nsrc} AUCs for {nvar} targets across {nobs} observations, categorizing features at rank={n_up}' 
+    m = f'aucell - calculating {nsrc} AUCs for {nvar} targets across {nobs} observations, categorizing features at rank={n_up}'
     _log(m, level='info', verbose=verbose)
     es = np.zeros(shape=(nobs, nsrc))
     for i in tqdm(range(mat.shape[0]), disable=not verbose):

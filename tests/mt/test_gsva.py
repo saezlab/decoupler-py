@@ -158,7 +158,7 @@ def test_score_geneset(gsetidx, generanking, rankstat, maxdiff, absrnk, tau, exp
     es = dc.mt._gsva._score_geneset.py_func(gsetidx, generanking, rankstat, maxdiff, absrnk, tau)
     assert isinstance(es, float)
     assert expected_range[0] <= es <= expected_range[1]
-    
+
 
 def test_init_cdfs():
     cdfs = dc.mt._gsva._init_cdfs.py_func()
@@ -265,7 +265,7 @@ def test_func_gsva(
     maxdiff,
     absrnk,
     gv_es,
-):  
+):
     X, obs, var = mat
     cnct, starts, offsets = idxmat
     obs = np.array(['S01', 'S02', 'S29', 'S30'])

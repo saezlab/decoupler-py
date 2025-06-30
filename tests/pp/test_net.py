@@ -100,17 +100,17 @@ def test_order(
     radjmat = adjmat[::-1]
     oadjmat = dc.pp.net._order(features=targets, targets=rtargets, adjmat=radjmat)
     assert (adjmat == oadjmat).all()
-    
+
     mfeatures = list(targets) + ['x', 'y', 'z']
     madjmat = dc.pp.net._order(features=mfeatures, targets=targets, adjmat=adjmat)
     assert np.all(madjmat == 0, axis=1).sum() == 3
-    
+
     lfeatures = targets[:5]
     assert lfeatures.size < targets.size
     ladjmat = dc.pp.net._order(features=lfeatures, targets=targets, adjmat=adjmat)
     assert ladjmat.shape[0] < adjmat.shape[0]
     assert np.all(ladjmat == 0, axis=1).sum() == 0
-    
+
 
 @pytest.mark.parametrize('verbose', [True, False])
 def test_adjmat(
@@ -139,7 +139,7 @@ def test_adjmat(
     adjmat = adjmat.ravel()
     non_zero_adjmat = adjmat[adjmat != 0.]
     assert all(non_zero_adjmat == 1.)
-    
+
 
 @pytest.mark.parametrize('verbose', [True, False])
 def test_idxmat(

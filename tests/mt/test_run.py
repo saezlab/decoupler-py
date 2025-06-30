@@ -56,4 +56,4 @@ def test_run(
         tmin=0,
     )
     assert (des.values == ses.values).all()
-    
+

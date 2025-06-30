@@ -41,7 +41,7 @@ def _func_mdt(
     which are the weights of all feature sets :math:`F`. It uses the implementation provided by ``xgboost`` :cite:`xgboost`.
 
     The enrichment score :math:`ES` for each :math:`F` is then calculated as the importance of each covariate in the model.
-    
+
     %(notest)s
 
     %(params)s

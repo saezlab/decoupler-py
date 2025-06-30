@@ -34,7 +34,7 @@ def test_fillval(
         [2, 12, 2, False, 42, False],
         [100, 50, 0, False, 0, True],
         [10, 500, 0, True, 0, True],
-        
+
     ]
 )
 def test_toy(
@@ -71,7 +71,7 @@ def test_toy(
         [0.1, 2, 36, 41, True],
         [0.9, 3, 49, 21, False],
         [1.0, 4, 18, 41, False],
-        
+
     ]
 )
 def test_toy_bench(
@@ -98,4 +98,4 @@ def test_toy_bench(
         else:
             assert pval > 0.05
 
-    
+

@@ -19,7 +19,7 @@ def test_mean_zscores(
     scores = rng.normal(size=(2, 5, 10))
     es = dc.mt._consensus._mean_zscores.py_func(scores=scores)
     assert scores.shape[1:] == es.shape
-    
+
 
 def test_consensus(
     adata,
@@ -31,4 +31,4 @@ def test_consensus(
     res = dc.mt.decouple(data=adata.to_df(), net=net, methods=['zscore', 'ulm'], cons=False, tmin=0)
     es, pv = dc.mt.consensus(res)
     assert np.isfinite(es.values).all()
-    assert ((0 <= pv.values) & (pv.values <= 1)).all() 
+    assert ((0 <= pv.values) & (pv.values <= 1)).all()
