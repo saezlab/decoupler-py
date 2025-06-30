@@ -1,5 +1,5 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
 from anndata import AnnData
 from matplotlib.figure import Figure
 
@@ -9,12 +9,7 @@ from decoupler._Plotter import Plotter
 
 @docs.dedent
 def filter_by_prop(
-    adata: AnnData,
-    min_prop: float = 0.1,
-    min_smpls: int = 2,
-    log: bool = True,
-    color = 'gray',
-    **kwargs
+    adata: AnnData, min_prop: float = 0.1, min_smpls: int = 2, log: bool = True, color="gray", **kwargs
 ) -> None | Figure:
     """
     Plot to help determining the thresholds of the ``decoupler.pp.filter_by_prop`` function.
@@ -30,10 +25,11 @@ def filter_by_prop(
         Color to use in ``matplotlib.pyplot.hist``.
     %(plot)s
     """
-    assert isinstance(adata, AnnData), 'adata must be AnnData'
-    assert 'psbulk_props' in adata.layers.keys(), \
-    'psbulk_props must be in adata.layers, use this function afer running decoupler.pp.pseudobulk'
-    props = adata.layers['psbulk_props']
+    assert isinstance(adata, AnnData), "adata must be AnnData"
+    assert "psbulk_props" in adata.layers.keys(), (
+        "psbulk_props must be in adata.layers, use this function afer running decoupler.pp.pseudobulk"
+    )
+    props = adata.layers["psbulk_props"]
     if isinstance(props, pd.DataFrame):
         props = props.values
     nsmpls = np.sum(props >= min_prop, axis=0)
@@ -45,10 +41,10 @@ def filter_by_prop(
         bins=range(min(nsmpls), max(nsmpls) + 2),
         log=log,
         color=color,
-        align='left',
+        align="left",
         rwidth=0.95,
     )
-    bp.ax.axvline(x=min_smpls - 0.5, c='black', ls='--')
-    bp.ax.set_xlabel('Samples (≥ min_prop)')
-    bp.ax.set_ylabel('Number of genes')
+    bp.ax.axvline(x=min_smpls - 0.5, c="black", ls="--")
+    bp.ax.set_xlabel("Samples (≥ min_prop)")
+    bp.ax.set_ylabel("Number of genes")
     return bp._return()

@@ -1,6 +1,6 @@
 import numpy as np
-import scipy.stats as sts
 import pytest
+import scipy.stats as sts
 
 import decoupler as dc
 
@@ -37,7 +37,7 @@ def test_tval():
     assert np.allclose(-0.49811675, t)
 
 
-@pytest.mark.parametrize('tval', [True, False])
+@pytest.mark.parametrize("tval", [True, False])
 def test_func_ulm(
     mat,
     adjmat,

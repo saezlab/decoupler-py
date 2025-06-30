@@ -1,10 +1,8 @@
-import pandas as pd
 import numpy as np
-import scipy.sparse as sps
 import pytest
+import scipy.sparse as sps
 
 import decoupler as dc
-
 
 """
 gs <- list(
@@ -46,13 +44,14 @@ def test_erf(
     e = dc.mt._gsva._erf.py_func(x=x)
     assert isinstance(e, np.ndarray)
 
+
 @pytest.mark.parametrize(
-    'k,lam',
+    "k,lam",
     [
         [-3, 10],
         [0, 5],
         [3, 50],
-    ]
+    ],
 )
 def test_poisson_pmf(
     k,
@@ -62,38 +61,30 @@ def test_poisson_pmf(
     assert isinstance(p, float)
 
 
-def test_ecdf(
-    rng
-):
+def test_ecdf(rng):
     arr = rng.normal(size=10)
     e = dc.mt._gsva._ecdf.py_func(arr)
     assert isinstance(e, np.ndarray)
 
 
-def test_mat_ecdf(
-    rng
-):
+def test_mat_ecdf(rng):
     arr = rng.normal(size=(5, 10))
     e = dc.mt._gsva._mat_ecdf.py_func(arr)
     assert isinstance(e, np.ndarray)
 
 
-@pytest.mark.parametrize('gauss', [True, False])
+@pytest.mark.parametrize("gauss", [True, False])
 def test_col_d(
     rng,
     gauss,
 ):
     x = rng.normal(loc=5, size=20)
     pre_cdf = dc.mt._gsva._init_cdfs()
-    arr = dc.mt._gsva._col_d.py_func(
-        x=x,
-        gauss=gauss,
-        pre_cdf=pre_cdf
-    )
+    arr = dc.mt._gsva._col_d.py_func(x=x, gauss=gauss, pre_cdf=pre_cdf)
     assert isinstance(arr, np.ndarray)
 
 
-@pytest.mark.parametrize('gauss', [True, False])
+@pytest.mark.parametrize("gauss", [True, False])
 def test_mat_d(
     rng,
     gauss,
@@ -127,8 +118,8 @@ def test_rankmat(
     [
         (np.array([1, 3]), np.array([3, 1, 2, 4]), np.array([0.9, 0.1, 0.8, 0.2]), 4, 1.0),
         (np.array([2, 4]), np.array([1, 3, 2, 4]), np.array([0.5, 0.4, 0.6, 0.3]), 4, 2.0),
-        (np.array([1]),    np.array([2, 1, 3]),     np.array([1.0, 0.5, 0.2]),      3, 0.5),
-    ]
+        (np.array([1]), np.array([2, 1, 3]), np.array([1.0, 0.5, 0.2]), 3, 0.5),
+    ],
 )
 def test_rnd_walk(gsetidx, decordstat, symrnkstat, n, tau):
     k = len(gsetidx)
@@ -151,14 +142,14 @@ def test_rnd_walk(gsetidx, decordstat, symrnkstat, n, tau):
     [
         (np.array([1, 3]), np.array([3, 1, 2, 4]), np.array([0.9, 0.1, 0.8, 0.2]), True, True, 1.0, (0.0, 2.0)),
         (np.array([2, 4]), np.array([1, 3, 2, 4]), np.array([0.5, 0.4, 0.6, 0.3]), True, False, 2.0, (-2.0, 2.0)),
-        (np.array([1]),    np.array([2, 1, 3]),     np.array([1.0, 0.5, 0.2]),      False, True, 0.5, (-1.0, 1.0)),
-    ]
+        (np.array([1]), np.array([2, 1, 3]), np.array([1.0, 0.5, 0.2]), False, True, 0.5, (-1.0, 1.0)),
+    ],
 )
 def test_score_geneset(gsetidx, generanking, rankstat, maxdiff, absrnk, tau, expected_range):
     es = dc.mt._gsva._score_geneset.py_func(gsetidx, generanking, rankstat, maxdiff, absrnk, tau)
     assert isinstance(es, float)
     assert expected_range[0] <= es <= expected_range[1]
-    
+
 
 def test_init_cdfs():
     cdfs = dc.mt._gsva._init_cdfs.py_func()
@@ -168,56 +159,50 @@ def test_init_cdfs():
 
 
 def test_ppois():
-    assert dc.mt._gsva._ppois.py_func(1000, 3) == 1.
+    assert dc.mt._gsva._ppois.py_func(1000, 3) == 1.0
     assert np.isclose(dc.mt._gsva._ppois.py_func(100, 75), 0.9975681)
     assert np.isclose(dc.mt._gsva._ppois.py_func(300000, 300000), 0.5004856)
-    assert dc.mt._gsva._ppois.py_func(1, 1000) == 0.
+    assert dc.mt._gsva._ppois.py_func(1, 1000) == 0.0
 
 
 def test_norm_cdf():
-    assert np.isclose(dc.mt._gsva._norm_cdf.py_func(np.array([1, 2, 3], dtype=float), mu=0.0, sigma=1.0),
-                      np.array([0.8413447, 0.9772499, 0.9986501])).all()
-    assert np.isclose(dc.mt._gsva._norm_cdf.py_func(np.array([0, 9, 1], dtype=float), mu=0.0, sigma=1.0),
-                      np.array([0.5, 1., 0.8413447])).all()
+    assert np.isclose(
+        dc.mt._gsva._norm_cdf.py_func(np.array([1, 2, 3], dtype=float), mu=0.0, sigma=1.0),
+        np.array([0.8413447, 0.9772499, 0.9986501]),
+    ).all()
+    assert np.isclose(
+        dc.mt._gsva._norm_cdf.py_func(np.array([0, 9, 1], dtype=float), mu=0.0, sigma=1.0),
+        np.array([0.5, 1.0, 0.8413447]),
+    ).all()
 
 
 def test_density():
-    m = np.array([
-        [4, 5, 1, 0],
-        [6, 4, 0, 2],
-        [8, 8, 3, 1],
-        [1, 1, 9, 8],
-        [0, 2, 7, 5]
-    ])
-    d_gauss = dc.mt._gsva._density(m, kcdf='gaussian')
+    m = np.array([[4, 5, 1, 0], [6, 4, 0, 2], [8, 8, 3, 1], [1, 1, 9, 8], [0, 2, 7, 5]])
+    d_gauss = dc.mt._gsva._density(m, kcdf="gaussian")
     assert np.all(np.isclose(d_gauss[0, :], np.array([0.006604542, 0.77949374, -0.97600555, -1.9585940])))
-    assert np.all(np.isclose(d_gauss[:, 0], np.array([0.006604542, 0.847297859, 2.178640849, -0.960265677, -1.962387678])))
-    d_poiss = dc.mt._gsva._density(m, kcdf='poisson')
+    assert np.all(
+        np.isclose(d_gauss[:, 0], np.array([0.006604542, 0.847297859, 2.178640849, -0.960265677, -1.962387678]))
+    )
+    d_poiss = dc.mt._gsva._density(m, kcdf="poisson")
     assert np.all(np.isclose(d_poiss[0, :], np.array([0.2504135, 0.6946200, -0.74551495, -1.49476762])))
     assert np.all(np.isclose(d_poiss[:, 0], np.array([0.2504135, 0.9572208, 1.7733889, -0.8076761, -1.5963288])))
     d_ecdf = dc.mt._gsva._density(m, kcdf=None)
     print(d_ecdf[0, :])
     assert np.all(np.isclose(d_ecdf[0, :], np.array([0.6, 0.8, 0.4, 0.2])))
-    assert np.all(np.isclose(d_ecdf[:, 0], np.array([0.6, 0.8, 1., 0.4, 0.2])))
+    assert np.all(np.isclose(d_ecdf[:, 0], np.array([0.6, 0.8, 1.0, 0.4, 0.2])))
 
 
 def test_rankdata():
-    arr = np.array([
-        0.5, 1., 0.5, 0.75, 0.25, 0.75, 0.5, 1.,
-        0.75, 0.75, 0.25, 0.75, 0.25, 0.25, 0.5,
-        1., 0.5, 0.5, 0.5, 0.75
-    ])
+    arr = np.array(
+        [0.5, 1.0, 0.5, 0.75, 0.25, 0.75, 0.5, 1.0, 0.75, 0.75, 0.25, 0.75, 0.25, 0.25, 0.5, 1.0, 0.5, 0.5, 0.5, 0.75]
+    )
     dc_rnk = dc.mt._gsva._rankdata.py_func(arr)
-    gv_rnk = np.array([
-        11, 20, 10, 17, 4, 16, 9, 19, 15, 14, 3, 13, 2, 1, 8, 18, 7, 6, 5, 12
-    ])
+    gv_rnk = np.array([11, 20, 10, 17, 4, 16, 9, 19, 15, 14, 3, 13, 2, 1, 8, 18, 7, 6, 5, 12])
     assert (dc_rnk == gv_rnk).all()
 
 
 def test_dos_srs():
-    arr = np.array([
-        11, 20, 10, 17, 4, 16, 9, 19, 15, 14, 3, 13, 2, 1, 8, 18, 7, 6, 5, 12
-    ])
+    arr = np.array([11, 20, 10, 17, 4, 16, 9, 19, 15, 14, 3, 13, 2, 1, 8, 18, 7, 6, 5, 12])
     dc_dos, dc_srs = dc.mt._gsva._dos_srs.py_func(arr)
     gv_dos = np.array([10, 1, 11, 4, 17, 5, 12, 2, 6, 7, 18, 8, 19, 20, 13, 3, 14, 15, 16, 9])
     gv_srs = np.array([1, 10, 0, 7, 6, 6, 1, 9, 5, 4, 7, 3, 8, 9, 2, 8, 3, 4, 5, 2])
@@ -226,37 +211,61 @@ def test_dos_srs():
 
 
 @pytest.mark.parametrize(
-    'kcdf,maxdiff,absrnk,gv_es',
+    "kcdf,maxdiff,absrnk,gv_es",
     [
-        ['gaussian', True, False,
-         np.array([
-            [ 0.8823529,  0.009615385, -0.6470588, -0.4485294, -0.5058824],
-            [ 0.7058824, -0.414473684, -0.6470588,  0.2215909,  0.6666667],
-            [-0.5294118,  0.000000000,  0.3529412,  0.7250000,  0.8823529],
-            [-0.5637255,  0.285714286,  0.4460784, -0.5902778, -0.8235294],
-         ])],
-        ['poisson', True, False,
-         np.array([
-            [ 0.8823529, -0.4117647, -1.0000000, -0.2467105, 0.04977376],
-            [ 1.0000000, -0.5439815, -0.8235294, -0.4545455, 0.04977376],
-            [-0.9411765,  0.5000000,  0.8823529,  0.8125000, 0.76470588],
-            [-0.9411765,  0.4375000,  0.8235294,  0.5081522, 0.11764706],
-         ])],
-        [None, True, False,
-         np.array([
-            [ 0.8823529, -0.1853448, -0.8235294, -0.28846154, -0.3031674],
-            [ 0.6470588, -0.4000000, -0.6932773,  0.36250000,  0.7142857],
-            [-0.4973262,  0.3486842,  0.5756303,  0.81250000,  0.5882353],
-            [-0.7058824,  0.2750000,  0.4117647,  0.07894737, -0.1372549],
-         ])],
-        [None, False, False,
-         np.array([
-            [ 0.9411765, -0.5301724, -0.8823529, -0.41346150, -0.4208145],
-            [ 0.7058824, -0.4500000, -0.6932773,  0.50000000,  0.7142857],
-            [-0.6737968,  0.4111842,  0.6344538,  0.81250000,  0.7647059],
-            [-0.7058824,  0.5250000,  0.6470588,  0.26644740, -0.3725490],
-         ])],
-    ]
+        [
+            "gaussian",
+            True,
+            False,
+            np.array(
+                [
+                    [0.8823529, 0.009615385, -0.6470588, -0.4485294, -0.5058824],
+                    [0.7058824, -0.414473684, -0.6470588, 0.2215909, 0.6666667],
+                    [-0.5294118, 0.000000000, 0.3529412, 0.7250000, 0.8823529],
+                    [-0.5637255, 0.285714286, 0.4460784, -0.5902778, -0.8235294],
+                ]
+            ),
+        ],
+        [
+            "poisson",
+            True,
+            False,
+            np.array(
+                [
+                    [0.8823529, -0.4117647, -1.0000000, -0.2467105, 0.04977376],
+                    [1.0000000, -0.5439815, -0.8235294, -0.4545455, 0.04977376],
+                    [-0.9411765, 0.5000000, 0.8823529, 0.8125000, 0.76470588],
+                    [-0.9411765, 0.4375000, 0.8235294, 0.5081522, 0.11764706],
+                ]
+            ),
+        ],
+        [
+            None,
+            True,
+            False,
+            np.array(
+                [
+                    [0.8823529, -0.1853448, -0.8235294, -0.28846154, -0.3031674],
+                    [0.6470588, -0.4000000, -0.6932773, 0.36250000, 0.7142857],
+                    [-0.4973262, 0.3486842, 0.5756303, 0.81250000, 0.5882353],
+                    [-0.7058824, 0.2750000, 0.4117647, 0.07894737, -0.1372549],
+                ]
+            ),
+        ],
+        [
+            None,
+            False,
+            False,
+            np.array(
+                [
+                    [0.9411765, -0.5301724, -0.8823529, -0.41346150, -0.4208145],
+                    [0.7058824, -0.4500000, -0.6932773, 0.50000000, 0.7142857],
+                    [-0.6737968, 0.4111842, 0.6344538, 0.81250000, 0.7647059],
+                    [-0.7058824, 0.5250000, 0.6470588, 0.26644740, -0.3725490],
+                ]
+            ),
+        ],
+    ],
 )
 def test_func_gsva(
     mat,
@@ -265,12 +274,12 @@ def test_func_gsva(
     maxdiff,
     absrnk,
     gv_es,
-):  
+):
     X, obs, var = mat
     cnct, starts, offsets = idxmat
-    obs = np.array(['S01', 'S02', 'S29', 'S30'])
+    obs = np.array(["S01", "S02", "S29", "S30"])
     X = np.vstack((X[:2, :], X[-2:, :]))
-    if kcdf == 'poisson':
+    if kcdf == "poisson":
         X = X.round()
     X = sps.csr_matrix(X)
     dc_es, _ = dc.mt._gsva._func_gsva(

@@ -1,16 +1,9 @@
 import logging
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | [%(levelname)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s | [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 
-def _log(
-    message: str,
-    level: str = 'info',
-    verbose: bool = False
-) -> None:
+
+def _log(message: str, level: str = "info", verbose: bool = False) -> None:
     """
     Log a message with a specified logging level.
 

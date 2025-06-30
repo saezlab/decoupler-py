@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import numpy as np
 
 from decoupler.bm._pp import _validate_bool
@@ -8,7 +6,7 @@ from decoupler.bm._pp import _validate_bool
 def _binary_clf_curve(
     y_true: np.ndarray,
     y_score: np.ndarray,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     # Sort scores
     idx = np.flip(np.argsort(y_score))
     y_score = y_score[idx]
@@ -31,9 +29,9 @@ def auroc(
     # Compute binary curve
     fps, tps, thr = _binary_clf_curve(y_true, y_score)
     # Add limits
-    fps = np.append(0., fps)
-    tps = np.append(0., tps)
-    thr = np.append(thr[0] + 1., thr)
+    fps = np.append(0.0, fps)
+    tps = np.append(0.0, tps)
+    thr = np.append(thr[0] + 1.0, thr)
     # Compute ratios
     fpr = fps / fps[-1]
     tpr = tps / tps[-1]
@@ -41,23 +39,18 @@ def auroc(
     dx = np.diff(np.ascontiguousarray(fpr))
     # Get direction slope
     if np.all(dx <= 0):
-        d = -1.
+        d = -1.0
     else:
-        d = 1.
+        d = 1.0
     # Compute area
-    ret = np.sum((dx * (tpr[1:] + tpr[:-1]) / 2.0))
+    ret = np.sum(dx * (tpr[1:] + tpr[:-1]) / 2.0)
     auc = d * ret
     return auc
 
 
-def auprc(
-    y_true: np.ndarray,
-    y_score: np.ndarray,
-    pi0: float = 0.5
-) -> float:
+def auprc(y_true: np.ndarray, y_score: np.ndarray, pi0: float = 0.5) -> float:
     _validate_bool(y_true=y_true, y_score=y_score)
-    assert isinstance(pi0, (int, float)) and 0. <= pi0 <= 1., \
-    'pi0 must be numeric and between 0 and 1'
+    assert isinstance(pi0, (int, float)) and 0.0 <= pi0 <= 1.0, "pi0 must be numeric and between 0 and 1"
     # Compute binary curve
     fps, tps, thr = _binary_clf_curve(y_true, y_score)
     # Compute prc
@@ -85,16 +78,16 @@ def auc(
     y_true: np.ndarray,
     y_score: np.ndarray,
     pi0: float = 0.5,
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """
     Area Under the Curve.
     """
     # Normalize to make comparable
     norm = np.nanmax(np.abs(y_score), axis=1)
-    msk = norm == 0.
-    norm[msk] = 1.
+    msk = norm == 0.0
+    norm[msk] = 1.0
     y_score = y_score / norm.reshape(-1, 1)
-    assert ((-1. <= y_score) & (y_score <= 1.)).all()
+    assert ((-1.0 <= y_score) & (y_score <= 1.0)).all()
     # Flatten and remove nans
     y_true, y_score = y_true.ravel(), y_score.ravel()
     msk_nan = ~np.isnan(y_score)
@@ -103,4 +96,5 @@ def auc(
     auc_prc = auprc(y_true=y_true, y_score=y_score, pi0=pi0)
     return auc_roc, auc_prc
 
-auc.scores = ['auroc', 'auprc']
+
+auc.scores = ["auroc", "auprc"]

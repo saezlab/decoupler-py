@@ -23,16 +23,11 @@ class Plotter:
         %(plot)s
         """
         # Validate
-        assert isinstance(ax, Axes) or ax is None, \
-        'ax must be matplotlib.axes._axes.Axes or None'
-        assert isinstance(figsize, tuple), \
-        'figsize must be tuple'
-        assert isinstance(dpi, (int, float)) and dpi > 0, \
-        'dpi must be numerical and > 0'
-        assert isinstance(return_fig, bool), \
-        'return_fig must be bool'
-        assert isinstance(save, str) or save is None, \
-        'save must be str or None'
+        assert isinstance(ax, Axes) or ax is None, "ax must be matplotlib.axes._axes.Axes or None"
+        assert isinstance(figsize, tuple), "figsize must be tuple"
+        assert isinstance(dpi, (int, float)) and dpi > 0, "dpi must be numerical and > 0"
+        assert isinstance(return_fig, bool), "return_fig must be bool"
+        assert isinstance(save, str) or save is None, "save must be str or None"
         self.ax = ax
         self.figsize = figsize
         self.dpi = dpi
@@ -45,6 +40,6 @@ class Plotter:
 
     def _return(self):
         if self.save is not None:
-            self.fig.savefig(self.save, bbox_inches='tight')
+            self.fig.savefig(self.save, bbox_inches="tight")
         if self.return_fig:
             return self.fig

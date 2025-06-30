@@ -5,14 +5,14 @@ import decoupler as dc
 
 
 @pytest.mark.parametrize(
-    'key,uns_key',
+    "key,uns_key",
     [
-        ['X_pca', 'rank_obsm'],
-        ['X_pca', None],
-        ['X_umap', 'other'],
-        ['score_ulm', 'other'],
-        ['score_ulm', None],
-    ]
+        ["X_pca", "rank_obsm"],
+        ["X_pca", None],
+        ["X_umap", "other"],
+        ["score_ulm", "other"],
+        ["score_ulm", None],
+    ],
 )
 def test_rankby_obsm(
     tdata_obsm,
@@ -20,8 +20,8 @@ def test_rankby_obsm(
     uns_key,
 ):
     tdata_obsm = tdata_obsm.copy()
-    tdata_obsm.obs['dose'] = 'Low'
-    tdata_obsm.obs.loc[tdata_obsm.obs_names[5], 'dose'] = 'High'
+    tdata_obsm.obs["dose"] = "Low"
+    tdata_obsm.obs.loc[tdata_obsm.obs_names[5], "dose"] = "High"
     res = dc.tl.rankby_obsm(tdata_obsm, key=key, uns_key=uns_key)
     if uns_key is None:
         assert isinstance(res, pd.DataFrame)

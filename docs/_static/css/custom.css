@@ -5,7 +5,7 @@ div.cell_output table.dataframe {
 
 /* Adjust the logo size */
 .logo img {
-    width: 50%;   /* or any percentage you want */
+    width: 50%; /* or any percentage you want */
     height: auto; /* maintain aspect ratio */
 }
 

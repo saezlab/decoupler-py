@@ -1,18 +1,18 @@
 import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
 import pytest
+from matplotlib.figure import Figure
 
 import decoupler as dc
 
 
 @pytest.mark.parametrize(
-    'y,hue,kw',
+    "y,hue,kw",
     [
-        ['group', None, dict()],
-        ['group', 'group', dict(width=0.5)],
-        ['group', 'sample', dict(palette='tab10')],
-        ['sample', 'group', dict(palette='tab20')],
-    ]
+        ["group", None, dict()],
+        ["group", "group", dict(width=0.5)],
+        ["group", "sample", dict(palette="tab10")],
+        ["sample", "group", dict(palette="tab20")],
+    ],
 )
 def test_obsbar(
     adata,

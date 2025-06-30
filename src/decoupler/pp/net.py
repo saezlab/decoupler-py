@@ -1,14 +1,12 @@
-from typing import Tuple
-
-import pandas as pd
+import numba as nb
 import numpy as np
+import pandas as pd
 import scipy.stats as sts
 from tqdm.auto import tqdm
-import numba as nb
 
+from decoupler._datatype import DataType
 from decoupler._docs import docs
 from decoupler._log import _log
-from decoupler._datatype import DataType
 from decoupler.pp.data import extract
 
 
@@ -30,7 +28,7 @@ def read_gmt(
     # Init empty df
     df = []
     # Read line per line
-    with open(path, 'r') as f:
+    with open(path) as f:
         for line in f.readlines():
             line = line.rstrip().split()
             # Extract gene set name
@@ -40,32 +38,34 @@ def read_gmt(
             for gene in genes:
                 df.append([set_name, gene])
     # Transform to df
-    df = pd.DataFrame(df, columns=['source', 'target'])
+    df = pd.DataFrame(df, columns=["source", "target"])
     return df
 
 
 def _validate_net(
-    net = pd.DataFrame,
+    net=pd.DataFrame,
     verbose: bool = False,
 ) -> pd.DataFrame:
-    assert isinstance(net, pd.DataFrame), 'net must be a DataFrame'
-    assert {'source', 'target'}.issubset(net.columns), \
-    "DataFrame must have 'source' and 'target' columns\n \
+    assert isinstance(net, pd.DataFrame), "net must be a DataFrame"
+    assert {"source", "target"}.issubset(net.columns), (
+        "DataFrame must have 'source' and 'target' columns\n \
     If present but with a different names use:\n \
     net = net.rename(columns={'...' : 'source', '...': 'target'})"
-    assert not net.duplicated(subset=['source', 'target']).any(), \
-    "net has duplicate rows, use:\n \
+    )
+    assert not net.duplicated(subset=["source", "target"]).any(), (
+        "net has duplicate rows, use:\n \
     net = net.drop_duplicates(subset=['source', 'target'])"
-    if 'weight' not in net.columns:
-        vnet = net[['source', 'target']].copy()
-        vnet['weight'] = 1.
+    )
+    if "weight" not in net.columns:
+        vnet = net[["source", "target"]].copy()
+        vnet["weight"] = 1.0
         m = "weight not found in net.columns, adding it as:\nnet['weight'] = 1"
-        _log(m, level='warn', verbose=verbose)
+        _log(m, level="warn", verbose=verbose)
     else:
-        vnet = net[['source', 'target', 'weight']].copy()
-    vnet['source'] = vnet['source'].astype('U')
-    vnet['target'] = vnet['target'].astype('U')
-    vnet['weight'] = vnet['weight'].astype(float)
+        vnet = net[["source", "target", "weight"]].copy()
+    vnet["source"] = vnet["source"].astype("U")
+    vnet["target"] = vnet["target"].astype("U")
+    vnet["weight"] = vnet["weight"].astype(float)
     return vnet
 
 
@@ -93,32 +93,33 @@ def prune(
     # Validate
     vnet = _validate_net(net, verbose=verbose)
     features = set(features)
-    assert isinstance(tmin, (int, float)) and tmin >= 0, 'tmin must be numeric and >= 0'
+    assert isinstance(tmin, (int, float)) and tmin >= 0, "tmin must be numeric and >= 0"
     # Find shared targets between mat and net
-    msk = vnet['target'].isin(features)
+    msk = vnet["target"].isin(features)
     vnet = vnet.loc[msk]
     # Find unique sources with tmin
-    sources = vnet['source'].value_counts()
+    sources = vnet["source"].value_counts()
     sources = set(sources[sources >= tmin].index)
     # Filter
-    msk = vnet['source'].isin(sources)
+    msk = vnet["source"].isin(sources)
     vnet = vnet[msk]
-    assert not vnet.empty, \
-    f'No sources with more than tmin={tmin} targets after\n \
+    assert not vnet.empty, (
+        f"No sources with more than tmin={tmin} targets after\n \
     filtering by shared features in mat.\n \
     Make sure mat and net have shared target features or\n \
-    reduce the number assigned to tmin'
+    reduce the number assigned to tmin"
+    )
     return vnet
 
 
 def _adj(
     net: pd.DataFrame,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     # Pivot df to a wider format
-    X = net.pivot(columns='source', index='target', values='weight').fillna(0)
+    X = net.pivot(columns="source", index="target", values="weight").fillna(0)
     # Store node names and weights
-    sources = X.columns.values.astype('U')
-    targets = X.index.values.astype('U')
+    sources = X.columns.values.astype("U")
+    targets = X.index.values.astype("U")
     X = X.values.astype(float)
     return sources, targets, X
 
@@ -133,7 +134,7 @@ def _order(
     # Create an index array for rows of features corresponding to targets
     features_dict = {gene: i for i, gene in enumerate(features)}
     idxs = [features_dict[gene] for gene in targets if gene in features_dict]
-    assert len(idxs) > 0, 'No overlap found between features and targets'
+    assert len(idxs) > 0, "No overlap found between features and targets"
     # Populate madjmat using advanced indexing
     madjmat[idxs, :] = adjmat[: len(idxs), :]
     return madjmat
@@ -144,7 +145,7 @@ def adjmat(
     features: np.ndarray,
     net: pd.DataFrame,
     verbose: bool = False,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Converts a network in long format into a regulatory adjacency matrix (targets x sources).
 
@@ -160,8 +161,8 @@ def adjmat(
     sources, targets, adjm = _adj(net=net)
     # Sort adjmat to match features
     adjm = _order(features, targets, adjm)
-    m = f'Network adjacency matrix has {targets.size} unique features and {sources.size} unique sources'
-    _log(m, level='info', verbose=verbose)
+    m = f"Network adjacency matrix has {targets.size} unique features and {sources.size} unique sources"
+    _log(m, level="info", verbose=verbose)
     return sources, targets, adjm
 
 
@@ -170,7 +171,7 @@ def idxmat(
     features: np.ndarray,
     net: pd.DataFrame,
     verbose: bool = False,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Indexes and returns feature sets as a decomposed sparse matrix.
 
@@ -185,16 +186,11 @@ def idxmat(
     """
     # Transform targets to indxs
     table = {name: i for i, name in enumerate(features)}
-    net['idx_target'] = [table[target] for target in net['target']]
+    net["idx_target"] = [table[target] for target in net["target"]]
     # Find sets
-    cnct = (
-        net
-        .groupby('source', observed=True)
-        ['idx_target']
-        .apply(lambda x: np.array(x, dtype=int))
-    )
-    net.drop(columns=['idx_target'], inplace=True)
-    sources = cnct.index.values.astype('U')
+    cnct = net.groupby("source", observed=True)["idx_target"].apply(lambda x: np.array(x, dtype=int))
+    net.drop(columns=["idx_target"], inplace=True)
+    sources = cnct.index.values.astype("U")
     # Flatten net and get offsets
     offsets = cnct.apply(lambda x: len(x)).values
     cnct = np.concatenate(cnct.values)
@@ -202,18 +198,13 @@ def idxmat(
     starts = np.zeros(offsets.shape[0], dtype=int)
     starts[1:] = np.cumsum(offsets)[:-1]
     targets = np.unique(cnct)
-    m = f'Network has {targets.size} unique features and {sources.size} unique sources'
-    _log(m, level='info', verbose=verbose)
+    m = f"Network has {targets.size} unique features and {sources.size} unique sources"
+    _log(m, level="info", verbose=verbose)
     return sources, cnct, starts, offsets
 
 
 @nb.njit(cache=True)
-def _getset(
-    cnct: np.ndarray,
-    starts: np.ndarray,
-    offsets: np.ndarray,
-    j: int
-) -> np.ndarray:
+def _getset(cnct: np.ndarray, starts: np.ndarray, offsets: np.ndarray, j: int) -> np.ndarray:
     srt = starts[j]
     off = srt + offsets[j]
     fset = cnct[srt:off]
@@ -222,11 +213,7 @@ def _getset(
 
 @docs.dedent
 def shuffle_net(
-    net: pd.DataFrame,
-    target: bool = True,
-    weight: bool = False,
-    seed: int = 42,
-    same_seed: bool = True
+    net: pd.DataFrame, target: bool = True, weight: bool = False, seed: int = 42, same_seed: bool = True
 ) -> pd.DataFrame:
     """
     Shuffle a network to make it random.
@@ -258,32 +245,28 @@ def shuffle_net(
     Shuffled network.
     """
     # Validate
-    assert isinstance(net, pd.DataFrame), 'net must be pandas.DataFrame'
-    assert isinstance(target, bool), 'target must be bool'
-    assert isinstance(weight, bool), 'weight must be bool'
-    assert target or weight, 'If target and weight are both False, nothing is shuffled'
-    assert isinstance(same_seed, bool), 'same_seed must be bool'
-    assert 'target' in net.columns, 'target must be in net.columns'
-    assert 'weight' in net.columns, 'weight must be in net.columns'
+    assert isinstance(net, pd.DataFrame), "net must be pandas.DataFrame"
+    assert isinstance(target, bool), "target must be bool"
+    assert isinstance(weight, bool), "weight must be bool"
+    assert target or weight, "If target and weight are both False, nothing is shuffled"
+    assert isinstance(same_seed, bool), "same_seed must be bool"
+    assert "target" in net.columns, "target must be in net.columns"
+    assert "weight" in net.columns, "weight must be in net.columns"
     # Make copy of net
     rnet = net.copy()
     # Shuffle
     if target:
         rng = np.random.default_rng(seed=seed)
-        rng.shuffle(rnet['target'].values)
+        rng.shuffle(rnet["target"].values)
     if weight:
         rng = np.random.default_rng(seed=seed + int(not same_seed))
-        rng.shuffle(rnet['weight'].values)
-    return rnet.drop_duplicates(['source', 'target'], keep='first')
+        rng.shuffle(rnet["weight"].values)
+    return rnet.drop_duplicates(["source", "target"], keep="first")
 
 
 @docs.dedent
 def net_corr(
-    net: pd.DataFrame,
-    data: None | DataType = None,
-    tmin: int = 5,
-    verbose: bool = False,
-    **kwargs
+    net: pd.DataFrame, data: None | DataType = None, tmin: int = 5, verbose: bool = False, **kwargs
 ) -> pd.DataFrame:
     """
     Checks the correlation across the sources in a network.
@@ -307,10 +290,10 @@ def net_corr(
     # If mat is provided
     if data is not None:
         # Extract sparse matrix and array of genes
-        kwargs.setdefault('verbose', verbose)
+        kwargs.setdefault("verbose", verbose)
         _, _, c = extract(data=data, **kwargs)
     else:
-        c = np.unique(net['target'].values).astype('U')
+        c = np.unique(net["target"].values).astype("U")
     net = prune(features=c, net=net, tmin=tmin)
     sources, targets, adj = adjmat(features=c, net=net, verbose=False)
     # Compute corr
@@ -320,15 +303,14 @@ def net_corr(
         A = np.delete(adj, idx, axis=1)
         b = adj[:, i].reshape(-1, 1)
         r, p = sts.pearsonr(A, b)
-        for j, s_b in enumerate(sources[i + 1:]):
+        for j, s_b in enumerate(sources[i + 1 :]):
             corr.append([s_a, s_b, r[j], p[j]])
-    corr = pd.DataFrame(corr, columns=['source_a', 'source_b', 'corr', 'pval'])
-    corr['padj'] = sts.false_discovery_control(corr['pval'])
-    corr['abs_corr'] = corr['corr'].abs()
+    corr = pd.DataFrame(corr, columns=["source_a", "source_b", "corr", "pval"])
+    corr["padj"] = sts.false_discovery_control(corr["pval"])
+    corr["abs_corr"] = corr["corr"].abs()
     corr = (
-        corr
-        .sort_values(['padj', 'pval', 'abs_corr'], ascending=[False, True, True])
+        corr.sort_values(["padj", "pval", "abs_corr"], ascending=[False, True, True])
         .reset_index(drop=True)
-        .drop(columns=['abs_corr'])
+        .drop(columns=["abs_corr"])
     )
     return corr
