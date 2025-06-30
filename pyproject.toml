@@ -30,6 +30,7 @@ dependencies = [
   "requests",
   "marsilea",
   "adjustText",
+  "scipy<1.16.0"  # https://github.com/statsmodels/statsmodels/issues/9584
   # for debug logging (referenced from the issue template)
   "session-info2",
 ]
