@@ -12,13 +12,7 @@ from decoupler.pp.net import prune
 
 @docs.dedent
 def leading_edge(
-    df: pd.DataFrame,
-    net: pd.DataFrame,
-    stat: str,
-    name: str,
-    cmap='RdBu_r',
-    color='#88c544',
-    **kwargs
+    df: pd.DataFrame, net: pd.DataFrame, stat: str, name: str, cmap="RdBu_r", color="#88c544", **kwargs
 ) -> tuple[None | Figure, np.ndarray]:
     """
     Plot the running score of GSEA.

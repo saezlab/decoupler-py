@@ -14,11 +14,12 @@ def _extract(
     layer: str | None = None,
     raw: bool = False,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    assert isinstance(data, list | pd.DataFrame | AnnData), \
-    'mat must be a list of [matrix, samples, features], pd.DataFrame (samples x features)\n\
-    or an AnnData instance'
-    assert layer is None or isinstance(layer, str), 'layer must be str or None'
-    assert isinstance(raw, bool), 'raw must be bool'
+    assert isinstance(data, list | pd.DataFrame | AnnData), (
+        "mat must be a list of [matrix, samples, features], pd.DataFrame (samples x features)\n\
+    or an AnnData instance"
+    )
+    assert layer is None or isinstance(layer, str), "layer must be str or None"
+    assert isinstance(raw, bool), "raw must be bool"
     if isinstance(data, list):
         mat, row, col = data
         mat = np.array(mat)
@@ -44,13 +45,9 @@ def _extract(
 
 
 def _validate_mat(
-    mat: np.ndarray,
-    row: np.ndarray,
-    col: np.ndarray,
-    empty: bool = True,
-    verbose: bool = False
+    mat: np.ndarray, row: np.ndarray, col: np.ndarray, empty: bool = True, verbose: bool = False
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    assert isinstance(empty, bool), 'empty must be bool'
+    assert isinstance(empty, bool), "empty must be bool"
     # Accept any sparse format but transform to csr
     if sps.issparse(mat) and not isinstance(mat, sps.csr_matrix):
         mat = sps.csr_matrix(mat)

@@ -139,9 +139,9 @@ def _metric_scores(
     verbose: bool,
     **kwargs,
 ) -> None:
-    assert isinstance(metrics, str | list) or metrics is None, 'metrics must be str or list'
+    assert isinstance(metrics, str | list) or metrics is None, "metrics must be str or list"
     if metrics is None:
-        metrics = ['auc', 'fscore', 'qrank']
+        metrics = ["auc", "fscore", "qrank"]
     elif isinstance(metrics, str):
         metrics = [metrics]
     if runby == "expr":

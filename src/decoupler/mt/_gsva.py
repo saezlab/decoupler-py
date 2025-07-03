@@ -193,9 +193,7 @@ def _dos_srs(r):
 
 
 @nb.njit(parallel=True, cache=True)
-def _rankmat(
-    mat: np.ndarray
-) -> tuple[np.ndarray, np.ndarray]:
+def _rankmat(mat: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     n_rows, n_cols = mat.shape
     dos_mat = np.zeros((n_rows, n_cols), dtype=np.int_)
     srs_mat = np.zeros((n_rows, n_cols), dtype=np.int_)

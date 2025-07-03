@@ -111,7 +111,7 @@ def _shadow_regulon(
     net: np.ndarray,
     reg_sign: float = 1.96,
     n_targets: int | float = 10,
-    penalty: int | float = 20
+    penalty: int | float = 20,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     # Find significant activities
     msk_sign = np.abs(nes_i) > reg_sign
