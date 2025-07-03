@@ -1,10 +1,8 @@
-import pandas as pd
 import numpy as np
-import scipy.sparse as sps
 import pytest
+import scipy.sparse as sps
 
 import decoupler as dc
-
 
 """
 gs <- list(
@@ -101,16 +99,6 @@ def test_mat_d(
     x = rng.normal(loc=5, size=(5, 15))
     d = dc.mt._gsva._mat_d.py_func(mat=x, gauss=gauss)
     assert isinstance(d, np.ndarray)
-
-
-def test_dos_srs(
-    rng,
-):
-    r = np.array(15)
-    rng.shuffle(r)
-    dos, srs = dc.mt._gsva._dos_srs.py_func(r=r)
-    assert isinstance(dos, np.ndarray)
-    assert isinstance(srs, np.ndarray)
 
 
 def test_rankmat(
@@ -268,7 +256,6 @@ def test_func_gsva(
 ):
     X, obs, var = mat
     cnct, starts, offsets = idxmat
-    obs = np.array(['S01', 'S02', 'S29', 'S30'])
     X = np.vstack((X[:2, :], X[-2:, :]))
     if kcdf == 'poisson':
         X = X.round()

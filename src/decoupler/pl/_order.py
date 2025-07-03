@@ -1,8 +1,8 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
+import seaborn as sns
 from matplotlib.colors import to_rgb
 from matplotlib.figure import Figure
-import seaborn as sns
 
 from decoupler._docs import docs
 from decoupler._Plotter import Plotter
@@ -12,7 +12,7 @@ from decoupler._Plotter import Plotter
 def order(
     df: pd.DataFrame,
     mode: str = 'line',
-    kw_order = dict(),
+    kw_order: dict | None = None,
     **kwargs
 ) -> None | Figure:
     """
@@ -33,6 +33,8 @@ def order(
     assert isinstance(df, pd.DataFrame), 'df must be pandas.DataFrame'
     assert isinstance(mode, str) and mode in ['line', 'mat'], \
     'mode must be str and either "line" or "mat"'
+    if kw_order is None:
+        kw_order = {}
     assert isinstance(kw_order, dict), \
     'kw_order must be dict'
     # Process

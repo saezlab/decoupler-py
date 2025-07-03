@@ -37,7 +37,7 @@ def fscore(
     # Instance
     bp = Plotter(**kwargs)
     # Plot
-    args = dict()
+    args = {}
     if hue is not None:
         args['hue'] = hue
         args['palette'] = palette

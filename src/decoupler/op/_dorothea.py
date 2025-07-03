@@ -1,17 +1,16 @@
-import numpy as np
 import pandas as pd
 
 from decoupler._docs import docs
-from decoupler._log import _log
 from decoupler._download import URL_INT, _download
-from decoupler.op._translate import translate
+from decoupler._log import _log
 from decoupler.op._dtype import _infer_dtypes
+from decoupler.op._translate import translate
 
 
 @docs.dedent
 def dorothea(
     organism: str = 'human',
-    levels: str | list = ['A', 'B', 'C'],
+    levels: str | list | None = None,
     dict_weights: dict | None = None,
     license: str = 'academic',
     verbose: bool = False,
@@ -42,8 +41,10 @@ def dorothea(
     -------
     Dataframe in long format containing target genes for each TF with their associated weights and confidence level.
     """
-    assert isinstance(levels, (str, list)), 'levels must be str or list'
-    if isinstance(levels, str):
+    assert isinstance(levels, str | list) or levels is None, 'levels must be str or list'
+    if levels is None:
+        levels = ['A', 'B', 'C']
+    elif isinstance(levels, str):
         levels = [levels]
     assert all(l in {'A', 'B', 'C', 'D'} for l in levels), 'levels can only contain any of these values: A, B, C, and/or D'
     assert isinstance(dict_weights, dict) or dict_weights is None, 'dict_weights must be dict or None'

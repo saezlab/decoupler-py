@@ -1,11 +1,9 @@
-from typing import Tuple
-
-import numpy as np
-import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
+import numpy as np
+import pandas as pd
 import seaborn as sns
+from matplotlib.figure import Figure
 
 from decoupler._docs import docs
 from decoupler._Plotter import Plotter
@@ -16,11 +14,11 @@ def _set_limits(
     vcenter: int | float,
     vmax: int | float,
     values: np.ndarray
-) -> Tuple[float, float, float]:
+) -> tuple(float, float, float):
     assert np.isfinite(values).all(), 'values in data mut be finite'
-    assert isinstance(vmin, (int, float)) or vmin is None, 'vmin must be numerical or None'
-    assert isinstance(vcenter, (int, float)) or vcenter is None, 'vcenter must be numerical or None'
-    assert isinstance(vmax, (int, float)) or vmax is None, 'vmax must be numerical or None'
+    assert isinstance(vmin, int | float) or vmin is None, 'vmin must be numerical or None'
+    assert isinstance(vcenter, int | float) or vcenter is None, 'vcenter must be numerical or None'
+    assert isinstance(vmax, int | float) or vmax is None, 'vmax must be numerical or None'
     if vmin is None:
         vmin = values.min()
     if vmax is None:
@@ -102,7 +100,7 @@ def barplot(
     divnorm = matplotlib.colors.TwoSlopeNorm(vmin=vmin, vcenter=vcenter, vmax=vmax)
     cmap_f = plt.get_cmap(cmap)
     div_colors = cmap_f(divnorm(sizes))
-    for bar, color in zip(bp.ax.containers[0], div_colors):
+    for bar, color in zip(bp.ax.containers[0], div_colors, strict=True):
         bar.set_facecolor(color)
     # Add legend
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=divnorm)

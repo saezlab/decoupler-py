@@ -6,10 +6,10 @@ import decoupler as dc
 @pytest.mark.parametrize(
     'methods,args,cons,anndata',
     [
-        ['all', dict(), True, True],
-        ['aucell', dict(aucell=dict(n_up=3)), True, False],
-        [['ulm'], dict(), False, True],
-        [['ulm', 'ora'], dict(ulm=dict(), ora=dict(n_up=3)), False, False]
+        ['all', {}, True, True],
+        ['aucell', {'aucell': {'n_up':3}}, True, False],
+        [['ulm'], {}, False, True],
+        [['ulm', 'ora'], {'ulm': {}, 'ora': {'n_up': 3}}, False, False]
     ]
 )
 def test_decouple(

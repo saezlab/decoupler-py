@@ -15,9 +15,9 @@ def test_show_organisms():
 @pytest.mark.parametrize(
     'lst,my_dict,one_to_many',
     [
-        [['a', 'b', 'c', 'd'], dict(a=['B', 'C'], b=['A', 'C'], c=['A', 'B'], d='D'), 1],
-        [['a', 'b', 'c', 'd'], dict(c=['A', 'B']), 1],
-        [['a', 'b', 'c', 'd'], dict(a=['B', 'C'], b=['A', 'C'], c=['A', 'B'], d='D'), 10],
+        [['a', 'b', 'c', 'd'], {'a': ['B', 'C'], 'b': ['A', 'C'], 'c': ['A', 'B'], 'd': 'D'}, 1],
+        [['a', 'b', 'c', 'd'], {'c': ['A', 'B']}, 1],
+        [['a', 'b', 'c', 'd'], {'a': ['B', 'C'], 'b': ['A', 'C'], 'c': ['A', 'B'], 'd': 'D'}, 10],
     ]
 )
 def test_replace_subunits(

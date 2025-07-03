@@ -1,6 +1,6 @@
 import pandas as pd
-import scipy.sparse as sps
 import pytest
+import scipy.sparse as sps
 
 import decoupler as dc
 

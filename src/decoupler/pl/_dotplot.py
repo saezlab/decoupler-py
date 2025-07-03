@@ -1,8 +1,8 @@
-import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
+import numpy as np
+import pandas as pd
 from matplotlib.colors import TwoSlopeNorm
+from matplotlib.figure import Figure
 
 from decoupler._docs import docs
 from decoupler._Plotter import Plotter
@@ -49,9 +49,9 @@ def dotplot(
     assert isinstance(y, str) and y in df.columns, 'y must be str and in df.columns'
     assert isinstance(c, str) and c in df.columns, 'c must be str and in df.columns'
     assert isinstance(s, str) and s in df.columns, 's must be str and in df.columns'
-    assert isinstance(top, (int, float)) and top > 0, 'top must be numerical and > 0'
-    assert isinstance(scale, (int, float)), 'scale must be numerical'
-    assert isinstance(vcenter, (int, float)) or vcenter is None, 'vcenter must be numeric or None'
+    assert isinstance(top, int | float) and top > 0, 'top must be numerical and > 0'
+    assert isinstance(scale, int | float), 'scale must be numerical'
+    assert isinstance(vcenter, int | float) or vcenter is None, 'vcenter must be numeric or None'
     # Filter by top
     df = df.copy()
     df['abs_x_col'] = df[x].abs()

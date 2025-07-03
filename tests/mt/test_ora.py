@@ -1,9 +1,9 @@
 import math
 
 import numpy as np
-import scipy.stats as sts
-import scipy.sparse as sps
 import pytest
+import scipy.sparse as sps
+import scipy.stats as sts
 
 import decoupler as dc
 

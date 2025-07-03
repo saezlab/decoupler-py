@@ -1,5 +1,5 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
 from anndata import AnnData
 from matplotlib.figure import Figure
 

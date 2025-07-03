@@ -1,8 +1,8 @@
 import warnings
 
+import anndata as ad
 import pandas as pd
 import pytest
-import anndata as ad
 
 import decoupler as dc
 

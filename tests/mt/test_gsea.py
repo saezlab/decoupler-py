@@ -1,8 +1,8 @@
+import gseapy as gp
 import numpy as np
 import pandas as pd
 import pytest
 
-import gseapy as gp
 import decoupler as dc
 
 
@@ -115,7 +115,6 @@ def test_func_gsea(
         seed=seed,
     ).res2d
     gp_es = res.pivot(index='Name', columns='Term', values='NES').astype(float)
-    gp_pv = res.pivot(index='Name', columns='Term', values='FDR q-val').astype(float)
     dc_es, dc_pv = dc.mt._gsea._func_gsea(
         mat=X,
         cnct=cnct,

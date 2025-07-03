@@ -1,7 +1,8 @@
+import io
+
+import pandas as pd
 import requests
 from tqdm import tqdm
-import pandas as pd
-import io
 
 from decoupler._log import _log
 
@@ -28,6 +29,6 @@ def _download(
     # Read into pandas
     data = io.BytesIO(b"".join(chunks))
     df = pd.read_csv(data, **kwargs)
-    m = f'Download finished'
+    m = 'Download finished'
     _log(m, level='info', verbose=verbose)
     return df

@@ -1,11 +1,11 @@
-from typing import Tuple, Callable
+from collections.abc import Callable
 from functools import partial
 
-from anndata import AnnData
-import pandas as pd
 import numpy as np
+import pandas as pd
 import scipy.sparse as sps
 import scipy.spatial as scs
+from anndata import AnnData
 
 from decoupler._docs import docs
 from decoupler._log import _log
@@ -19,6 +19,7 @@ def get_obsm(
 ) -> AnnData:
     """
     Extracts values stored in ``.obsm`` as a new AnnData object.
+
     This allows to reuse ``scanpy`` functions to visualise enrichment scores.
 
     Parameters
@@ -201,7 +202,7 @@ def _psbulk(
     new_obs: pd.DataFrame,
     mode: Callable,
     verbose: bool = False,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple(np.ndarray, np.ndarray, np.ndarray, np.ndarray):
     # Init empty variables
     psbulk = np.zeros((n_rows, n_cols))
     props = np.zeros((n_rows, n_cols))
@@ -324,8 +325,8 @@ def pseudobulk(
     # Validate
     assert isinstance(adata, AnnData), 'adata must be an AnnData instance'
     assert isinstance(sample_col, str), 'sample_col must be a str'
-    assert isinstance(groups_col, (str, list)) or groups_col is None, 'groups_col must be str or None'
-    assert isinstance(mode, (str, dict)) or callable(mode), 'mode must be str, dict or callable'
+    assert isinstance(groups_col, str | list) or groups_col is None, 'groups_col must be str or None'
+    assert isinstance(mode, str | dict) or callable(mode), 'mode must be str, dict or callable'
     # Extract data
     X, obs, var = extract(adata, layer=layer, raw=raw, empty=empty, verbose=verbose)
     obs = adata.obs.loc[obs].copy()
@@ -360,7 +361,7 @@ def pseudobulk(
                 verbose=verbose,
             )
             psbulks.append(psbulk)
-        layers = {k: v for k, v in zip(mode.keys(), psbulks)}
+        layers = dict(zip(mode.keys(), psbulks, strict=False))
         layers['psbulk_props'] = props
     else:
         # Compute psbulk
@@ -420,9 +421,9 @@ def filter_samples(
     assert cols.issubset(adata.obs.columns), \
     'psbulk_cells and psbulk_counts must be in obs, ' \
     'run again decoupler.pp.pseudobulk'
-    assert isinstance(min_cells, (int, float)) and min_cells > 0., \
+    assert isinstance(min_cells, int | float) and min_cells > 0., \
     'min_cells must be numerical and bigger than 0'
-    assert isinstance(min_counts, (int, float)), \
+    assert isinstance(min_counts, int | float), \
     'min_counts must be numerical'
     msk_cells = adata.obs['psbulk_cells'] >= min_cells
     msk_counts = adata.obs['psbulk_counts'] >= min_counts
@@ -463,7 +464,7 @@ def _cpm(
     X: np.ndarray,
     lib_size: float | np.ndarray,
 ) -> np.ndarray:
-    if isinstance(lib_size, (int, float)):
+    if isinstance(lib_size, int | float):
         cpm = X / lib_size * 1e6
     else:
         cpm = X / lib_size.reshape(-1, 1) * 1e6
@@ -473,7 +474,7 @@ def _ssize_tcount(
     X: np.ndarray,
     lib_size: float | None = None,
     min_count: int = 10,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple(np.ndarray, np.ndarray):
     if isinstance(X, sps.csr_matrix):
         X = X.toarray()
     # Compute lib_size if needed
@@ -527,15 +528,15 @@ def filter_by_expr(
     """
     # Validate
     assert isinstance(adata, AnnData), 'adata must be AnnData'
-    assert isinstance(lib_size, (int, float)) or lib_size is None, \
+    assert isinstance(lib_size, int | float) or lib_size is None, \
     'lib_size must be numeric or None'
-    assert isinstance(min_count, (int, float)) and min_count >= 0, \
+    assert isinstance(min_count, int | float) and min_count >= 0, \
     'min_count must be numeric and > 0'
-    assert isinstance(min_total_count, (int, float)) and min_total_count >= 0, \
+    assert isinstance(min_total_count, int | float) and min_total_count >= 0, \
     'min_total_count must be numeric and > 0'
-    assert isinstance(large_n, (int, float)) and large_n >= 0, \
+    assert isinstance(large_n, int | float) and large_n >= 0, \
     'large_n must be numeric and > 0'
-    assert isinstance(min_prop, (int, float)) and 1 >= min_prop >= 0, \
+    assert isinstance(min_prop, int | float) and 1 >= min_prop >= 0, \
     'min_prop must be numeric and between 0 and 1'
     # Extract inputs
     X, _, var_names = extract(adata, empty=False)
@@ -596,9 +597,9 @@ def filter_by_prop(
     assert isinstance(adata, AnnData), 'adata must be AnnData'
     assert 'psbulk_props' in adata.layers.keys(), \
     'psbulk_props must be in adata.layers, use this function afer running decoupler.pp.pseudobulk'
-    assert isinstance(min_prop, (int, float)) and 1 >= min_prop >= 0, \
+    assert isinstance(min_prop, int | float) and 1 >= min_prop >= 0, \
     'min_prop must be numeric and between 0 and 1'
-    assert isinstance(min_smpls, (int, float)) and adata.obs_names.size >= min_smpls >= 0, \
+    assert isinstance(min_smpls, int | float) and adata.obs_names.size >= min_smpls >= 0, \
     f'min_smpls must be numeric and {adata.obs_names.size} > 0'
     # Extract props
     props = adata.layers['psbulk_props']
@@ -641,9 +642,9 @@ def knn(
     assert isinstance(adata, AnnData), 'adata must be anndata.AnnData'
     assert key in adata.obsm, \
     f'adata.obsm must contain the spatial coordinates in adata.obsm["{key}"]'
-    assert isinstance(bw, (int, float)) and bw > 0, 'bw must be numeric and > 0'
+    assert isinstance(bw, int | float) and bw > 0, 'bw must be numeric and > 0'
     assert isinstance(max_nn, int) and max_nn > 0, 'max_nn must be int and > 0'
-    assert isinstance(cutoff, (int, float)) and cutoff > 0, \
+    assert isinstance(cutoff, int | float) and cutoff > 0, \
     'cutoff must be numeric and > 0'
     # Find NN and their eucl dists
     coords = adata.obsm[key]
@@ -695,7 +696,7 @@ def bin_order(
     assert isinstance(adata, AnnData), 'adata must be anndata.AnnData'
     assert isinstance(order, str) and order in adata.obs.columns, \
     'order must be str and in adata.obs.columns'
-    assert isinstance(names, (str, list)) or names is None, \
+    assert isinstance(names, str | list) or names is None, \
     'names must be str, list or None'
     assert (isinstance(label, str) and label in adata.obs.columns) or label is None, \
     'label must be str and in adata.obs.columns, or None'
@@ -718,8 +719,8 @@ def bin_order(
     if label is not None:
         adata.obs[label] = pd.Categorical(adata.obs[label])
         if f'{label}_colors' not in adata.uns.keys():
-            from matplotlib.colors import to_hex
             import matplotlib.pyplot as plt
+            from matplotlib.colors import to_hex
             cmap = plt.get_cmap('tab10')
             adata.uns[f'{label}_colors'] = [to_hex(cmap(i)) for i in adata.obs[label].sort_values().cat.codes.unique()]
         cols += ['label', 'color']

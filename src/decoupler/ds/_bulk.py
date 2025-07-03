@@ -1,8 +1,8 @@
 from anndata import AnnData
 
 from decoupler._docs import docs
-from decoupler._log import _log
 from decoupler._download import _download
+from decoupler._log import _log
 
 
 @docs.dedent
@@ -10,6 +10,8 @@ def hsctgfb(
     verbose: bool = False,
 ) -> AnnData:
     """
+    Hepatic stellate cells (HSC).
+
     Downloads RNA-seq bulk data consisting of 6 samples of hepatic stellate cells
     (HSC) where three of them were activated by the cytokine
     Transforming growth factor (TGF-β) :cite:`hsc_tgfb`.
@@ -49,6 +51,8 @@ def knocktf(
     verbose: bool = False,
 ) -> AnnData:
     """
+    KnockTF perturbation database.
+
     Downloads gene contrast statistics from KnockTF :cite:`knocktf`,
     a large collection of transcription factor (TF) RNA-seq
     perturbation experiments.
@@ -67,7 +71,7 @@ def knocktf(
     -------
     AnnData object.
     """
-    assert isinstance(thr_fc, (int, float)) or thr_fc is None, \
+    assert isinstance(thr_fc, int | float) or thr_fc is None, \
     'thr_fc must be numeric or None'
     # Download
     url = (

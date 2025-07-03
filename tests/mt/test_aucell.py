@@ -1,10 +1,8 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
 import scipy.sparse as sps
-import pytest
 
 import decoupler as dc
-
 
 """
 gs <- list(

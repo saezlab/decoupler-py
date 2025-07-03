@@ -1,16 +1,16 @@
-from typing import Tuple, Callable
+from collections.abc import Callable
 
-import pandas as pd
 import numpy as np
-from anndata import AnnData
+import pandas as pd
 import scipy.sparse as sps
 import scipy.stats as sts
+from anndata import AnnData
 from tqdm.auto import tqdm
 
-from decoupler._log import _log
 from decoupler._datatype import DataType
-from decoupler.pp.net import prune, adjmat, idxmat
+from decoupler._log import _log
 from decoupler.pp.data import extract
+from decoupler.pp.net import adjmat, idxmat, prune
 
 
 def _return(
@@ -19,7 +19,7 @@ def _return(
     es: pd.DataFrame,
     pv: pd.DataFrame,
     verbose: bool = False,
-) -> Tuple[pd.DataFrame, pd.DataFrame] | AnnData | None:
+) -> tuple(pd.DataFrame, pd.DataFrame) | AnnData | None:
     if isinstance(data, AnnData):
         if data.obs_names.size != es.index.size:
             m = 'Provided AnnData contains empty observations, returning repaired object'
@@ -52,7 +52,7 @@ def _run(
     bsize: int | float = 250_000,
     verbose: bool = False,
     **kwargs
-) -> Tuple[pd.DataFrame, pd.DataFrame] | AnnData | None:
+) -> tuple(pd.DataFrame, pd.DataFrame) | AnnData | None:
     _log(f'{name} - Running {name}', level='info', verbose=verbose)
     # Process data
     mat, obs, var = extract(data, layer=layer, raw=raw, empty=empty, verbose=verbose)

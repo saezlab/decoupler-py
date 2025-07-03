@@ -17,4 +17,4 @@ def test_ensmbl_to_symbol(
     lst_sym,
 ):
     lst_trn = dc.ds.ensmbl_to_symbol(genes=lst_ens, organism=organism)
-    assert all(s == t for s, t in zip(lst_trn, lst_sym))
+    assert all(s == t for s, t in zip(lst_trn, lst_sym, strict=False))

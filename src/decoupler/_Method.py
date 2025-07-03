@@ -1,9 +1,7 @@
-from typing import Callable
-import textwrap
+from collections.abc import Callable
 
 import pandas as pd
 
-from decoupler._docs import docs
 from decoupler._datatype import DataType
 from decoupler.mt._run import _run
 

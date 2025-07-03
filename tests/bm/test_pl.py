@@ -1,11 +1,13 @@
-import pandas as pd
 import matplotlib
+import pandas as pd
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
 import pytest
+from matplotlib.figure import Figure
 
 import decoupler as dc
+
 
 @pytest.fixture
 def df():

@@ -1,9 +1,9 @@
 import pandas as pd
 
-from decoupler._docs import docs
 from decoupler._datatype import DataType
-from decoupler.mt._methods import _methods
+from decoupler._docs import docs
 from decoupler.mt._consensus import consensus
+from decoupler.mt._methods import _methods
 
 
 @docs.dedent
@@ -11,7 +11,7 @@ def decouple(
     data: DataType,
     net: pd.DataFrame,
     methods: str | list = 'all',
-    args: dict = dict(),
+    args: dict | None = None,
     cons: bool = False,
     **kwargs
 ) -> dict | None:
@@ -42,6 +42,8 @@ def decouple(
         else:
             methods = [methods]
     methods = set(methods)
+    if args is None:
+        args = {}
     assert methods.issubset(_mdict), \
     f'methods={methods} must be in decoupler.\nUse decoupler.mt.show_methods to check which ones are available'
     assert all(k in methods for k in args), \

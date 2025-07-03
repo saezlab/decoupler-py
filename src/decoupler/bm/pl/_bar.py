@@ -4,7 +4,6 @@ from matplotlib.figure import Figure
 
 from decoupler._docs import docs
 from decoupler._Plotter import Plotter
-from decoupler.bm.pl._format import _format
 
 
 @docs.dedent
@@ -47,7 +46,7 @@ def bar(
         .sort_values(ascending=False)
         .index
     )
-    args = dict()
+    args = {}
     if hue is not None:
         args['hue'] = hue
         args['palette'] = palette

@@ -1,15 +1,15 @@
-import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.colors import to_rgb, Normalize
-from matplotlib.cm import ScalarMappable
-from matplotlib.figure import Figure
+import numpy as np
+import pandas as pd
 import seaborn as sns
 from anndata import AnnData
+from matplotlib.cm import ScalarMappable
+from matplotlib.colors import Normalize, to_rgb
+from matplotlib.figure import Figure
 
 from decoupler._docs import docs
 from decoupler._Plotter import Plotter
-from decoupler.pp.anndata import get_obsm, bin_order
+from decoupler.pp.anndata import bin_order, get_obsm
 from decoupler.pp.net import prune
 
 
@@ -144,7 +144,7 @@ def order_targets(
     omin, omax = df_ftr['order'].min(), df_ftr['order'].max()
     # Add neg targets
     if neg_names.size > 0:
-        img = ax.imshow(mat.loc[neg_names], extent=[omin, omax, 0, neg_names.size], aspect='auto', cmap=neg_cmap, vmin=vmin, vmax=vmax)
+        ax.imshow(mat.loc[neg_names], extent=[omin, omax, 0, neg_names.size], aspect='auto', cmap=neg_cmap, vmin=vmin, vmax=vmax)
         yticklabels.extend(list(neg_names)[::-1])
         cbar_mappable = ScalarMappable(cmap=neg_cmap, norm=Normalize(vmin=vmin, vmax=vmax))
         pos = ax.get_position().bounds
@@ -154,7 +154,7 @@ def order_targets(
     ax.axhline(y=neg_names.size, c='black', lw=1)
     # Add pos targets
     if pos_names.size > 0:
-        img = ax.imshow(mat.loc[pos_names], extent=[omin, omax, neg_names.size, neg_names.size + pos_names.size], aspect='auto', cmap='Reds', vmin=vmin, vmax=vmax)
+        ax.imshow(mat.loc[pos_names], extent=[omin, omax, neg_names.size, neg_names.size + pos_names.size], aspect='auto', cmap='Reds', vmin=vmin, vmax=vmax)
         yticklabels.extend(list(pos_names)[::-1])
         cbar_mappable = ScalarMappable(cmap=pos_cmap, norm=Normalize(vmin=vmin, vmax=vmax))
         pos = ax.get_position().bounds

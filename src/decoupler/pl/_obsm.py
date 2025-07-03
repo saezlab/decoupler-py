@@ -1,13 +1,11 @@
-from typing import Tuple
-
-import pandas as pd
-import numpy as np
-import matplotlib
-import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
-from anndata import AnnData
 import marsilea as ma
 import marsilea.plotter as mp
+import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from anndata import AnnData
+from matplotlib.figure import Figure
 
 from decoupler._docs import docs
 from decoupler._Plotter import Plotter
@@ -18,13 +16,13 @@ def _input(
     uns_key: str,
     names: str | list | None = None,
     nvar: int | float | list | None = 10,
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
+) -> tuple(pd.DataFrame, pd.DataFrame):
     assert isinstance(adata, AnnData), 'adata must be adata.AnnData'
     assert isinstance(uns_key, str) and uns_key in adata.uns, \
     'uns_key must be str and in adata.uns'
-    assert isinstance(names, (str, list)) or names is None, \
+    assert isinstance(names, str | list) or names is None, \
     'names must be str, list or None'
-    assert isinstance(nvar, (int, float, str, list)) or nvar is None, \
+    assert isinstance(nvar, int | float | str | list) or nvar is None, \
     'nvar must be numeric, list or None'
     # Filter stats by obs names
     stats = adata.uns[uns_key]
@@ -42,7 +40,7 @@ def _input(
     obsm = adata.obsm[obsm_key]
     if isinstance(obsm, pd.DataFrame):
         var_names = obsm.std(ddof=1, axis=0).sort_values(ascending=False).index
-        if isinstance(nvar, (int, float)):
+        if isinstance(nvar, int | float):
             var_names = var_names[:int(nvar)]
         elif isinstance(nvar, list):
             var_names = nvar
@@ -50,7 +48,7 @@ def _input(
         stats = stats[stats['obsm'].isin(var_names)]
     else:
         var_names = sorted(stats['obsm'].unique())
-        if isinstance(nvar, (int, float)):
+        if isinstance(nvar, int | float):
             var_names = var_names[:nvar]
             obsm = obsm[:, :nvar]
         elif isinstance(nvar, list):
@@ -80,10 +78,10 @@ def obsm(
     nvar: int | float | str | list | None = 10,
     dendrogram: bool = True,
     thr_sign: float = 0.05,
-    titles: list = ['Scores', 'Stats'],
+    titles: list | None = None,
     cmap_stat: str = 'Purples',
     cmap_obsm: str = 'BrBG',
-    cmap_obs: dict = dict(),
+    cmap_obs: dict | None = None,
     **kwargs
 ) -> None | Figure:
     """
@@ -112,11 +110,16 @@ def obsm(
         Dictionary of colormaps containing a palette for each metadata covariate being plotted.
     %(plot)s
     """
+    # Validate
     assert isinstance(dendrogram, bool), 'dendrogram must be bool'
     assert isinstance(thr_sign, float) and 1 >= thr_sign >= 0, \
     'thr_sign must be float and between 0 and 1'
+    if titles is None:
+        titles = ['Scores', 'Stats']
     assert isinstance(titles, list) and len(titles) == 2, \
     'titles must be list and with 2 elements'
+    if cmap_obs is None:
+        cmap_obs = ['Scores', 'Stats']
     assert isinstance(cmap_obs, dict), \
     'cmap_obs must be dict'
     # Extract

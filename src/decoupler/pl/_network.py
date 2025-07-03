@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 from matplotlib.lines import Line2D
 
-from decoupler._odeps import ig, Graph, _check_import
 from decoupler._docs import docs
+from decoupler._odeps import Graph, _check_import, ig
 from decoupler._Plotter import Plotter
 
 
@@ -16,7 +16,7 @@ def _src_idxs(
     sources: int | list | str,
     by_abs: bool,
 ) -> np.ndarray:
-    assert isinstance(sources, (int, list, str)), "sources must be int, list or str"
+    assert isinstance(sources, int | list | str), "sources must be int, list or str"
     if isinstance(sources, int):
         if by_abs:
             s_idx = np.argsort(-abs(score.values[0]))[:sources]
@@ -35,7 +35,7 @@ def _trg_idxs(
     targets: int | list | str,
     by_abs: bool,
 ) -> np.ndarray:
-    assert isinstance(targets, (int, list, str)), "targets must be int, list or str"
+    assert isinstance(targets, int | list | str), "targets must be int, list or str"
     if isinstance(targets, int):
         net["prod"] = [
             data.iloc[0][t] * w if t in data.columns else 0 for t, w in zip(net["target"], net["weight"], strict=False)
@@ -312,8 +312,8 @@ def network(
     )
     handles = [square, circle, line1, line2]
     labels = ["Source", "Target", "Positive", "Negative"]
-    legend = ax3.legend(
-        handles=[square, circle, line1, line2],
+    ax3.legend(
+        handles=handles,
         labels=labels,
         frameon=False,
         loc="center",

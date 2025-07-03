@@ -1,12 +1,12 @@
 import logging
 
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.colors import to_hex
-from matplotlib.figure import Figure
 import marsilea as ma
 import marsilea.plotter as mp
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from matplotlib.colors import to_hex
+from matplotlib.figure import Figure
 
 from decoupler._docs import docs
 from decoupler._Plotter import Plotter
@@ -32,9 +32,9 @@ def _palette(
         cmap = plt.get_cmap(cmap)
         sidx = np.argsort(np.argsort(labels))
         colors = np.array([to_hex(cmap(i)) for i in rnks])
-        palette = dict(zip(rnks, colors[sidx]))
+        palette = dict(zip(rnks, colors[sidx], strict=True))
     else:
-        palette = dict(zip(rnks, [cmap for _ in range(rnks.size)]))
+        palette = dict(zip(rnks, [cmap for _ in range(rnks.size)], strict=True))
     return palette
 
 
@@ -42,7 +42,7 @@ def _palette(
 def summary(
     df: pd.DataFrame,
     y: str,
-    metrics: list = ['auc', 'fscore', 'qrank'],
+    metrics: list | None = None,
     cmap_y: str = 'tab20',
     cmap_auc: str = 'Greens',
     cmap_fscore: str = 'Blues',
@@ -71,8 +71,10 @@ def summary(
     # Validate
     assert isinstance(df, pd.DataFrame), 'df must be pandas.DataFrame'
     assert isinstance(y, str) and y in df.columns, 'y must be str and in df.columns'
-    assert isinstance(metrics, (str, list)), 'metrics must be str or list'
-    if isinstance(metrics, str):
+    assert isinstance(metrics, str | list) or metrics is None, 'metrics must be str or list'
+    if metrics is None:
+        metrics = ['auc', 'fscore', 'qrank']
+    elif isinstance(metrics, str):
         metrics = [metrics]
     assert set(metrics).issubset({'auc', 'fscore', 'qrank'})
     logging.getLogger('matplotlib').setLevel(logging.WARNING)
@@ -91,7 +93,8 @@ def summary(
     pad = 0.05
     if 'auc' in metrics:
         cnames = ['auroc', 'auprc', 'H(auroc, auprc)']
-        h = ma.Heatmap(df[cnames], cmap=cmap_auc, name="h_auc", width=1, height=3, lw=.1, cbar_kws=dict(orientation="horizontal", title="Scaled auc"))
+        h = ma.Heatmap(df[cnames], cmap=cmap_auc, name="h_auc", width=1, height=3, lw=.1,
+                       cbar_kws={'orientation': 'horizontal', 'title': 'Scaled auc'})
         h.group_cols(['auc', 'auc', 'auc'], order=['auc'])
         h.add_top(
             ma.plotter.Chunk(['auc'], fill_colors=[_mcolor(cmap_auc)], align='center')
@@ -100,7 +103,8 @@ def summary(
         lst_h.append(h)
     if 'fscore' in metrics:
         cnames = ['precision', 'recall', 'F-score']
-        h = ma.Heatmap(df[cnames], cmap=cmap_fscore, name="h_fsc", width=1, height=2, lw=.1, cbar_kws=dict(orientation="horizontal", title="Scaled fscore"))
+        h = ma.Heatmap(df[cnames], cmap=cmap_fscore, name="h_fsc", width=1, height=2, lw=.1,
+                       cbar_kws={'orientation':'horizontal', 'title':'Scaled fscore'})
         h.group_cols(['fscore', 'fscore', 'fscore'], order=['fscore'])
         h.add_top(
             ma.plotter.Chunk(['fscore'], fill_colors=[_mcolor(cmap_fscore)], align='center')
@@ -109,7 +113,8 @@ def summary(
         lst_h.append(h)
     if 'qrank' in metrics:
         cnames = ['-log10(pval)', '1-qrank', 'H(1-qrank, -log10(pval))']
-        h = ma.Heatmap(df[cnames], cmap=cmap_qrank, name="h_rnk", width=1, height=1, lw=.1, cbar_kws=dict(orientation="horizontal", title="Scaled qrank"))
+        h = ma.Heatmap(df[cnames], cmap=cmap_qrank, name="h_rnk", width=1, height=1, lw=.1,
+                       cbar_kws={'orientation':"horizontal", 'title':'Scaled qrank'})
         h.group_cols(['qrank', 'qrank', 'qrank'], order=['qrank'])
         h.add_top(
             ma.plotter.Chunk(['qrank'], fill_colors=[_mcolor(cmap_qrank)], align='center')

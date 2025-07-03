@@ -1,11 +1,11 @@
 from itertools import product
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from decoupler._docs import docs
-from decoupler._log import _log
 from decoupler._download import _download
+from decoupler._log import _log
 
 
 def show_organisms(
@@ -104,7 +104,7 @@ def _translate(
 @docs.dedent
 def translate(
     net: pd.DataFrame,
-    columns: str | list = ['source', 'target', 'genesymbol'],
+    columns: str | list | None = None,
     target_organism: str = 'mouse',
     min_evidence: int | float = 3,
     one_to_many: int | float = 5,
@@ -112,6 +112,7 @@ def translate(
 ) -> pd.DataFrame:
     """
     Translates gene symbols from human to a target organism using the HCOP database.
+
     Check which organisms are available with ``decoupler.op.show_organisms``.
 
     HCOP is a composite database combining data from various orthology resources.
@@ -143,16 +144,18 @@ def translate(
     """
     # Validate
     assert isinstance(net, pd.DataFrame), 'net must be a pd.DataFrame'
-    assert isinstance(columns, (str, list)), 'columns must be str or list'
-    if isinstance(columns, str):
+    assert isinstance(columns, str | list), 'columns must be str or list'
+    if columns is None:
+        columns = ['source', 'target', 'genesymbol']
+    elif isinstance(columns, str):
         columns = [columns]
     columns = [c for c in columns if c in net.columns]
     assert columns, f'columns must be one of these: {net.columns}'
     assert isinstance(target_organism, str), 'target_organism must be str'
     valid_orgs = show_organisms()
     assert target_organism in valid_orgs, f'target_organism must be one of these: {valid_orgs}'
-    assert isinstance(min_evidence, (int, float)) and min_evidence > 0, 'min_evidence must be numerical and > 0'
-    assert isinstance(one_to_many, (int, float)) and one_to_many > 0, 'one_to_many must be numerical and > 0'
+    assert isinstance(min_evidence, int | float) and min_evidence > 0, 'min_evidence must be numerical and > 0'
+    assert isinstance(one_to_many, int | float) and one_to_many > 0, 'one_to_many must be numerical and > 0'
     _log(f'Translating to {target_organism}', level='info', verbose=verbose)
     # Handle missmatch lavels from ebi db
     target_col = f'{target_organism}_symbol'
@@ -166,7 +169,7 @@ def translate(
     map_df = pd.read_csv(url, sep="\t", low_memory=False)
     map_df['evidence'] = map_df['support'].apply(lambda x: len(x.split(",")))
     map_df = map_df[map_df['evidence'] >= min_evidence]
-    map_df = map_df[[f'human_symbol', target_col]]
+    map_df = map_df[['human_symbol', target_col]]
     map_df = map_df.rename(columns={'human_symbol': 'source', target_col: 'target'})
     map_dict = map_df.groupby('source')['target'].apply(list).to_dict()
     for col in columns:

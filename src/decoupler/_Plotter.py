@@ -27,7 +27,7 @@ class Plotter:
         'ax must be matplotlib.axes._axes.Axes or None'
         assert isinstance(figsize, tuple), \
         'figsize must be tuple'
-        assert isinstance(dpi, (int, float)) and dpi > 0, \
+        assert isinstance(dpi, int | float) and dpi > 0, \
         'dpi must be numerical and > 0'
         assert isinstance(return_fig, bool), \
         'return_fig must be bool'

@@ -1,8 +1,8 @@
 import logging
 import tempfile
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 import pytest
 
 import decoupler as dc
@@ -60,7 +60,7 @@ def test_prune(
     nrow_equal,
     raise_err,
 ):
-    features = ['G{:02d}'.format(i + 1) for i in range(20)]
+    features = [f'G{i + 1:02d}' for i in range(20)]
     if raise_err:
         with pytest.raises(AssertionError):
             dc.pp.net.prune(features=features, net=net, tmin=tmin)
@@ -177,27 +177,27 @@ def test_shuffle_net(
     net,
     seed,
 ):
-    s_w_net = net.groupby(['source'])['weight'].apply(lambda x: set(sorted(x)))
-    s_t_net = net.groupby(['source'])['target'].apply(lambda x: set(sorted(x)))
+    s_w_net = net.groupby(['source'])['weight'].apply(lambda x: set(x))
+    s_t_net = net.groupby(['source'])['target'].apply(lambda x: set(x))
     t_net = dc.pp.shuffle_net(net=net, target=True, weight=False, same_seed=False, seed=seed)
-    s_t_t_net = t_net.groupby(['source'])['target'].apply(lambda x: set(sorted(x)))
-    s_w_t_net = t_net.groupby(['source'])['weight'].apply(lambda x: set(sorted(x)))
+    s_t_t_net = t_net.groupby(['source'])['target'].apply(lambda x: set(x))
+    s_w_t_net = t_net.groupby(['source'])['weight'].apply(lambda x: set(x))
     inter = s_w_net.index.intersection(s_w_t_net.index)
     assert inter.size > 0
     assert not all(s_t_t_net.loc[s].issubset(s_t_net.loc[s]) for s in inter)
     assert all(s_w_t_net.loc[s].issubset(s_w_net.loc[s]) for s in inter)
     w_net = dc.pp.shuffle_net(net=net, target=False, weight=True, same_seed=False, seed=seed)
-    s_t_w_net = w_net.groupby(['source'])['target'].apply(lambda x: set(sorted(x)))
-    s_w_w_net = w_net.groupby(['source'])['weight'].apply(lambda x: set(sorted(x)))
+    s_t_w_net = w_net.groupby(['source'])['target'].apply(lambda x: set(x))
+    s_w_w_net = w_net.groupby(['source'])['weight'].apply(lambda x: set(x))
     inter = s_w_net.index.intersection(s_w_w_net.index)
     assert inter.size > 0
     assert all(s_t_w_net.loc[s].issubset(s_t_net.loc[s]) for s in inter)
     assert not all(s_w_w_net.loc[s].issubset(s_w_net.loc[s]) for s in inter)
     tw_net = dc.pp.shuffle_net(net=net, target=True, weight=True, same_seed=False, seed=seed)
     stw_net = dc.pp.shuffle_net(net=net, target=True, weight=True, same_seed=True, seed=seed)
-    t_net = net.groupby(['target'])['weight'].apply(lambda x: set(sorted(x)))
-    t_tw_net = tw_net.groupby(['target'])['weight'].apply(lambda x: set(sorted(x)))
-    t_stw_net = stw_net.groupby(['target'])['weight'].apply(lambda x: set(sorted(x)))
+    t_net = net.groupby(['target'])['weight'].apply(lambda x: set(x))
+    t_tw_net = tw_net.groupby(['target'])['weight'].apply(lambda x: set(x))
+    t_stw_net = stw_net.groupby(['target'])['weight'].apply(lambda x: set(x))
     inter = t_net.index.intersection(t_tw_net.index).intersection(t_stw_net.index)
     assert inter.size > 0
     assert not all(t_tw_net.loc[s].issubset(t_net.loc[s]) for s in inter)

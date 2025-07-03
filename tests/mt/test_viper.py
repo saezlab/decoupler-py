@@ -1,9 +1,7 @@
 import numpy as np
 import pandas as pd
-import pytest
 
 import decoupler as dc
-
 
 """
 mat <- matrix(c(
@@ -69,7 +67,6 @@ def test_func_viper(
     mat = dc.pp.extract(data=adata)
     X, obs, var = mat
     sources, targets, adjmat = dc.pp.adjmat(features=var, net=net, verbose=False)
-    obs = np.array(['S01', 'S02', 'S29', 'S30'])
     X = np.vstack((X[:2, :], X[-2:, :]))
     pf_dc_es, pf_dc_pv = dc.mt._viper._func_viper(mat=X, adj=adjmat, pleiotropy=False)
     pt_dc_es, pt_dc_pv = dc.mt._viper._func_viper(mat=X, adj=adjmat, n_targets=1, pleiotropy=True)

@@ -1,16 +1,13 @@
-from typing import Tuple
-
-import pandas as pd
-import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 from matplotlib.figure import Figure
-from matplotlib.colors import TwoSlopeNorm
 
 from decoupler._docs import docs
 from decoupler._Plotter import Plotter
-from decoupler.pp.net import prune
 from decoupler.mt._gsea import _esrank
+from decoupler.pp.net import prune
 
 
 @docs.dedent
@@ -22,7 +19,7 @@ def leading_edge(
     cmap='RdBu_r',
     color='#88c544',
     **kwargs
-) -> Tuple[None | Figure, np.ndarray]:
+) -> tuple(None | Figure, np.ndarray):
     """
     Plot the running score of GSEA.
 

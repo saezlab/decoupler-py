@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import numpy as np
 
 from decoupler.bm._pp import _validate_bool
@@ -8,7 +6,7 @@ from decoupler.bm._pp import _validate_bool
 def _binary_clf_curve(
     y_true: np.ndarray,
     y_score: np.ndarray,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple(np.ndarray, np.ndarray, np.ndarray):
     # Sort scores
     idx = np.flip(np.argsort(y_score))
     y_score = y_score[idx]
@@ -45,7 +43,7 @@ def auroc(
     else:
         d = 1.
     # Compute area
-    ret = np.sum((dx * (tpr[1:] + tpr[:-1]) / 2.0))
+    ret = np.sum(dx * (tpr[1:] + tpr[:-1]) / 2.0)
     auc = d * ret
     return auc
 
@@ -56,7 +54,7 @@ def auprc(
     pi0: float = 0.5
 ) -> float:
     _validate_bool(y_true=y_true, y_score=y_score)
-    assert isinstance(pi0, (int, float)) and 0. <= pi0 <= 1., \
+    assert isinstance(pi0, int | float) and 0. <= pi0 <= 1., \
     'pi0 must be numeric and between 0 and 1'
     # Compute binary curve
     fps, tps, thr = _binary_clf_curve(y_true, y_score)
@@ -85,10 +83,8 @@ def auc(
     y_true: np.ndarray,
     y_score: np.ndarray,
     pi0: float = 0.5,
-) -> Tuple[float, float]:
-    """
-    Area Under the Curve.
-    """
+) -> tuple(float, float):
+    """Area Under the Curve."""
     # Normalize to make comparable
     norm = np.nanmax(np.abs(y_score), axis=1)
     msk = norm == 0.

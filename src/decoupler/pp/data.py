@@ -1,22 +1,20 @@
-from typing import Tuple
-
-import pandas as pd
 import numpy as np
-from numpy.random import default_rng
-from anndata import AnnData
+import pandas as pd
 import scipy.sparse as sps
+from anndata import AnnData
+from numpy.random import default_rng
 
+from decoupler._datatype import DataType
 from decoupler._docs import docs
 from decoupler._log import _log
-from decoupler._datatype import DataType
 
 
 def _extract(
     data: DataType,
     layer: str | None = None,
     raw: bool = False,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    assert isinstance(data, (list, pd.DataFrame, AnnData)), \
+) -> tuple(np.ndarray, np.ndarray, np.ndarray):
+    assert isinstance(data, list | pd.DataFrame | AnnData), \
     'mat must be a list of [matrix, samples, features], pd.DataFrame (samples x features)\n\
     or an AnnData instance'
     assert layer is None or isinstance(layer, str), 'layer must be str or None'
@@ -51,7 +49,7 @@ def _validate_mat(
     col: np.ndarray,
     empty: bool = True,
     verbose: bool = False
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple(np.ndarray, np.ndarray, np.ndarray):
     assert isinstance(empty, bool), 'empty must be bool'
     # Accept any sparse format but transform to csr
     if sps.issparse(mat) and not isinstance(mat, sps.csr_matrix):
@@ -87,10 +85,10 @@ def _validate_mat(
     return mat, row, col
 
 
-def break_ties(
+def _break_ties(
     mat: np.ndarray,
     features: np.ndarray,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple(np.ndarray, np.ndarray):
     # Randomize feature order to break ties randomly
     rng = default_rng(seed=0)
     idx = np.arange(features.size)
@@ -106,7 +104,7 @@ def extract(
     raw: bool = False,
     empty: bool = True,
     verbose: bool = False,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple(np.ndarray, np.ndarray, np.ndarray):
     """
     Extracts matrix, rownames and colnames from data.
 
@@ -129,5 +127,5 @@ def extract(
     # Validate
     mat, row, col = _validate_mat(mat=mat, row=row, col=col, empty=empty, verbose=verbose)
     # Randomly sort features
-    mat, col = break_ties(mat=mat, features=col)
+    mat, col = _break_ties(mat=mat, features=col)
     return mat, row, col

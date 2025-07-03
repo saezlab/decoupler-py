@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import numpy as np
 import pandas as pd
 from anndata import AnnData
@@ -29,7 +27,7 @@ def toy(
     pstime: bool = False,
     seed: int = 42,
     verbose: bool = False,
-) -> Tuple[AnnData, pd.DataFrame]:
+) -> tuple(AnnData, pd.DataFrame):
     """
     Generate a toy adata and net for testing.
 
@@ -51,11 +49,11 @@ def toy(
     AnnData and net examples.
     """
     # Validate
-    assert isinstance(nobs, (int, float)) and nobs >= 2, \
+    assert isinstance(nobs, int | float) and nobs >= 2, \
     'nobs must be numeric and >= 2'
-    assert isinstance(nvar, (int, float)) and nvar >= 12, \
+    assert isinstance(nvar, int | float) and nvar >= 12, \
     'nvar must be numeric and >= 12'
-    assert isinstance(bval, (int, float)), \
+    assert isinstance(bval, int | float), \
     'bval must be numeric'
     # Network model
     net = pd.DataFrame([
@@ -81,8 +79,8 @@ def toy(
     row_a = [row_a + np.abs(rng.normal(size=nvar)) for _ in range(n)]
     row_b = [row_b + np.abs(rng.normal(size=nvar)) for _ in range(n + res)]
     adata = np.vstack([row_a, row_b])
-    features = ['G{:02d}'.format(i + 1) for i in range(nvar)]
-    samples = ['C{:02d}'.format(i + 1) for i in range(nobs)]
+    features = [f'G{i + 1:02d}' for i in range(nvar)]
+    samples = [f'C{i + 1:02d}' for i in range(nobs)]
     adata = pd.DataFrame(adata, index=samples, columns=features)
     adata = AnnData(adata)
     adata.obs['group'] = (['A'] * len(row_a)) + (['B'] * len(row_b))
@@ -90,7 +88,7 @@ def toy(
     adata.obs['sample'] = rng.choice(['S01', 'S02', 'S03'], size=adata.n_obs, replace=True)
     adata.obs['sample'] = adata.obs['sample'].astype('category')
     if pstime:
-        m = f'toy - Adding simulated pseudotime'
+        m = 'toy - Adding simulated pseudotime'
         _log(m, level='info', verbose=verbose)
         pst = np.arange(adata.n_obs)
         pst = pst / pst.max()
@@ -125,7 +123,7 @@ def toy_bench(
     AnnData and net examples.
     """
     # Validate
-    assert isinstance(shuffle_r, (int, float)) and 0.0 <= shuffle_r <= 1.0, \
+    assert isinstance(shuffle_r, int | float) and 0.0 <= shuffle_r <= 1.0, \
     'shuffle_r must be numeric and between 0 and 1'
     # Get toy data
     adata, net = toy(**kwargs)

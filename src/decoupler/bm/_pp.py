@@ -1,12 +1,9 @@
-from typing import Tuple
-
-import pandas as pd
 import numpy as np
+import pandas as pd
 import scipy.sparse as sps
 from anndata import AnnData
 
 from decoupler._log import _log
-from decoupler.pp.net import prune
 
 
 def _validate_groupby(
@@ -14,7 +11,7 @@ def _validate_groupby(
     groupby: str | list | None,
     runby: str,
 ) -> None | list:
-    assert isinstance(groupby, (str, list)) or groupby is None, \
+    assert isinstance(groupby, str | list) or groupby is None, \
     'groupby must be str, list or None'
     assert isinstance(runby, str) and runby in ['expr', 'source'], \
     'runby must be str and either expr or source'
@@ -27,7 +24,7 @@ def _validate_groupby(
             # For each group inside each groupby
             for grp_j in grp_i:
                 assert not ('source' == grp_j and runby == 'source'), \
-                f'source cannot be in groupby if runby="source"'
+                'source cannot be in groupby if runby="source"'
                 # Assert that columns exist in obs
                 assert grp_j in obs.columns, \
                 f'Column name "{grp_j}" must be in adata.obs.columns'
@@ -55,7 +52,7 @@ def _filter(
     net: pd.DataFrame,
     sfilt: bool,
     verbose: bool,
-) -> Tuple[AnnData, pd.DataFrame]:
+) -> tuple(AnnData, pd.DataFrame):
     # Remove experiments without sources in net
     srcs = net['source'].unique()
     prts = set()

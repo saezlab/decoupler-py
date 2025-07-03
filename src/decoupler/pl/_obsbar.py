@@ -1,7 +1,6 @@
-import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
 import seaborn as sns
 from anndata import AnnData
+from matplotlib.figure import Figure
 
 from decoupler._docs import docs
 from decoupler._Plotter import Plotter
@@ -12,7 +11,7 @@ def obsbar(
     adata: AnnData,
     y: str,
     hue: str | None = None,
-    kw_barplot: dict = dict(),
+    kw_barplot: dict | None = None,
     **kwargs
 ) -> None | Figure:
     """
@@ -39,6 +38,8 @@ def obsbar(
     assert cols.issubset(adata.obs.columns), \
     f'y={y} and hue={hue} must be in adata.obs.columns={adata.obs.columns}'
     cols = list(cols)
+    if kw_barplot is None:
+        kw_barplot = {}
     # Process
     data = (
         adata.obs

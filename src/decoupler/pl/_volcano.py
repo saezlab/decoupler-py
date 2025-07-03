@@ -1,7 +1,7 @@
-import pandas as pd
-import numpy as np
-from matplotlib.figure import Figure
 import adjustText as at
+import numpy as np
+import pandas as pd
+from matplotlib.figure import Figure
 
 from decoupler._docs import docs
 from decoupler._Plotter import Plotter
@@ -63,17 +63,17 @@ def volcano(
     assert (net is None) == (name is None), \
     'net and name must be both defined or both None'
     assert isinstance(top, int) and top > 0, 'top must be int and > 0'
-    assert isinstance(thr_stat, (int, float)) and thr_stat > 0, \
+    assert isinstance(thr_stat, int | float) and thr_stat > 0, \
     'thr_stat must be numeric and > 0'
-    assert isinstance(thr_sign, (int, float)) and thr_sign > 0, \
+    assert isinstance(thr_sign, int | float) and thr_sign > 0, \
     'thr_sign must be numeric and > 0'
     if max_stat is None:
         max_stat = np.inf
     if max_sign is None:
         max_sign = np.inf
-    assert isinstance(max_stat, (int, float)) and max_stat > 0, \
+    assert isinstance(max_stat, int | float) and max_stat > 0, \
     'max_stat must be None, or numeric and > 0'
-    assert isinstance(max_sign, (int, float)) and max_sign > 0, \
+    assert isinstance(max_sign, int | float) and max_sign > 0, \
     'max_sign must be None, or numeric and > 0'
     assert isinstance(color_pos, str), 'color_pos must be str'
     assert isinstance(color_neg, str), 'color_neg must be str'
@@ -118,8 +118,8 @@ def volcano(
     signs = df[up_msk | dw_msk].sort_values('pval', ascending=False)
     signs = signs.iloc[:top]
     texts = []
-    for x, y, s in zip(signs['stat'], signs['pval'], signs.index):
+    for x, y, s in zip(signs['stat'], signs['pval'], signs.index, strict=False):
         texts.append(bp.ax.text(x, y, s))
     if len(texts) > 0:
-        at.adjust_text(texts, arrowprops=dict(arrowstyle='-', color='black'), ax=bp.ax)
+        at.adjust_text(texts, arrowprops={'arrowstyle':'-', 'color':'black'}, ax=bp.ax)
     return bp._return()

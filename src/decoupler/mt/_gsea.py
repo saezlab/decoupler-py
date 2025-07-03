@@ -1,14 +1,11 @@
-from typing import Tuple
-
+import numba as nb
 import numpy as np
-import scipy.stats as sts
 import scipy.sparse as sps
 from tqdm.auto import tqdm
-import numba as nb
 
 from decoupler._docs import docs
 from decoupler._log import _log
-from decoupler._Method import MethodMeta, Method
+from decoupler._Method import Method, MethodMeta
 from decoupler.pp.net import _getset
 
 
@@ -43,7 +40,7 @@ def _esrank(
     rnks: np.ndarray,
     set_msk: np.ndarray,
     dec: float,
-) -> Tuple[float, int, np.ndarray]:
+) -> tuple(float, int, np.ndarray):
     # Init empty
     mx_value = 0.0
     cum_sum = 0.0
@@ -89,7 +86,7 @@ def _nesrank(
     set_msk: np.ndarray,
     dec: float,
     es: float,
-) -> Tuple[float, float]:
+) -> tuple(float, float):
     # Keep old set_msk upstream
     set_msk = set_msk.copy()
     # Compute null
@@ -125,7 +122,7 @@ def _stsgsea(
     starts: np.ndarray,
     offsets: np.ndarray,
     ridx: np.ndarray,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple(np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray):
     # Sort features
     idx = np.argsort(-row)
     row = row[idx]
@@ -160,7 +157,7 @@ def _func_gsea(
     times: int | float = 1000,
     seed: int | float = 42,
     verbose: bool = False,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple(np.ndarray, np.ndarray):
     r"""
     Gene Set Enrichment Analysis (GSEA) :cite:`gsea`.
 
@@ -229,8 +226,8 @@ def _func_gsea(
     %(returns)s
     """
     nobs, nvar = mat.shape
-    assert isinstance(times, (int, float)) and times >= 0, 'times must be numeric and >= 0'
-    assert isinstance(seed, (int, float)) and seed >= 0, 'seed must be numeric and >= 0'
+    assert isinstance(times, int | float) and times >= 0, 'times must be numeric and >= 0'
+    assert isinstance(seed, int | float) and seed >= 0, 'seed must be numeric and >= 0'
     times, seed = int(times), int(seed)
     # Compute
     nsrc = starts.size

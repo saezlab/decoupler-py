@@ -1,9 +1,9 @@
-import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
+import numpy as np
+import pandas as pd
 import seaborn as sns
 from anndata import AnnData
+from matplotlib.figure import Figure
 
 from decoupler._docs import docs
 from decoupler._Plotter import Plotter
@@ -38,7 +38,7 @@ def filter_samples(
     f'adata.obs must be a pd.DataFrame not {type(adata.obs)}'
     assert all(col in adata.obs.columns for col in ['psbulk_cells', 'psbulk_counts']), \
     'psbulk_* columns not present in adata.obs, this function should be used after running decoupler.pp.pseudobulk'
-    assert isinstance(groupby, (str, list)), 'groupby must be str or list'
+    assert isinstance(groupby, str | list), 'groupby must be str or list'
     if isinstance(groupby, str):
         groupby = [groupby]
     assert all(col in adata.obs for col in groupby), 'columns in groupby must be in adata.obs'
@@ -61,7 +61,7 @@ def filter_samples(
         plt.close(bp.fig)
         bp.fig, axes = plt.subplots(len(groupby), 1, figsize=bp.figsize, dpi=bp.dpi, tight_layout=True)
         axes = axes.ravel()
-        for ax, grp in zip(axes, groupby):
+        for ax, grp in zip(axes, groupby, strict=False):
             ax.grid(zorder=0)
             ax.set_axisbelow(True)
             sns.scatterplot(x='psbulk_cells', y='psbulk_counts', hue=grp, ax=ax, data=df, zorder=1)

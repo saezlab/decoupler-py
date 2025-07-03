@@ -1,16 +1,12 @@
-import warnings
-
-import pandas as pd
 import numpy as np
-from tqdm.auto import tqdm
-import scipy.stats as sts
+import pandas as pd
 import scipy.sparse as sps
+import scipy.stats as sts
 from anndata import AnnData
+from tqdm.auto import tqdm
 
-from decoupler._odeps import dcor, _check_import
 from decoupler._docs import docs
-from decoupler.pp.data import extract
-
+from decoupler._odeps import _check_import, dcor
 
 
 @docs.dedent

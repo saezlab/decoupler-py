@@ -1,6 +1,5 @@
 from docrep import DocstringProcessor
 
-
 _plot = """\
 ax
     An existing :class:`matplotlib.axes._axes.Axes` instance to plot on. If ``None``,

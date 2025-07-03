@@ -1,12 +1,12 @@
-import requests
-import io
 import gzip
+import io
 import json
 
 import pandas as pd
+import requests
 import scipy.io as sio
-from matplotlib.image import imread
 from anndata import AnnData
+from matplotlib.image import imread
 
 from decoupler._docs import docs
 from decoupler._log import _log
@@ -17,6 +17,8 @@ def msvisium(
     verbose: bool = False,
 ) -> AnnData:
     """
+    Multiple sclerosis slide.
+
     Downloads a spatial RNA-seq (Visium) human sample with multiple sclerosis
     displaying a chronic active lesion in the white matter of the brain :cite:`msvisium`.
 
@@ -62,9 +64,9 @@ def msvisium(
     # Create anndata
     adata = AnnData(X=X, obs=obs, var=var)
     # Add images
-    adata.uns['spatial'] = dict()
-    adata.uns['spatial']['MS377T'] = dict()
-    adata.uns['spatial']['MS377T']['images'] = dict()
+    adata.uns['spatial'] = {}
+    adata.uns['spatial']['MS377T'] = {}
+    adata.uns['spatial']['MS377T']['images'] = {}
     response = requests.get(url + 'scalefactors%5Fjson%2Ejson%2Egz')
     with gzip.GzipFile(fileobj=io.BytesIO(response.content)) as f:
         adata.uns['spatial']['MS377T']['scalefactors'] = json.load(f)

@@ -1,11 +1,9 @@
-from typing import Tuple
-
 import numpy as np
 import scipy.stats as sts
 
 from decoupler._docs import docs
 from decoupler._log import _log
-from decoupler._Method import MethodMeta, Method
+from decoupler._Method import Method, MethodMeta
 
 
 @docs.dedent
@@ -14,7 +12,7 @@ def _func_zscore(
     adj: np.ndarray,
     flavor: str = 'RoKAI',
     verbose: bool = False,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple(np.ndarray, np.ndarray):
     r"""
     Z-score (ZSCORE) :cite:`zscore`.
 

@@ -1,12 +1,10 @@
-from typing import Tuple
-
-import numpy as np
 import numba as nb
+import numpy as np
 import scipy.stats as sts
 
 from decoupler._docs import docs
 from decoupler._log import _log
-from decoupler._Method import MethodMeta, Method
+from decoupler._Method import Method, MethodMeta
 
 
 @nb.njit(parallel=True, cache=True)
@@ -38,7 +36,7 @@ def _func_mlm(
     adj: np.ndarray,
     tval: bool = True,
     verbose: bool = False,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple(np.ndarray, np.ndarray):
     r"""
     Multivariate Linear Model (MLM) :cite:`decoupler`.
 

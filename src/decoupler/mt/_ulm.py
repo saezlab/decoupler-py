@@ -1,11 +1,9 @@
-from typing import Tuple
-
 import numpy as np
 import scipy.stats as sts
 
 from decoupler._docs import docs
 from decoupler._log import _log
-from decoupler._Method import MethodMeta, Method
+from decoupler._Method import Method, MethodMeta
 
 
 def _cov(
@@ -37,7 +35,7 @@ def _func_ulm(
     adj: np.ndarray,
     tval: bool = True,
     verbose: bool = False,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple(np.ndarray, np.ndarray):
     r"""
     Univariate Linear Model (ULM) :cite:`decoupler`.
 

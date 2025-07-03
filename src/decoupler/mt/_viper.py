@@ -1,13 +1,11 @@
-from typing import Tuple
-
+import numba as nb
 import numpy as np
 import scipy.stats as sts
 from tqdm.auto import tqdm
-import numba as nb
 
 from decoupler._docs import docs
 from decoupler._log import _log
-from decoupler._Method import MethodMeta, Method
+from decoupler._Method import Method, MethodMeta
 
 
 @nb.njit(cache=True)
@@ -17,7 +15,7 @@ def _get_wts_posidxs(
     pval1: np.ndarray,
     table: np.ndarray,
     penalty: int,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple(np.ndarray, np.ndarray):
     pos_idxs = np.zeros(idxs.shape[0], dtype=np.int_)
     for j in range(idxs.shape[0]):
         p = pval1[j]
@@ -38,7 +36,7 @@ def _get_wts_posidxs(
 @nb.njit(cache=True)
 def _get_tmp_idxs(
     pval: np.ndarray,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple(np.ndarray, np.ndarray):
     size = int(np.sum(~np.isnan(pval)) / 2)
     tmp = np.zeros((size, 2))
     idxs = np.zeros((size, 2), dtype=np.int_)
@@ -114,7 +112,7 @@ def _shadow_regulon(
     reg_sign: float = 1.96,
     n_targets: int | float = 10,
     penalty: int | float = 20
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple(np.ndarray, np.ndarray, np.ndarray):
     # Find significant activities
     msk_sign = np.abs(nes_i) > reg_sign
     # Filter by significance
@@ -180,7 +178,7 @@ def _func_viper(
     n_targets: int | float = 10,
     penalty: int | float = 20,
     verbose: bool = False,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple(np.ndarray, np.ndarray):
     r"""
     Virtual Inference of Protein-activity by Enriched Regulon analysis (VIPER) :cite:`viper`.
 
@@ -298,7 +296,7 @@ def _func_viper(
     # Compute score
     nes = _aREA(mat, adj)
     if pleiotropy:
-        m = f'viper - refining scores based on pleiotropy'
+        m = 'viper - refining scores based on pleiotropy'
         _log(m, level='info', verbose=verbose)
         reg_sign = sts.norm.ppf(1-(reg_sign / 2))
         for i in tqdm(range(nes.shape[0]), disable=not verbose):

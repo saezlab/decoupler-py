@@ -1,9 +1,7 @@
-from typing import Tuple
-
+import numba as nb
 import numpy as np
 import pandas as pd
 import scipy.stats as sts
-import numba as nb
 from anndata import AnnData
 
 from decoupler._docs import docs
@@ -64,7 +62,7 @@ def _mean_zscores(
 def consensus(
     result: dict | AnnData,
     verbose: bool = False,
-) -> Tuple[pd.DataFrame, pd.DataFrame] | None:
+) -> tuple(pd.DataFrame, pd.DataFrame) | None:
     r"""
     Consensus score across methods.
 
@@ -110,7 +108,7 @@ def consensus(
     Consensus enrichment scores and p-values.
     """
     # Validate
-    assert isinstance(result, (dict, AnnData)), 'scores must be dict or anndata.AnnData'
+    assert isinstance(result, dict | AnnData), 'scores must be dict or anndata.AnnData'
     # Transform to mat
     if isinstance(result, AnnData):
         keys = [k for k in result.obsm if 'score_' in k]

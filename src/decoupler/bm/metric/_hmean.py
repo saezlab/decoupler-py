@@ -1,5 +1,5 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from decoupler._docs import docs
 from decoupler.bm.pl._format import _format
@@ -10,7 +10,7 @@ def _hmean(
     y: float | int,
     beta: float | int = 1,
 ) -> float:
-    assert isinstance(beta, (int, float)) and 0 < beta, \
+    assert isinstance(beta, int | float) and 0 < beta, \
     'beta must be numeric and > 0'
     h = np.zeros(len(x))
     msk = (x != 0.) & (y != 0.)
@@ -21,7 +21,7 @@ def _hmean(
 @docs.dedent
 def hmean(
     df: pd.DataFrame,
-    metrics: str | list = ['auc', 'fscore', 'qrank'],
+    metrics: str | list | None = None,
     beta: int | float = 0.5,
 ) -> pd.DataFrame:
     """
@@ -42,8 +42,10 @@ def hmean(
     """
     # Validate
     assert isinstance(df, pd.DataFrame), 'df must be pandas.DataFrame'
-    assert isinstance(metrics, (str, list)), 'metrics must be str or list'
-    if isinstance(metrics, str):
+    assert isinstance(metrics, str | list) or metrics is None, 'metrics must be str or list'
+    if metrics is None:
+        metrics = ['auc', 'fscore', 'qrank']
+    elif isinstance(metrics, str):
         metrics = [metrics]
     # Run
     d_metrics = {

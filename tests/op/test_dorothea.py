@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 import pytest
 
 import decoupler as dc
@@ -9,7 +8,7 @@ import decoupler as dc
     'levels,dict_weights',
     [
         ['A', None],
-        [['A', 'B'], dict(A=1, B=0.5)],
+        [['A', 'B'], {'A': 1, 'B': 0.5}],
     ]
 )
 def test_dorothea(

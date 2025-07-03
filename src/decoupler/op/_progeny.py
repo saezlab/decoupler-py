@@ -53,9 +53,9 @@ def progeny(
     Dataframe in long format containing target genes for each pathway with their associated weights and p-values.
     """
     # Validate
-    assert isinstance(top, (int, float)) and top > 0, \
+    assert isinstance(top, int | float) and top > 0, \
     'top must be numeric and > 0'
-    assert isinstance(thr_padj, (int, float)) and 0. <= thr_padj <= 1., \
+    assert isinstance(thr_padj, int | float) and 0. <= thr_padj <= 1., \
     'thr_padj must be numeric and between 0 and 1'
     # Download
     p = resource(name='PROGENy', organism=organism, license=license, verbose=verbose)

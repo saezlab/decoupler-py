@@ -1,16 +1,14 @@
-from typing import Tuple
-
-import pandas as pd
 import numpy as np
+import pandas as pd
 from anndata import AnnData
 
 from decoupler._docs import docs
 from decoupler._log import _log
-from decoupler.pp.net import prune
-from decoupler.mt._methods import _methods
-from decoupler.mt._decouple import decouple
-from decoupler.bm._pp import _validate_groupby, _validate_obs, _filter, _sign
+from decoupler.bm._pp import _filter, _sign, _validate_groupby, _validate_obs
 from decoupler.bm.metric import dict_metric
+from decoupler.mt._decouple import decouple
+from decoupler.mt._methods import _methods
+from decoupler.pp.net import prune
 
 
 def _testsign(
@@ -19,7 +17,7 @@ def _testsign(
     test: bool,
     thr: float,
 ) -> np.ndarray:
-    assert isinstance(thr, (int, float)) and 0. <= thr <= 1., \
+    assert isinstance(thr, int | float) and 0. <= thr <= 1., \
     'thr must be numeric and between 0 and 1'
     if test:
         sign = adata.obsm[f'padj_{mth}'].values <= thr
@@ -33,7 +31,7 @@ def _testsign(
 def _tensor_scores(
     adata: AnnData,
     thr: float,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, list]:
+) -> tuple(np.ndarray, np.ndarray, np.ndarray, np.ndarray, list):
     # Get unique methods
     has_test = {m.name: m.test for m in _methods}
     has_test = has_test | {'consensus': True}
@@ -85,7 +83,7 @@ def _mask_grps(
     obs: pd.DataFrame,
     groupby: None | list,
     verbose: float,
-) -> Tuple[list, list, list]:
+) -> tuple(list, list, list):
     if groupby is not None:
         # Init empty lsts
         msks = []
@@ -114,7 +112,7 @@ def _mask_grps(
             grpbys.append(grpby_i)
             grps.append(grps_i)
     else:
-        m = f'benchmark - running without grouping'
+        m = 'benchmark - running without grouping'
         _log(m, level='info', verbose=verbose)
         msks = None
         grpbys = None
@@ -134,7 +132,7 @@ def _metric(
     if metric == 'fscore':
         y_score = y_sign
     score = f(y_true=y_true, y_score=y_score, **kwargs)
-    return {k: s for k, s in zip(f.scores, score)}
+    return dict(zip(f.scores, score, strict=True))
 
 
 def _metric_scores(
@@ -152,8 +150,10 @@ def _metric_scores(
     verbose: bool,
     **kwargs
 ) -> None:
-    assert isinstance(metrics, (str, list)), 'metrics must be str or list'
-    if isinstance(metrics, str):
+    assert isinstance(metrics, str | list) or metrics is None, 'metrics must be str or list'
+    if isinstance(metrics, None):
+        metrics = ['auc', 'fscore', 'qrank']
+    elif isinstance(metrics, str):
         metrics = [metrics]
     if runby == 'expr':
         m = ('benchmark - evaluating by experiment on:\n' +
@@ -176,7 +176,7 @@ def _metric_scores(
                     row = [grpby_i, grp, None, mth, cname, val]
                     df.append(row)
     elif runby == 'source':
-        m = f'benchmark - evaluating by source'
+        m = 'benchmark - evaluating by source'
         _log(m, level='info', verbose=verbose)
         for m in range(len(mthds)):
             mth = mthds[m]
@@ -285,14 +285,14 @@ def _eval_scores(
 def benchmark(
     adata: AnnData,
     net: pd.DataFrame | dict,
-    metrics: str | list = ['auc', 'fscore', 'qrank'],
+    metrics: str | list | None = None,
     groupby: str | None = None,
     runby: str = 'expr',
     sfilt: bool = False,
     thr: float = 0.10,
     emin: int = 5,
     verbose: bool = False,
-    kws_decouple: dict = dict(),
+    kws_decouple: dict | None = None,
     **kwargs
 ):
     """
@@ -329,16 +329,17 @@ def benchmark(
     groupby = _validate_groupby(obs=adata.obs, groupby=groupby, runby=runby)
     assert isinstance(emin, int) and emin > 0, 'emin must be int and > 0'
     # Init default args
-    kws_decouple = kws_decouple.copy()
+    if kws_decouple is None:
+        kws_decouple = {}
     kws_decouple.setdefault('tmin', 5)
-    kws_decouple.setdefault('args', dict())
+    kws_decouple.setdefault('args', {})
     # Clean adata
     for col in list(adata.obsm.keys()):
         if col.startswith('score_') or col.startswith('padj_'):
             del adata.obsm[col]
     # Run benchmark per net
     if isinstance(net, pd.DataFrame):
-        m = f'benchmark - running benchmark for one network'
+        m = 'benchmark - running benchmark for one network'
         _log(m, level='info', verbose=verbose)
         # Process
         net = prune(features=adata.var_names, net=net, tmin=kws_decouple['tmin'], verbose=verbose)
@@ -357,7 +358,7 @@ def benchmark(
             **kwargs
         )
     else:
-        m = f'benchmark - running benchmark for multiple networks'
+        m = f'benchmark - running benchmark for {len(net)} networks'
         _log(m, level='info', verbose=verbose)
         df = []
         for n_name in net:

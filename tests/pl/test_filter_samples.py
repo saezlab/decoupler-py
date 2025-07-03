@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
 import pytest
+from matplotlib.figure import Figure
 
 import decoupler as dc
 

@@ -1,14 +1,12 @@
-from typing import Tuple
-
-import numpy as np
-import scipy.stats as sts
-import scipy.sparse as sps
-from tqdm.auto import tqdm
 import numba as nb
+import numpy as np
+import scipy.sparse as sps
+import scipy.stats as sts
+from tqdm.auto import tqdm
 
 from decoupler._docs import docs
 from decoupler._log import _log
-from decoupler._Method import MethodMeta, Method
+from decoupler._Method import Method, MethodMeta
 from decoupler.pp.net import _getset
 
 
@@ -45,7 +43,7 @@ def _validate_n_up(
     nvar: int,
     n_up: int | float | None = None,
 ) -> int:
-    assert isinstance(n_up, (int, float)) or n_up is None, 'n_up must be numerical or None'
+    assert isinstance(n_up, int | float) or n_up is None, 'n_up must be numerical or None'
     if n_up is None:
         n_up = np.ceil(0.05 * nvar)
         n_up = int(np.clip(n_up, a_min=2, a_max=nvar))
@@ -63,7 +61,7 @@ def _func_aucell(
     offsets: np.ndarray,
     n_up: int | float | None = None,
     verbose: bool = False,
-) -> Tuple[np.ndarray, None]:
+) -> tuple(np.ndarray, None):
     r"""
     Area Under the Curve for set enrichment within single cells (AUCell) :cite:`aucell`.
 

@@ -1,7 +1,7 @@
 import pandas as pd
+import pytest
 import scipy.sparse as sps
 import scipy.stats as sts
-import pytest
 
 import decoupler as dc
 

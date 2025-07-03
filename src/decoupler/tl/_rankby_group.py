@@ -1,5 +1,5 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
 import scipy.stats as sts
 from anndata import AnnData
 
@@ -34,7 +34,7 @@ def rankby_group(
     assert isinstance(adata, AnnData), 'adata must be anndata.AnnData'
     assert isinstance(groupby, str) and groupby in adata.obs.columns, \
     'groupby must be str and in adata.obs.columns'
-    assert isinstance(reference, (str, list)), 'reference must be str or list'
+    assert isinstance(reference, str | list), 'reference must be str or list'
     methods = {'wilcoxon', 't-test', 't-test_overestim_var'}
     assert isinstance(method, str) and method in methods, \
     f'method must be one of: {methods}'

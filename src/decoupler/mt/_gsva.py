@@ -1,17 +1,15 @@
-from typing import Tuple
 import math
 
+import numba as nb
 import numpy as np
-import scipy.stats as sts
 import scipy.sparse as sps
 from tqdm.auto import tqdm
-import numba as nb
 
 from decoupler._docs import docs
 from decoupler._log import _log
-from decoupler._Method import MethodMeta, Method
-from decoupler.pp.net import _getset
+from decoupler._Method import Method, MethodMeta
 from decoupler.mt._gsea import _std
+from decoupler.pp.net import _getset
 
 
 @nb.njit(cache=True)
@@ -151,7 +149,9 @@ def _density(
 
 
 @nb.njit(cache=True)
-def _rankdata(values):
+def _rankdata(
+    values: np.ndarray
+) -> np.ndarray:
     n = len(values)
     ranks = np.empty(n, dtype=np.int_)
     indices = np.arange(n)
@@ -208,7 +208,7 @@ def _dos_srs(r):
 @nb.njit(parallel=True, cache=True)
 def _rankmat(
     mat: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple(np.ndarray, np.ndarray):
     n_rows, n_cols = mat.shape
     dos_mat = np.zeros((n_rows, n_cols), dtype=np.int_)
     srs_mat = np.zeros((n_rows, n_cols), dtype=np.int_)
@@ -226,7 +226,7 @@ def _rnd_walk(
     symrnkstat: np.ndarray,
     n: int,
     tau: int | float,
-) -> Tuple[float, int]:
+) -> tuple(float, int):
     gsetrnk = np.empty(k, dtype=np.int_)
     for i in range(k):
         gsetrnk[i] = decordstat[gsetidx[i] - 1]
@@ -312,7 +312,7 @@ def _func_gsva(
     absrnk: bool = False,
     tau: int | float = 1,
     verbose: bool = False,
-) -> Tuple[np.ndarray, None]:
+) -> tuple(np.ndarray, None):
     r"""
     Gene Set Variation Analysis (GSVA) :cite:`gsva`.
 
@@ -378,7 +378,7 @@ def _func_gsva(
     %(returns)s
     """
     if isinstance(mat, sps.csr_matrix):
-        m = f'gsva - Converting sparse matrix to dense format before density transformation'
+        m = 'gsva - Converting sparse matrix to dense format before density transformation'
         _log(m, level='info', verbose=verbose)
         mat = mat.toarray()
     m = f'gsva - computing density with kcdf={kcdf}'

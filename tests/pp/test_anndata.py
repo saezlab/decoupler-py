@@ -1,7 +1,7 @@
-import pandas as pd
 import numpy as np
-import scipy.sparse as sps
+import pandas as pd
 import pytest
+import scipy.sparse as sps
 from anndata import AnnData
 
 import decoupler as dc
@@ -58,7 +58,7 @@ def test_swap_layer(
         [['dose', 'group'], 'sum', False, True],
         ['group', 'median', False, False],
         ['group', lambda x: np.max(x) - np.min(x), True, True],
-        ['group', dict(sum=np.sum, mean=np.mean), False, False],
+        ['group', {'sum': np.sum, 'mean': np.mean}, False, False],
     ]
 )
 def test_pseudobulk(

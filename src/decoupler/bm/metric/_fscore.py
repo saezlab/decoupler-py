@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import numpy as np
 
 from decoupler.bm._pp import _validate_bool
@@ -8,10 +6,8 @@ from decoupler.bm._pp import _validate_bool
 def fscore(
     y_true: np.ndarray,
     y_score: np.ndarray,
-) -> Tuple[float, float, float]:
-    """
-    F-beta score
-    """
+) -> tuple(float, float, float):
+    """F-beta score"""
     # Validate
     _validate_bool(y_true=y_true, y_score=y_score)
     assert y_score.dtype == np.bool_, \

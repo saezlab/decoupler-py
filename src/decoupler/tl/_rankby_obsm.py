@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import pandas as pd
 import scipy.stats as sts
 from anndata import AnnData
@@ -10,7 +8,7 @@ from decoupler._docs import docs
 def _input_rank_obsm(
     adata: AnnData,
     key: str,
-) -> Tuple[pd.DataFrame, list, list]:
+) -> tuple(pd.DataFrame, list, list):
     # Validate
     assert isinstance(adata, AnnData), 'adata must be anndata.AnnData'
     assert key in adata.obsm, f'key={key} must be in adata.obsm'

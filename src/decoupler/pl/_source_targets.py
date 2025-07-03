@@ -1,7 +1,7 @@
-import pandas as pd
-import numpy as np
-from matplotlib.figure import Figure
 import adjustText as at
+import numpy as np
+import pandas as pd
+from matplotlib.figure import Figure
 
 from decoupler._docs import docs
 from decoupler._Plotter import Plotter
@@ -62,15 +62,15 @@ def source_targets(
     f'net must be a pd.DataFrame containing the columns {x} and {y}'
     assert isinstance(name, str), 'name must be a str'
     assert isinstance(top, int) and top > 0, 'top must be int and > 0'
-    assert isinstance(thr_x, (int, float)), 'thr_x must be numeric'
-    assert isinstance(thr_y, (int, float)), 'thr_y must be numeric'
+    assert isinstance(thr_x, int | float), 'thr_x must be numeric'
+    assert isinstance(thr_y, int | float), 'thr_y must be numeric'
     if max_x is None:
         max_x = np.inf
     if max_y is None:
         max_y = np.inf
-    assert isinstance(max_x, (int, float)) and max_x > 0, \
+    assert isinstance(max_x, int | float) and max_x > 0, \
     'max_x must be None, or numeric and > 0'
-    assert isinstance(max_y, (int, float)) and max_y > 0, \
+    assert isinstance(max_y, int | float) and max_y > 0, \
     'max_y must be None, or numeric and > 0'
     assert isinstance(color_pos, str), 'color_pos must be str'
     assert isinstance(color_neg, str), 'color_neg must be str'
@@ -105,8 +105,8 @@ def source_targets(
     signs = df.sort_values('order', ascending=False)
     signs = signs.iloc[:top]
     texts = []
-    for x, y, s in zip(signs[x], signs[y], signs.index):
-        texts.append(bp.ax.text(x, y, s))
+    for tx, ty, ts in zip(signs[x], signs[y], signs.index, strict=False):
+        texts.append(bp.ax.text(tx, ty, ts))
     if len(texts) > 0:
-        at.adjust_text(texts, arrowprops=dict(arrowstyle='-', color='black'), ax=bp.ax)
+        at.adjust_text(texts, arrowprops={'arrowstyle':'-', 'color':'black'}, ax=bp.ax)
     return bp._return()

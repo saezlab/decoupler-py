@@ -1,8 +1,8 @@
 import logging
 
 import numpy as np
-import scipy.stats as sts
 import pytest
+import scipy.stats as sts
 
 import decoupler as dc
 

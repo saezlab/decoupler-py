@@ -1,15 +1,13 @@
-from typing import Tuple, Callable
 import inspect
-from functools import partial
+from collections.abc import Callable
 
-import numpy as np
-import scipy.stats as sts
 import numba as nb
+import numpy as np
 
 from decoupler._docs import docs
 from decoupler._log import _log
-from decoupler._Method import MethodMeta, Method
-from decoupler.mt._gsea import _std, _ridx
+from decoupler._Method import Method, MethodMeta
+from decoupler.mt._gsea import _ridx, _std
 
 
 @nb.njit(cache=True)
@@ -57,7 +55,7 @@ _fun_dict = {
     'wmean': _wmean,
 }
 
-_cfuncs = dict()
+_cfuncs = {}
 
 def _validate_args(
     fun: Callable,
@@ -67,11 +65,11 @@ def _validate_args(
     required_args = ['x', 'w']
     for arg in required_args:
         if arg not in args:
-            assert False, f'fun={fun.__name__} must contain arguments x and w'
+            assert AssertionError(), f'fun={fun.__name__} must contain arguments x and w'
     # Check if any additional arguments have default values
     for param in args.values():
         if param.name not in required_args and param.default == inspect.Parameter.empty:
-            assert False, f'fun={fun.__name__} has an argument {param.name} without a default value'
+            assert AssertionError(), f'fun={fun.__name__} has an argument {param.name} without a default value'
     if not hasattr(fun, 'func_code'):
         m = f'waggr - {fun.__name__} will be compiled into numba code'
         _log(m, level='info', verbose=verbose)
@@ -88,9 +86,9 @@ def _validate_func(
     w = np.array([-1., 0., 2.])
     try:
         res = fun(x=x, w=w)
-        assert isinstance(res, (int, float)), 'output of fun must be a single numerical value'
-    except:
-        raise ValueError(f'fun failed to run with test data: fun(x={x}), w={w}')
+        assert isinstance(res, int | float), 'output of fun must be a single numerical value'
+    except Exception as err:
+        raise ValueError(f'fun failed to run with test data: fun(x={x}), w={w}') from err
     m = f'waggr - using function {fun.__name__}'
     _log(m, level='info', verbose=verbose)
     _fun(f=fun, verbose=verbose)
@@ -145,7 +143,7 @@ def _func_waggr(
     times: int | float = 1000,
     seed: int | float = 42,
     verbose: bool = False,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple(np.ndarray, np.ndarray):
     r"""
     Weighted Aggregate (WAGGR) :cite:`decoupler`.
 
@@ -214,8 +212,8 @@ def _func_waggr(
         fun = _fun_dict[fun]
     _validate_func(fun, verbose=verbose)
     vfun = _cfuncs[fun.__name__]
-    assert isinstance(times, (int, float)) and times >= 0, 'times must be numeric and >= 0'
-    assert isinstance(seed, (int, float)) and seed >= 0, 'seed must be numeric and >= 0'
+    assert isinstance(times, int | float) and times >= 0, 'times must be numeric and >= 0'
+    assert isinstance(seed, int | float) and seed >= 0, 'seed must be numeric and >= 0'
     times, seed = int(times), int(seed)
     nobs, nvar = mat.shape
     nvar, nsrc = adj.shape

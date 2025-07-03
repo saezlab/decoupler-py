@@ -7,10 +7,10 @@ import decoupler as dc
 @pytest.mark.parametrize(
     'kwargs',
     [
-        dict(),
-        dict(n_estimators=10),
-        dict(max_depth=1),
-        dict(gamma=0.01),
+        {},
+        {'n_estimators': 10},
+        {'max_depth': 1},
+        {'gamma': 0.01},
     ]
 )
 def test_func_mdt(

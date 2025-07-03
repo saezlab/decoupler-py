@@ -1,8 +1,7 @@
-import logging
 
 import numpy as np
-import statsmodels.api as sm
 import pytest
+import statsmodels.api as sm
 
 import decoupler as dc
 

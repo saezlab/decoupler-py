@@ -1,4 +1,3 @@
-from decoupler._Method import _show_methods
 from decoupler.mt._aucell import aucell
 from decoupler.mt._gsea import gsea
 from decoupler.mt._gsva import gsva

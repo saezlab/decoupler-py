@@ -1,19 +1,19 @@
-import json
 
-import requests
 import pandas as pd
+import requests
 
 from decoupler._docs import docs
-from decoupler._log import _log
 from decoupler._download import URL_DBS, _download
-from decoupler.op._translate import translate
+from decoupler._log import _log
 from decoupler.op._dtype import _infer_dtypes
+from decoupler.op._translate import translate
 
 
 def show_resources(
 ) -> pd.DataFrame:
     """
     Shows available resources in Omnipath :cite:p:`omnipath`.
+
     For more information visit the official
     [website](https://omnipathdb.org/).
 

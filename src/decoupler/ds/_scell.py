@@ -1,13 +1,13 @@
-import os
-import io
 import gzip
+import io
+import os
 import warnings
-import requests
 
-import pandas as pd
-from tqdm.auto import tqdm
-import scipy.io as sio
 import anndata as ad
+import pandas as pd
+import requests
+import scipy.io as sio
+from tqdm.auto import tqdm
 
 from decoupler._docs import docs
 from decoupler._log import _log
@@ -39,6 +39,8 @@ def pbmc3k(
     verbose: bool = False,
 ) -> ad.AnnData:
     """
+    10X peripheral blood mononuclear cells (PBMCs).
+
     Downloads single-cell RNA-seq data of peripheral blood mononuclear
     cells (PBMCs) from a healthy donor.
 
@@ -69,6 +71,8 @@ def covid5k(
     verbose: bool = False,
 ) -> ad.AnnData:
     """
+    Peripheral blood mononuclear cells (PBMCs) from COVID-19 patients.
+
     Downloads single-cell RNA-seq data of peripheral blood mononuclear
     cells (PBMCs) from a cohort of patients with and without
     COVID-19 :cite:`covid5k`.
@@ -134,6 +138,8 @@ def erygast1k(
     verbose: bool = False,
 ) -> ad.AnnData:
     """
+    Erythroid lineage during gastrulation in mouse.
+
     Downloads single-cell RNA-seq data of the erythroid lineage
     during gastrulation in mouse :cite:`erygast`.
 

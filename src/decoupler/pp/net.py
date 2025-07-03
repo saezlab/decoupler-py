@@ -1,14 +1,12 @@
-from typing import Tuple
-
-import pandas as pd
+import numba as nb
 import numpy as np
+import pandas as pd
 import scipy.stats as sts
 from tqdm.auto import tqdm
-import numba as nb
 
+from decoupler._datatype import DataType
 from decoupler._docs import docs
 from decoupler._log import _log
-from decoupler._datatype import DataType
 from decoupler.pp.data import extract
 
 
@@ -30,7 +28,7 @@ def read_gmt(
     # Init empty df
     df = []
     # Read line per line
-    with open(path, 'r') as f:
+    with open(path) as f:
         for line in f.readlines():
             line = line.rstrip().split()
             # Extract gene set name
@@ -93,7 +91,7 @@ def prune(
     # Validate
     vnet = _validate_net(net, verbose=verbose)
     features = set(features)
-    assert isinstance(tmin, (int, float)) and tmin >= 0, 'tmin must be numeric and >= 0'
+    assert isinstance(tmin, int | float) and tmin >= 0, 'tmin must be numeric and >= 0'
     # Find shared targets between mat and net
     msk = vnet['target'].isin(features)
     vnet = vnet.loc[msk]
@@ -113,7 +111,7 @@ def prune(
 
 def _adj(
     net: pd.DataFrame,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple(np.ndarray, np.ndarray, np.ndarray):
     # Pivot df to a wider format
     X = net.pivot(columns='source', index='target', values='weight').fillna(0)
     # Store node names and weights
@@ -144,7 +142,7 @@ def adjmat(
     features: np.ndarray,
     net: pd.DataFrame,
     verbose: bool = False,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple(np.ndarray, np.ndarray, np.ndarray):
     """
     Converts a network in long format into a regulatory adjacency matrix (targets x sources).
 
@@ -170,7 +168,7 @@ def idxmat(
     features: np.ndarray,
     net: pd.DataFrame,
     verbose: bool = False,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple(np.ndarray, np.ndarray, np.ndarray, np.ndarray):
     """
     Indexes and returns feature sets as a decomposed sparse matrix.
 
@@ -287,6 +285,7 @@ def net_corr(
 ) -> pd.DataFrame:
     """
     Checks the correlation across the sources in a network.
+
     If data is also provided, target features will be prunned to
     match the ones in mat.
 

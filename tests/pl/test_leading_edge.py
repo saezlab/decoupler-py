@@ -1,8 +1,8 @@
-import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
+import numpy as np
+import pandas as pd
 import pytest
+from matplotlib.figure import Figure
 
 import decoupler as dc
 

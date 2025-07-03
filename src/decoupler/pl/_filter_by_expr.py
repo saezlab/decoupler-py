@@ -1,12 +1,12 @@
 import numpy as np
-from matplotlib.figure import Figure
 import seaborn as sns
 from anndata import AnnData
+from matplotlib.figure import Figure
 
 from decoupler._docs import docs
 from decoupler._Plotter import Plotter
-from decoupler.pp.data import extract
 from decoupler.pp.anndata import _min_sample_size, _ssize_tcount
+from decoupler.pp.data import extract
 
 
 @docs.dedent
@@ -63,7 +63,7 @@ def filter_by_expr(
         y=sample_size,
         cmap=cmap,
         cbar=True,
-        cbar_kws=dict(shrink=.75, label='Number of genes'),
+        cbar_kws={'shrink':.75, 'label':'Number of genes'},
         discrete=(False, True),
         ax=bp.ax,
     )

@@ -1,14 +1,10 @@
-import warnings
-from typing import Tuple
-
 import numpy as np
-import scipy.sparse as sps
 from tqdm.auto import tqdm
 
-from decoupler._odeps import xgboost, _check_import
 from decoupler._docs import docs
 from decoupler._log import _log
-from decoupler._Method import MethodMeta, Method
+from decoupler._Method import Method, MethodMeta
+from decoupler._odeps import _check_import, xgboost
 
 
 def _xgbr(
@@ -32,7 +28,7 @@ def _func_mdt(
     adj: np.ndarray,
     verbose: bool = False,
     **kwargs,
-) -> Tuple[np.ndarray, None]:
+) -> tuple(np.ndarray, None):
     r"""
     Multivariate Decision Trees (MDT) :cite:`decoupler`.
 
