@@ -8,10 +8,10 @@ from decoupler.op._resource import resource
 
 @docs.dedent
 def progeny(
-    organism: str = 'human',
+    organism: str = "human",
     top: int | float = np.inf,
     thr_padj: float = 0.05,
-    license: str = 'academic',
+    license: str = "academic",
     verbose: bool = False,
 ) -> pd.DataFrame:
     """
@@ -53,24 +53,15 @@ def progeny(
     Dataframe in long format containing target genes for each pathway with their associated weights and p-values.
     """
     # Validate
-    assert isinstance(top, (int, float)) and top > 0, \
-    'top must be numeric and > 0'
-    assert isinstance(thr_padj, (int, float)) and 0. <= thr_padj <= 1., \
-    'thr_padj must be numeric and between 0 and 1'
+    assert isinstance(top, int | float) and top > 0, "top must be numeric and > 0"
+    assert isinstance(thr_padj, int | float) and 0.0 <= thr_padj <= 1.0, "thr_padj must be numeric and between 0 and 1"
     # Download
-    p = resource(name='PROGENy', organism=organism, license=license, verbose=verbose)
-    p = (
-        p
-        .sort_values('p_value')
-        .groupby('pathway')
-        .head(top)
-        .sort_values(['pathway', 'p_value'])
-        .reset_index(drop=True)
-    )
-    p = p.rename(columns={'pathway': 'source', 'genesymbol': 'target', 'p_value': 'padj'})
-    p = p[p['padj'] < thr_padj]
-    p = p[['source', 'target', 'weight', 'padj']]
-    m = f'progeny - filtered interactions for padj < {thr_padj}'
-    _log(m, level='info', verbose=verbose)
-    p = p.drop_duplicates(['source', 'target']).reset_index(drop=True)
+    p = resource(name="PROGENy", organism=organism, license=license, verbose=verbose)
+    p = p.sort_values("p_value").groupby("pathway").head(top).sort_values(["pathway", "p_value"]).reset_index(drop=True)
+    p = p.rename(columns={"pathway": "source", "genesymbol": "target", "p_value": "padj"})
+    p = p[p["padj"] < thr_padj]
+    p = p[["source", "target", "weight", "padj"]]
+    m = f"progeny - filtered interactions for padj < {thr_padj}"
+    _log(m, level="info", verbose=verbose)
+    p = p.drop_duplicates(["source", "target"]).reset_index(drop=True)
     return p

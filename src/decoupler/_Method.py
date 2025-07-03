@@ -1,9 +1,7 @@
-from typing import Callable
-import textwrap
+from collections.abc import Callable
 
 import pandas as pd
 
-from decoupler._docs import docs
 from decoupler._datatype import DataType
 from decoupler.mt._run import _run
 
@@ -32,19 +30,23 @@ class MethodMeta:
         self.reference = reference
 
     def meta(self) -> pd.DataFrame:
-        meta = pd.DataFrame([{
-            'name': self.name,
-            'desc': self.desc,
-            'stype': self.stype,
-            'weight': self.weight,
-            'test': self.test,
-            'limits': self.limits,
-            'reference': self.reference
-        }])
+        meta = pd.DataFrame(
+            [
+                {
+                    "name": self.name,
+                    "desc": self.desc,
+                    "stype": self.stype,
+                    "weight": self.weight,
+                    "test": self.test,
+                    "limits": self.limits,
+                    "reference": self.reference,
+                }
+            ]
+        )
         return meta
 
 
-#@docs.dedent
+# @docs.dedent
 class Method(MethodMeta):
     def __init__(
         self,

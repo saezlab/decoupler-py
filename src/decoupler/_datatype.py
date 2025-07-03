@@ -1,12 +1,5 @@
-from typing import Union, Tuple
-
-from anndata import AnnData
-import pandas as pd
 import numpy as np
+import pandas as pd
+from anndata import AnnData
 
-
-DataType = Union[
-    AnnData,
-    pd.DataFrame,
-    Tuple[np.ndarray, np.ndarray, np.ndarray],
-]
+DataType = AnnData | pd.DataFrame | tuple[np.ndarray, np.ndarray, np.ndarray]

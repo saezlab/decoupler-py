@@ -15,7 +15,7 @@ def rng():
 @pytest.fixture
 def adata():
     adata, _ = dc.ds.toy(nobs=40, nvar=20, bval=2, seed=42, verbose=False)
-    adata.layers['counts'] = adata.X.round()
+    adata.layers["counts"] = adata.X.round()
     return adata
 
 
@@ -32,7 +32,7 @@ def tdata_obsm(
     rng,
 ):
     sc.tl.pca(tdata)
-    tdata.obsm['X_umap'] = tdata.obsm['X_pca'][:, :2] + rng.random(tdata.obsm['X_pca'][:, :2].shape)
+    tdata.obsm["X_umap"] = tdata.obsm["X_pca"][:, :2] + rng.random(tdata.obsm["X_pca"][:, :2].shape)
     dc.mt.ulm(data=tdata, net=net, tmin=0)
     return tdata
 
@@ -43,28 +43,28 @@ def pdata(
     rng,
 ):
     adata.X = adata.X.round() * (rng.random(adata.shape) > 0.75)
-    return dc.pp.pseudobulk(adata=adata, sample_col='sample', groups_col='group')
+    return dc.pp.pseudobulk(adata=adata, sample_col="sample", groups_col="group")
 
 
 @pytest.fixture
 def bdata():
     adata, _ = dc.ds.toy_bench(nobs=100, nvar=20, bval=2, seed=42, verbose=False)
-    adata.obs['bm_group'] = adata.obs.apply(lambda x: [x['sample'], x['group']], axis=1)
+    adata.obs["bm_group"] = adata.obs.apply(lambda x: [x["sample"], x["group"]], axis=1)
     return adata
 
 
 @pytest.fixture
 def deg():
     deg = pd.DataFrame(
-        data = [
+        data=[
             [1, 0.5],
             [-2, 0.25],
             [3, 0.125],
             [-4, 0.05],
             [5, 0.025],
         ],
-        columns=['stat', 'padj'],
-        index=['G01', 'G02', 'G03', 'G04', 'G05']
+        columns=["stat", "padj"],
+        index=["G01", "G02", "G03", "G04", "G05"],
     )
     return deg
 
@@ -72,13 +72,13 @@ def deg():
 @pytest.fixture
 def net():
     _, net = dc.ds.toy(nobs=2, nvar=12, bval=2, seed=42, verbose=False)
-    net = dc.pp.prune(features=net['target'].unique(), net=net, tmin=3)
+    net = dc.pp.prune(features=net["target"].unique(), net=net, tmin=3)
     return net
 
 
 @pytest.fixture
 def unwnet(net):
-    return net.drop(columns=['weight'], inplace=False)
+    return net.drop(columns=["weight"], inplace=False)
 
 
 @pytest.fixture

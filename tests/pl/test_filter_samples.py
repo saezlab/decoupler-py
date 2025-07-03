@@ -1,17 +1,17 @@
 import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
 import pytest
+from matplotlib.figure import Figure
 
 import decoupler as dc
 
 
 @pytest.mark.parametrize(
-    'groupby,log',
+    "groupby,log",
     [
-        ['group', True],
-        [['group'], True],
-        [['sample', 'group'], True],
-    ]
+        ["group", True],
+        [["group"], True],
+        [["sample", "group"], True],
+    ],
 )
 def test_filter_samples(
     pdata,

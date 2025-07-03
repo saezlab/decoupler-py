@@ -1,17 +1,15 @@
-from typing import Tuple
 import math
 
+import numba as nb
 import numpy as np
-import scipy.stats as sts
 import scipy.sparse as sps
 from tqdm.auto import tqdm
-import numba as nb
 
 from decoupler._docs import docs
 from decoupler._log import _log
-from decoupler._Method import MethodMeta, Method
-from decoupler.pp.net import _getset
+from decoupler._Method import Method, MethodMeta
 from decoupler.mt._gsea import _std
+from decoupler.pp.net import _getset
 
 
 @nb.njit(cache=True)
@@ -33,7 +31,7 @@ def _norm_cdf(
     sigma: float = 1.0,
 ) -> np.ndarray:
     e = _erf((x - mu) / (sigma * np.sqrt(2.0)))
-    return (0.5 * (1.0 + e))
+    return 0.5 * (1.0 + e)
 
 
 @nb.njit(cache=True)
@@ -50,21 +48,17 @@ def _poisson_pmf(
 
 
 @nb.njit(cache=True)
-def _ppois(
-    k: float,
-    lam: float
-) -> float:
+def _ppois(k: float, lam: float) -> float:
     cdf_sum = 0.0
     for i in range(int(k) + 1):
         cdf_sum += _poisson_pmf(i, lam)
     if cdf_sum > 1:
-        cdf_sum = 1.
+        cdf_sum = 1.0
     return cdf_sum
 
 
 @nb.njit(cache=True)
-def _init_cdfs(
-) -> np.ndarray:
+def _init_cdfs() -> np.ndarray:
     pre_res = 10000
     max_pre = 10
     pre_cdf = _norm_cdf(np.arange(pre_res + 1) * max_pre / pre_res, 0, 1)
@@ -73,14 +67,12 @@ def _init_cdfs(
 
 @nb.njit(cache=True)
 def _ecdf(arr):
-    ecdf = np.searchsorted(np.sort(arr), arr, side='right') / len(arr)
+    ecdf = np.searchsorted(np.sort(arr), arr, side="right") / len(arr)
     return ecdf
 
 
 @nb.njit(parallel=True, cache=True)
-def _mat_ecdf(
-    mat: np.ndarray
-) -> np.ndarray:
+def _mat_ecdf(mat: np.ndarray) -> np.ndarray:
     D = np.zeros(mat.shape)
     for j in range(mat.shape[1]):
         D[:, j] = _ecdf(mat[:, j])
@@ -88,11 +80,7 @@ def _mat_ecdf(
 
 
 @nb.njit(cache=True)
-def _col_d(
-    x: np.ndarray,
-    gauss: bool,
-    pre_cdf: np.ndarray
-) -> np.ndarray:
+def _col_d(x: np.ndarray, gauss: bool, pre_cdf: np.ndarray) -> np.ndarray:
     size = x.shape[0]
     if gauss:
         bw = _std(x, 1) / 4.0
@@ -122,10 +110,7 @@ def _col_d(
 
 
 @nb.njit(parallel=True, cache=True)
-def _mat_d(
-    mat: np.ndarray,
-    gauss: bool
-) -> np.ndarray:
+def _mat_d(mat: np.ndarray, gauss: bool) -> np.ndarray:
     pre_cdf = _init_cdfs()
     D = np.zeros(mat.shape)
     for j in nb.prange(mat.shape[1]):
@@ -137,13 +122,15 @@ def _density(
     mat: np.ndarray,
     kcdf: str | None,
 ) -> np.ndarray:
-    assert (isinstance(kcdf, str) and kcdf in ['gaussian', 'poisson']) or kcdf is None, \
-    'kcdf must be gaussian, poisson or None'
-    if kcdf == 'gaussian':
+    assert (isinstance(kcdf, str) and kcdf in ["gaussian", "poisson"]) or kcdf is None, (
+        "kcdf must be gaussian, poisson or None"
+    )
+    if kcdf == "gaussian":
         mat = _mat_d(mat, gauss=True)
-    elif kcdf == 'poisson':
-        assert mat.sum().is_integer(), \
-        f'when kcdf={kcdf} input data must be integers (e.g. 3, 4, etc.), not decimal values (e.g. 3.5, 4.9, etc.)'
+    elif kcdf == "poisson":
+        assert mat.sum().is_integer(), (
+            f"when kcdf={kcdf} input data must be integers (e.g. 3, 4, etc.), not decimal values (e.g. 3.5, 4.9, etc.)"
+        )
         mat = _mat_d(mat, gauss=False)
     elif kcdf is None:
         mat = _mat_ecdf(mat)
@@ -151,7 +138,7 @@ def _density(
 
 
 @nb.njit(cache=True)
-def _rankdata(values):
+def _rankdata(values: np.ndarray) -> np.ndarray:
     n = len(values)
     ranks = np.empty(n, dtype=np.int_)
     indices = np.arange(n)
@@ -174,7 +161,7 @@ def _rankdata(values):
 
 @nb.njit(cache=True)
 def _dos_srs(r):
-    mask = (r == 0)
+    mask = r == 0
     p = len(r)
     r_dense = r.astype(np.int_).copy()
     if mask.any():
@@ -206,9 +193,7 @@ def _dos_srs(r):
 
 
 @nb.njit(parallel=True, cache=True)
-def _rankmat(
-    mat: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray]:
+def _rankmat(mat: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     n_rows, n_cols = mat.shape
     dos_mat = np.zeros((n_rows, n_cols), dtype=np.int_)
     srs_mat = np.zeros((n_rows, n_cols), dtype=np.int_)
@@ -226,7 +211,7 @@ def _rnd_walk(
     symrnkstat: np.ndarray,
     n: int,
     tau: int | float,
-) -> Tuple[float, int]:
+) -> tuple[float, int]:
     gsetrnk = np.empty(k, dtype=np.int_)
     for i in range(k):
         gsetrnk[i] = decordstat[gsetidx[i] - 1]
@@ -249,8 +234,9 @@ def _rnd_walk(
         walkstatpos = 0.0
         walkstatneg = 0.0
         for i in range(n):
-            wlkstat = (stepcdfingeneset[i] / stepcdfingeneset[n - 1]) - \
-                      (stepcdfoutgeneset[i] / stepcdfoutgeneset[n - 1])
+            wlkstat = (stepcdfingeneset[i] / stepcdfingeneset[n - 1]) - (
+                stepcdfoutgeneset[i] / stepcdfoutgeneset[n - 1]
+            )
             if wlkstat > walkstatpos:
                 walkstatpos = wlkstat
             if wlkstat < walkstatneg:
@@ -307,12 +293,12 @@ def _func_gsva(
     cnct: np.ndarray,
     starts: np.ndarray,
     offsets: np.ndarray,
-    kcdf: str | None = 'gaussian',
+    kcdf: str | None = "gaussian",
     maxdiff: bool = True,
     absrnk: bool = False,
     tau: int | float = 1,
     verbose: bool = False,
-) -> Tuple[np.ndarray, None]:
+) -> tuple[np.ndarray, None]:
     r"""
     Gene Set Variation Analysis (GSVA) :cite:`gsva`.
 
@@ -378,19 +364,19 @@ def _func_gsva(
     %(returns)s
     """
     if isinstance(mat, sps.csr_matrix):
-        m = f'gsva - Converting sparse matrix to dense format before density transformation'
-        _log(m, level='info', verbose=verbose)
+        m = "gsva - Converting sparse matrix to dense format before density transformation"
+        _log(m, level="info", verbose=verbose)
         mat = mat.toarray()
-    m = f'gsva - computing density with kcdf={kcdf}'
-    _log(m, level='info', verbose=verbose)
+    m = f"gsva - computing density with kcdf={kcdf}"
+    _log(m, level="info", verbose=verbose)
     # Compute density
     if mat.shape[0] > 1:
         mat = _density(mat, kcdf=kcdf)
     dos, srs = _rankmat(mat)
     # Compute GSVA
     nsrc = starts.size
-    m = f'gsva - calculating {nsrc} scores with maxdiff={maxdiff}, absrnk={absrnk}'
-    _log(m, level='info', verbose=verbose)
+    m = f"gsva - calculating {nsrc} scores with maxdiff={maxdiff}, absrnk={absrnk}"
+    _log(m, level="info", verbose=verbose)
     es = np.zeros((dos.shape[0], nsrc))
     for j in tqdm(range(nsrc), disable=not verbose):
         fset = (_getset(cnct, starts, offsets, j) + 1).astype(int)
@@ -399,14 +385,14 @@ def _func_gsva(
 
 
 _gsva = MethodMeta(
-    name='gsva',
-    desc='Gene Set Variation Analysis (GSVA)',
+    name="gsva",
+    desc="Gene Set Variation Analysis (GSVA)",
     func=_func_gsva,
-    stype='numerical',
+    stype="numerical",
     adj=False,
     weight=False,
     test=False,
     limits=(-1, +1),
-    reference='https://doi.org/10.1186/1471-2105-14-7',
+    reference="https://doi.org/10.1186/1471-2105-14-7",
 )
 gsva = Method(_method=_gsva)

@@ -1,12 +1,10 @@
-from typing import Tuple
-
-import numpy as np
 import numba as nb
+import numpy as np
 import scipy.stats as sts
 
 from decoupler._docs import docs
 from decoupler._log import _log
-from decoupler._Method import MethodMeta, Method
+from decoupler._Method import Method, MethodMeta
 
 
 @nb.njit(parallel=True, cache=True)
@@ -20,9 +18,11 @@ def _fit(
     n_samples = y.shape[1]
     n_fsets = X.shape[1]
     coef, sse, _, _ = np.linalg.lstsq(X, y)
-    assert len(sse) > 0, 'Could not fit a multivariate linear model. This can happen because there are more sources\n \
+    assert len(sse) > 0, (
+        "Could not fit a multivariate linear model. This can happen because there are more sources\n \
     (covariates) than unique targets (samples), or because the network adjacency matrix rank is smaller than the number\n \
-    of sources'
+    of sources"
+    )
     sse = sse / df
     se = np.zeros((n_samples, n_fsets))
     for i in nb.prange(n_samples):
@@ -38,7 +38,7 @@ def _func_mlm(
     adj: np.ndarray,
     tval: bool = True,
     verbose: bool = False,
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     r"""
     Multivariate Linear Model (MLM) :cite:`decoupler`.
 
@@ -97,12 +97,12 @@ def _func_mlm(
     # Get dims
     n_features, n_fsets = adj.shape
     # Add intercept
-    adj = np.column_stack((np.ones((n_features, )), adj))
+    adj = np.column_stack((np.ones((n_features,)), adj))
     # Compute inv and df for lm
     inv = np.linalg.inv(np.dot(adj.T, adj))
     df = n_features - n_fsets - 1
-    m = f'mlm - fitting {n_fsets} multivariate models of {n_features} observations with {df} degrees of freedom'
-    _log(m, level='info', verbose=verbose)
+    m = f"mlm - fitting {n_fsets} multivariate models of {n_features} observations with {df} degrees of freedom"
+    _log(m, level="info", verbose=verbose)
     # Compute tval
     coef, t = _fit(adj, mat.T, inv, df)
     # Compute pval
@@ -116,14 +116,14 @@ def _func_mlm(
 
 
 _mlm = MethodMeta(
-    name='mlm',
-    desc='Multivariate Linear Model (MLM)',
+    name="mlm",
+    desc="Multivariate Linear Model (MLM)",
     func=_func_mlm,
-    stype='numerical',
+    stype="numerical",
     adj=True,
     weight=True,
     test=True,
     limits=(-np.inf, +np.inf),
-    reference='https://doi.org/10.1093/bioadv/vbac016',
+    reference="https://doi.org/10.1093/bioadv/vbac016",
 )
 mlm = Method(_method=_mlm)
