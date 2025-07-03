@@ -4,7 +4,7 @@ requires = [ "hatchling" ]
 
 [project]
 name = "decoupler"
-version = "2.0.6"
+version = "2.0.7"
 description = "Python package to perform enrichment analysis from omics data."
 readme = "README.md"
 license = { file = "LICENSE" }
