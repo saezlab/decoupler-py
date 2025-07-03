@@ -40,7 +40,7 @@ def _esrank(
     rnks: np.ndarray,
     set_msk: np.ndarray,
     dec: float,
-) -> tuple(float, int, np.ndarray):
+) -> tuple[float, int, np.ndarray]:
     # Init empty
     mx_value = 0.0
     cum_sum = 0.0
@@ -86,7 +86,7 @@ def _nesrank(
     set_msk: np.ndarray,
     dec: float,
     es: float,
-) -> tuple(float, float):
+) -> tuple[float, float]:
     # Keep old set_msk upstream
     set_msk = set_msk.copy()
     # Compute null
@@ -122,7 +122,7 @@ def _stsgsea(
     starts: np.ndarray,
     offsets: np.ndarray,
     ridx: np.ndarray,
-) -> tuple(np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray):
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     # Sort features
     idx = np.argsort(-row)
     row = row[idx]
@@ -157,7 +157,7 @@ def _func_gsea(
     times: int | float = 1000,
     seed: int | float = 42,
     verbose: bool = False,
-) -> tuple(np.ndarray, np.ndarray):
+) -> tuple[np.ndarray, np.ndarray]:
     r"""
     Gene Set Enrichment Analysis (GSEA) :cite:`gsea`.
 

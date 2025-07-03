@@ -19,7 +19,7 @@ def _return(
     es: pd.DataFrame,
     pv: pd.DataFrame,
     verbose: bool = False,
-) -> tuple(pd.DataFrame, pd.DataFrame) | AnnData | None:
+) -> tuple[pd.DataFrame, pd.DataFrame] | AnnData | None:
     if isinstance(data, AnnData):
         if data.obs_names.size != es.index.size:
             m = "Provided AnnData contains empty observations, returning repaired object"
@@ -51,9 +51,9 @@ def _run(
     empty: bool = True,
     bsize: int | float = 250_000,
     verbose: bool = False,
-    **kwargs,
-) -> tuple(pd.DataFrame, pd.DataFrame) | AnnData | None:
-    _log(f"{name} - Running {name}", level="info", verbose=verbose)
+    **kwargs
+) -> tuple[pd.DataFrame, pd.DataFrame] | AnnData | None:
+    _log(f'{name} - Running {name}', level='info', verbose=verbose)
     # Process data
     mat, obs, var = extract(data, layer=layer, raw=raw, empty=empty, verbose=verbose)
     sparse = sps.issparse(mat)

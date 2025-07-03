@@ -27,7 +27,7 @@ def toy(
     pstime: bool = False,
     seed: int = 42,
     verbose: bool = False,
-) -> tuple(AnnData, pd.DataFrame):
+) -> tuple[AnnData, pd.DataFrame]:
     """
     Generate a toy adata and net for testing.
 

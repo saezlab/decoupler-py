@@ -193,7 +193,9 @@ def _dos_srs(r):
 
 
 @nb.njit(parallel=True, cache=True)
-def _rankmat(mat: np.ndarray) -> tuple(np.ndarray, np.ndarray):
+def _rankmat(
+    mat: np.ndarray
+) -> tuple[np.ndarray, np.ndarray]:
     n_rows, n_cols = mat.shape
     dos_mat = np.zeros((n_rows, n_cols), dtype=np.int_)
     srs_mat = np.zeros((n_rows, n_cols), dtype=np.int_)
@@ -211,7 +213,7 @@ def _rnd_walk(
     symrnkstat: np.ndarray,
     n: int,
     tau: int | float,
-) -> tuple(float, int):
+) -> tuple[float, int]:
     gsetrnk = np.empty(k, dtype=np.int_)
     for i in range(k):
         gsetrnk[i] = decordstat[gsetidx[i] - 1]
@@ -298,7 +300,7 @@ def _func_gsva(
     absrnk: bool = False,
     tau: int | float = 1,
     verbose: bool = False,
-) -> tuple(np.ndarray, None):
+) -> tuple[np.ndarray, None]:
     r"""
     Gene Set Variation Analysis (GSVA) :cite:`gsva`.
 

@@ -15,7 +15,7 @@ def _get_wts_posidxs(
     pval1: np.ndarray,
     table: np.ndarray,
     penalty: int,
-) -> tuple(np.ndarray, np.ndarray):
+) -> tuple[np.ndarray, np.ndarray]:
     pos_idxs = np.zeros(idxs.shape[0], dtype=np.int_)
     for j in range(idxs.shape[0]):
         p = pval1[j]
@@ -36,7 +36,7 @@ def _get_wts_posidxs(
 @nb.njit(cache=True)
 def _get_tmp_idxs(
     pval: np.ndarray,
-) -> tuple(np.ndarray, np.ndarray):
+) -> tuple[np.ndarray, np.ndarray]:
     size = int(np.sum(~np.isnan(pval)) / 2)
     tmp = np.zeros((size, 2))
     idxs = np.zeros((size, 2), dtype=np.int_)
@@ -111,8 +111,8 @@ def _shadow_regulon(
     net: np.ndarray,
     reg_sign: float = 1.96,
     n_targets: int | float = 10,
-    penalty: int | float = 20,
-) -> tuple(np.ndarray, np.ndarray, np.ndarray):
+    penalty: int | float = 20
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     # Find significant activities
     msk_sign = np.abs(nes_i) > reg_sign
     # Filter by significance
@@ -174,7 +174,7 @@ def _func_viper(
     n_targets: int | float = 10,
     penalty: int | float = 20,
     verbose: bool = False,
-) -> tuple(np.ndarray, np.ndarray):
+) -> tuple[np.ndarray, np.ndarray]:
     r"""
     Virtual Inference of Protein-activity by Enriched Regulon analysis (VIPER) :cite:`viper`.
 

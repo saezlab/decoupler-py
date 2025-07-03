@@ -62,7 +62,7 @@ def _mean_zscores(
 def consensus(
     result: dict | AnnData,
     verbose: bool = False,
-) -> tuple(pd.DataFrame, pd.DataFrame) | None:
+) -> tuple[pd.DataFrame, pd.DataFrame] | None:
     r"""
     Consensus score across methods.
 

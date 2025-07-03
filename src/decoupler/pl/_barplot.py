@@ -9,13 +9,16 @@ from decoupler._docs import docs
 from decoupler._Plotter import Plotter
 
 
-def _set_limits(vmin: int | float, vcenter: int | float, vmax: int | float, values: np.ndarray) -> tuple(
-    float, float, float
-):
-    assert np.isfinite(values).all(), "values in data mut be finite"
-    assert isinstance(vmin, int | float) or vmin is None, "vmin must be numerical or None"
-    assert isinstance(vcenter, int | float) or vcenter is None, "vcenter must be numerical or None"
-    assert isinstance(vmax, int | float) or vmax is None, "vmax must be numerical or None"
+def _set_limits(
+    vmin: int | float,
+    vcenter: int | float,
+    vmax: int | float,
+    values: np.ndarray
+) -> tuple[float, float, float]:
+    assert np.isfinite(values).all(), 'values in data mut be finite'
+    assert isinstance(vmin, int | float) or vmin is None, 'vmin must be numerical or None'
+    assert isinstance(vcenter, int | float) or vcenter is None, 'vcenter must be numerical or None'
+    assert isinstance(vmax, int | float) or vmax is None, 'vmax must be numerical or None'
     if vmin is None:
         vmin = values.min()
     if vmax is None:

@@ -6,7 +6,7 @@ from decoupler.bm._pp import _validate_bool
 def fscore(
     y_true: np.ndarray,
     y_score: np.ndarray,
-) -> tuple(float, float, float):
+) -> tuple[float, float, float]:
     """F-beta score"""
     # Validate
     _validate_bool(y_true=y_true, y_score=y_score)

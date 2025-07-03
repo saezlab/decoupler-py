@@ -7,7 +7,7 @@ from decoupler.bm._pp import _validate_bool
 def qrank(
     y_true: np.ndarray,
     y_score: np.ndarray,
-) -> tuple(float, float):
+) -> tuple[float, float]:
     """1 - quantile normalized rank"""
     _validate_bool(y_true=y_true, y_score=y_score)
     y_rank = sts.rankdata(y_score, axis=1, nan_policy="omit", method="average")

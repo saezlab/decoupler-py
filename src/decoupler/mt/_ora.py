@@ -145,7 +145,7 @@ def _runora(
     offsets: np.ndarray,
     n_bg: int | None,
     ha_corr: int | float = 0.5,
-) -> tuple(float, float):
+) -> tuple[float, float]:
     nsrc = starts.size
     # Transform to set
     row = set(row)
@@ -185,7 +185,7 @@ def _func_ora(
     n_bg: int | float | None = 20_000,
     ha_corr: int | float = 0.5,
     verbose: bool = False,
-) -> tuple(np.ndarray, np.ndarray):
+) -> tuple[np.ndarray, np.ndarray]:
     r"""
     Over Representation Analysis (ORA) :cite:`ora`.
 

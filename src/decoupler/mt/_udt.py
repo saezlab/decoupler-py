@@ -31,7 +31,7 @@ def _func_udt(
     adj: np.ndarray,
     verbose: bool = False,
     **kwargs,
-) -> tuple(np.ndarray, None):
+) -> tuple[np.ndarray, None]:
     """
     Univariate Decision Tree (UDT) :cite:`decoupler`.
 

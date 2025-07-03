@@ -38,7 +38,7 @@ def _func_mlm(
     adj: np.ndarray,
     tval: bool = True,
     verbose: bool = False,
-) -> tuple(np.ndarray, np.ndarray):
+) -> tuple[np.ndarray, np.ndarray]:
     r"""
     Multivariate Linear Model (MLM) :cite:`decoupler`.
 

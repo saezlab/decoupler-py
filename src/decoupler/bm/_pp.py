@@ -43,7 +43,7 @@ def _filter(
     net: pd.DataFrame,
     sfilt: bool,
     verbose: bool,
-) -> tuple(AnnData, pd.DataFrame):
+) -> tuple[AnnData, pd.DataFrame]:
     # Remove experiments without sources in net
     srcs = net["source"].unique()
     prts = set()

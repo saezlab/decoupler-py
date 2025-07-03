@@ -145,7 +145,7 @@ def _func_waggr(
     times: int | float = 1000,
     seed: int | float = 42,
     verbose: bool = False,
-) -> tuple(np.ndarray, np.ndarray):
+) -> tuple[np.ndarray, np.ndarray]:
     r"""
     Weighted Aggregate (WAGGR) :cite:`decoupler`.
 

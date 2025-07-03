@@ -193,7 +193,7 @@ def _psbulk(
     new_obs: pd.DataFrame,
     mode: Callable,
     verbose: bool = False,
-) -> tuple(np.ndarray, np.ndarray, np.ndarray, np.ndarray):
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     # Init empty variables
     psbulk = np.zeros((n_rows, n_cols))
     props = np.zeros((n_rows, n_cols))
@@ -464,7 +464,7 @@ def _ssize_tcount(
     X: np.ndarray,
     lib_size: float | None = None,
     min_count: int = 10,
-) -> tuple(np.ndarray, np.ndarray):
+) -> tuple[np.ndarray, np.ndarray]:
     if isinstance(X, sps.csr_matrix):
         X = X.toarray()
     # Compute lib_size if needed

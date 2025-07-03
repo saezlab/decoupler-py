@@ -28,7 +28,7 @@ def _func_mdt(
     adj: np.ndarray,
     verbose: bool = False,
     **kwargs,
-) -> tuple(np.ndarray, None):
+) -> tuple[np.ndarray, None]:
     r"""
     Multivariate Decision Trees (MDT) :cite:`decoupler`.
 

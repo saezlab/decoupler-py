@@ -12,7 +12,7 @@ def _func_zscore(
     adj: np.ndarray,
     flavor: str = "RoKAI",
     verbose: bool = False,
-) -> tuple(np.ndarray, np.ndarray):
+) -> tuple[np.ndarray, np.ndarray]:
     r"""
     Z-score (ZSCORE) :cite:`zscore`.
 

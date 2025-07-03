@@ -30,7 +30,7 @@ def _testsign(
 def _tensor_scores(
     adata: AnnData,
     thr: float,
-) -> tuple(np.ndarray, np.ndarray, np.ndarray, np.ndarray, list):
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, list]:
     # Get unique methods
     has_test = {m.name: m.test for m in _methods}
     has_test = has_test | {"consensus": True}
@@ -79,7 +79,7 @@ def _mask_grps(
     obs: pd.DataFrame,
     groupby: None | list,
     verbose: float,
-) -> tuple(list, list, list):
+) -> tuple[list, list, list]:
     if groupby is not None:
         # Init empty lsts
         msks = []
@@ -139,9 +139,9 @@ def _metric_scores(
     verbose: bool,
     **kwargs,
 ) -> None:
-    assert isinstance(metrics, str | list) or metrics is None, "metrics must be str or list"
-    if isinstance(metrics, None):
-        metrics = ["auc", "fscore", "qrank"]
+    assert isinstance(metrics, str | list) or metrics is None, 'metrics must be str or list'
+    if metrics is None:
+        metrics = ['auc', 'fscore', 'qrank']
     elif isinstance(metrics, str):
         metrics = [metrics]
     if runby == "expr":

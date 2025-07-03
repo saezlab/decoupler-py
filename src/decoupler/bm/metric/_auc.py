@@ -6,7 +6,7 @@ from decoupler.bm._pp import _validate_bool
 def _binary_clf_curve(
     y_true: np.ndarray,
     y_score: np.ndarray,
-) -> tuple(np.ndarray, np.ndarray, np.ndarray):
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     # Sort scores
     idx = np.flip(np.argsort(y_score))
     y_score = y_score[idx]
@@ -78,7 +78,7 @@ def auc(
     y_true: np.ndarray,
     y_score: np.ndarray,
     pi0: float = 0.5,
-) -> tuple(float, float):
+) -> tuple[float, float]:
     """Area Under the Curve."""
     # Normalize to make comparable
     norm = np.nanmax(np.abs(y_score), axis=1)

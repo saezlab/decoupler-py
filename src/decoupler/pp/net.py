@@ -114,7 +114,7 @@ def prune(
 
 def _adj(
     net: pd.DataFrame,
-) -> tuple(np.ndarray, np.ndarray, np.ndarray):
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     # Pivot df to a wider format
     X = net.pivot(columns="source", index="target", values="weight").fillna(0)
     # Store node names and weights
@@ -145,7 +145,7 @@ def adjmat(
     features: np.ndarray,
     net: pd.DataFrame,
     verbose: bool = False,
-) -> tuple(np.ndarray, np.ndarray, np.ndarray):
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Converts a network in long format into a regulatory adjacency matrix (targets x sources).
 
@@ -171,7 +171,7 @@ def idxmat(
     features: np.ndarray,
     net: pd.DataFrame,
     verbose: bool = False,
-) -> tuple(np.ndarray, np.ndarray, np.ndarray, np.ndarray):
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Indexes and returns feature sets as a decomposed sparse matrix.
 

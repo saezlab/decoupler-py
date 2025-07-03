@@ -26,7 +26,7 @@ def _func_ulm(
     adj: np.ndarray,
     tval: bool = True,
     verbose: bool = False,
-) -> tuple(np.ndarray, np.ndarray):
+) -> tuple[np.ndarray, np.ndarray]:
     r"""
     Univariate Linear Model (ULM) :cite:`decoupler`.
 
