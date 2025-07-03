@@ -15,18 +15,15 @@ from decoupler._Plotter import Plotter
 def _mcolor(
     cmap: str,
 ) -> str:
-    assert isinstance(cmap, str), 'cmap must be str'
+    assert isinstance(cmap, str), "cmap must be str"
     cmap = plt.get_cmap(cmap)
     mid_color_rgb = cmap(0.5)
     mid_color_hex = to_hex(mid_color_rgb)
     return mid_color_hex
 
 
-def _palette(
-    labels: list,
-    cmap: str = 'tab20'
-) -> dict:
-    assert isinstance(cmap, str), 'cmap must be str'
+def _palette(labels: list, cmap: str = "tab20") -> dict:
+    assert isinstance(cmap, str), "cmap must be str"
     rnks = np.arange(len(labels))
     if cmap in plt.colormaps():
         cmap = plt.get_cmap(cmap)
@@ -43,11 +40,11 @@ def summary(
     df: pd.DataFrame,
     y: str,
     metrics: list | None = None,
-    cmap_y: str = 'tab20',
-    cmap_auc: str = 'Greens',
-    cmap_fscore: str = 'Blues',
-    cmap_qrank: str = 'Reds',
-    **kwargs
+    cmap_y: str = "tab20",
+    cmap_auc: str = "Greens",
+    cmap_fscore: str = "Blues",
+    cmap_qrank: str = "Reds",
+    **kwargs,
 ) -> None | Figure:
     """
     Summarizes metrics into a final score by computing the quantile-normalized rank across them.
@@ -69,72 +66,107 @@ def summary(
     %(plot)s
     """
     # Validate
-    assert isinstance(df, pd.DataFrame), 'df must be pandas.DataFrame'
-    assert isinstance(y, str) and y in df.columns, 'y must be str and in df.columns'
-    assert isinstance(metrics, str | list) or metrics is None, 'metrics must be str or list'
+    assert isinstance(df, pd.DataFrame), "df must be pandas.DataFrame"
+    assert isinstance(y, str) and y in df.columns, "y must be str and in df.columns"
+    assert isinstance(metrics, str | list) or metrics is None, "metrics must be str or list"
     if metrics is None:
-        metrics = ['auc', 'fscore', 'qrank']
+        metrics = ["auc", "fscore", "qrank"]
     elif isinstance(metrics, str):
         metrics = [metrics]
-    assert set(metrics).issubset({'auc', 'fscore', 'qrank'})
-    logging.getLogger('matplotlib').setLevel(logging.WARNING)
+    assert set(metrics).issubset({"auc", "fscore", "qrank"})
+    logging.getLogger("matplotlib").setLevel(logging.WARNING)
     # Fix
-    df = df.copy().sort_values('score', ascending=False).set_index(y)
+    df = df.copy().sort_values("score", ascending=False).set_index(y)
     # Scale
-    cols = list(df.select_dtypes(include='number').columns)
+    cols = list(df.select_dtypes(include="number").columns)
     df[cols] = (df[cols] - df[cols].min()) / (df[cols].max() - df[cols].min())
     # Instance
-    kwargs['ax'] = None
+    kwargs["ax"] = None
     bp = Plotter(**kwargs)
     bp.fig.delaxes(bp.ax)
     plt.close(bp.fig)
     # Plot
     lst_h = []
     pad = 0.05
-    if 'auc' in metrics:
-        cnames = ['auroc', 'auprc', 'H(auroc, auprc)']
-        h = ma.Heatmap(df[cnames], cmap=cmap_auc, name="h_auc", width=1, height=3, lw=.1,
-                       cbar_kws={'orientation': 'horizontal', 'title': 'Scaled auc'})
-        h.group_cols(['auc', 'auc', 'auc'], order=['auc'])
-        h.add_top(
-            ma.plotter.Chunk(['auc'], fill_colors=[_mcolor(cmap_auc)], align='center')
+    if "auc" in metrics:
+        cnames = ["auroc", "auprc", "H(auroc, auprc)"]
+        h = ma.Heatmap(
+            df[cnames],
+            cmap=cmap_auc,
+            name="h_auc",
+            width=1,
+            height=3,
+            lw=0.1,
+            cbar_kws={"orientation": "horizontal", "title": "Scaled auc"},
         )
-        h.add_bottom(mp.Labels(cnames[:2] + ['h mean'], ), pad=pad)
+        h.group_cols(["auc", "auc", "auc"], order=["auc"])
+        h.add_top(ma.plotter.Chunk(["auc"], fill_colors=[_mcolor(cmap_auc)], align="center"))
+        h.add_bottom(
+            mp.Labels(
+                cnames[:2] + ["h mean"],
+            ),
+            pad=pad,
+        )
         lst_h.append(h)
-    if 'fscore' in metrics:
-        cnames = ['precision', 'recall', 'F-score']
-        h = ma.Heatmap(df[cnames], cmap=cmap_fscore, name="h_fsc", width=1, height=2, lw=.1,
-                       cbar_kws={'orientation':'horizontal', 'title':'Scaled fscore'})
-        h.group_cols(['fscore', 'fscore', 'fscore'], order=['fscore'])
-        h.add_top(
-            ma.plotter.Chunk(['fscore'], fill_colors=[_mcolor(cmap_fscore)], align='center')
+    if "fscore" in metrics:
+        cnames = ["precision", "recall", "F-score"]
+        h = ma.Heatmap(
+            df[cnames],
+            cmap=cmap_fscore,
+            name="h_fsc",
+            width=1,
+            height=2,
+            lw=0.1,
+            cbar_kws={"orientation": "horizontal", "title": "Scaled fscore"},
         )
-        h.add_bottom(mp.Labels(cnames[:2] + ['h mean'], ), pad=pad)
+        h.group_cols(["fscore", "fscore", "fscore"], order=["fscore"])
+        h.add_top(ma.plotter.Chunk(["fscore"], fill_colors=[_mcolor(cmap_fscore)], align="center"))
+        h.add_bottom(
+            mp.Labels(
+                cnames[:2] + ["h mean"],
+            ),
+            pad=pad,
+        )
         lst_h.append(h)
-    if 'qrank' in metrics:
-        cnames = ['-log10(pval)', '1-qrank', 'H(1-qrank, -log10(pval))']
-        h = ma.Heatmap(df[cnames], cmap=cmap_qrank, name="h_rnk", width=1, height=1, lw=.1,
-                       cbar_kws={'orientation':"horizontal", 'title':'Scaled qrank'})
-        h.group_cols(['qrank', 'qrank', 'qrank'], order=['qrank'])
-        h.add_top(
-            ma.plotter.Chunk(['qrank'], fill_colors=[_mcolor(cmap_qrank)], align='center')
+    if "qrank" in metrics:
+        cnames = ["-log10(pval)", "1-qrank", "H(1-qrank, -log10(pval))"]
+        h = ma.Heatmap(
+            df[cnames],
+            cmap=cmap_qrank,
+            name="h_rnk",
+            width=1,
+            height=1,
+            lw=0.1,
+            cbar_kws={"orientation": "horizontal", "title": "Scaled qrank"},
         )
-        h.add_bottom(mp.Labels(cnames[:2] + ['h mean'], ), pad=pad)
+        h.group_cols(["qrank", "qrank", "qrank"], order=["qrank"])
+        h.add_top(ma.plotter.Chunk(["qrank"], fill_colors=[_mcolor(cmap_qrank)], align="center"))
+        h.add_bottom(
+            mp.Labels(
+                cnames[:2] + ["h mean"],
+            ),
+            pad=pad,
+        )
         lst_h.append(h)
     # Build canvas
     c = lst_h[0]
     # Add bar to the left
-    bar = mp.Bar(df['score'].T, label='Score', color='gray', palette=_palette(labels=df.index, cmap=cmap_y))
+    bar = mp.Bar(df["score"].T, label="Score", color="gray", palette=_palette(labels=df.index, cmap=cmap_y))
     c.add_left(bar)
-    c.add_left(mp.Labels(df.index, ), pad=pad)
+    c.add_left(
+        mp.Labels(
+            df.index,
+        ),
+        pad=pad,
+    )
     c.add_title(left=y, pad=pad)
     for h in lst_h[1:]:
         c += h
-    c.add_legends(side='right')
+    c.add_legends(side="right")
     c.render()
     if bp.return_fig or bp.save is not None:
         plt.close()
-    i = [i for i in range(len(c.figure.axes)) if c.figure.axes[i].get_xlabel() == 'Score'][0]
+    i = [i for i in range(len(c.figure.axes)) if c.figure.axes[i].get_xlabel() == "Score"][0]
     c.figure.axes[i].invert_xaxis()
     bp.fig = c.figure
     bp.fig.set_figwidth(bp.figsize[0])

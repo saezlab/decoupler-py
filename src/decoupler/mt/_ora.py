@@ -15,16 +15,18 @@ from decoupler.pp.net import _getset
 def _maxn() -> int:
     l = 1
     n = 2
-    h = float('inf')
+    h = float("inf")
     while l < n:
-        if abs(math.lgamma(n+1) - math.lgamma(n) - math.log(n)) >= 1:
+        if abs(math.lgamma(n + 1) - math.lgamma(n) - math.log(n)) >= 1:
             h = n
         else:
             l = n
         n = (l + min(h, l * 3)) // 2
     return n
 
+
 MAXN = _maxn()
+
 
 @nb.njit(cache=True)
 def _mlnTest2t(
@@ -34,19 +36,30 @@ def _mlnTest2t(
     abcd: int,
 ):
     if 0 > a or a > ab or a > ac or ab + ac > abcd + a:
-        raise ValueError('invalid contingency table')
+        raise ValueError("invalid contingency table")
     if abcd > MAXN:
-        raise OverflowError('the grand total of contingency table is too large')
+        raise OverflowError("the grand total of contingency table is too large")
     a_min = max(0, ab + ac - abcd)
     a_max = min(ab, ac)
     if a_min == a_max:
-        return 0.
-    p0 = math.lgamma(ab + 1) + math.lgamma(ac + 1) + math.lgamma(abcd - ac + 1) + math.lgamma(abcd - ab + 1) - math.lgamma(abcd + 1)
+        return 0.0
+    p0 = (
+        math.lgamma(ab + 1)
+        + math.lgamma(ac + 1)
+        + math.lgamma(abcd - ac + 1)
+        + math.lgamma(abcd - ab + 1)
+        - math.lgamma(abcd + 1)
+    )
     pa = math.lgamma(a + 1) + math.lgamma(ab - a + 1) + math.lgamma(ac - a + 1) + math.lgamma(abcd - ab - ac + a + 1)
-    st = 1.
+    st = 1.0
     if ab * ac < a * abcd:
         for i in range(min(a - 1, int(round(ab * ac / abcd))), a_min - 1, -1):
-            pi = math.lgamma(i + 1) + math.lgamma(ab - i + 1) + math.lgamma(ac - i + 1) + math.lgamma(abcd - ab - ac + i + 1)
+            pi = (
+                math.lgamma(i + 1)
+                + math.lgamma(ab - i + 1)
+                + math.lgamma(ac - i + 1)
+                + math.lgamma(abcd - ab - ac + i + 1)
+            )
             if pi < pa:
                 continue
             st_new = st + math.exp(pa - pi)
@@ -54,20 +67,35 @@ def _mlnTest2t(
                 break
             st = st_new
         for i in range(a + 1, a_max + 1):
-            pi = math.lgamma(i + 1) + math.lgamma(ab - i + 1) + math.lgamma(ac - i + 1) + math.lgamma(abcd - ab - ac + i + 1)
+            pi = (
+                math.lgamma(i + 1)
+                + math.lgamma(ab - i + 1)
+                + math.lgamma(ac - i + 1)
+                + math.lgamma(abcd - ab - ac + i + 1)
+            )
             st_new = st + math.exp(pa - pi)
             if st_new == st:
                 break
             st = st_new
     else:
         for i in range(a - 1, a_min - 1, -1):
-            pi = math.lgamma(i + 1) + math.lgamma(ab - i + 1) + math.lgamma(ac - i + 1) + math.lgamma(abcd - ab - ac + i + 1)
+            pi = (
+                math.lgamma(i + 1)
+                + math.lgamma(ab - i + 1)
+                + math.lgamma(ac - i + 1)
+                + math.lgamma(abcd - ab - ac + i + 1)
+            )
             st_new = st + math.exp(pa - pi)
             if st_new == st:
                 break
             st = st_new
         for i in range(max(a + 1, int(round(ab * ac / abcd))), a_max + 1):
-            pi = math.lgamma(i + 1) + math.lgamma(ab - i + 1) + math.lgamma(ac - i + 1) + math.lgamma(abcd - ab - ac + i + 1)
+            pi = (
+                math.lgamma(i + 1)
+                + math.lgamma(ab - i + 1)
+                + math.lgamma(ac - i + 1)
+                + math.lgamma(abcd - ab - ac + i + 1)
+            )
             if pi < pa:
                 continue
             st_new = st + math.exp(pa - pi)
@@ -103,7 +131,7 @@ def _oddsr(
     c += ha_corr
     d += ha_corr
     r = (a * d) / (b * c)
-    if log and r != 0.:
+    if log and r != 0.0:
         r = math.log(r)
     return r
 
@@ -217,17 +245,17 @@ def _func_ora(
     nsrc = starts.size
     if n_up is None:
         n_up = int(np.max([np.ceil(0.05 * nvar), 2]))
-        m = f'ora - setting n_up={n_up}'
-        _log(m, level='info', verbose=verbose)
+        m = f"ora - setting n_up={n_up}"
+        _log(m, level="info", verbose=verbose)
     if n_bg is None:
         n_bg = 0
-        m = 'ora - not using n_bg, a feature specific background will be used instead'
-        _log(m, level='info', verbose=verbose)
-    assert isinstance(n_up, int | float) and n_up > 0, 'n_up must be numeric and > 0'
-    assert isinstance(n_bm, int | float) and n_bm >= 0, 'n_bm must be numeric and positive'
-    assert isinstance(n_bg, int | float) and n_bg >= 0, 'n_bg must be numeric and positive'
-    m = f'ora - calculating {nsrc} scores across {nobs} observations with n_up={n_up}, n_bm={n_bm}, n_bg={n_bg}'
-    _log(m, level='info', verbose=verbose)
+        m = "ora - not using n_bg, a feature specific background will be used instead"
+        _log(m, level="info", verbose=verbose)
+    assert isinstance(n_up, int | float) and n_up > 0, "n_up must be numeric and > 0"
+    assert isinstance(n_bm, int | float) and n_bm >= 0, "n_bm must be numeric and positive"
+    assert isinstance(n_bg, int | float) and n_bg >= 0, "n_bg must be numeric and positive"
+    m = f"ora - calculating {nsrc} scores across {nobs} observations with n_up={n_up}, n_bm={n_bm}, n_bg={n_bg}"
+    _log(m, level="info", verbose=verbose)
     es = np.zeros((nobs, nsrc))
     pv = np.zeros((nobs, nsrc))
     ranks = np.arange(nvar, dtype=np.int_)
@@ -237,21 +265,23 @@ def _func_ora(
         else:
             row = mat[i]
         # Find ranks
-        row = sts.rankdata(row, method='ordinal')
+        row = sts.rankdata(row, method="ordinal")
         row = ranks[(row > n_up) | (row < n_bm)]
-        es[i], pv[i] = _runora(row=row, ranks=ranks, cnct=cnct, starts=starts, offsets=offsets, n_bg=n_bg, ha_corr=ha_corr)
+        es[i], pv[i] = _runora(
+            row=row, ranks=ranks, cnct=cnct, starts=starts, offsets=offsets, n_bg=n_bg, ha_corr=ha_corr
+        )
     return es, pv
 
 
 _ora = MethodMeta(
-    name='ora',
-    desc='Over Representation Analysis (ORA)',
+    name="ora",
+    desc="Over Representation Analysis (ORA)",
     func=_func_ora,
-    stype='categorical',
+    stype="categorical",
     adj=False,
     weight=False,
     test=True,
     limits=(-np.inf, +np.inf),
-    reference='https://doi.org/10.2307/2340521',
+    reference="https://doi.org/10.2307/2340521",
 )
 ora = Method(_method=_ora)

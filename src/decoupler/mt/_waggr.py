@@ -43,36 +43,38 @@ def _fun(
                 w = adj[:, j]
                 es[i, j] = f(x, w)
         return es
+
     _f.__name__ = f.__name__
     if _f.__name__ not in _cfuncs:
         _cfuncs[f.__name__] = _f
-        m = f'waggr - using {_f.__name__} for the first time, will need to be compiled'
-        _log(m, level='info', verbose=verbose)
+        m = f"waggr - using {_f.__name__} for the first time, will need to be compiled"
+        _log(m, level="info", verbose=verbose)
 
 
 _fun_dict = {
-    'wsum': _wsum,
-    'wmean': _wmean,
+    "wsum": _wsum,
+    "wmean": _wmean,
 }
 
 _cfuncs = {}
+
 
 def _validate_args(
     fun: Callable,
     verbose: bool,
 ) -> bool:
     args = inspect.signature(fun).parameters
-    required_args = ['x', 'w']
+    required_args = ["x", "w"]
     for arg in required_args:
         if arg not in args:
-            assert AssertionError(), f'fun={fun.__name__} must contain arguments x and w'
+            assert AssertionError(), f"fun={fun.__name__} must contain arguments x and w"
     # Check if any additional arguments have default values
     for param in args.values():
         if param.name not in required_args and param.default == inspect.Parameter.empty:
-            assert AssertionError(), f'fun={fun.__name__} has an argument {param.name} without a default value'
-    if not hasattr(fun, 'func_code'):
-        m = f'waggr - {fun.__name__} will be compiled into numba code'
-        _log(m, level='info', verbose=verbose)
+            assert AssertionError(), f"fun={fun.__name__} has an argument {param.name} without a default value"
+    if not hasattr(fun, "func_code"):
+        m = f"waggr - {fun.__name__} will be compiled into numba code"
+        _log(m, level="info", verbose=verbose)
         fun = nb.njit(fun)
     return fun
 
@@ -82,15 +84,15 @@ def _validate_func(
     verbose: bool,
 ) -> None:
     fun = _validate_args(fun=fun, verbose=verbose)
-    x = np.array([1., 2., 3.])
-    w = np.array([-1., 0., 2.])
+    x = np.array([1.0, 2.0, 3.0])
+    w = np.array([-1.0, 0.0, 2.0])
     try:
         res = fun(x=x, w=w)
-        assert isinstance(res, int | float), 'output of fun must be a single numerical value'
+        assert isinstance(res, int | float), "output of fun must be a single numerical value"
     except Exception as err:
-        raise ValueError(f'fun failed to run with test data: fun(x={x}), w={w}') from err
-    m = f'waggr - using function {fun.__name__}'
-    _log(m, level='info', verbose=verbose)
+        raise ValueError(f"fun failed to run with test data: fun(x={x}), w={w}") from err
+    m = f"waggr - using function {fun.__name__}"
+    _log(m, level="info", verbose=verbose)
     _fun(f=fun, verbose=verbose)
 
 
@@ -118,13 +120,13 @@ def _perm(
         for j in range(nsrc):
             e = es[i, j]
             d = _std(null_dst[i, j, :], 1)
-            if d != 0.:
+            if d != 0.0:
                 n = (e - np.mean(null_dst[i, j, :])) / d
             else:
-                if e != 0.:
+                if e != 0.0:
                     n = np.inf
                 else:
-                    n = 0.
+                    n = 0.0
             nes[i, j] = n
     # Compute empirical p-value
     pvals = np.where(pvals == 0.0, 1.0, pvals)
@@ -139,7 +141,7 @@ def _perm(
 def _func_waggr(
     mat: np.ndarray,
     adj: np.ndarray,
-    fun: str | Callable = 'wmean',
+    fun: str | Callable = "wmean",
     times: int | float = 1000,
     seed: int | float = 42,
     verbose: bool = False,
@@ -206,23 +208,23 @@ def _func_waggr(
 
     %(returns)s
     """
-    assert isinstance(fun, str) or callable(fun), 'fun must be str or callable'
+    assert isinstance(fun, str) or callable(fun), "fun must be str or callable"
     if isinstance(fun, str):
-        assert fun in _fun_dict, 'when fun is str, it must be wmean or wsum'
+        assert fun in _fun_dict, "when fun is str, it must be wmean or wsum"
         fun = _fun_dict[fun]
     _validate_func(fun, verbose=verbose)
     vfun = _cfuncs[fun.__name__]
-    assert isinstance(times, int | float) and times >= 0, 'times must be numeric and >= 0'
-    assert isinstance(seed, int | float) and seed >= 0, 'seed must be numeric and >= 0'
+    assert isinstance(times, int | float) and times >= 0, "times must be numeric and >= 0"
+    assert isinstance(seed, int | float) and seed >= 0, "seed must be numeric and >= 0"
     times, seed = int(times), int(seed)
     nobs, nvar = mat.shape
     nvar, nsrc = adj.shape
-    m = f'waggr - calculating scores for {nsrc} sources across {nobs} observations'
-    _log(m, level='info', verbose=verbose)
+    m = f"waggr - calculating scores for {nsrc} sources across {nobs} observations"
+    _log(m, level="info", verbose=verbose)
     es = vfun(mat, adj)
     if times > 1:
-        m = f'waggr - comparing estimates against {times} random permutations'
-        _log(m, level='info', verbose=verbose)
+        m = f"waggr - comparing estimates against {times} random permutations"
+        _log(m, level="info", verbose=verbose)
         idx = _ridx(times=times, nvar=nvar, seed=seed)
         es, pv = _perm(fun=vfun, es=es, mat=mat, adj=adj, idx=idx)
     else:
@@ -231,14 +233,14 @@ def _func_waggr(
 
 
 _waggr = MethodMeta(
-    name='waggr',
-    desc='Weighted Aggregate (WAGGR)',
+    name="waggr",
+    desc="Weighted Aggregate (WAGGR)",
     func=_func_waggr,
-    stype='numerical',
+    stype="numerical",
     adj=True,
     weight=True,
     test=True,
     limits=(-np.inf, +np.inf),
-    reference='https://doi.org/10.1093/bioadv/vbac016',
+    reference="https://doi.org/10.1093/bioadv/vbac016",
 )
 waggr = Method(_method=_waggr)

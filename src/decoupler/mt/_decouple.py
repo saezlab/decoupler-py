@@ -10,10 +10,10 @@ from decoupler.mt._methods import _methods
 def decouple(
     data: DataType,
     net: pd.DataFrame,
-    methods: str | list = 'all',
+    methods: str | list = "all",
     args: dict | None = None,
     cons: bool = False,
-    **kwargs
+    **kwargs,
 ) -> dict | None:
     """
     Runs multiple enrichment methods sequentially.
@@ -37,19 +37,21 @@ def decouple(
     # Validate
     _mdict = {m.name: m for m in _methods}
     if isinstance(methods, str):
-        if methods == 'all':
+        if methods == "all":
             methods = _mdict.keys()
         else:
             methods = [methods]
     methods = set(methods)
     if args is None:
         args = {}
-    assert methods.issubset(_mdict), \
-    f'methods={methods} must be in decoupler.\nUse decoupler.mt.show_methods to check which ones are available'
-    assert all(k in methods for k in args), \
-    f'All keys in args={args.keys()} must belong to a method in methods={methods}'
+    assert methods.issubset(_mdict), (
+        f"methods={methods} must be in decoupler.\nUse decoupler.mt.show_methods to check which ones are available"
+    )
+    assert all(k in methods for k in args), (
+        f"All keys in args={args.keys()} must belong to a method in methods={methods}"
+    )
     kwargs = kwargs.copy()
-    kwargs.setdefault('verbose', False)
+    kwargs.setdefault("verbose", False)
     # Run each method
     all_res = {}
     for name in methods:
@@ -58,13 +60,13 @@ def decouple(
         res = mth(data=data, net=net, **arg, **kwargs)
         if res:
             res = {
-                f'score_{mth.name}': res[0],
-                f'padj_{mth.name}': res[1],
+                f"score_{mth.name}": res[0],
+                f"padj_{mth.name}": res[1],
             }
             all_res = all_res | res
     if all_res:
         if cons:
-            all_res['score_consensus'], all_res['padj_consensus'] = consensus(all_res, verbose=kwargs['verbose'])
+            all_res["score_consensus"], all_res["padj_consensus"] = consensus(all_res, verbose=kwargs["verbose"])
         return all_res
     elif cons:
-        consensus(data, verbose=kwargs['verbose'])
+        consensus(data, verbose=kwargs["verbose"])

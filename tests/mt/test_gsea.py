@@ -22,23 +22,16 @@ def test_ridx():
 
 
 @pytest.mark.parametrize(
-    'row,rnks,set_msk,dec,expected_value,expected_index',
+    "row,rnks,set_msk,dec,expected_value,expected_index",
     [
         (np.array([0.0, 2.0, 0.0]), np.array([0, 1, 2]), np.array([False, True, False]), 0.1, 0.9, 1),
         (np.array([1.0, 2.0, 3.0]), np.array([2, 1, 0]), np.array([True, True, True]), 0.1, 1.0, 0),
         (np.array([1.0, 2.0, 3.0]), np.array([0, 1, 2]), np.array([False, False, False]), 0.1, 0, 0),
         (np.array([0.0, 0.0, 0.0]), np.array([0, 1, 2]), np.array([True, True, True]), 0.1, 0.0, 0),
         (np.array([1.0, -2.0, 3.0]), np.array([0, 1, 2]), np.array([True, False, True]), 0.5, 0.5, 2),
-    ]
+    ],
 )
-def test_esrank(
-    row,
-    rnks,
-    set_msk,
-    dec,
-    expected_value,
-    expected_index
-):
+def test_esrank(row, rnks, set_msk, dec, expected_value, expected_index):
     value, index, es = dc.mt._gsea._esrank.py_func(row=row, rnks=rnks, set_msk=set_msk, dec=dec)
     assert np.isclose(value, expected_value)
     assert index == expected_index
@@ -48,27 +41,22 @@ def test_esrank(
 def test_nesrank(
     rng,
 ):
-    ridx = np.array([
-        [0, 1, 2],
-        [0, 2, 1],
-        [1, 2, 0],
-        [1, 0, 2],
-        [2, 0, 1],
-        [2, 1, 0],
-    ])
+    ridx = np.array(
+        [
+            [0, 1, 2],
+            [0, 2, 1],
+            [1, 2, 0],
+            [1, 0, 2],
+            [2, 0, 1],
+            [2, 1, 0],
+        ]
+    )
     row = np.array([0.0, 2.0, 0.0])
     rnks = np.array([0, 1, 2])
     set_msk = np.array([False, True, False])
     dec = 0.1
     es = 0.9
-    nes, pval = dc.mt._gsea._nesrank.py_func(
-        ridx=ridx,
-        row=row,
-        rnks=rnks,
-        set_msk=set_msk,
-        dec=dec,
-        es=es
-    )
+    nes, pval = dc.mt._gsea._nesrank.py_func(ridx=ridx, row=row, rnks=rnks, set_msk=set_msk, dec=dec, es=es)
     assert isinstance(nes, float)
     assert isinstance(pval, float)
 
@@ -102,19 +90,19 @@ def test_func_gsea(
     times = 1000
     seed = 42
     X, obs, var = mat
-    gene_sets = net.groupby('source')['target'].apply(lambda x: list(x)).to_dict()
+    gene_sets = net.groupby("source")["target"].apply(lambda x: list(x)).to_dict()
     cnct, starts, offsets = idxmat
     res = gp.prerank(
         rnk=pd.DataFrame(X, index=obs, columns=var).T,
         gene_sets=gene_sets,
         permutation_num=times,
-        permutation_type='gene_set',
+        permutation_type="gene_set",
         outdir=None,
         min_size=0,
         threads=4,
         seed=seed,
     ).res2d
-    gp_es = res.pivot(index='Name', columns='Term', values='NES').astype(float)
+    gp_es = res.pivot(index="Name", columns="Term", values="NES").astype(float)
     dc_es, dc_pv = dc.mt._gsea._func_gsea(
         mat=X,
         cnct=cnct,

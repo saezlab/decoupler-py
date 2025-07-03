@@ -6,12 +6,12 @@ import decoupler as dc
 
 
 @pytest.mark.parametrize(
-    'groupby,log',
+    "groupby,log",
     [
-        ['group', True],
-        [['group'], True],
-        [['sample', 'group'], True],
-    ]
+        ["group", True],
+        [["group"], True],
+        [["sample", "group"], True],
+    ],
 )
 def test_filter_samples(
     pdata,

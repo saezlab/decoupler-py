@@ -10,8 +10,7 @@ def fscore(
     """F-beta score"""
     # Validate
     _validate_bool(y_true=y_true, y_score=y_score)
-    assert y_score.dtype == np.bool_, \
-    'y_score must be bool numpy.ndarray'
+    assert y_score.dtype == np.bool_, "y_score must be bool numpy.ndarray"
     y_true = y_true.astype(np.bool_)
     # Compute
     tp = np.sum(y_true * y_score)
@@ -21,8 +20,9 @@ def fscore(
         prc = tp / (tp + fp)
         rcl = tp / (tp + fn)
     else:
-        prc = 0.
-        rcl = 0.
+        prc = 0.0
+        rcl = 0.0
     return prc, rcl
 
-fscore.scores = ['precision', 'recall']
+
+fscore.scores = ["precision", "recall"]

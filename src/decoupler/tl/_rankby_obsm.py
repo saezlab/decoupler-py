@@ -10,16 +10,10 @@ def _input_rank_obsm(
     key: str,
 ) -> tuple(pd.DataFrame, list, list):
     # Validate
-    assert isinstance(adata, AnnData), 'adata must be anndata.AnnData'
-    assert key in adata.obsm, f'key={key} must be in adata.obsm'
+    assert isinstance(adata, AnnData), "adata must be anndata.AnnData"
+    assert key in adata.obsm, f"key={key} must be in adata.obsm"
     # Process
-    name_col = (
-        key
-        .replace('X_', '')
-        .replace('pca', 'PC')
-        .replace('mofa', 'Factor')
-        .replace('umap', 'UMAP')
-    )
+    name_col = key.replace("X_", "").replace("pca", "PC").replace("mofa", "Factor").replace("umap", "UMAP")
     df = adata.obsm[key]
     if isinstance(df, pd.DataFrame):
         y_vars = df.std(ddof=1, axis=0).sort_values(ascending=False).index
@@ -28,11 +22,7 @@ def _input_rank_obsm(
         ncol = df.shape[1]
         digits = len(str(ncol))
         y_vars = [f"{name_col}{str(i).zfill(digits)}" for i in range(1, ncol + 1)]
-    df = pd.DataFrame(
-        data=df,
-        index=adata.obs_names,
-        columns=y_vars
-    )
+    df = pd.DataFrame(data=df, index=adata.obs_names, columns=y_vars)
     x_vars = adata.obs.columns
     # Merge
     df = pd.merge(df, adata.obs, left_index=True, right_index=True)
@@ -43,7 +33,7 @@ def _input_rank_obsm(
 def rankby_obsm(
     adata: AnnData,
     key: str,
-    uns_key: str | None = 'rank_obsm',
+    uns_key: str | None = "rank_obsm",
 ) -> None | pd.DataFrame:
     """
     Ranks features in ``adata.obsm`` by the significance of their association with metadata in ``adata.obs``.
@@ -63,8 +53,7 @@ def rankby_obsm(
     -------
     If ``uns_key=False``, a pandas.DataFrame with the resulting statistics.
     """
-    assert isinstance(uns_key, str) or uns_key is None, \
-    'uns_key must be str or None'
+    assert isinstance(uns_key, str) or uns_key is None, "uns_key must be str or None"
     # Extract
     df, x_vars, y_vars = _input_rank_obsm(adata=adata, key=key)
     # Test
@@ -83,13 +72,13 @@ def rankby_obsm(
                 if all(len(g) >= 2 for g in x):
                     stat, pval = sts.f_oneway(*x)
                 else:
-                    stat, pval = None, 1.
+                    stat, pval = None, 1.0
             row = [y_var, x_var, stat, pval]
             res.append(row)
-    res = pd.DataFrame(res, columns=['obsm', 'obs', 'stat', 'pval'])
-    res['padj'] = sts.false_discovery_control(res['pval'])
+    res = pd.DataFrame(res, columns=["obsm", "obs", "stat", "pval"])
+    res["padj"] = sts.false_discovery_control(res["pval"])
     # Rank
-    res = res.sort_values('padj').reset_index(drop=True)
+    res = res.sort_values("padj").reset_index(drop=True)
     # Add obsm key
     res.key = key
     # Save or return

@@ -17,15 +17,15 @@ def test_extract(
     X, obs, var = dc.pp.extract(data=adata)
     assert X.shape[0] == obs.size
     assert X.shape[1] == var.size
-    adata.layers['counts'] = adata.X.round()
-    X, obs, var = dc.pp.extract(data=adata, layer='counts')
+    adata.layers["counts"] = adata.X.round()
+    X, obs, var = dc.pp.extract(data=adata, layer="counts")
     assert float(np.sum(X)).is_integer()
     sadata = adata.copy()
     sadata.X = sps.csc_matrix(sadata.X)
     X, obs, var = dc.pp.extract(data=sadata)
     assert isinstance(X, sps.csr_matrix)
     eadata = adata.copy()
-    eadata.X[5, :] = 0.
+    eadata.X[5, :] = 0.0
     X, obs, var = dc.pp.extract(data=eadata, empty=True)
     assert X.shape[0] < eadata.shape[0]
     nadata = adata.copy()

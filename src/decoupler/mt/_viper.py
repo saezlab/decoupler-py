@@ -28,7 +28,7 @@ def _get_wts_posidxs(
         y = wts[:, y_idx]
         x_msk, y_msk = x != 0, y != 0
         msk = x_msk * y_msk
-        x[msk] = x[msk] / (1 + np.abs(p))**(penalty/table[x_idx])
+        x[msk] = x[msk] / (1 + np.abs(p)) ** (penalty / table[x_idx])
         wts[:, x_idx] = x
     return wts, pos_idxs
 
@@ -75,7 +75,7 @@ def _fill_pval_mat(
                 ss = np.sign(sum1)
                 if ss == 0:
                     ss = 1
-                sum2 = np.sum((1- np.abs(reg[k_msk, k])) * s1[k_msk])
+                sum2 = np.sum((1 - np.abs(reg[k_msk, k])) * s1[k_msk])
                 ww = np.ones(nhits)
                 col[k] = (np.abs(sum1) + sum2 * (sum2 > 0)) / ww.size * ss * np.sqrt(ww.size)
     return col
@@ -90,16 +90,16 @@ def _get_inter_pvals(
     pval = np.full((sub_net.shape[1], sub_net.shape[1]), np.nan)
     for j in range(sub_net.shape[1]):
         trgt_msk = sub_net[:, j] != 0
-        reg = ((sub_net[trgt_msk] != 0) * sub_net[trgt_msk, j].reshape(-1, 1))
+        reg = (sub_net[trgt_msk] != 0) * sub_net[trgt_msk, j].reshape(-1, 1)
         s2 = ss_i[trgt_msk]
-        s2 = sts.rankdata(s2, method='average') / (s2.shape[0]+1) * 2 - 1
+        s2 = sts.rankdata(s2, method="average") / (s2.shape[0] + 1) * 2 - 1
         s1 = np.abs(s2) * 2 - 1
         s1 = s1 + (1 - np.max(s1)) / 2
-        s1 = sts.norm.ppf(s1/2 + 0.5)
+        s1 = sts.norm.ppf(s1 / 2 + 0.5)
         tmp = np.sign(nes_i[j])
         if tmp == 0:
             tmp = 1
-        s2 = (sts.norm.ppf(s2/2 + 0.5) * tmp)
+        s2 = sts.norm.ppf(s2 / 2 + 0.5) * tmp
         pval[j] = _fill_pval_mat(j=j, reg=reg, n_targets=n_targets, s1=s1, s2=s2)
     pval = 1 - sts.norm.cdf(pval)
     return pval
@@ -111,7 +111,7 @@ def _shadow_regulon(
     net: np.ndarray,
     reg_sign: float = 1.96,
     n_targets: int | float = 10,
-    penalty: int | float = 20
+    penalty: int | float = 20,
 ) -> tuple(np.ndarray, np.ndarray, np.ndarray):
     # Find significant activities
     msk_sign = np.abs(nes_i) > reg_sign
@@ -143,27 +143,23 @@ def _shadow_regulon(
     return sub_net, wts, idxs
 
 
-def _aREA(
-    mat: np.ndarray,
-    net: np.ndarray,
-    wts: None = None
-) -> np.ndarray:
+def _aREA(mat: np.ndarray, net: np.ndarray, wts: None = None) -> np.ndarray:
     if wts is None:
         wts = np.zeros(net.shape)
         wts[net != 0] = 1
     wts = wts / np.max(wts, axis=0)
     nes = np.sqrt(np.sum(wts**2, axis=0))
-    wts = (wts / np.sum(wts, axis=0))
-    mat = sts.rankdata(mat, method='average', axis=1) / (mat.shape[1] + 1)
+    wts = wts / np.sum(wts, axis=0)
+    mat = sts.rankdata(mat, method="average", axis=1) / (mat.shape[1] + 1)
     t1 = np.abs(mat - 0.5) * 2
-    t1 = t1 + (1 - np.max(t1))/2
+    t1 = t1 + (1 - np.max(t1)) / 2
     msk = np.sum(net != 0, axis=1) >= 1
     t1, mat = t1[:, msk], mat[:, msk]
     net, wts = net[msk], wts[msk]
     t1 = sts.norm.ppf(t1)
     mat = sts.norm.ppf(mat)
-    sum1 = mat.dot(wts*net)
-    sum2 = t1.dot((1-np.abs(net)) * wts)
+    sum1 = mat.dot(wts * net)
+    sum2 = t1.dot((1 - np.abs(net)) * wts)
     tmp = (np.abs(sum1) + sum2 * (sum2 > 0)) * np.sign(sum1)
     nes = tmp * nes
     return nes
@@ -291,14 +287,14 @@ def _func_viper(
     # Get number of batches
     n_samples = mat.shape[0]
     n_features, n_fsets = adj.shape
-    m = f'viper - calculating {n_fsets} scores across {n_samples} observations'
-    _log(m, level='info', verbose=verbose)
+    m = f"viper - calculating {n_fsets} scores across {n_samples} observations"
+    _log(m, level="info", verbose=verbose)
     # Compute score
     nes = _aREA(mat, adj)
     if pleiotropy:
-        m = 'viper - refining scores based on pleiotropy'
-        _log(m, level='info', verbose=verbose)
-        reg_sign = sts.norm.ppf(1-(reg_sign / 2))
+        m = "viper - refining scores based on pleiotropy"
+        _log(m, level="info", verbose=verbose)
+        reg_sign = sts.norm.ppf(1 - (reg_sign / 2))
         for i in tqdm(range(nes.shape[0]), disable=not verbose):
             # Extract per sample
             ss_i = mat[i]
@@ -318,14 +314,14 @@ def _func_viper(
 
 
 _viper = MethodMeta(
-    name='viper',
-    desc='Virtual Inference of Protein-activity by Enriched Regulon analysis (VIPER)',
+    name="viper",
+    desc="Virtual Inference of Protein-activity by Enriched Regulon analysis (VIPER)",
     func=_func_viper,
-    stype='numerical',
+    stype="numerical",
     adj=True,
     weight=True,
     test=True,
     limits=(-np.inf, +np.inf),
-    reference='https://doi.org/10.1038/ng.3593',
+    reference="https://doi.org/10.1038/ng.3593",
 )
 viper = Method(_method=_viper)

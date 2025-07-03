@@ -22,17 +22,17 @@ def _return(
 ) -> tuple(pd.DataFrame, pd.DataFrame) | AnnData | None:
     if isinstance(data, AnnData):
         if data.obs_names.size != es.index.size:
-            m = 'Provided AnnData contains empty observations, returning repaired object'
-            _log(m, level='warn', verbose=verbose)
+            m = "Provided AnnData contains empty observations, returning repaired object"
+            _log(m, level="warn", verbose=verbose)
             data = data[es.index, :].copy()
-            data.obsm[f'score_{name}'] = es
+            data.obsm[f"score_{name}"] = es
             if pv is not None:
-                data.obsm[f'padj_{name}'] = pv
+                data.obsm[f"padj_{name}"] = pv
             return data
         else:
-            data.obsm[f'score_{name}'] = es
+            data.obsm[f"score_{name}"] = es
             if pv is not None:
-                data.obsm[f'padj_{name}'] = pv
+                data.obsm[f"padj_{name}"] = pv
             return None
     else:
         return es, pv
@@ -51,9 +51,9 @@ def _run(
     empty: bool = True,
     bsize: int | float = 250_000,
     verbose: bool = False,
-    **kwargs
+    **kwargs,
 ) -> tuple(pd.DataFrame, pd.DataFrame) | AnnData | None:
-    _log(f'{name} - Running {name}', level='info', verbose=verbose)
+    _log(f"{name} - Running {name}", level="info", verbose=verbose)
     # Process data
     mat, obs, var = extract(data, layer=layer, raw=raw, empty=empty, verbose=verbose)
     sparse = sps.issparse(mat)
@@ -85,10 +85,10 @@ def _run(
     if test:
         pv = np.vstack(pv)
         pv = pd.DataFrame(pv, index=obs, columns=sources)
-        if name != 'mlm':
-            _log(f'{name} - adjusting p-values by FDR', level='info', verbose=verbose)
-            pv.loc[:, :] = sts.false_discovery_control(pv.values, axis=1, method='bh')
+        if name != "mlm":
+            _log(f"{name} - adjusting p-values by FDR", level="info", verbose=verbose)
+            pv.loc[:, :] = sts.false_discovery_control(pv.values, axis=1, method="bh")
     else:
         pv = None
-    _log(f'{name} - done', level='info', verbose=verbose)
+    _log(f"{name} - done", level="info", verbose=verbose)
     return _return(name, data, es, pv, verbose=verbose)

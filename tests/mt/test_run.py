@@ -11,7 +11,7 @@ def test_return(
 ):
     mth = dc.mt.ulm
     adata = adata[:4].copy()
-    adata.X[:, 0] = 0.
+    adata.X[:, 0] = 0.0
     es, pv = mth(data=adata.to_df(), net=net, tmin=0)
     r = dc.mt._run._return(name=mth.name, data=adata, es=es, pv=pv)
     assert r is None
@@ -22,12 +22,12 @@ def test_return(
 
 
 @pytest.mark.parametrize(
-    'mth,bsize',
+    "mth,bsize",
     [
         [dc.mt.zscore, 2],
         [dc.mt.ora, 2],
         [dc.mt.gsva, 250_000],
-    ]
+    ],
 )
 def test_run(
     adata,
@@ -56,4 +56,3 @@ def test_run(
         tmin=0,
     )
     assert (des.values == ses.values).all()
-

@@ -18,7 +18,7 @@ def filter_by_expr(
     min_total_count: int = 15,
     large_n: int = 10,
     min_prop: float = 0.7,
-    cmap: str = 'viridis',
+    cmap: str = "viridis",
     **kwargs,
 ) -> None | Figure:
     """
@@ -36,7 +36,7 @@ def filter_by_expr(
     %(min_prop_expr)s
     %(plot)s
     """
-    assert isinstance(adata, AnnData), 'adata must be AnnData'
+    assert isinstance(adata, AnnData), "adata must be AnnData"
     # Extract inputs
     X, _, _ = extract(adata, empty=False)
     obs = adata.obs
@@ -54,7 +54,7 @@ def filter_by_expr(
         min_count=min_count,
     )
     # Total counts
-    total_count[total_count < 1.] = np.nan  # Handle 0s
+    total_count[total_count < 1.0] = np.nan  # Handle 0s
     # Instance
     bp = Plotter(**kwargs)
     # Plot
@@ -63,12 +63,12 @@ def filter_by_expr(
         y=sample_size,
         cmap=cmap,
         cbar=True,
-        cbar_kws={'shrink':.75, 'label':'Number of genes'},
+        cbar_kws={"shrink": 0.75, "label": "Number of genes"},
         discrete=(False, True),
         ax=bp.ax,
     )
-    bp.ax.axhline(y=min_sample_size - 0.5, c='gray', ls='--')
-    bp.ax.axvline(x=np.log10(min_total_count), c='gray', ls='--')
-    bp.ax.set_xlabel(r'$\log_{10}$ total sum of counts')
-    bp.ax.set_ylabel('Number of samples')
+    bp.ax.axhline(y=min_sample_size - 0.5, c="gray", ls="--")
+    bp.ax.axvline(x=np.log10(min_total_count), c="gray", ls="--")
+    bp.ax.set_xlabel(r"$\log_{10}$ total sum of counts")
+    bp.ax.set_ylabel("Number of samples")
     return bp._return()

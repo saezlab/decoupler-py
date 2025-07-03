@@ -52,35 +52,41 @@ def test_func_viper(
     net,
 ):
     dict_net = {
-        'T1': 'T1',
-        'T2': 'T1',
-        'T3': 'T2',
-        'T4': 'T2',
-        'T5': 'T3',
+        "T1": "T1",
+        "T2": "T1",
+        "T3": "T2",
+        "T4": "T2",
+        "T5": "T3",
     }
-    net['source'] = [dict_net[s] for s in net['source']]
-    net = pd.concat([
-        net,
-        net[net['source'] == 'T2'].assign(source='T4'),
-        pd.DataFrame([['T4', 'G03', -1.2]], columns=['source', 'target', 'weight'], index=[0])
-    ])
+    net["source"] = [dict_net[s] for s in net["source"]]
+    net = pd.concat(
+        [
+            net,
+            net[net["source"] == "T2"].assign(source="T4"),
+            pd.DataFrame([["T4", "G03", -1.2]], columns=["source", "target", "weight"], index=[0]),
+        ]
+    )
     mat = dc.pp.extract(data=adata)
     X, obs, var = mat
     sources, targets, adjmat = dc.pp.adjmat(features=var, net=net, verbose=False)
     X = np.vstack((X[:2, :], X[-2:, :]))
     pf_dc_es, pf_dc_pv = dc.mt._viper._func_viper(mat=X, adj=adjmat, pleiotropy=False)
     pt_dc_es, pt_dc_pv = dc.mt._viper._func_viper(mat=X, adj=adjmat, n_targets=1, pleiotropy=True)
-    pf_vp_es = np.array([
-        [ 3.708381, -2.154396, -1.4069603, -2.468185],
-        [ 3.702911, -2.288070, -0.7239077, -2.848132],
-        [-3.613066,  1.696114, -0.5789716,  2.039502],
-        [-3.495480,  2.560792, -1.1296442,  2.523946],
-    ])
-    pt_vp_es = np.array([
-        [ 2.224856, -2.154396, -1.4069603, -1.131059],
-        [ 1.880012, -2.288070, -0.7239077, -2.848132],
-        [-3.177418,  1.696114, -0.5789716,  2.039502],
-        [-2.073186,  2.560792, -1.1296442,  2.523946],
-    ])
+    pf_vp_es = np.array(
+        [
+            [3.708381, -2.154396, -1.4069603, -2.468185],
+            [3.702911, -2.288070, -0.7239077, -2.848132],
+            [-3.613066, 1.696114, -0.5789716, 2.039502],
+            [-3.495480, 2.560792, -1.1296442, 2.523946],
+        ]
+    )
+    pt_vp_es = np.array(
+        [
+            [2.224856, -2.154396, -1.4069603, -1.131059],
+            [1.880012, -2.288070, -0.7239077, -2.848132],
+            [-3.177418, 1.696114, -0.5789716, 2.039502],
+            [-2.073186, 2.560792, -1.1296442, 2.523946],
+        ]
+    )
     assert np.isclose(pf_vp_es, pf_dc_es).all()
     assert np.isclose(pt_vp_es, pt_dc_es).all()

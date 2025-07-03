@@ -12,7 +12,7 @@ def _xgbr(
     y: np.ndarray,
     **kwargs,
 ) -> np.ndarray:
-    kwargs.setdefault('n_estimators', 10)
+    kwargs.setdefault("n_estimators", 10)
     # Init model
     reg = xgboost.XGBRegressor(**kwargs)
     # Fit
@@ -50,11 +50,11 @@ def _func_udt(
         All other keyword arguments are passed to ``xgboost.XGBRegressor``.
     %(returns)s
     """
-    _check_import(xgboost, 'xgboost')
+    _check_import(xgboost, "xgboost")
     nobs = mat.shape[0]
     nvar, nsrc = adj.shape
-    m = f'udt - fitting {nsrc} univariate decision tree models (XGBoost) of {nvar} targets across {nobs} observations'
-    _log(m, level='info', verbose=verbose)
+    m = f"udt - fitting {nsrc} univariate decision tree models (XGBoost) of {nvar} targets across {nobs} observations"
+    _log(m, level="info", verbose=verbose)
     es = np.zeros(shape=(nobs, nsrc))
     for i in tqdm(range(nobs), disable=not verbose):
         obs = mat[i]
@@ -64,14 +64,14 @@ def _func_udt(
 
 
 _udt = MethodMeta(
-    name='udt',
-    desc='Univariate Decision Tree (UDT)',
+    name="udt",
+    desc="Univariate Decision Tree (UDT)",
     func=_func_udt,
-    stype='numerical',
+    stype="numerical",
     adj=True,
     weight=True,
     test=False,
     limits=(0, 1),
-    reference='https://doi.org/10.1093/bioadv/vbac016',
+    reference="https://doi.org/10.1093/bioadv/vbac016",
 )
 udt = Method(_method=_udt)

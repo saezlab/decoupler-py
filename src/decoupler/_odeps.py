@@ -3,9 +3,7 @@ import warnings
 from typing import TYPE_CHECKING
 
 
-def _try_import(
-    name: str
-) -> types.ModuleType | None:
+def _try_import(name: str) -> types.ModuleType | None:
     try:
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=FutureWarning, module=name)

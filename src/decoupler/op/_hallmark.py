@@ -8,8 +8,8 @@ from decoupler.op._translate import translate
 
 @docs.dedent
 def hallmark(
-    organism: str = 'human',
-    license: str = 'academic',
+    organism: str = "human",
+    license: str = "academic",
     verbose: bool = False,
 ) -> pd.DataFrame:
     """
@@ -28,15 +28,15 @@ def hallmark(
     -------
     Dataframe in long format containing the hallmark gene sets.
     """
-    url = 'https://static.omnipathdb.org/tables/msigdb-hallmark.tsv.gz'
-    hm = _download(url, sep='\t', compression='gzip', verbose=verbose)
-    hm = hm[['geneset', 'genesymbol']]
-    hm['geneset'] = hm['geneset'].str.replace('HALLMARK_', '')
-    hm['genesymbol'] = hm['genesymbol'].str.replace('COMPLEX:', '').str.split('_')
-    hm = hm.explode('genesymbol')
+    url = "https://static.omnipathdb.org/tables/msigdb-hallmark.tsv.gz"
+    hm = _download(url, sep="\t", compression="gzip", verbose=verbose)
+    hm = hm[["geneset", "genesymbol"]]
+    hm["geneset"] = hm["geneset"].str.replace("HALLMARK_", "")
+    hm["genesymbol"] = hm["genesymbol"].str.replace("COMPLEX:", "").str.split("_")
+    hm = hm.explode("genesymbol")
     hm = _infer_dtypes(hm)
-    if organism != 'human':
-        hm = translate(hm, columns=['genesymbol'], target_organism=organism, verbose=verbose)
-    hm = hm.rename(columns={'geneset': 'source', 'genesymbol': 'target'})
-    hm = hm.drop_duplicates(['source', 'target']).reset_index(drop=True)
+    if organism != "human":
+        hm = translate(hm, columns=["genesymbol"], target_organism=organism, verbose=verbose)
+    hm = hm.rename(columns={"geneset": "source", "genesymbol": "target"})
+    hm = hm.drop_duplicates(["source", "target"]).reset_index(drop=True)
     return hm

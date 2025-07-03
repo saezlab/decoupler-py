@@ -8,8 +8,7 @@ from decoupler._download import _download
 from decoupler._log import _log
 
 
-def show_organisms(
-) -> list:
+def show_organisms() -> list:
     """
     Shows available organisms to translate to with ``decoupler.op.translate_net``.
 
@@ -18,25 +17,25 @@ def show_organisms(
     List of available organisms.
     """
     valid_orgs = [
-        'anole_lizard',
-        'c.elegans',
-        'cat',
-        'cattle',
-        'chicken',
-        'chimpanzee',
-        'dog',
-        'fruitfly',
-        'horse',
-        'macaque',
-        'mouse',
-        'opossum',
-        'pig',
-        'platypus',
-        'rat',
-        's.cerevisiae',
-        's.pombe',
-        'xenopus',
-        'zebrafish'
+        "anole_lizard",
+        "c.elegans",
+        "cat",
+        "cattle",
+        "chicken",
+        "chimpanzee",
+        "dog",
+        "fruitfly",
+        "horse",
+        "macaque",
+        "mouse",
+        "opossum",
+        "pig",
+        "platypus",
+        "rat",
+        "s.cerevisiae",
+        "s.pombe",
+        "xenopus",
+        "zebrafish",
     ]
     return valid_orgs
 
@@ -61,15 +60,16 @@ def _replace_subunits(
     return result
 
 
-def _generate_orthologs(
-    resource,
-    column,
-    map_dict,
-    one_to_many
-):
+def _generate_orthologs(resource, column, map_dict, one_to_many):
     df = resource[[column]].drop_duplicates().set_index(column)
     df["subunits"] = df.index.str.split("_")
-    df["subunits"] = df["subunits"].apply(_replace_subunits, args=(map_dict, one_to_many, ))
+    df["subunits"] = df["subunits"].apply(
+        _replace_subunits,
+        args=(
+            map_dict,
+            one_to_many,
+        ),
+    )
     df = df["subunits"].explode().reset_index()
     grouped = df.groupby(column).filter(lambda x: x["subunits"].notna().all()).groupby(column)
     # Generate all possible subunit combinations within each group
@@ -105,7 +105,7 @@ def _translate(
 def translate(
     net: pd.DataFrame,
     columns: str | list | None = None,
-    target_organism: str = 'mouse',
+    target_organism: str = "mouse",
     min_evidence: int | float = 3,
     one_to_many: int | float = 5,
     verbose: bool = False,
@@ -143,41 +143,41 @@ def translate(
     Translated net.
     """
     # Validate
-    assert isinstance(net, pd.DataFrame), 'net must be a pd.DataFrame'
-    assert isinstance(columns, str | list), 'columns must be str or list'
+    assert isinstance(net, pd.DataFrame), "net must be a pd.DataFrame"
+    assert isinstance(columns, str | list), "columns must be str or list"
     if columns is None:
-        columns = ['source', 'target', 'genesymbol']
+        columns = ["source", "target", "genesymbol"]
     elif isinstance(columns, str):
         columns = [columns]
     columns = [c for c in columns if c in net.columns]
-    assert columns, f'columns must be one of these: {net.columns}'
-    assert isinstance(target_organism, str), 'target_organism must be str'
+    assert columns, f"columns must be one of these: {net.columns}"
+    assert isinstance(target_organism, str), "target_organism must be str"
     valid_orgs = show_organisms()
-    assert target_organism in valid_orgs, f'target_organism must be one of these: {valid_orgs}'
-    assert isinstance(min_evidence, int | float) and min_evidence > 0, 'min_evidence must be numerical and > 0'
-    assert isinstance(one_to_many, int | float) and one_to_many > 0, 'one_to_many must be numerical and > 0'
-    _log(f'Translating to {target_organism}', level='info', verbose=verbose)
+    assert target_organism in valid_orgs, f"target_organism must be one of these: {valid_orgs}"
+    assert isinstance(min_evidence, int | float) and min_evidence > 0, "min_evidence must be numerical and > 0"
+    assert isinstance(one_to_many, int | float) and one_to_many > 0, "one_to_many must be numerical and > 0"
+    _log(f"Translating to {target_organism}", level="info", verbose=verbose)
     # Handle missmatch lavels from ebi db
-    target_col = f'{target_organism}_symbol'
-    if target_organism == 'anole_lizard':
-        target_col = 'anole lizard_symbol'
-    elif target_organism == 'fruitfly':
-        target_col = 'fruit fly_symbol'
+    target_col = f"{target_organism}_symbol"
+    if target_organism == "anole_lizard":
+        target_col = "anole lizard_symbol"
+    elif target_organism == "fruitfly":
+        target_col = "fruit fly_symbol"
     # Process orthologs
-    url = f'https://ftp.ebi.ac.uk/pub/databases/genenames/hcop/human_{target_organism}_hcop_fifteen_column.txt.gz'
-    map_df = _download(url, low_memory=False, compression='gzip', sep='\t', verbose=verbose)
+    url = f"https://ftp.ebi.ac.uk/pub/databases/genenames/hcop/human_{target_organism}_hcop_fifteen_column.txt.gz"
+    map_df = _download(url, low_memory=False, compression="gzip", sep="\t", verbose=verbose)
     map_df = pd.read_csv(url, sep="\t", low_memory=False)
-    map_df['evidence'] = map_df['support'].apply(lambda x: len(x.split(",")))
-    map_df = map_df[map_df['evidence'] >= min_evidence]
-    map_df = map_df[['human_symbol', target_col]]
-    map_df = map_df.rename(columns={'human_symbol': 'source', target_col: 'target'})
-    map_dict = map_df.groupby('source')['target'].apply(list).to_dict()
+    map_df["evidence"] = map_df["support"].apply(lambda x: len(x.split(",")))
+    map_df = map_df[map_df["evidence"] >= min_evidence]
+    map_df = map_df[["human_symbol", target_col]]
+    map_df = map_df.rename(columns={"human_symbol": "source", target_col: "target"})
+    map_dict = map_df.groupby("source")["target"].apply(list).to_dict()
     for col in columns:
         col_unique = net[col].drop_duplicates()
         prop = col_unique.isin(map_dict).sum() / col_unique.size
-        m = f'Successfully translated {prop:.1%} of the genes from column {col}.'
-        _log(m, level='info', verbose=verbose)
+        m = f"Successfully translated {prop:.1%} of the genes from column {col}."
+        _log(m, level="info", verbose=verbose)
         net = _translate(resource=net, map_dict=map_dict, column=col, one_to_many=one_to_many)
     net = net.reset_index(drop=True)
-    _log('Translation finished', level='info', verbose=verbose)
+    _log("Translation finished", level="info", verbose=verbose)
     return net

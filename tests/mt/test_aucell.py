@@ -26,6 +26,7 @@ rnks <- AUCell::AUCell_buildRankings(t(mat), plotStats=FALSE)
 t(AUCell::AUCell_calcAUC(gs, rnks, aucMaxRank=3)@assays@data$AUC)
 """
 
+
 def test_auc(
     mat,
     idxmat,
@@ -33,14 +34,7 @@ def test_auc(
     X, obs, var = mat
     cnct, starts, offsets = idxmat
     row = X[0]
-    es = dc.mt._aucell._auc.py_func(
-        row=row,
-        cnct=cnct,
-        starts=starts,
-        offsets=offsets,
-        n_up=2,
-        nsrc=offsets.size
-    )
+    es = dc.mt._aucell._auc.py_func(row=row, cnct=cnct, starts=starts, offsets=offsets, n_up=2, nsrc=offsets.size)
     assert isinstance(es, np.ndarray)
     assert es.size == offsets.size
 
@@ -51,18 +45,20 @@ def test_func_aucell(
 ):
     X, obs, var = mat
     cnct, starts, offsets = idxmat
-    obs = np.array(['S01', 'S02', 'S29', 'S30'])
+    obs = np.array(["S01", "S02", "S29", "S30"])
     X = np.vstack((X[:2, :], X[-2:, :]))
     X = sps.csr_matrix(X)
     ac_es = pd.DataFrame(
-        data=np.array([
-            [0.6666667, 0.3333333, 0, 0, 0],
-            [1.0000000, 0.0000000, 0, 0, 0],
-            [0.0000000, 1.0000000, 1, 0, 0],
-            [0.0000000, 1.0000000, 1, 0, 0],
-        ]),
-        columns=['T1', 'T2', 'T3', 'T4', 'T5'],
-        index=obs
+        data=np.array(
+            [
+                [0.6666667, 0.3333333, 0, 0, 0],
+                [1.0000000, 0.0000000, 0, 0, 0],
+                [0.0000000, 1.0000000, 1, 0, 0],
+                [0.0000000, 1.0000000, 1, 0, 0],
+            ]
+        ),
+        columns=["T1", "T2", "T3", "T4", "T5"],
+        index=obs,
     )
     dc_es, _ = dc.mt._aucell._func_aucell(
         mat=X,
@@ -70,6 +66,5 @@ def test_func_aucell(
         starts=starts,
         offsets=offsets,
         n_up=3,
-
     )
     assert np.isclose(dc_es, ac_es.values).all()

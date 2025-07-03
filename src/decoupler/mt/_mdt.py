@@ -46,11 +46,11 @@ def _func_mdt(
         All other keyword arguments are passed to ``xgboost.XGBRegressor``.
     %(returns)s
     """
-    _check_import(xgboost, 'xgboost')
+    _check_import(xgboost, "xgboost")
     nobs = mat.shape[0]
     nvar, nsrc = adj.shape
-    m = f'mdt - fitting {nsrc} multivariate decision tree models (XGBoost) of {nvar} targets across {nobs} observations'
-    _log(m, level='info', verbose=verbose)
+    m = f"mdt - fitting {nsrc} multivariate decision tree models (XGBoost) of {nvar} targets across {nobs} observations"
+    _log(m, level="info", verbose=verbose)
     es = np.zeros(shape=(nobs, nsrc))
     for i in tqdm(range(nobs), disable=not verbose):
         obs = mat[i]
@@ -59,14 +59,14 @@ def _func_mdt(
 
 
 _mdt = MethodMeta(
-    name='mdt',
-    desc='Multivariate Decision Tree (MDT)',
+    name="mdt",
+    desc="Multivariate Decision Tree (MDT)",
     func=_func_mdt,
-    stype='numerical',
+    stype="numerical",
     adj=True,
     weight=True,
     test=False,
     limits=(0, 1),
-    reference='https://doi.org/10.1093/bioadv/vbac016',
+    reference="https://doi.org/10.1093/bioadv/vbac016",
 )
 mdt = Method(_method=_mdt)

@@ -10,13 +10,7 @@ from decoupler._odeps import _check_import, dcor
 
 
 @docs.dedent
-def rankby_order(
-    adata: AnnData,
-    order: str,
-    stat: str = 'dcor',
-    verbose: bool = False,
-    **kwargs
-) -> pd.DataFrame:
+def rankby_order(adata: AnnData, order: str, stat: str = "dcor", verbose: bool = False, **kwargs) -> pd.DataFrame:
     """
     Rank features along a continuous, ordered process such as pseudotime.
 
@@ -42,11 +36,12 @@ def rankby_order(
     DataFrame with features associated with the ordering variable.
     """
     # Validate
-    assert isinstance(adata, AnnData), 'adata must be anndata.AnnData'
-    assert isinstance(order, str) and order in adata.obs.columns, 'order must be str and in adata.obs.columns'
-    stats = {'dcor', 'pearsonr', 'spearmanr', 'kendalltau'}
-    assert (isinstance(stat, str) and stat in stats) or callable(stat), \
-    f'stat must be str and one of these {stats}, or a function that returns statistic and pvalue'
+    assert isinstance(adata, AnnData), "adata must be anndata.AnnData"
+    assert isinstance(order, str) and order in adata.obs.columns, "order must be str and in adata.obs.columns"
+    stats = {"dcor", "pearsonr", "spearmanr", "kendalltau"}
+    assert (isinstance(stat, str) and stat in stats) or callable(stat), (
+        f"stat must be str and one of these {stats}, or a function that returns statistic and pvalue"
+    )
     # Get vars and ordinal variable
     X = adata.X
     if sps.issparse(X):
@@ -55,16 +50,16 @@ def rankby_order(
     y = adata.obs[order].values.astype(float)
     # Init
     df = pd.DataFrame()
-    df['name'] = adata.var_names
+    df["name"] = adata.var_names
     # Fit
-    if stat == 'dcor':
-        _check_import(dcor, 'dcor')
+    if stat == "dcor":
+        _check_import(dcor, "dcor")
         f = dcor.independence.distance_correlation_t_test
-    elif stat == 'pearsonr':
+    elif stat == "pearsonr":
         f = sts.pearsonr
-    elif stat == 'spearmanr':
+    elif stat == "spearmanr":
         f = sts.spearmanr
-    elif stat == 'kendalltau':
+    elif stat == "kendalltau":
         f = sts.kendalltau
     else:
         f = stat
@@ -81,10 +76,10 @@ def rankby_order(
             p = 1
         ss.append(s)
         ps.append(p)
-    df['stat'] = ss
-    df['pval'] = ps
-    df['padj'] = sts.false_discovery_control(df['pval'])
-    df['abs_stat'] = df['stat'].abs()
-    df = df.sort_values(['padj', 'pval', 'abs_stat'], ascending=[True, True, False]).reset_index(drop=True)
-    df = df.drop(columns='abs_stat')
+    df["stat"] = ss
+    df["pval"] = ps
+    df["padj"] = sts.false_discovery_control(df["pval"])
+    df["abs_stat"] = df["stat"].abs()
+    df = df.sort_values(["padj", "pval", "abs_stat"], ascending=[True, True, False]).reset_index(drop=True)
+    df = df.drop(columns="abs_stat")
     return df

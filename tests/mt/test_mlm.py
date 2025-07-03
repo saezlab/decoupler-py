@@ -1,4 +1,3 @@
-
 import numpy as np
 import pytest
 import statsmodels.api as sm
@@ -13,7 +12,7 @@ def test_fit(
     X, obs, var = mat
     n_features, n_fsets = adjmat.shape
     n_samples, _ = X.shape
-    adjmat = np.column_stack((np.ones((n_features, )), adjmat))
+    adjmat = np.column_stack((np.ones((n_features,)), adjmat))
     inv = np.linalg.inv(np.dot(adjmat.T, adjmat))
     df = n_features - n_fsets - 1
     coef, t = dc.mt._mlm._fit.py_func(
@@ -30,7 +29,7 @@ def test_fit(
     assert t.shape == (n_samples, n_fsets)
 
 
-@pytest.mark.parametrize('tval', [True, False])
+@pytest.mark.parametrize("tval", [True, False])
 def test_func_mlm(
     mat,
     adjmat,

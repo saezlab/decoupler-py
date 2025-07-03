@@ -16,7 +16,7 @@ def _std(
 ) -> float:
     N = arr.shape[0]
     m = np.mean(arr)
-    var = np.sum((arr - m)**2) / (N - ddof)
+    var = np.sum((arr - m) ** 2) / (N - ddof)
     sd = np.sqrt(var)
     return sd
 
@@ -51,8 +51,8 @@ def _esrank(
     es = np.zeros(rnks.size)
     # Compute norm
     sum_set = np.sum(np.abs(row[set_msk]))
-    if sum_set == 0.:
-        return 0., 0, np.zeros(rnks.size)
+    if sum_set == 0.0:
+        return 0.0, 0, np.zeros(rnks.size)
     # Compute ES
     for i in rnks:
         if set_msk[i]:
@@ -92,13 +92,13 @@ def _nesrank(
     # Compute null
     times, nvar = ridx.shape
     if times == 0:
-        return 0., 1.
+        return 0.0, 1.0
     null = np.zeros(times)
     for i in range(times):
         null[i], _, _ = _esrank(row=row, rnks=rnks, set_msk=set_msk[ridx[i]], dec=dec)
     # Compute NES
-    pos_null_msk = null >= 0.
-    neg_null_msk = null < 0.
+    pos_null_msk = null >= 0.0
+    neg_null_msk = null < 0.0
     pos_null_sum = pos_null_msk.sum()
     neg_null_sum = neg_null_msk.sum()
     if (es >= 0) and (pos_null_sum > 0):
@@ -226,16 +226,16 @@ def _func_gsea(
     %(returns)s
     """
     nobs, nvar = mat.shape
-    assert isinstance(times, int | float) and times >= 0, 'times must be numeric and >= 0'
-    assert isinstance(seed, int | float) and seed >= 0, 'seed must be numeric and >= 0'
+    assert isinstance(times, int | float) and times >= 0, "times must be numeric and >= 0"
+    assert isinstance(seed, int | float) and seed >= 0, "seed must be numeric and >= 0"
     times, seed = int(times), int(seed)
     # Compute
     nsrc = starts.size
-    m = f'gsea - calculating {nsrc} scores across {nobs} observations'
-    _log(m, level='info', verbose=verbose)
+    m = f"gsea - calculating {nsrc} scores across {nobs} observations"
+    _log(m, level="info", verbose=verbose)
     if times > 1:
-        m = f'gsea - comparing estimates against {times} random permutations'
-        _log(m, level='info', verbose=verbose)
+        m = f"gsea - comparing estimates against {times} random permutations"
+        _log(m, level="info", verbose=verbose)
         ridx = _ridx(times=times, nvar=nvar, seed=seed)
     else:
         ridx = _ridx(times=times, nvar=nvar, seed=None)
@@ -260,14 +260,14 @@ def _func_gsea(
 
 
 _gsea = MethodMeta(
-    name='gsea',
-    desc='Gene Set Enrichment Analysis (GSEA)',
+    name="gsea",
+    desc="Gene Set Enrichment Analysis (GSEA)",
     func=_func_gsea,
-    stype='numerical',
+    stype="numerical",
     adj=False,
     weight=False,
     test=True,
     limits=(-np.inf, +np.inf),
-    reference='https://doi.org/10.1073/pnas.0506580102',
+    reference="https://doi.org/10.1073/pnas.0506580102",
 )
 gsea = Method(_method=_gsea)

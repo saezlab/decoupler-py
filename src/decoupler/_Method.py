@@ -30,19 +30,23 @@ class MethodMeta:
         self.reference = reference
 
     def meta(self) -> pd.DataFrame:
-        meta = pd.DataFrame([{
-            'name': self.name,
-            'desc': self.desc,
-            'stype': self.stype,
-            'weight': self.weight,
-            'test': self.test,
-            'limits': self.limits,
-            'reference': self.reference
-        }])
+        meta = pd.DataFrame(
+            [
+                {
+                    "name": self.name,
+                    "desc": self.desc,
+                    "stype": self.stype,
+                    "weight": self.weight,
+                    "test": self.test,
+                    "limits": self.limits,
+                    "reference": self.reference,
+                }
+            ]
+        )
         return meta
 
 
-#@docs.dedent
+# @docs.dedent
 class Method(MethodMeta):
     def __init__(
         self,
