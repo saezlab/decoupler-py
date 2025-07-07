@@ -24,6 +24,17 @@ def filter_by_prop(
     color
         Color to use in ``matplotlib.pyplot.hist``.
     %(plot)s
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        adata = dc.ds.covid5k()
+        pdata = dc.pp.pseudobulk(adata, sample_col="individual", groups_col="celltype")
+        tcells = pdata[pdata.obs["celltype"] == "T cell"].copy()
+        dc.pl.filter_by_prop(tcells)
     """
     assert isinstance(adata, AnnData), "adata must be AnnData"
     assert "psbulk_props" in adata.layers.keys(), (

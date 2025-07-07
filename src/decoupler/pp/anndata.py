@@ -27,6 +27,17 @@ def get_obsm(adata: AnnData, key: str) -> AnnData:
     Returns
     -------
     New AnnData object with values of the provided key in ``.obsm`` in ``X``.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        adata, net = dc.ds.toy()
+        dc.mt.ulm(adata, net, tmin=3)
+        scores = dc.pp.get_obsm(adata, "score_ulm")
+        scores
     """
     # Validate
     assert isinstance(adata, AnnData), "adata must be anndata.AnnData"
@@ -71,6 +82,19 @@ def swap_layer(
     Returns
     -------
     If ``inplace=False``, new ``AnnData`` object.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+        import scanpy as sc
+
+        adata, net = dc.ds.toy()
+        adata.layers["lognorm"] = adata.X
+        sc.pp.scale(adata)
+        adata = dc.pp.swap_layer(adata, key="lognorm", X_key="scaled")
+        adata
     """
     # Validate
     assert isinstance(adata, AnnData), "adata must be anndata.AnnData"
@@ -312,6 +336,16 @@ def pseudobulk(
     Returns
     -------
     New AnnData object containing summarized pseudobulk profiles by sample and optionally by group.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        adata = dc.ds.covid5k()
+        pdata = dc.pp.pseudobulk(adata, sample_col="individual", groups_col="celltype")
+        pdata
     """
     # Validate
     assert isinstance(adata, AnnData), "adata must be an AnnData instance"
@@ -406,6 +440,16 @@ def filter_samples(
     Returns
     -------
     If ``inplace=False``, array of samples to be kept.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        adata = dc.ds.covid5k()
+        pdata = dc.pp.pseudobulk(adata, sample_col="individual", groups_col="celltype")
+        dc.pp.filter_samples(pdata, min_cells=10, min_counts=1000)
     """
     assert isinstance(adata, AnnData), "adata must be AnnData"
     cols = {"psbulk_cells", "psbulk_counts"}
@@ -515,6 +559,16 @@ def filter_by_expr(
     Returns
     -------
     If ``inplace=False``, array of genes to be kept.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        adata = dc.ds.covid5k()
+        pdata = dc.pp.pseudobulk(adata, sample_col="individual", groups_col="celltype")
+        dc.pp.filter_by_expr(pdata)
     """
     # Validate
     assert isinstance(adata, AnnData), "adata must be AnnData"
@@ -577,6 +631,16 @@ def filter_by_prop(
     Returns
     -------
     If ``inplace=False``, array of genes to be kept.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        adata = dc.ds.covid5k()
+        pdata = dc.pp.pseudobulk(adata, sample_col="individual", groups_col="celltype")
+        dc.pp.filter_by_prop(pdata)
     """
     # Validate
     assert isinstance(adata, AnnData), "adata must be AnnData"
@@ -623,6 +687,15 @@ def knn(
         Maximum number of nearest neighbors to consider.
     cutoff
         Values below this number are set to zero.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        adata = dc.ds.msvisium()
+        dc.pp.knn(adata, key="spatial", bw=100, cutoff=0.1)
     """
     # Validate
     assert isinstance(adata, AnnData), "adata must be anndata.AnnData"
@@ -672,6 +745,15 @@ def bin_order(
     Returns
     -------
     DataFrame with sources binned alng a continous ordered proess.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        adata, net = dc.ds.toy(pstime=True)
+        dc.pp.bin_order(adata, names=["G01", "G02", "G03"], order="pstime")
     """
     # Validate
     assert isinstance(adata, AnnData), "adata must be anndata.AnnData"

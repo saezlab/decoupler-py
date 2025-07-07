@@ -207,6 +207,15 @@ def _func_waggr(
     %(seed)s
 
     %(returns)s
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        adata, net = dc.ds.toy()
+        dc.mt.waggr(adata, net, tmin=3)
     """
     assert isinstance(fun, str) or callable(fun), "fun must be str or callable"
     if isinstance(fun, str):

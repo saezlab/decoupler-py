@@ -283,6 +283,14 @@ def _func_viper(
         If ``pleiotropy``, number higher than 1 indicating the penalty for the pleiotropic interactions. 1 = no penalty.
 
     %(returns)s
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+        adata, net = dc.ds.toy()
+        dc.mt.viper(adata, net, tmin=3)
     """
     # Get number of batches
     n_samples = mat.shape[0]

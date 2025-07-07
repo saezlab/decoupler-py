@@ -19,6 +19,14 @@ def ensmbl_to_symbol(
     Returns
     -------
     List of gene symbols
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        dc.ds.ensmbl_to_symbol(genes=["ENSG00000196092", "ENSG00000115415"], organism="hsapiens_gene_ensembl")
     """
     url = (
         'http://www.ensembl.org/biomart/martservice?query=<?xml version="1.0" encoding="UTF-8"?>'

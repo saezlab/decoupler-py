@@ -23,6 +23,16 @@ def order(df: pd.DataFrame, mode: str = "line", kw_order: dict | None = None, **
         Other keyword arguments are passed down to ``seaborn.lineplot`` or ``matplotlib.pyplot.imshow``,
         depending on ``mode`` used.
     %(plot)s
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        adata, net = dc.ds.toy(pstime=True)
+        bins = dc.pp.bin_order(adata=adata, order="pstime", label="group", names=["G01", "G02", "G03"])
+        dc.pl.order(df=bins)
     """
     # Validate
     assert isinstance(df, pd.DataFrame), "df must be pandas.DataFrame"

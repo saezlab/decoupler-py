@@ -24,6 +24,14 @@ def read_gmt(
     Returns
     -------
     Gene sets as ``pd.DataFrame``.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        net = dc.pp.read_gmt("path/to/gene_sets.gmt")
     """
     # Init empty df
     df = []
@@ -89,6 +97,16 @@ def prune(
     Returns
     -------
     Filtered net in long format.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        adata, net = dc.ds.toy()
+        X, obs_names, var_names = dc.pp.extract(adata)
+        dc.pp.prune(var_names, net, tmin=3)
     """
     # Validate
     vnet = _validate_net(net, verbose=verbose)
@@ -156,6 +174,16 @@ def adjmat(
     Returns
     -------
     Returns the source names (columns), target names (rows), and the adjacency matrix of weights.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        adata, net = dc.ds.toy()
+        X, obs_names, var_names = dc.pp.extract(adata)
+        gst_names, var_names, adjm = dc.pp.adjmat(var_names, net)
     """
     # Extract adj mat
     sources, targets, adjm = _adj(net=net)
@@ -183,6 +211,16 @@ def idxmat(
     Returns
     -------
     List of sources, concatenated indexes, starts and offsets.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        adata, net = dc.ds.toy()
+        X, obs_names, var_names = dc.pp.extract(adata)
+        gst_names, idxs, starts, offsets = dc.pp.idxmat(var_names, net)
     """
     # Transform targets to indxs
     table = {name: i for i, name in enumerate(features)}
@@ -243,6 +281,16 @@ def shuffle_net(
     Returns
     -------
     Shuffled network.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        adata, net = dc.ds.toy()
+        rnet = dc.pp.shuffle_net(net)
+        rnet
     """
     # Validate
     assert isinstance(net, pd.DataFrame), "net must be pandas.DataFrame"
@@ -286,6 +334,15 @@ def net_corr(
     Returns
     -------
     Correlation pairs dataframe.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        adata, net = dc.ds.toy()
+        dc.pp.net_corr(net, tmin=3)
     """
     net = _validate_net(net, verbose=verbose)
     # If mat is provided

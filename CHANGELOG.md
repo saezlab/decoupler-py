@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning][].
 [keep a changelog]: https://keepachangelog.com/en/1.0.0/
 [semantic versioning]: https://semver.org/spec/v2.0.0.html
 
-## 2.0.6
+## 2.0.8
 
 Major update to accomodate the scverse template {cite}`scverse`.
 

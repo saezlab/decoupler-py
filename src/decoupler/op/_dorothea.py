@@ -40,6 +40,15 @@ def dorothea(
     Returns
     -------
     Dataframe in long format containing target genes for each TF with their associated weights and confidence level.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        do = dc.op.dorothea()
+        do
     """
     assert isinstance(levels, str | list) or levels is None, "levels must be str or list"
     if levels is None:

@@ -56,6 +56,15 @@ def _func_zscore(
         Which flavor to use when calculating the z-score, either KSEA or RoKAI.
 
     %(returns)s
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        adata, net = dc.ds.toy()
+        dc.mt.zscore(adata, net, tmin=3)
     """
     assert isinstance(flavor, str) and flavor in ["KSEA", "RoKAI"], "flavor must be str and KSEA or RoKAI"
     nobs, nvar = mat.shape

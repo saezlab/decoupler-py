@@ -52,6 +52,18 @@ def rankby_obsm(
     Returns
     -------
     If ``uns_key=False``, a pandas.DataFrame with the resulting statistics.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+        import scanpy as sc
+
+        adata, net = dc.ds.toy()
+        sc.pp.scale(adata)
+        sc.tl.pca(adata)
+        dc.tl.rankby_obsm(adata, "X_pca")
     """
     assert isinstance(uns_key, str) or uns_key is None, "uns_key must be str or None"
     # Extract

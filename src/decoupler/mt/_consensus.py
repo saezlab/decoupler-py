@@ -106,6 +106,16 @@ def consensus(
     Returns
     -------
     Consensus enrichment scores and p-values.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        adata, net = dc.ds.toy()
+        dc.mt.decouple(adata, net, tmin=3)
+        dc.mt.consensus(adata)
     """
     # Validate
     assert isinstance(result, dict | AnnData), "scores must be dict or anndata.AnnData"

@@ -23,6 +23,15 @@ def hsctgfb(
     Returns
     -------
     AnnData object.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        adata = dc.ds.hsctgfb()
+        adata
     """
     # Download
     url = (
@@ -70,6 +79,15 @@ def knocktf(
     Returns
     -------
     AnnData object.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        adata = dc.ds.knocktf()
+        adata
     """
     assert isinstance(thr_fc, int | float) or thr_fc is None, "thr_fc must be numeric or None"
     # Download

@@ -229,6 +229,15 @@ def network(
     layout
         Layout to use to order the nodes. Check ``igraph`` documentation for more options.
     %(plot)s
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        adata, net = dc.ds.toy()
+        dc.pl.network(net, figsize=(4, 4))
     """
     assert isinstance(net, pd.DataFrame), "net must be pd.DataFrame"
     assert (data is None) == (score is None), "data and score must either both be None"
@@ -238,6 +247,7 @@ def network(
         score = pd.DataFrame(np.ones((1, srcs.size)), index=["0"], columns=srcs)
         trgs = net["target"].unique().astype("U")
         data = pd.DataFrame(np.ones((1, trgs.size)), index=["0"], columns=trgs)
+        s_cmap = "white"
         t_cmap = "white"
     # Filter
     fdata, fscore, fnet = _filter(

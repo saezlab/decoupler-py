@@ -29,6 +29,24 @@ def leading_edge(
     color
         Color to plot the running-sum statistic.
     %(plot)s
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+        import scanpy as sc
+
+        adata, net = dc.ds.toy()
+        sc.tl.rank_genes_groups(adata, groupby="group")
+        deg = sc.get.rank_genes_groups_df(adata, group="A").set_index("names")
+        _, le = dc.pl.leading_edge(
+            deg,
+            stat="scores",
+            net=net,
+            name="T1",
+        )
+        le
     """
 
     class MidpointNormalize(matplotlib.colors.Normalize):

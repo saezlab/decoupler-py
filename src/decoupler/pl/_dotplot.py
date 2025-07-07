@@ -42,6 +42,31 @@ def dotplot(
     %(cmap)s
     %(vcenter)s
     %(plot)s
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+        import scanpy as sc
+        import numpy as np
+
+        adata, net = dc.ds.toy()
+        sc.tl.rank_genes_groups(adata, groupby="group")
+        deg = sc.get.rank_genes_groups_df(adata, group=None)
+        mat = deg.pivot(index="group", columns="names", values="scores")
+        scores, padjs = dc.mt.ulm(mat, net, tmin=3)
+        df = (
+            scores.loc[["A"]]
+            .melt(value_name="score")
+            .merge(
+                padjs.loc[["A"]]
+                .melt(value_name="padj")
+                .assign(padj=lambda x: x["padj"].clip(2.22e-16, 1))
+                .assign(padj=lambda x: -np.log10(x["padj"]))
+            )
+        )
+        dc.pl.dotplot(df=df, x="score", y="variable", s="padj", c="score", scale=1, top=3)
     """
     # Validate
     assert isinstance(df, pd.DataFrame), "df must be a pd.DataFrame"

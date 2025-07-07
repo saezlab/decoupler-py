@@ -21,6 +21,15 @@ def obsbar(adata: AnnData, y: str, hue: str | None = None, kw_barplot: dict | No
     kw_barplot
         Keyword arguments passed to ``seaborn.barplot``.
     %(plot)s
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        adata, net = dc.ds.toy()
+        dc.pl.obsbar(adata, y="sample", hue="sample")
     """
     # Validate
     assert isinstance(adata, AnnData), "adata must be an AnnData instance"

@@ -18,6 +18,14 @@ def show_resources() -> pd.DataFrame:
     Returns
     -------
     List of available resources to query with `decoupler.op.resource`.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        dc.op.show_resources()
     """
     ann = pd.read_csv("https://omnipathdb.org/queries/annotations", sep="\t")
     ann = ann.set_index("argument").loc["databases"].str.split(";")["values"]
@@ -56,6 +64,15 @@ def resource(
     Returns
     -------
     Network in long format.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        df = dc.op.resource(name="PanglaoDB")
+        df
     """
     # Validate
     assert isinstance(name, str), "name must be str"

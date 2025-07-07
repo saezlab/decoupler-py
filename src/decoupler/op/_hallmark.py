@@ -27,6 +27,15 @@ def hallmark(
     Returns
     -------
     Dataframe in long format containing the hallmark gene sets.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        hm = dc.op.hallmark()
+        hm
     """
     url = "https://static.omnipathdb.org/tables/msigdb-hallmark.tsv.gz"
     hm = _download(url, sep="\t", compression="gzip", verbose=verbose)

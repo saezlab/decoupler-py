@@ -105,6 +105,19 @@ def obsm(
     cmap_obs
         Dictionary of colormaps containing a palette for each metadata covariate being plotted.
     %(plot)s
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+        import scanpy as sc
+
+        adata, net = dc.ds.toy()
+        sc.pp.scale(adata)
+        sc.tl.pca(adata)
+        dc.tl.rankby_obsm(adata, key="X_pca")
+        dc.pl.obsm(adata=adata, nvar=5)
     """
     # Validate
     assert isinstance(dendrogram, bool), "dendrogram must be bool"
@@ -113,7 +126,7 @@ def obsm(
         titles = ["Scores", "Stats"]
     assert isinstance(titles, list) and len(titles) == 2, "titles must be list and with 2 elements"
     if cmap_obs is None:
-        cmap_obs = ["Scores", "Stats"]
+        cmap_obs = {}
     assert isinstance(cmap_obs, dict), "cmap_obs must be dict"
     # Extract
     obsm, stats, names = _input(adata=adata, uns_key=key, names=names, nvar=nvar)

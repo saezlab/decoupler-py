@@ -34,6 +34,15 @@ def rankby_order(adata: AnnData, order: str, stat: str = "dcor", verbose: bool =
     Returns
     -------
     DataFrame with features associated with the ordering variable.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        adata, net = dc.ds.toy(pstime=True)
+        dc.tl.rankby_order(adata, order="pstime", names=["G01", "G02", "G03"])
     """
     # Validate
     assert isinstance(adata, AnnData), "adata must be anndata.AnnData"

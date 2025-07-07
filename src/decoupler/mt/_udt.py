@@ -49,6 +49,15 @@ def _func_udt(
     kwargs
         All other keyword arguments are passed to ``xgboost.XGBRegressor``.
     %(returns)s
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        adata, net = dc.ds.toy()
+        dc.mt.udt(adata, net, tmin=3)
     """
     _check_import(xgboost, "xgboost")
     nobs = mat.shape[0]
