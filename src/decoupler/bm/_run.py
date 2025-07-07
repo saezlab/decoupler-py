@@ -310,6 +310,16 @@ def benchmark(
     Returns
     -------
     Dataframe containing metric scores.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        adata, net = dc.ds.toy_bench()
+        df = dc.bm.benchmark(adata=adata, net=net, kws_decouple={"tmin": 3})
+        df
     """
     # Validate
     assert isinstance(adata, AnnData), "adata must be anndata.AnnData"
