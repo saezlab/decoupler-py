@@ -26,9 +26,10 @@ def hsctgfb(
 
     Example
     -------
-    >>> import decoupler as dc
-    >>> adata = dc.ds.hsctgfb()
-    >>> adata
+    import decoupler as dc
+    adata = dc.ds.hsctgfb()
+    adata
+
     AnnData object with n_obs × n_vars = 6 × 58674
         obs: 'condition', 'sample_id'
     """
@@ -81,9 +82,10 @@ def knocktf(
 
     Example
     -------
-    >>> import decoupler as dc
-    >>> adata = dc.ds.knocktf()
-    >>> adata
+    import decoupler as dc
+    adata = dc.ds.knocktf()
+    adata
+
     AnnData object with n_obs × n_vars = 388 × 21985
         obs: 'source', 'Species', 'Knock.Method', 'Biosample.Name', 'Profile.ID', 'Platform', 'TF.Class', 'TF.Superclass', 'Tissue.Type', 'Biosample.Type', 'Data.Source', 'Pubmed.ID', 'logFC', 'type_p'
     """
