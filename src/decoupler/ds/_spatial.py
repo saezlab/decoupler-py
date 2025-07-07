@@ -29,6 +29,14 @@ def msvisium(
     Returns
     -------
     AnnData object.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+        adata = dc.ds.msvisium()
+        adata
     """
     url = "https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSM8563708&format=file&file=GSM8563708%5FMS377T%5F"
     # Download mat

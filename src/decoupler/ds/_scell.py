@@ -50,6 +50,14 @@ def pbmc3k(
     Returns
     -------
     AnnData object.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+        adata = dc.ds.pbmc3k()
+        adata
     """
     url = "https://raw.githubusercontent.com/chanzuckerberg/cellxgene/main/example-dataset/pbmc3k.h5ad"
     adata = _download_anndata(url, verbose=verbose)
@@ -82,6 +90,14 @@ def covid5k(
     Returns
     -------
     AnnData object.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+        adata = dc.ds.covid5k()
+        adata
     """
     url = (
         "https://ftp.ebi.ac.uk/pub/databases/microarray/data/atlas/"
@@ -148,6 +164,14 @@ def erygast1k(
     Returns
     -------
     AnnData object.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+        adata = dc.ds.erygast1k()
+        adata
     """
     # How to process from scvelo:
     """

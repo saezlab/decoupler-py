@@ -362,6 +362,14 @@ def _func_gsva(
         will be regarded as 'highly' activated.
 
     %(returns)s
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+        adata, net = dc.ds.toy()
+        dc.mt.gsva(adata, net, tmin=3)
     """
     if isinstance(mat, sps.csr_matrix):
         m = "gsva - Converting sparse matrix to dense format before density transformation"

@@ -86,6 +86,14 @@ def _func_aucell(
         If ``None``, the top 5% of features based on their magnitude are selected.
 
     %(returns)s
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+        adata, net = dc.ds.toy()
+        dc.mt.aucell(adata, net, tmin=3)
     """
     nobs, nvar = mat.shape
     nsrc = starts.size

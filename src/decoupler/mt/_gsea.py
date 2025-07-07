@@ -224,6 +224,14 @@ def _func_gsea(
     %(seed)s
 
     %(returns)s
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+        adata, net = dc.ds.toy()
+        dc.mt.gsea(adata, net, tmin=3)
     """
     nobs, nvar = mat.shape
     assert isinstance(times, int | float) and times >= 0, "times must be numeric and >= 0"

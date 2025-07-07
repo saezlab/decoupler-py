@@ -47,6 +47,14 @@ def toy(
     Returns
     -------
     AnnData and net examples.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+        adata, net = dc.ds.toy()
+        adata, net
     """
     # Validate
     assert isinstance(nobs, int | float) and nobs >= 2, "nobs must be numeric and >= 2"
@@ -128,6 +136,14 @@ def toy_bench(shuffle_r: float = 0.25, seed: int = 42, verbose: bool = False, **
     Returns
     -------
     AnnData and net examples.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+        adata, net = dc.ds.toy_bench()
+        adata, net
     """
     # Validate
     assert isinstance(shuffle_r, int | float) and 0.0 <= shuffle_r <= 1.0, (

@@ -33,6 +33,18 @@ def decouple(
     %(empty)s
     %(bsize)s
     %(verbose)s
+
+    Returns
+    -------
+    Dictionary of results or as ``.obsm`` keys in the provided AnnData.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+        adata, net = dc.ds.toy()
+        dc.mt.decouple(adata, net, tmin=3)
     """
     # Validate
     _mdict = {m.name: m for m in _methods}

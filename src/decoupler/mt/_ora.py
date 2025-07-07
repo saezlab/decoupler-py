@@ -240,6 +240,14 @@ def _func_ora(
         Number indicating the background size.
 
     %(returns)s
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+        adata, net = dc.ds.toy()
+        dc.mt.ora(adata, net, tmin=3)
     """
     nobs, nvar = mat.shape
     nsrc = starts.size

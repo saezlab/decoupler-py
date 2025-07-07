@@ -93,6 +93,14 @@ def _func_mlm(
     %(tval)s
 
     %(returns)s
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+        adata, net = dc.ds.toy()
+        dc.mt.mlm(adata, net, tmin=3)
     """
     # Get dims
     n_features, n_fsets = adj.shape
