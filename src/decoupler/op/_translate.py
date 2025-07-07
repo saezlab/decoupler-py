@@ -157,7 +157,7 @@ def translate(
         import decoupler as dc
 
         ct = dc.op.collectri()
-        mouse_ct = dc.op.translate(ct, target_organism='mouse')
+        mouse_ct = dc.op.translate(ct, target_organism="mouse")
         mouse_ct
     """
     # Validate

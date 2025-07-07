@@ -36,7 +36,7 @@ def get_obsm(adata: AnnData, key: str) -> AnnData:
 
         adata, net = dc.ds.toy()
         dc.mt.ulm(adata, net, tmin=3)
-        scores = dc.pp.get_obsm(adata, 'score_ulm')
+        scores = dc.pp.get_obsm(adata, "score_ulm")
         scores
     """
     # Validate
@@ -91,9 +91,9 @@ def swap_layer(
         import scanpy as sc
 
         adata, net = dc.ds.toy()
-        adata.layers['lognorm'] = adata.X
+        adata.layers["lognorm"] = adata.X
         sc.pp.scale(adata)
-        adata = dc.pp.swap_layer(adata, key='lognorm', X_key='scaled')
+        adata = dc.pp.swap_layer(adata, key="lognorm", X_key="scaled")
         adata
     """
     # Validate
@@ -344,7 +344,7 @@ def pseudobulk(
         import decoupler as dc
 
         adata = dc.ds.covid5k()
-        pdata = dc.pp.pseudobulk(adata, sample_col='individual', groups_col='celltype')
+        pdata = dc.pp.pseudobulk(adata, sample_col="individual", groups_col="celltype")
         pdata
     """
     # Validate
@@ -448,7 +448,7 @@ def filter_samples(
         import decoupler as dc
 
         adata = dc.ds.covid5k()
-        pdata = dc.pp.pseudobulk(adata, sample_col='individual', groups_col='celltype')
+        pdata = dc.pp.pseudobulk(adata, sample_col="individual", groups_col="celltype")
         dc.pp.filter_samples(pdata, min_cells=10, min_counts=1000)
     """
     assert isinstance(adata, AnnData), "adata must be AnnData"
@@ -567,7 +567,7 @@ def filter_by_expr(
         import decoupler as dc
 
         adata = dc.ds.covid5k()
-        pdata = dc.pp.pseudobulk(adata, sample_col='individual', groups_col='celltype')
+        pdata = dc.pp.pseudobulk(adata, sample_col="individual", groups_col="celltype")
         dc.pp.filter_by_expr(pdata)
     """
     # Validate
@@ -639,7 +639,7 @@ def filter_by_prop(
         import decoupler as dc
 
         adata = dc.ds.covid5k()
-        pdata = dc.pp.pseudobulk(adata, sample_col='individual', groups_col='celltype')
+        pdata = dc.pp.pseudobulk(adata, sample_col="individual", groups_col="celltype")
         dc.pp.filter_by_prop(pdata)
     """
     # Validate
@@ -753,7 +753,7 @@ def bin_order(
         import decoupler as dc
 
         adata, net = dc.ds.toy(pstime=True)
-        dc.pp.bin_order(adata, names=['G01', 'G02', 'G03'], order='pstime')
+        dc.pp.bin_order(adata, names=["G01", "G02", "G03"], order="pstime")
     """
     # Validate
     assert isinstance(adata, AnnData), "adata must be anndata.AnnData"

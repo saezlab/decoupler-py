@@ -67,11 +67,11 @@ def barplot(
         import scanpy as sc
 
         adata, net = dc.ds.toy()
-        sc.tl.rank_genes_groups(adata, groupby='group')
+        sc.tl.rank_genes_groups(adata, groupby="group")
         deg = sc.get.rank_genes_groups_df(adata, group=None)
-        mat = deg.pivot(index='group', columns='names', values='scores')
+        mat = deg.pivot(index="group", columns="names", values="scores")
         scores, padjs = dc.mt.ulm(mat, net, tmin=3)
-        dc.pl.barplot(scores, name='A')
+        dc.pl.barplot(scores, name="A")
     """
     # Validate
     assert isinstance(data, pd.DataFrame), "data must be pandas.DataFrame"

@@ -71,7 +71,7 @@ def resource(
 
         import decoupler as dc
 
-        df = dc.op.resource(name='PanglaoDB')
+        df = dc.op.resource(name="PanglaoDB")
         df
     """
     # Validate

@@ -39,8 +39,8 @@ def rankby_group(
 
         adata, net = dc.ds.toy()
         dc.mt.ulm(adata, net, tmin=3)
-        scores = dc.pp.get_obsm(adata, 'score_ulm')
-        dc.tl.rankby_group(adata, groupby='group')
+        scores = dc.pp.get_obsm(adata, "score_ulm")
+        dc.tl.rankby_group(adata, groupby="group")
     """
     assert isinstance(adata, AnnData), "adata must be anndata.AnnData"
     assert isinstance(groupby, str) and groupby in adata.obs.columns, "groupby must be str and in adata.obs.columns"

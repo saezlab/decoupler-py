@@ -32,8 +32,8 @@ def filter_by_prop(
         import decoupler as dc
 
         adata = dc.ds.covid5k()
-        pdata = dc.pp.pseudobulk(adata, sample_col='individual', groups_col='celltype')
-        tcells = pdata[pdata.obs['celltype'] == 'T cell'].copy()
+        pdata = dc.pp.pseudobulk(adata, sample_col="individual", groups_col="celltype")
+        tcells = pdata[pdata.obs["celltype"] == "T cell"].copy()
         dc.pl.filter_by_prop(tcells)
     """
     assert isinstance(adata, AnnData), "adata must be AnnData"

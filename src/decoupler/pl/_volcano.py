@@ -64,9 +64,9 @@ def volcano(
         import scanpy as sc
 
         adata, net = dc.ds.toy()
-        sc.tl.rank_genes_groups(adata, groupby='group')
-        deg = sc.get.rank_genes_groups_df(adata, group='A').set_index('names')
-        dc.pl.volcano(data=deg, x='logfoldchanges', y='pvals')
+        sc.tl.rank_genes_groups(adata, groupby="group")
+        deg = sc.get.rank_genes_groups_df(adata, group="A").set_index("names")
+        dc.pl.volcano(data=deg, x="logfoldchanges", y="pvals")
     """
     # Validate inputs
     m = f"data must be a pd.DataFrame containing the columns {x} and {y}"

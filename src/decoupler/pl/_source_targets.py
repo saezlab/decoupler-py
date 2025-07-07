@@ -61,8 +61,8 @@ def source_targets(
         import scanpy as sc
 
         adata, net = dc.ds.toy()
-        sc.tl.rank_genes_groups(adata, groupby='group')
-        deg = sc.get.rank_genes_groups_df(adata, group='A').set_index('names')
+        sc.tl.rank_genes_groups(adata, groupby="group")
+        deg = sc.get.rank_genes_groups_df(adata, group="A").set_index("names")
         dc.pl.source_targets(data=deg, x="weight", y="scores", net=net, name="T1")
     """
     # Validate inputs

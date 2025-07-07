@@ -31,12 +31,7 @@ def order(df: pd.DataFrame, mode: str = "line", kw_order: dict | None = None, **
         import decoupler as dc
 
         adata, net = dc.ds.toy(pstime=True)
-        bins = dc.pp.bin_order(
-            adata=adata,
-            order="pstime",
-            label="group",
-            names=['G01', 'G02', 'G03']
-        )
+        bins = dc.pp.bin_order(adata=adata, order="pstime", label="group", names=["G01", "G02", "G03"])
         dc.pl.order(df=bins)
     """
     # Validate

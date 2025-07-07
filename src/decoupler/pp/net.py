@@ -31,7 +31,7 @@ def read_gmt(
 
         import decoupler as dc
 
-        net = dc.pp.read_gmt('path/to/gene_sets.gmt')
+        net = dc.pp.read_gmt("path/to/gene_sets.gmt")
     """
     # Init empty df
     df = []
