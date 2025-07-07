@@ -52,6 +52,18 @@ def source_targets(
     color_neg
         Color to plot negatively associated features.
     %(plot)s
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+        import scanpy as sc
+
+        adata, net = dc.ds.toy()
+        sc.tl.rank_genes_groups(adata, groupby='group')
+        deg = sc.get.rank_genes_groups_df(adata, group='A').set_index('names')
+        dc.pl.source_targets(data=deg, x="weight", y="scores", net=net, name="T1")
     """
     # Validate inputs
     m = f"data must be a pd.DataFrame containing the columns {x} and {y}"

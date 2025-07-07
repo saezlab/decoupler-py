@@ -57,6 +57,22 @@ def order_targets(
     vmax
         Minimum value to color.
     %(plot)s
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        adata, net = dc.ds.toy(pstime=True)
+        dc.mt.ulm(adata, net, tmin=3)
+        dc.pl.order_targets(
+            adata=adata,
+            net=net,
+            label="group",
+            source="T1",
+            order="pstime",
+        )
     """
     # Validate
     assert isinstance(source, str), "source must be str"

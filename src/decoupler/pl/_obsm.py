@@ -105,6 +105,19 @@ def obsm(
     cmap_obs
         Dictionary of colormaps containing a palette for each metadata covariate being plotted.
     %(plot)s
+
+        Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+        import scanpy as sc
+
+        adata, net = dc.ds.toy()
+        sc.pp.scale(adata)
+        sc.tl.pca(adata)
+        dc.tl.rankby_obsm(adata, key="X_pca")
+        dc.pl.obsm(adata=adata, nvar=5)
     """
     # Validate
     assert isinstance(dendrogram, bool), "dendrogram must be bool"

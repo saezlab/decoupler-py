@@ -35,6 +35,15 @@ def filter_by_expr(
     %(large_n)s
     %(min_prop_expr)s
     %(plot)s
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        adata = dc.ds.hsctgfb()
+        dc.pl.filter_by_expr(adata)
     """
     assert isinstance(adata, AnnData), "adata must be AnnData"
     # Extract inputs
