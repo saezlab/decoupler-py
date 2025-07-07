@@ -34,6 +34,7 @@ def hsctgfb(
         adata
 
     .. code-block:: text
+
         AnnData object with n_obs × n_vars = 6 × 58674
             obs: 'condition', 'sample_id'
     """
