@@ -8,7 +8,17 @@ and this project adheres to [Semantic Versioning][].
 [keep a changelog]: https://keepachangelog.com/en/1.0.0/
 [semantic versioning]: https://semver.org/spec/v2.0.0.html
 
-## 2.0.6
+
+## 2.0.8
+
+### Changes
+
+- Updated logo
+- `decoupler._download._download` now returns bytes instead of a dataframe. To transform to `pandas.DataFrame` use `decoupler._download._bytes_to_pandas`
+
+
+
+## 2.0.7
 
 Major update to accomodate the scverse template {cite}`scverse`.
 
