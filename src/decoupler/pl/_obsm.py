@@ -113,7 +113,7 @@ def obsm(
         titles = ["Scores", "Stats"]
     assert isinstance(titles, list) and len(titles) == 2, "titles must be list and with 2 elements"
     if cmap_obs is None:
-        cmap_obs = ["Scores", "Stats"]
+        cmap_obs = {}
     assert isinstance(cmap_obs, dict), "cmap_obs must be dict"
     # Extract
     obsm, stats, names = _input(adata=adata, uns_key=key, names=names, nvar=nvar)
