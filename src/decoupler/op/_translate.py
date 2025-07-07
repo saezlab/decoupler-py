@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from decoupler._docs import docs
-from decoupler._download import _download
+from decoupler._download import _bytes_to_pandas, _download
 from decoupler._log import _log
 
 
@@ -165,7 +165,8 @@ def translate(
         target_col = "fruit fly_symbol"
     # Process orthologs
     url = f"https://ftp.ebi.ac.uk/pub/databases/genenames/hcop/human_{target_organism}_hcop_fifteen_column.txt.gz"
-    map_df = _download(url, low_memory=False, compression="gzip", sep="\t", verbose=verbose)
+    map_df = _download(url, verbose=verbose)
+    map_df = _bytes_to_pandas(map_df, low_memory=False, compression="gzip", sep="\t")
     map_df = pd.read_csv(url, sep="\t", low_memory=False)
     map_df["evidence"] = map_df["support"].apply(lambda x: len(x.split(",")))
     map_df = map_df[map_df["evidence"] >= min_evidence]

@@ -1,7 +1,7 @@
 import pandas as pd
 
 from decoupler._docs import docs
-from decoupler._download import _download
+from decoupler._download import _bytes_to_pandas, _download
 from decoupler.op._dtype import _infer_dtypes
 from decoupler.op._translate import translate
 
@@ -29,7 +29,8 @@ def hallmark(
     Dataframe in long format containing the hallmark gene sets.
     """
     url = "https://static.omnipathdb.org/tables/msigdb-hallmark.tsv.gz"
-    hm = _download(url, sep="\t", compression="gzip", verbose=verbose)
+    hm = _download(url, verbose=verbose)
+    hm = _bytes_to_pandas(hm, sep="\t", compression="gzip")
     hm = hm[["geneset", "genesymbol"]]
     hm["geneset"] = hm["geneset"].str.replace("HALLMARK_", "")
     hm["genesymbol"] = hm["genesymbol"].str.replace("COMPLEX:", "").str.split("_")

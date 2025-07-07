@@ -1,7 +1,7 @@
 import pandas as pd
 
 from decoupler._docs import docs
-from decoupler._download import URL_INT, _download
+from decoupler._download import URL_INT, _bytes_to_pandas, _download
 from decoupler._log import _log
 from decoupler.op._dtype import _infer_dtypes
 from decoupler.op._translate import translate
@@ -62,7 +62,8 @@ def dorothea(
     url = URL_INT + url_ext
     m = f"dorothea - Accessing DoRothEA (levels {str_levels}) with {license} license and weights={weights}"
     _log(m, level="info", verbose=verbose)
-    do = _download(url, sep="\t", verbose=verbose)
+    do = _download(url, verbose=verbose)
+    do = _bytes_to_pandas(do, sep="\t")
     # Filter extra columns
     do = do[
         [

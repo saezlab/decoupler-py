@@ -1,7 +1,7 @@
 import pandas as pd
 
 from decoupler._docs import docs
-from decoupler._download import _download
+from decoupler._download import _bytes_to_pandas, _download
 from decoupler.op._dtype import _infer_dtypes
 from decoupler.op._translate import translate
 
@@ -36,6 +36,7 @@ def collectri(
     """
     url = "https://zenodo.org/records/8192729/files/CollecTRI_regulons.csv?download=1"
     ct = _download(url, verbose=verbose)
+    ct = _bytes_to_pandas(ct)
     # Update resources
     resources = []
     for str_res in ct["resources"]:
