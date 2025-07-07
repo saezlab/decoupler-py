@@ -116,6 +116,15 @@ def extract(
     Returns
     -------
     Matrix, rownames and colnames from data.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        adata, net = dc.ds.toy()
+        X, obs_names, var_names = dc.pp.extract(adata)
     """
     # Extract
     mat, row, col = _extract(data=data, layer=layer, raw=raw)
