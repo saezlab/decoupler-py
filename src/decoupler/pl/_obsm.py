@@ -106,7 +106,7 @@ def obsm(
         Dictionary of colormaps containing a palette for each metadata covariate being plotted.
     %(plot)s
 
-        Example
+    Example
     -------
     .. code-block:: python
 
