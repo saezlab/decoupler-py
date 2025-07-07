@@ -99,6 +99,7 @@ def _func_mlm(
     .. code-block:: python
 
         import decoupler as dc
+
         adata, net = dc.ds.toy()
         dc.mt.mlm(adata, net, tmin=3)
     """

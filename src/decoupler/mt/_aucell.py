@@ -92,6 +92,7 @@ def _func_aucell(
     .. code-block:: python
 
         import decoupler as dc
+
         adata, net = dc.ds.toy()
         dc.mt.aucell(adata, net, tmin=3)
     """

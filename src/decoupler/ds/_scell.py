@@ -56,6 +56,7 @@ def pbmc3k(
     .. code-block:: python
 
         import decoupler as dc
+
         adata = dc.ds.pbmc3k()
         adata
     """
@@ -96,6 +97,7 @@ def covid5k(
     .. code-block:: python
 
         import decoupler as dc
+
         adata = dc.ds.covid5k()
         adata
     """
@@ -170,6 +172,7 @@ def erygast1k(
     .. code-block:: python
 
         import decoupler as dc
+
         adata = dc.ds.erygast1k()
         adata
     """

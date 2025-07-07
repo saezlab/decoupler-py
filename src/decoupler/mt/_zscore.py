@@ -62,6 +62,7 @@ def _func_zscore(
     .. code-block:: python
 
         import decoupler as dc
+
         adata, net = dc.ds.toy()
         dc.mt.zscore(adata, net, tmin=3)
     """

@@ -53,6 +53,7 @@ def toy(
     .. code-block:: python
 
         import decoupler as dc
+
         adata, net = dc.ds.toy()
         adata, net
     """
@@ -142,6 +143,7 @@ def toy_bench(shuffle_r: float = 0.25, seed: int = 42, verbose: bool = False, **
     .. code-block:: python
 
         import decoupler as dc
+
         adata, net = dc.ds.toy_bench()
         adata, net
     """

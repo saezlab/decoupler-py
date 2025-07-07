@@ -213,6 +213,7 @@ def _func_waggr(
     .. code-block:: python
 
         import decoupler as dc
+
         adata, net = dc.ds.toy()
         dc.mt.waggr(adata, net, tmin=3)
     """

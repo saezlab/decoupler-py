@@ -51,6 +51,7 @@ def _func_mdt(
     .. code-block:: python
 
         import decoupler as dc
+
         adata, net = dc.ds.toy()
         dc.mt.mdt(adata, net, tmin=3)
     """

@@ -246,6 +246,7 @@ def _func_ora(
     .. code-block:: python
 
         import decoupler as dc
+
         adata, net = dc.ds.toy()
         dc.mt.ora(adata, net, tmin=3)
     """

@@ -88,6 +88,7 @@ def _func_ulm(
     .. code-block:: python
 
         import decoupler as dc
+
         adata, net = dc.ds.toy()
         dc.mt.ulm(adata, net, tmin=3)
     """

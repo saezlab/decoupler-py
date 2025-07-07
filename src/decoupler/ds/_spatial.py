@@ -35,6 +35,7 @@ def msvisium(
     .. code-block:: python
 
         import decoupler as dc
+
         adata = dc.ds.msvisium()
         adata
     """

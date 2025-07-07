@@ -29,6 +29,7 @@ def hsctgfb(
     .. code-block:: python
 
         import decoupler as dc
+
         adata = dc.ds.hsctgfb()
         adata
     """
@@ -84,6 +85,7 @@ def knocktf(
     .. code-block:: python
 
         import decoupler as dc
+
         adata = dc.ds.knocktf()
         adata
     """
