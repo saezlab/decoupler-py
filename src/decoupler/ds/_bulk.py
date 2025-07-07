@@ -23,6 +23,14 @@ def hsctgfb(
     Returns
     -------
     AnnData object.
+
+    Example
+    -------
+    >>> import decoupler as dc
+    >>> adata = dc.ds.hsctgfb()
+    >>> adata
+    AnnData object with n_obs × n_vars = 6 × 58674
+        obs: 'condition', 'sample_id'
     """
     # Download
     url = (
@@ -70,6 +78,14 @@ def knocktf(
     Returns
     -------
     AnnData object.
+
+    Example
+    -------
+    >>> import decoupler as dc
+    >>> adata = dc.ds.knocktf()
+    >>> adata
+    AnnData object with n_obs × n_vars = 388 × 21985
+        obs: 'source', 'Species', 'Knock.Method', 'Biosample.Name', 'Profile.ID', 'Platform', 'TF.Class', 'TF.Superclass', 'Tissue.Type', 'Biosample.Type', 'Data.Source', 'Pubmed.ID', 'logFC', 'type_p'
     """
     assert isinstance(thr_fc, int | float) or thr_fc is None, "thr_fc must be numeric or None"
     # Download

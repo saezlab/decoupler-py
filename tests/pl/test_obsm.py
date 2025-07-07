@@ -36,8 +36,8 @@ def tdata_obsm_ulm(
         [True, None, ["PC01", "PC02"], True, ["Scores", "Stats"], {"pstime": "magma"}],
         [False, None, None, True, ["Scores", "Stats"], {}],
         [False, None, 10, True, ["Scores", "Stats"], {}],
-        [False, None, "T3", True, ["Scores", "Stats"], {}],
-        [False, None, ["T5", "T3"], True, ["Scores", "Stats"], {}],
+        [False, None, "T3", True, ["Scores", "Stats"], None],
+        [False, None, ["T5", "T3"], True, ["Scores", "Stats"], None],
     ],
 )
 def test_obsm(
