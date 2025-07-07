@@ -33,6 +33,15 @@ def collectri(
     -------
     Dataframe in long format containing target genes for each TF with their associated weights,
     and if available, the PMIDs supporting each interaction.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        ct = dc.op.collectri()
+        ct
     """
     url = "https://zenodo.org/records/8192729/files/CollecTRI_regulons.csv?download=1"
     ct = _download(url, verbose=verbose)

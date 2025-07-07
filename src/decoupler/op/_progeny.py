@@ -51,6 +51,15 @@ def progeny(
     Returns
     -------
     Dataframe in long format containing target genes for each pathway with their associated weights and p-values.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        pg = dc.op.progeny()
+        pg
     """
     # Validate
     assert isinstance(top, int | float) and top > 0, "top must be numeric and > 0"

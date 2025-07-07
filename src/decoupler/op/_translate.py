@@ -15,6 +15,14 @@ def show_organisms() -> list:
     Returns
     -------
     List of available organisms.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        dc.op.show_organisms()
     """
     valid_orgs = [
         "anole_lizard",
@@ -141,6 +149,16 @@ def translate(
     Returns
     -------
     Translated net.
+
+    Example
+    -------
+    .. code-block:: python
+
+        import decoupler as dc
+
+        ct = dc.op.collectri()
+        mouse_ct = dc.op.translate(ct, target_organism='mouse')
+        mouse_ct
     """
     # Validate
     assert isinstance(net, pd.DataFrame), "net must be a pd.DataFrame"
