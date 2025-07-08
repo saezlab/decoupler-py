@@ -2,7 +2,7 @@ import pandas as pd
 import requests
 
 from decoupler._docs import docs
-from decoupler._download import URL_DBS, _download
+from decoupler._download import URL_DBS, _bytes_to_pandas, _download
 from decoupler._log import _log
 from decoupler.op._dtype import _infer_dtypes
 from decoupler.op._translate import translate
@@ -87,7 +87,8 @@ def resource(
     _log(m, level="info", verbose=verbose)
     # Download
     url = URL_DBS + f"{name}&license={license}"
-    df = _download(url, sep="\t", verbose=verbose)
+    df = _download(url, verbose=verbose)
+    df = _bytes_to_pandas(df, sep="\t")
     # Process
     labels = df["label"].unique()
     for label in labels:
