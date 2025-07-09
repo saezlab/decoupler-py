@@ -18,6 +18,48 @@ and this project adheres to [Semantic Versioning][].
 
 ## 2.0.7
 
+### Changes
+- Added `pre-commit` functionality to the repository
+
+## 2.0.6
+
+### Changes
+- Modified links and paths to follow scverse's repository
+
+## 2.0.5
+
+### Bugfixes
+- Fixed error message when extra dependencies where not installed
+
+## 2.0.4
+
+### Bugfixes
+- Fixed `dcor` import bug as an external dependency
+
+## 2.0.3
+
+### Bugfixes
+- Fixed error in `pp.pseudobulk` when obs columns were not categorical
+
+## 2.0.2
+
+### Changes
+- Allowed ordering functions (`pp.bin_order`, `pl.order` and `pl.order_targets`) not to be bound between 0 and 1
+- Added ipywidgets as dependency
+- Silenced xgboost warnings
+
+### Bugfixes
+- Handled corner case in `bm.metric.auc` when scores are all 0
+- Fixed error in `bm.metric.hmean` when metrics were str instead of list
+- Fixed error when `obs` column is a list in `pp.pseudobulk`
+
+## 2.0.1
+
+### Bugfixes
+- Fixed an error in `pp.pseudobulk` when handling empty samples or features
+
+## 2.0.0
+
 Major update to accomodate the scverse template {cite}`scverse`.
 
 All functions have been rewritten to follow the new API, errors when running previous versions (`1.X.X`) are expected if `decoupler >= 2.0.0` is installed.
