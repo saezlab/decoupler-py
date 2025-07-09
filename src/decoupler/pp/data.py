@@ -164,7 +164,7 @@ def extract(
     m = f"Extracted omics mat with {row.size} rows (observations) and {col.size} columns (features)"
     _log(m, level="info", verbose=verbose)
     # Validate
-    isbacked = hasattr(data, 'isbacked') and data.isbacked
+    isbacked = hasattr(data, "isbacked") and data.isbacked
     if not isbacked:
         mat, row, col = _validate_mat(mat=mat, row=row, col=col, empty=empty, verbose=verbose)
         # Randomly sort features

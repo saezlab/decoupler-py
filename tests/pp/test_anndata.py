@@ -84,6 +84,7 @@ def test_pseudobulk(
         layer = "counts"
     else:
         layer = None
+
     def _run_psbulk():
         pdata = dc.pp.pseudobulk(
             adata=adata,
@@ -95,6 +96,7 @@ def test_pseudobulk(
             skip_checks=False,
         )
         return pdata
+
     l_mem_usage, pdata = memory_usage(_run_psbulk, retval=True, interval=0.01)
     l_mem_usage = max(l_mem_usage) - min(l_mem_usage)
     assert isinstance(pdata, ad.AnnData)
@@ -115,7 +117,8 @@ def test_pseudobulk(
         assert set(mode.keys()).issubset(pdata.layers.keys())
     with tempfile.NamedTemporaryFile(suffix=".h5ad", delete=True) as tf:
         adata.write(tf.name)
-        bdata = ad.read_h5ad(tf.name, backed='r')
+        bdata = ad.read_h5ad(tf.name, backed="r")
+
         def _run_psbulk_backed_data():
             pbdata = dc.pp.pseudobulk(
                 adata=bdata,
@@ -127,6 +130,7 @@ def test_pseudobulk(
                 skip_checks=False,
             )
             return pbdata
+
         b_mem_usage, pbdata = memory_usage(_run_psbulk_backed_data, retval=True, interval=0.01)
         b_mem_usage = max(b_mem_usage) - min(b_mem_usage)
         assert b_mem_usage < l_mem_usage

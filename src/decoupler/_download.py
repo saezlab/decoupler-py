@@ -33,9 +33,6 @@ def _download(
     return data
 
 
-def _bytes_to_pandas(
-    data: bytes,
-    **kwargs
-) -> pd.DataFrame:
+def _bytes_to_pandas(data: bytes, **kwargs) -> pd.DataFrame:
     df = pd.read_csv(data, **kwargs)
     return df

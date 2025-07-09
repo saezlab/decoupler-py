@@ -66,11 +66,11 @@ optional-dependencies.test = [
   "gseapy",
   "igraph",
   "ipywidgets",
+  "memory-profiler",
   "pytest",
   "scanpy",
   "statsmodels",
   "xgboost",
-  "memory_profiler",
 ]
 # https://docs.pypi.org/project_metadata/#project-urls
 urls.Documentation = "https://decoupler.readthedocs.io/"
