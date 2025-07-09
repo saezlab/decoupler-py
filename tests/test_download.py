@@ -29,6 +29,7 @@ def test_download(
     url,
     kwargs,
 ):
-    df = dc._download._download(url, **kwargs)
+    df = dc._download._download(url, )
+    df = dc._download._bytes_to_pandas(df, **kwargs)
     assert isinstance(df, pd.DataFrame)
     assert df.columns.size > 1
