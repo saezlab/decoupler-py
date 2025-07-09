@@ -8,13 +8,16 @@ and this project adheres to [Semantic Versioning][].
 [keep a changelog]: https://keepachangelog.com/en/1.0.0/
 [semantic versioning]: https://semver.org/spec/v2.0.0.html
 
-## 2.0.8
+## 2.1.0
 
 ### Changes
 
 - Updated logo
 - `decoupler._download._download` now returns bytes instead of a dataframe. To transform to `pandas.DataFrame` use `decoupler._download._bytes_to_pandas`
 - Enrichment methods and pseudobulking now work with backed AnnData objects, useful when working with big datasets and memory is limited
+
+### Bugfixes
+- Fixed error in `pl.obsm` where default value of `cmap_obs` was not properly set.
 
 ## 2.0.7
 
