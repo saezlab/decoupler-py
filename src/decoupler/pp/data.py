@@ -3,6 +3,7 @@ import pandas as pd
 import scipy.sparse as sps
 from anndata import AnnData
 from numpy.random import default_rng
+from tqdm.auto import tqdm
 
 from decoupler._datatype import DataType
 from decoupler._docs import docs
@@ -38,9 +39,11 @@ def _extract(
         else:
             col = data.var_names.values.astype("U")
             if layer:
-                mat = data.layers[layer].astype(float)
+                mat = data.layers[layer]
             else:
-                mat = data.X.astype(float)
+                mat = data.X
+            if not data.isbacked:
+                mat = mat.astype(float)
     return mat, row, col
 
 
@@ -82,6 +85,35 @@ def _validate_mat(
     return mat, row, col
 
 
+def _validate_backed(
+    mat,
+    row: np.ndarray,
+    col: np.ndarray,
+    empty: bool = True,
+    verbose: bool = False,
+    bsize: int = 250_000,
+) -> np.ndarray:
+    nbatch = int(np.ceil(row.size / bsize))
+    msk_col = np.zeros((nbatch, mat.shape[1]), dtype=bool)
+    for i in tqdm(range(nbatch), disable=not verbose):
+        srt, end = i * bsize, i * bsize + bsize
+        bmat = mat[srt:end]
+        if sps.issparse(bmat):
+            msk_col[i] = bmat.getnnz(axis=0) == 0
+        else:
+            msk_col[i] = np.count_nonzero(bmat, axis=0) == 0
+        has_nonfin = np.any(~np.isfinite(bmat.data))
+        assert not has_nonfin, "mat contains non finite values (nan or inf), set them to 0 or remove them"
+    msk_col = np.logical_and.reduce(msk_col, axis=0)
+    n_empty_col = np.sum(msk_col)
+    if n_empty_col > 0 and empty:
+        m = f"{n_empty_col} features of mat are empty, they will be removed"
+        _log(m, level="warn", verbose=verbose)
+    else:
+        msk_col[:] = False
+    return msk_col
+
+
 def _break_ties(
     mat: np.ndarray,
     features: np.ndarray,
@@ -101,7 +133,8 @@ def extract(
     raw: bool = False,
     empty: bool = True,
     verbose: bool = False,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    bsize: int = 250_000,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray] | tuple[tuple, np.ndarray, np.ndarray]:
     """
     Extracts matrix, rownames and colnames from data.
 
@@ -131,7 +164,14 @@ def extract(
     m = f"Extracted omics mat with {row.size} rows (observations) and {col.size} columns (features)"
     _log(m, level="info", verbose=verbose)
     # Validate
-    mat, row, col = _validate_mat(mat=mat, row=row, col=col, empty=empty, verbose=verbose)
-    # Randomly sort features
-    mat, col = _break_ties(mat=mat, features=col)
+    isbacked = hasattr(data, "isbacked") and data.isbacked
+    if not isbacked:
+        mat, row, col = _validate_mat(mat=mat, row=row, col=col, empty=empty, verbose=verbose)
+        # Randomly sort features
+        mat, col = _break_ties(mat=mat, features=col)
+    else:
+        msk_col = _validate_backed(mat=mat, row=row, col=col, empty=empty, verbose=verbose, bsize=bsize)
+        msk_col = ~msk_col
+        mat = (mat, msk_col)
+        col = col[msk_col]
     return mat, row, col

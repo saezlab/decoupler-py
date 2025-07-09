@@ -55,21 +55,33 @@ def _run(
 ) -> tuple[pd.DataFrame, pd.DataFrame] | AnnData | None:
     _log(f"{name} - Running {name}", level="info", verbose=verbose)
     # Process data
-    mat, obs, var = extract(data, layer=layer, raw=raw, empty=empty, verbose=verbose)
-    sparse = sps.issparse(mat)
+    mat, obs, var = extract(data, layer=layer, raw=raw, empty=empty, verbose=verbose, bsize=bsize)
+    issparse = sps.issparse(mat)
+    isbacked = isinstance(mat, tuple)
     # Process net
     net = prune(features=var, net=net, tmin=tmin, verbose=verbose)
     # Handle stat type
     if adj:
         sources, targets, adjm = adjmat(features=var, net=net, verbose=verbose)
-        # Handle sparse
-        if sparse:
+        # Handle batches
+        if issparse or isbacked:
             nbatch = int(np.ceil(obs.size / bsize))
             es, pv = [], []
             for i in tqdm(range(nbatch), disable=not verbose):
+                if i == 0 and verbose:
+                    batch_verbose = True
+                else:
+                    batch_verbose = False
                 srt, end = i * bsize, i * bsize + bsize
-                bmat = mat[srt:end].toarray()
-                bes, bpv = func(bmat, adjm, verbose=verbose, **kwargs)
+                if sps.issparse(mat):
+                    bmat = mat[srt:end].toarray()
+                else:
+                    bmat, msk_col = mat
+                    bmat = bmat[srt:end, :]
+                    if sps.issparse(bmat):
+                        bmat = bmat.toarray()
+                    bmat = bmat[:, msk_col]
+                bes, bpv = func(bmat, adjm, verbose=batch_verbose, **kwargs)
                 es.append(bes)
                 pv.append(bpv)
             es = np.vstack(es)
@@ -79,7 +91,23 @@ def _run(
             es = pd.DataFrame(es, index=obs, columns=sources)
     else:
         sources, cnct, starts, offsets = idxmat(features=var, net=net, verbose=verbose)
-        es, pv = func(mat, cnct, starts, offsets, verbose=verbose, **kwargs)
+        if isbacked:
+            nbatch = int(np.ceil(obs.size / bsize))
+            es, pv = [], []
+            for i in tqdm(range(nbatch), disable=not verbose):
+                if i == 0 and verbose:
+                    batch_verbose = True
+                else:
+                    batch_verbose = False
+                srt, end = i * bsize, i * bsize + bsize
+                bmat, msk_col = mat
+                bmat = bmat[srt:end, msk_col]
+                bes, bpv = func(bmat, cnct, starts, offsets, verbose=batch_verbose, **kwargs)
+                es.append(bes)
+                pv.append(bpv)
+            es = np.vstack(es)
+        else:
+            es, pv = func(mat, cnct, starts, offsets, verbose=verbose, **kwargs)
         es = pd.DataFrame(es, index=obs, columns=sources)
     # Handle pvals and FDR correction
     if test:

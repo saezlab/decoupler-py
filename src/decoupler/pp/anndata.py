@@ -116,10 +116,11 @@ def swap_layer(
     return cdata
 
 
-def _validate_X(X: np.ndarray | sps.csr_matrix, mode: str = "sum", skip_checks: bool = False) -> None:
+def _validate_X(X: np.ndarray | sps.csr_matrix | tuple, mode: str = "sum", skip_checks: bool = False) -> None:
     assert isinstance(skip_checks, bool), "skip_checks must be bool"
     skip_checks = type(mode) is dict or callable(mode) or skip_checks
-    if not skip_checks:
+    isbacked = isinstance(X, tuple)
+    if not skip_checks and not isbacked:
         if isinstance(X, sps.csr_matrix):
             any_neg = (X.data < 0).any()
         else:
@@ -218,6 +219,7 @@ def _psbulk(
     mode: Callable,
     verbose: bool = False,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    isbacked = isinstance(X, tuple)
     # Init empty variables
     psbulk = np.zeros((n_rows, n_cols))
     props = np.zeros((n_rows, n_cols))
@@ -231,8 +233,12 @@ def _psbulk(
             tmp = obs[obs[sample_col] == smp].drop_duplicates().values
             new_obs.loc[smp, :] = tmp
             # Get cells from specific sample
-            profile = X[(obs[sample_col] == smp).values]
-            if isinstance(X, sps.csr_matrix):
+            if isbacked:
+                bX, msk_col = X
+                profile = bX[(obs[sample_col] == smp).values, :][:, msk_col]
+            else:
+                profile = X[(obs[sample_col] == smp).values]
+            if isinstance(profile, sps.csr_matrix):
                 profile = profile.toarray()
             # Skip if few cells or not enough counts
             ncell = profile.shape[0]
@@ -256,8 +262,12 @@ def _psbulk(
         for grp in groups:
             for smp in smples:
                 # Get cells from specific sample and group
-                profile = X[((obs[sample_col] == smp) & (obs[groups_col] == grp)).values]
-                if isinstance(X, sps.csr_matrix):
+                if isbacked:
+                    bX, msk_col = X
+                    profile = bX[((obs[sample_col] == smp) & (obs[groups_col] == grp)).values][:, msk_col]
+                else:
+                    profile = X[((obs[sample_col] == smp) & (obs[groups_col] == grp)).values]
+                if isinstance(profile, sps.csr_matrix):
                     profile = profile.toarray()
                 # Skip if few cells or not enough counts
                 ncell = profile.shape[0]
@@ -579,6 +589,8 @@ def filter_by_expr(
     assert isinstance(min_prop, int | float) and 1 >= min_prop >= 0, "min_prop must be numeric and between 0 and 1"
     # Extract inputs
     X, _, var_names = extract(adata, empty=False)
+    isbacked = isinstance(X, tuple)
+    assert not isbacked, "adata is in backed mode, reload adata without backed='r'"
     obs = adata.obs
     # Minimum sample size cutoff
     min_sample_size = _min_sample_size(

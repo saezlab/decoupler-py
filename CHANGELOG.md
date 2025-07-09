@@ -8,7 +8,60 @@ and this project adheres to [Semantic Versioning][].
 [keep a changelog]: https://keepachangelog.com/en/1.0.0/
 [semantic versioning]: https://semver.org/spec/v2.0.0.html
 
-## 2.0.8
+## 2.1.0
+
+### Changes
+
+- Updated logo
+- `decoupler._download._download` now returns bytes instead of a dataframe. To transform to `pandas.DataFrame` use `decoupler._download._bytes_to_pandas`
+- Enrichment methods and pseudobulking now work with backed AnnData objects, useful when working with big datasets and memory is limited
+
+### Bugfixes
+- Fixed error in `pl.obsm` where default value of `cmap_obs` was not properly set.
+
+## 2.0.7
+
+### Changes
+- Added `pre-commit` functionality to the repository
+
+## 2.0.6
+
+### Changes
+- Modified links and paths to follow scverse's repository
+
+## 2.0.5
+
+### Bugfixes
+- Fixed error message when extra dependencies where not installed
+
+## 2.0.4
+
+### Bugfixes
+- Fixed `dcor` import bug as an external dependency
+
+## 2.0.3
+
+### Bugfixes
+- Fixed error in `pp.pseudobulk` when obs columns were not categorical
+
+## 2.0.2
+
+### Changes
+- Allowed ordering functions (`pp.bin_order`, `pl.order` and `pl.order_targets`) not to be bound between 0 and 1
+- Added ipywidgets as dependency
+- Silenced xgboost warnings
+
+### Bugfixes
+- Handled corner case in `bm.metric.auc` when scores are all 0
+- Fixed error in `bm.metric.hmean` when metrics were str instead of list
+- Fixed error when `obs` column is a list in `pp.pseudobulk`
+
+## 2.0.1
+
+### Bugfixes
+- Fixed an error in `pp.pseudobulk` when handling empty samples or features
+
+## 2.0.0
 
 Major update to accomodate the scverse template {cite}`scverse`.
 
