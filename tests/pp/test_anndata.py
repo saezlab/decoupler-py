@@ -1,9 +1,10 @@
+import tempfile
+
+import anndata as ad
 import numpy as np
 import pandas as pd
 import pytest
 import scipy.sparse as sps
-import tempfile
-import anndata as ad
 from memory_profiler import memory_usage
 
 import decoupler as dc

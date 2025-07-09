@@ -1,5 +1,5 @@
 # decoupler - Ensemble of methods to infer enrichment scores
-<img src="https://github.com/saezlab/decoupleR/blob/master/inst/figures/logo.svg?raw=1" align="right" width="120" class="no-scaled-link" />
+<img src="docs/_static/images/logo.svg" align="right" width="120" class="no-scaled-link" />
 
 
 [![Tests][badge-tests]][tests]
