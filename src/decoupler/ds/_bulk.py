@@ -1,7 +1,7 @@
 from anndata import AnnData
 
 from decoupler._docs import docs
-from decoupler._download import _download
+from decoupler._download import _download, _bytes_to_pandas
 from decoupler._log import _log
 
 
@@ -38,7 +38,8 @@ def hsctgfb(
         "https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSE151251&format=file&"
         "file=GSE151251%5FHSCs%5FCtrl%2Evs%2EHSCs%5FTGFb%2Ecounts%2Etsv%2Egz"
     )
-    adata = _download(url, compression="gzip", sep="\t", verbose=verbose)
+    adata = _download(url, verbose=verbose)
+    adata = _bytes_to_pandas(adata, compression="gzip", sep="\t")
     # Transform to AnnData
     adata = adata.drop_duplicates("GeneName").set_index("GeneName").iloc[:, 5:].T
     adata.columns.name = None
@@ -92,9 +93,11 @@ def knocktf(
     assert isinstance(thr_fc, int | float) or thr_fc is None, "thr_fc must be numeric or None"
     # Download
     url = "https://zenodo.org/record/7035528/files/knockTF_expr.csv?download=1"
-    adata = _download(url, sep=",", index_col=0, verbose=verbose)
+    adata = _download(url, verbose=verbose)
+    adata = _bytes_to_pandas(adata, sep=",", index_col=0)
     url = "https://zenodo.org/record/7035528/files/knockTF_meta.csv?download=1"
-    obs = _download(url, sep=",", index_col=0, verbose=verbose)
+    obs = _download(url, verbose=verbose)
+    obs = _bytes_to_pandas(obs, sep=",", index_col=0)
     obs = obs.rename(columns={"TF": "source"}).assign(type_p=-1)
     # Make anndata
     adata = AnnData(X=adata, obs=obs)
