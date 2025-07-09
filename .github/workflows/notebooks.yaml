@@ -33,7 +33,7 @@ jobs:
                         "scell/rna_psbk.ipynb",
                         "scell/rna_pstime.ipynb",
                         "scell/rna_sc.ipynb",
-                        "scell/rna_visium.ipynb",
+                        "spatial/rna_visium.ipynb",
                     ]
 
         steps:
