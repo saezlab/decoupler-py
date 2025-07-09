@@ -48,6 +48,8 @@ def filter_by_expr(
     assert isinstance(adata, AnnData), "adata must be AnnData"
     # Extract inputs
     X, _, _ = extract(adata, empty=False)
+    isbacked = isinstance(X, tuple)
+    assert not isbacked, 'adata is in backed mode, reload adata without backed=\'r\''
     obs = adata.obs
     # Minimum sample size cutoff
     min_sample_size = _min_sample_size(

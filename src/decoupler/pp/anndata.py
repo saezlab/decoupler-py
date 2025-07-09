@@ -579,6 +579,8 @@ def filter_by_expr(
     assert isinstance(min_prop, int | float) and 1 >= min_prop >= 0, "min_prop must be numeric and between 0 and 1"
     # Extract inputs
     X, _, var_names = extract(adata, empty=False)
+    isbacked = isinstance(X, tuple)
+    assert not isbacked, 'adata is in backed mode, reload adata without backed=\'r\''
     obs = adata.obs
     # Minimum sample size cutoff
     min_sample_size = _min_sample_size(
