@@ -1,7 +1,7 @@
 from anndata import AnnData
 
 from decoupler._docs import docs
-from decoupler._download import _download, _bytes_to_pandas
+from decoupler._download import _bytes_to_pandas, _download
 from decoupler._log import _log
 
 
