@@ -10,6 +10,14 @@ and this project adheres to [Semantic Versioning][].
 
 ## 2.0.8
 
+### Changes
+
+- Updated logo
+- `decoupler._download._download` now returns bytes instead of a dataframe. To transform to `pandas.DataFrame` use `decoupler._download._bytes_to_pandas`
+- Enrichment methods and pseudobulking now work with backed AnnData objects, useful when working with big datasets and memory is limited
+
+## 2.0.7
+
 Major update to accomodate the scverse template {cite}`scverse`.
 
 All functions have been rewritten to follow the new API, errors when running previous versions (`1.X.X`) are expected if `decoupler >= 2.0.0` is installed.

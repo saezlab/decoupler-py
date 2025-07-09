@@ -2,7 +2,9 @@ import numpy as np
 import pandas as pd
 import pytest
 import scipy.sparse as sps
-from anndata import AnnData
+import tempfile
+import anndata as ad
+from memory_profiler import memory_usage
 
 import decoupler as dc
 
@@ -13,7 +15,7 @@ def test_get_obsm(
     key,
 ):
     obsm = dc.pp.get_obsm(adata=tdata_obsm, key=key)
-    assert isinstance(obsm, AnnData)
+    assert isinstance(obsm, ad.AnnData)
     assert obsm.n_obs == tdata_obsm.n_obs
     assert obsm.n_vars == tdata_obsm.obsm[key].shape[1]
     assert (obsm.obs == tdata_obsm.obs).values.all()
@@ -30,11 +32,11 @@ def test_swap_layer(
     assert list(ldata.layers.keys()) == ["counts"]
     ldata = adata.copy()
     res = dc.pp.swap_layer(adata=ldata, key="counts", X_key=None, inplace=False)
-    assert isinstance(res, AnnData)
+    assert isinstance(res, ad.AnnData)
     assert res.X.sum().is_integer()
     assert list(res.layers.keys()) == ["counts"]
     res = dc.pp.swap_layer(adata=ldata, key="counts", X_key="X", inplace=False)
-    assert isinstance(res, AnnData)
+    assert isinstance(res, ad.AnnData)
     assert res.X.sum().is_integer()
     assert list(res.layers.keys()) == ["counts", "X"]
     assert (ldata.X == res.layers["X"]).all()
@@ -59,14 +61,14 @@ def test_swap_layer(
     ],
 )
 def test_pseudobulk(
-    adata,
     groups_col,
     mode,
     sparse,
     empty,
     rng,
 ):
-    adata = adata.copy()
+    adata, _ = dc.ds.toy(nobs=10000, nvar=500, bval=2, seed=42, verbose=False)
+    adata.layers["counts"] = adata.X.round()
     adata.obs["sample"] = adata.obs["sample"].astype("object")
     adata.obs["dose"] = rng.choice(["low", "medium", "high"], size=adata.n_obs, replace=True)
     if empty:
@@ -81,16 +83,20 @@ def test_pseudobulk(
         layer = "counts"
     else:
         layer = None
-    pdata = dc.pp.pseudobulk(
-        adata=adata,
-        sample_col="sample",
-        groups_col=groups_col,
-        mode=mode,
-        empty=empty,
-        layer=layer,
-        skip_checks=False,
-    )
-    assert isinstance(pdata, AnnData)
+    def _run_psbulk():
+        pdata = dc.pp.pseudobulk(
+            adata=adata,
+            sample_col="sample",
+            groups_col=groups_col,
+            mode=mode,
+            empty=empty,
+            layer=layer,
+            skip_checks=False,
+        )
+        return pdata
+    l_mem_usage, pdata = memory_usage(_run_psbulk, retval=True, interval=0.01)
+    l_mem_usage = max(l_mem_usage) - min(l_mem_usage)
+    assert isinstance(pdata, ad.AnnData)
     assert pdata.shape[0] < adata.shape[0]
     if empty:
         assert pdata.shape[1] < adata.shape[1]
@@ -106,6 +112,28 @@ def test_pseudobulk(
         assert isinstance(pdata.X, np.ndarray)
     if isinstance(mode, dict):
         assert set(mode.keys()).issubset(pdata.layers.keys())
+    with tempfile.NamedTemporaryFile(suffix=".h5ad", delete=True) as tf:
+        adata.write(tf.name)
+        bdata = ad.read_h5ad(tf.name, backed='r')
+        def _run_psbulk_backed_data():
+            pbdata = dc.pp.pseudobulk(
+                adata=bdata,
+                sample_col="sample",
+                groups_col=groups_col,
+                mode=mode,
+                empty=empty,
+                layer=layer,
+                skip_checks=False,
+            )
+            return pbdata
+        b_mem_usage, pbdata = memory_usage(_run_psbulk_backed_data, retval=True, interval=0.01)
+        b_mem_usage = max(b_mem_usage) - min(b_mem_usage)
+        assert b_mem_usage < l_mem_usage
+        msk = pbdata.X.sum(1) != 0
+        pbdata = pbdata[msk, :].copy()
+        assert pbdata.shape == pdata.shape
+        pbdata = pbdata[:, pdata.var_names]
+        assert np.allclose(pbdata.X, pdata.X)
 
 
 @pytest.mark.parametrize("inplace", [True, False])

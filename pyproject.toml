@@ -70,6 +70,7 @@ optional-dependencies.test = [
   "scanpy",
   "statsmodels",
   "xgboost",
+  "memory_profiler",
 ]
 # https://docs.pypi.org/project_metadata/#project-urls
 urls.Documentation = "https://decoupler.readthedocs.io/"
