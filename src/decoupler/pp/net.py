@@ -37,12 +37,12 @@ def read_gmt(
     df = []
     # Read line per line
     with open(path) as f:
-        for line in f.readlines():
-            line = line.rstrip().split()
+        for line_str in f.readlines():
+            line_lst = line_str.rstrip().split()
             # Extract gene set name
-            set_name = line[0]
+            set_name = line_lst[0]
             # For each gene add an entry (skip link in [1])
-            genes = line[2:]
+            genes = line_lst[2:]
             for gene in genes:
                 df.append([set_name, gene])
     # Transform to df
@@ -110,10 +110,10 @@ def prune(
     """
     # Validate
     vnet = _validate_net(net, verbose=verbose)
-    features = set(features)
+    features_set = set(features)
     assert isinstance(tmin, int | float) and tmin >= 0, "tmin must be numeric and >= 0"
     # Find shared targets between mat and net
-    msk = vnet["target"].isin(features)
+    msk = vnet["target"].isin(features_set)
     vnet = vnet.loc[msk]
     # Find unique sources with tmin
     sources = vnet["source"].value_counts()

@@ -28,7 +28,7 @@ def _auc(
         # Compute max AUC for fset
         x_th = np.arange(1, stop=fset.shape[0] + 1)
         x_th = x_th[x_th < n_up]
-        max_auc = np.sum(np.diff(np.append(x_th, n_up)) * x_th)
+        max_auc: float = np.sum(np.diff(np.append(x_th, n_up)) * x_th)
         # Compute AUC
         x = row[fset]
         x = np.sort(x[x <= n_up])

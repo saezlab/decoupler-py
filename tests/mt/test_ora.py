@@ -42,8 +42,8 @@ def test_runora(
     ranks = np.arange(row.size, dtype=np.int_)
     row = ranks[(row > 2) | (row < 0)]
     es, pv = dc.mt._ora._runora.py_func(
-        row=row,
-        ranks=ranks,
+        row=set(row),
+        ranks=set(ranks),
         cnct=cnct,
         starts=starts,
         offsets=offsets,

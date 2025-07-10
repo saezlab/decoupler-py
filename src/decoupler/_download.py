@@ -13,7 +13,7 @@ URL_INT = "https://omnipathdb.org/interactions/?genesymbols=1&"
 def _download(
     url: str,
     verbose: bool = False,
-) -> bytes:
+) -> io.BytesIO:
     assert isinstance(url, str), "url must be str"
     # Download with progress bar
     m = f"Downloading {url}"
@@ -33,6 +33,6 @@ def _download(
     return data
 
 
-def _bytes_to_pandas(data: bytes, **kwargs) -> pd.DataFrame:
+def _bytes_to_pandas(data: io.BytesIO, **kwargs) -> pd.DataFrame:
     df = pd.read_csv(data, **kwargs)
     return df

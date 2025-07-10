@@ -59,8 +59,8 @@ def _filter(
     data: pd.DataFrame,
     score: pd.DataFrame,
     net: pd.DataFrame,
-    sources: int,
-    targets: int,
+    sources: int | list | str,
+    targets: int | list | str,
     by_abs: bool,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     assert isinstance(data, pd.DataFrame), "data must be pd.DataFrame"
@@ -92,11 +92,11 @@ def _norm(
 ) -> matplotlib.colors.Normalize:
     assert isinstance(vcenter, bool), "vcenter must be bool"
     if vcenter:
-        vmax = np.max(np.abs(x))
+        vmax: float = np.max(np.abs(x))
         norm = matplotlib.colors.Normalize(vmin=-vmax, vmax=vmax)
     else:
         vmax = np.max(x)
-        vmin = np.min(x)
+        vmin: float = np.min(x)
         norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
     return norm
 
@@ -151,13 +151,13 @@ def _gcolors(
     score: pd.DataFrame,
     s_norm: matplotlib.colors.Normalize,
     t_norm: matplotlib.colors.Normalize,
-    s_cmap: str,
-    t_cmap: str,
+    s_cmap_name: str,
+    t_cmap_name: str,
 ) -> bool:
     cmaps = matplotlib.colormaps.keys()
-    if (s_cmap in cmaps) and (t_cmap in cmaps):
-        s_cmap = matplotlib.colormaps.get_cmap(s_cmap)
-        t_cmap = matplotlib.colormaps.get_cmap(t_cmap)
+    if (s_cmap_name in cmaps) and (t_cmap_name in cmaps):
+        s_cmap = matplotlib.colormaps.get_cmap(s_cmap_name)
+        t_cmap = matplotlib.colormaps.get_cmap(t_cmap_name)
         color = []
         for i, k in enumerate(g.vs["label"]):
             if g.vs["type"][i]:
@@ -166,7 +166,7 @@ def _gcolors(
                 color.append(s_cmap(s_norm(score[k].values[0])))
         is_cmap = True
     else:
-        color = [s_cmap if typ == 0.0 else t_cmap for typ in g.vs["type"]]
+        color = [s_cmap_name if typ == 0.0 else t_cmap_name for typ in g.vs["type"]]
         is_cmap = False
     g.vs["color"] = color
     return is_cmap
@@ -270,8 +270,8 @@ def network(
         score=score,
         s_norm=s_norm,
         t_norm=t_norm,
-        s_cmap=s_cmap,
-        t_cmap=t_cmap,
+        s_cmap_name=s_cmap,
+        t_cmap_name=t_cmap,
     )
     # Instance
     kwargs["ax"] = None

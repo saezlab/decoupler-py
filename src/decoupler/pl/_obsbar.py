@@ -39,11 +39,11 @@ def obsbar(adata: AnnData, y: str, hue: str | None = None, kw_barplot: dict | No
     if hue is None:
         cols.remove(None)
     assert cols.issubset(adata.obs.columns), f"y={y} and hue={hue} must be in adata.obs.columns={adata.obs.columns}"
-    cols = list(cols)
+    cols_lst = list(cols)
     if kw_barplot is None:
         kw_barplot = {}
     # Process
-    data = adata.obs.groupby(cols, observed=True, as_index=False).size()
+    data = adata.obs.groupby(cols_lst, observed=True, as_index=False).size()
     # Instance
     bp = Plotter(**kwargs)
     # Plot

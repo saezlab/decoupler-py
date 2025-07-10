@@ -51,23 +51,26 @@ def decouple(
     _mdict = {m.name: m for m in _methods}
     if isinstance(methods, str):
         if methods == "all":
-            methods = _mdict.keys()
+            methods_list = list(_mdict.keys())
         else:
-            methods = [methods]
-    methods = set(methods)
+            methods_list = [methods]
+    else:
+        methods_list = list(methods)
+    methods_set = set(methods_list)
     if args is None:
         args = {}
-    assert methods.issubset(_mdict), (
-        f"methods={methods} must be in decoupler.\nUse decoupler.mt.show_methods to check which ones are available"
+    assert methods_set.issubset(_mdict), (
+        f"methods={methods_set} must be in decoupler.\nUse decoupler.mt.show_methods to check which ones are available"
     )
-    assert all(k in methods for k in args), (
-        f"All keys in args={args.keys()} must belong to a method in methods={methods}"
+    assert all(k in methods_set for k in args), (
+        f"All keys in args={args.keys()} must belong to a method in methods={methods_set}"
     )
     kwargs = kwargs.copy()
     kwargs.setdefault("verbose", False)
     # Run each method
-    all_res = {}
-    for name in methods:
+    all_res: dict[str, float] = {}
+    args = args.copy()
+    for name in methods_set:
         mth = _mdict[name]
         arg = args.setdefault(name, {})
         res = mth(data=data, net=net, **arg, **kwargs)
@@ -83,3 +86,4 @@ def decouple(
         return all_res
     elif cons:
         consensus(data, verbose=kwargs["verbose"])
+    return None

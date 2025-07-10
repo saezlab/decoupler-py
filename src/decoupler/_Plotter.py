@@ -14,7 +14,7 @@ class Plotter:
         dpi: int = 100,
         return_fig: bool = False,
         save: str | None = None,
-    ) -> Figure | None:
+    ) -> None:
         """
         Base class for plotters.
 
@@ -38,8 +38,9 @@ class Plotter:
         else:
             self.fig = self.ax.figure
 
-    def _return(self):
+    def _return(self) -> Figure | None:
         if self.save is not None:
             self.fig.savefig(self.save, bbox_inches="tight")
         if self.return_fig:
             return self.fig
+        return None

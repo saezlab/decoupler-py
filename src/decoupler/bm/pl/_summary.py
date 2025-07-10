@@ -13,20 +13,20 @@ from decoupler._Plotter import Plotter
 
 
 def _mcolor(
-    cmap: str,
+    cmap_name: str,
 ) -> str:
-    assert isinstance(cmap, str), "cmap must be str"
-    cmap = plt.get_cmap(cmap)
+    assert isinstance(cmap_name, str), "cmap must be str"
+    cmap = plt.get_cmap(cmap_name)
     mid_color_rgb = cmap(0.5)
     mid_color_hex = to_hex(mid_color_rgb)
     return mid_color_hex
 
 
-def _palette(labels: list, cmap: str = "tab20") -> dict:
-    assert isinstance(cmap, str), "cmap must be str"
+def _palette(labels: list, cmap_name: str = "tab20") -> dict:
+    assert isinstance(cmap_name, str), "cmap must be str"
     rnks = np.arange(len(labels))
-    if cmap in plt.colormaps():
-        cmap = plt.get_cmap(cmap)
+    if cmap_name in plt.colormaps():
+        cmap = plt.get_cmap(cmap_name)
         sidx = np.argsort(np.argsort(labels))
         colors = np.array([to_hex(cmap(i)) for i in rnks])
         palette = dict(zip(rnks, colors[sidx], strict=True))
@@ -151,7 +151,7 @@ def summary(
     # Build canvas
     c = lst_h[0]
     # Add bar to the left
-    bar = mp.Bar(df["score"].T, label="Score", color="gray", palette=_palette(labels=df.index, cmap=cmap_y))
+    bar = mp.Bar(df["score"].T, label="Score", color="gray", palette=_palette(labels=df.index, cmap_name=cmap_y))
     c.add_left(bar)
     c.add_left(
         mp.Labels(

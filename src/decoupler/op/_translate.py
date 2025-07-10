@@ -1,6 +1,5 @@
 from itertools import product
 
-import numpy as np
 import pandas as pd
 
 from decoupler._docs import docs
@@ -52,19 +51,19 @@ def _replace_subunits(
     lst: list,
     my_dict: dict,
     one_to_many: int,
-):
-    result = []
+) -> list:
+    result: list = []
     for x in lst:
         if x in my_dict:
             value = my_dict[x]
             if not isinstance(value, list):
                 value = [value]
             if len(value) > one_to_many:
-                result.append(np.nan)
+                result.append([])
             else:
                 result.append(value)
         else:
-            result.append(np.nan)
+            result.append([])
     return result
 
 
@@ -114,8 +113,8 @@ def translate(
     net: pd.DataFrame,
     columns: str | list | None = None,
     target_organism: str = "mouse",
-    min_evidence: int | float = 3,
-    one_to_many: int | float = 5,
+    min_evidence: int = 3,
+    one_to_many: int = 5,
     verbose: bool = False,
 ) -> pd.DataFrame:
     """
@@ -162,11 +161,11 @@ def translate(
     """
     # Validate
     assert isinstance(net, pd.DataFrame), "net must be a pd.DataFrame"
-    assert isinstance(columns, str | list), "columns must be str or list"
     if columns is None:
         columns = ["source", "target", "genesymbol"]
     elif isinstance(columns, str):
         columns = [columns]
+    assert isinstance(columns, str | list), "columns must be str or list"
     columns = [c for c in columns if c in net.columns]
     assert columns, f"columns must be one of these: {net.columns}"
     assert isinstance(target_organism, str), "target_organism must be str"

@@ -24,7 +24,7 @@ def _wmean(
     w: np.ndarray,
 ) -> float:
     agg = _wsum(x, w)
-    div = np.sum(np.abs(w))
+    div: float = np.sum(np.abs(w))
     return agg / div
 
 
@@ -56,13 +56,13 @@ _fun_dict = {
     "wmean": _wmean,
 }
 
-_cfuncs = {}
+_cfuncs: dict = {}
 
 
 def _validate_args(
     fun: Callable,
     verbose: bool,
-) -> bool:
+) -> Callable:
     args = inspect.signature(fun).parameters
     required_args = ["x", "w"]
     for arg in required_args:
@@ -80,7 +80,7 @@ def _validate_args(
 
 
 def _validate_func(
-    fun: str | Callable,
+    fun: Callable,
     verbose: bool,
 ) -> None:
     fun = _validate_args(fun=fun, verbose=verbose)
@@ -220,9 +220,11 @@ def _func_waggr(
     assert isinstance(fun, str) or callable(fun), "fun must be str or callable"
     if isinstance(fun, str):
         assert fun in _fun_dict, "when fun is str, it must be wmean or wsum"
-        fun = _fun_dict[fun]
-    _validate_func(fun, verbose=verbose)
-    vfun = _cfuncs[fun.__name__]
+        f_fun = _fun_dict[fun]
+    else:
+        f_fun = fun
+    _validate_func(f_fun, verbose=verbose)
+    vfun = _cfuncs[f_fun.__name__]
     assert isinstance(times, int | float) and times >= 0, "times must be numeric and >= 0"
     assert isinstance(seed, int | float) and seed >= 0, "seed must be numeric and >= 0"
     times, seed = int(times), int(seed)

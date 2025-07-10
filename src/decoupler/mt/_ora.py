@@ -21,7 +21,7 @@ def _maxn() -> int:
             h = n
         else:
             l = n
-        n = (l + min(h, l * 3)) // 2
+        n = int((l + min(h, l * 3)) / 2)
     return n
 
 
@@ -118,13 +118,13 @@ def _test1t(
 
 @nb.njit(cache=True)
 def _oddsr(
-    a: int,
-    b: int,
-    c: int,
-    d: int,
+    a: int | float,
+    b: int | float,
+    c: int | float,
+    d: int | float,
     ha_corr: int | float = 0.5,
     log: bool = True,
-):
+) -> float:
     # Haldane-Anscombe correction
     a += ha_corr
     b += ha_corr
@@ -138,8 +138,8 @@ def _oddsr(
 
 @nb.njit(parallel=True, cache=True)
 def _runora(
-    row: np.ndarray,
-    ranks: np.ndarray,
+    row: set,
+    ranks: set,
     cnct: np.ndarray,
     starts: np.ndarray,
     offsets: np.ndarray,
@@ -148,8 +148,6 @@ def _runora(
 ) -> tuple[float, float]:
     nsrc = starts.size
     # Transform to set
-    row = set(row)
-    ranks = set(ranks)
     es = np.zeros(nsrc)
     pv = np.zeros(nsrc)
     for j in nb.prange(nsrc):
@@ -277,7 +275,7 @@ def _func_ora(
         row = sts.rankdata(row, method="ordinal")
         row = ranks[(row > n_up) | (row < n_bm)]
         es[i], pv[i] = _runora(
-            row=row, ranks=ranks, cnct=cnct, starts=starts, offsets=offsets, n_bg=n_bg, ha_corr=ha_corr
+            row=set(row), ranks=set(ranks), cnct=cnct, starts=starts, offsets=offsets, n_bg=n_bg, ha_corr=ha_corr
         )
     return es, pv
 
