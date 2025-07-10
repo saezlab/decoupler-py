@@ -50,7 +50,7 @@ def _esrank(
     j_neg = 0
     es = np.zeros(rnks.size)
     # Compute norm
-    sum_set = np.sum(np.abs(row[set_msk]))
+    sum_set: float = np.sum(np.abs(row[set_msk]))
     if sum_set == 0.0:
         return 0.0, 0, np.zeros(rnks.size)
     # Compute ES
@@ -122,7 +122,7 @@ def _stsgsea(
     starts: np.ndarray,
     offsets: np.ndarray,
     ridx: np.ndarray,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     # Sort features
     idx = np.argsort(-row)
     row = row[idx]

@@ -30,7 +30,7 @@ def _testsign(
 def _tensor_scores(
     adata: AnnData,
     thr: float,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, list]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, list]:
     # Get unique methods
     has_test = {m.name: m.test for m in _methods}
     has_test = has_test | {"consensus": True}
@@ -77,8 +77,8 @@ def _unique_obs(
 
 def _mask_grps(
     obs: pd.DataFrame,
-    groupby: None | list,
-    verbose: float,
+    groupby: None | list | str,
+    verbose: bool,
 ) -> tuple[list, list, list]:
     if groupby is not None:
         # Init empty lsts
@@ -133,7 +133,7 @@ def _metric_scores(
     grt: np.ndarray,
     srcs: np.ndarray,
     mthds: list,
-    metrics: list,
+    metrics: str | list,
     runby: str,
     emin: int,
     verbose: bool,
@@ -145,11 +145,11 @@ def _metric_scores(
     elif isinstance(metrics, str):
         metrics = [metrics]
     if runby == "expr":
-        m = (
+        msg = (
             "benchmark - evaluating by experiment on:\n"
             + f"n_expr={score.shape[0]}, n_sources={score.shape[1]} across metrics={metrics}"
         )
-        _log(m, level="info", verbose=verbose)
+        _log(msg, level="info", verbose=verbose)
         for m in range(len(mthds)):
             mth = mthds[m]
             scr_i = score[:, :, m]
@@ -160,8 +160,8 @@ def _metric_scores(
                     row = [grpby_i, grp, None, mth, cname, val]
                     df.append(row)
     elif runby == "source":
-        m = "benchmark - evaluating by source"
-        _log(m, level="info", verbose=verbose)
+        msg = "benchmark - evaluating by source"
+        _log(msg, level="info", verbose=verbose)
         for m in range(len(mthds)):
             mth = mthds[m]
             # Remove sources with less than emin
@@ -198,7 +198,7 @@ def _metric_scores(
 
 def _eval_scores(
     adata: pd.DataFrame,
-    groupby: None | list,
+    groupby: None | list | str,
     runby: str,
     metrics: str | list,
     thr: float,
@@ -209,7 +209,7 @@ def _eval_scores(
     scores, signs, srcs, mthds = _tensor_scores(adata=adata, thr=thr)
     grts = _tensor_truth(obs=adata.obs, srcs=srcs)
     msks, grpbys, grps = _mask_grps(obs=adata.obs, groupby=groupby, verbose=verbose)
-    df = []
+    df: pd.DataFrame = []
     if msks is not None:
         n_grpbys = len(msks)
         for i in range(n_grpbys):
@@ -220,7 +220,7 @@ def _eval_scores(
             for j in range(n_grps):
                 msk = msk_i[j]
                 grp = grps_i[j]
-                n = np.sum(msk)
+                n: float = np.sum(msk)
                 if n >= emin:
                     score, sign, grt = scores[msk, :, :], signs[msk, :, :], grts[msk, :]
                     # Special case when groupby == perturb, remove extra grts
@@ -274,7 +274,7 @@ def benchmark(
     adata: AnnData,
     net: pd.DataFrame | dict,
     metrics: str | list | None = None,
-    groupby: str | None = None,
+    groupby: str | list | None = None,
     runby: str = "expr",
     sfilt: bool = False,
     thr: float = 0.10,

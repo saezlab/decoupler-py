@@ -1,6 +1,7 @@
 import numpy as np
 
 from decoupler.bm._pp import _validate_bool
+from decoupler.bm.metric._Metric import Metric
 
 
 def _binary_clf_curve(
@@ -43,7 +44,7 @@ def auroc(
     else:
         d = 1.0
     # Compute area
-    ret = np.sum(dx * (tpr[1:] + tpr[:-1]) / 2.0)
+    ret: float = np.sum(dx * (tpr[1:] + tpr[:-1]) / 2.0)
     auc = d * ret
     return auc
 
@@ -70,11 +71,11 @@ def auprc(y_true: np.ndarray, y_score: np.ndarray, pi0: float = 0.5) -> float:
     rcl = np.append(np.flip(rcl), 0)
     thr = np.flip(thr)
     dx = np.diff(np.ascontiguousarray(rcl))
-    auc = -np.sum(dx * prc[:-1])
-    return auc
+    auc_val = float(np.sum(dx * prc[:-1])) * -1
+    return auc_val
 
 
-def auc(
+def f_auc(
     y_true: np.ndarray,
     y_score: np.ndarray,
     pi0: float = 0.5,
@@ -95,4 +96,4 @@ def auc(
     return auc_roc, auc_prc
 
 
-auc.scores = ["auroc", "auprc"]
+auc = Metric(func=f_auc, scores=["auroc", "auprc"])

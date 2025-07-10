@@ -78,10 +78,10 @@ def msvisium(
         adata.uns["spatial"]["MS377T"]["scalefactors"] = json.load(f)
     response = requests.get(url + "tissue%5Fhires%5Fimage%2Epng%2Egz")
     with gzip.GzipFile(fileobj=io.BytesIO(response.content)) as f:
-        adata.uns["spatial"]["MS377T"]["images"]["hires"] = imread(f)
+        adata.uns["spatial"]["MS377T"]["images"]["hires"] = imread(io.BytesIO(f.read()))
     response = requests.get(url + "tissue%5Flowres%5Fimage%2Epng%2Egz")
     with gzip.GzipFile(fileobj=io.BytesIO(response.content)) as f:
-        adata.uns["spatial"]["MS377T"]["images"]["lowres"] = imread(f)
+        adata.uns["spatial"]["MS377T"]["images"]["lowres"] = imread(io.BytesIO(f.read()))
     # Add coordinates
     coords = pd.read_csv(
         url + "tissue%5Fpositions%5Flist%2Ecsv%2Egz",

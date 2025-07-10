@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 import pytest
 
@@ -32,11 +31,11 @@ def test_replace_subunits(
         idx = lst.index(k)
         if k in my_dict:
             if len(my_dict[k]) > one_to_many:
-                assert np.isnan(res[idx])
+                assert not res[idx]
             else:
                 assert isinstance(res[idx], list)
         else:
-            assert np.isnan(res[idx])
+            assert not res[idx]
 
 
 @pytest.mark.parametrize("target_organism", ["mouse", "anole_lizard", "fruitfly"])

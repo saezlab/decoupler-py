@@ -211,7 +211,7 @@ def _rnd_walk(
     symrnkstat: np.ndarray,
     n: int,
     tau: int | float,
-) -> tuple[float, int]:
+) -> tuple[float, float]:
     gsetrnk = np.empty(k, dtype=np.int_)
     for i in range(k):
         gsetrnk[i] = decordstat[gsetidx[i] - 1]

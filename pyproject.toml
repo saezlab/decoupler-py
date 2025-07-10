@@ -4,7 +4,7 @@ requires = [ "hatchling" ]
 
 [project]
 name = "decoupler"
-version = "2.1.0"
+version = "2.1.1"
 description = "Python package to perform enrichment analysis from omics data."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -67,6 +67,7 @@ optional-dependencies.test = [
   "igraph",
   "ipywidgets",
   "memory-profiler",
+  "pydeseq2",
   "pytest",
   "scanpy",
   "statsmodels",

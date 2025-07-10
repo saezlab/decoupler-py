@@ -10,7 +10,7 @@ def _validate_groupby(
     obs: pd.DataFrame,
     groupby: str | list | None,
     runby: str,
-) -> None | list:
+) -> None | list | str:
     assert isinstance(groupby, str | list) or groupby is None, "groupby must be str, list or None"
     assert isinstance(runby, str) and runby in ["expr", "source"], "runby must be str and either expr or source"
     if groupby is not None:
@@ -27,6 +27,7 @@ def _validate_groupby(
                 # Assert that column doesn't contain "|"
                 assert "|" not in grp_j, 'Column names must not contain the "|" character'
         return groupby
+    return None
 
 
 def _validate_obs(

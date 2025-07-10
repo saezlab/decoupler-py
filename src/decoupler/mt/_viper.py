@@ -71,11 +71,11 @@ def _fill_pval_mat(
             k_msk = reg[:, k] != 0
             nhits = k_msk.sum()
             if nhits > n_targets:
-                sum1 = np.sum(reg[:, k] * s2)
+                sum1: float = np.sum(reg[:, k] * s2)
                 ss = np.sign(sum1)
                 if ss == 0:
                     ss = 1
-                sum2 = np.sum((1 - np.abs(reg[k_msk, k])) * s1[k_msk])
+                sum2: float = np.sum((1 - np.abs(reg[k_msk, k])) * s1[k_msk])
                 ww = np.ones(nhits)
                 col[k] = (np.abs(sum1) + sum2 * (sum2 > 0)) / ww.size * ss * np.sqrt(ww.size)
     return col
@@ -110,7 +110,7 @@ def _shadow_regulon(
     ss_i: np.ndarray,
     net: np.ndarray,
     reg_sign: float = 1.96,
-    n_targets: int | float = 10,
+    n_targets: int = 10,
     penalty: int | float = 20,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     # Find significant activities
@@ -143,7 +143,7 @@ def _shadow_regulon(
     return sub_net, wts, idxs
 
 
-def _aREA(mat: np.ndarray, net: np.ndarray, wts: None = None) -> np.ndarray:
+def _aREA(mat: np.ndarray, net: np.ndarray, wts: None | np.ndarray = None) -> np.ndarray:
     if wts is None:
         wts = np.zeros(net.shape)
         wts[net != 0] = 1
@@ -171,7 +171,7 @@ def _func_viper(
     adj: np.ndarray,
     pleiotropy: bool = True,
     reg_sign: float = 0.05,
-    n_targets: int | float = 10,
+    n_targets: int = 10,
     penalty: int | float = 20,
     verbose: bool = False,
 ) -> tuple[np.ndarray, np.ndarray]:

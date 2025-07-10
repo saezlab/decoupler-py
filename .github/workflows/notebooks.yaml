@@ -1,0 +1,59 @@
+name: Test notebooks
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    test:
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+              # to fail on error in multiline statements (-e), in pipes (-o pipefail), and on unset variables (-u).
+              shell: bash -euo pipefail {0}
+
+        env:
+            NOTEBOOK_PATH: docs/notebooks
+
+        strategy:
+            fail-fast: false
+            matrix:
+                notebook: [
+                        "example.ipynb",
+                        "bench/rna.ipynb",
+                        "bulk/rna.ipynb",
+                        "omnipath/licenses.ipynb",
+                        "omnipath/orthologs.ipynb",
+                        "scell/rna_psbk.ipynb",
+                        "scell/rna_pstime.ipynb",
+                        "scell/rna_sc.ipynb",
+                        "spatial/rna_visium.ipynb",
+                    ]
+
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                filter: blob:none
+                fetch-depth: 0
+                submodules: "true"
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.13"
+            - name: Install uv
+              uses: astral-sh/setup-uv@v6
+              with:
+                enable-cache: true
+                cache-dependency-glob: pyproject.toml
+            - name: Install dependencies
+              run: |
+                  uv pip install --system ${{ matrix.pip-flags }} ".[dev,test]"
+                  uv pip install --system nbconvert ipykernel
+            - name: Run ${{ matrix.notebook }} Notebook
+              run: jupyter nbconvert --to notebook --execute ${{ env.NOTEBOOK_PATH }}/${{ matrix.notebook }}

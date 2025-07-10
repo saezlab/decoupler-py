@@ -59,7 +59,7 @@ def _validate_mat(
         msk_col = mat.getnnz(axis=0) == 0
     else:
         msk_col = np.count_nonzero(mat, axis=0) == 0
-    n_empty_col = np.sum(msk_col)
+    n_empty_col: float = np.sum(msk_col)
     if n_empty_col > 0 and empty:
         m = f"{n_empty_col} features of mat are empty, they will be removed"
         _log(m, level="warn", verbose=verbose)
@@ -72,7 +72,7 @@ def _validate_mat(
         msk_row = mat.getnnz(axis=1) == 0
     else:
         msk_row = np.count_nonzero(mat, axis=1) == 0
-    n_empty_row = np.sum(msk_row)
+    n_empty_row: float = np.sum(msk_row)
     if n_empty_row > 0 and empty:
         m = f"{n_empty_row} observations of mat are empty, they will be removed"
         _log(m, level="warn", verbose=verbose)
@@ -105,7 +105,7 @@ def _validate_backed(
         has_nonfin = np.any(~np.isfinite(bmat.data))
         assert not has_nonfin, "mat contains non finite values (nan or inf), set them to 0 or remove them"
     msk_col = np.logical_and.reduce(msk_col, axis=0)
-    n_empty_col = np.sum(msk_col)
+    n_empty_col: float = np.sum(msk_col)
     if n_empty_col > 0 and empty:
         m = f"{n_empty_col} features of mat are empty, they will be removed"
         _log(m, level="warn", verbose=verbose)
@@ -134,7 +134,7 @@ def extract(
     empty: bool = True,
     verbose: bool = False,
     bsize: int = 250_000,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray] | tuple[tuple, np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray] | tuple[tuple[np.ndarray, np.ndarray], np.ndarray, np.ndarray]:
     """
     Extracts matrix, rownames and colnames from data.
 
@@ -165,13 +165,15 @@ def extract(
     _log(m, level="info", verbose=verbose)
     # Validate
     isbacked = hasattr(data, "isbacked") and data.isbacked
+    mat_tuple: tuple[np.ndarray, np.ndarray, np.ndarray] | tuple[tuple[np.ndarray, np.ndarray], np.ndarray, np.ndarray]
     if not isbacked:
         mat, row, col = _validate_mat(mat=mat, row=row, col=col, empty=empty, verbose=verbose)
         # Randomly sort features
         mat, col = _break_ties(mat=mat, features=col)
+        mat_tuple = (mat, row, col)
     else:
         msk_col = _validate_backed(mat=mat, row=row, col=col, empty=empty, verbose=verbose, bsize=bsize)
         msk_col = ~msk_col
-        mat = (mat, msk_col)
         col = col[msk_col]
-    return mat, row, col
+        mat_tuple = ((mat, msk_col), row, col)
+    return mat_tuple

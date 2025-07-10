@@ -13,7 +13,7 @@ def _fit(
     y: np.ndarray,
     inv: np.ndarray,
     df: float,
-) -> np.ndarray:
+) -> tuple[np.ndarray, np.ndarray]:
     X = np.ascontiguousarray(X)
     n_samples = y.shape[1]
     n_fsets = X.shape[1]

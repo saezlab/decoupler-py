@@ -116,7 +116,7 @@ def swap_layer(
     return cdata
 
 
-def _validate_X(X: np.ndarray | sps.csr_matrix | tuple, mode: str = "sum", skip_checks: bool = False) -> None:
+def _validate_X(X: np.ndarray | sps.csr_matrix, mode: str | dict | Callable = "sum", skip_checks: bool = False) -> None:
     assert isinstance(skip_checks, bool), "skip_checks must be bool"
     skip_checks = type(mode) is dict or callable(mode) or skip_checks
     isbacked = isinstance(X, tuple)
@@ -143,9 +143,10 @@ def _validate_X(X: np.ndarray | sps.csr_matrix | tuple, mode: str = "sum", skip_
 
 
 def _validate_mode(
-    mode: str | Callable = "sum",
+    mode: str | Callable | dict = "sum",
     verbose: bool = False,
 ) -> Callable:
+    func: Callable
     if mode == "sum":
         func = partial(np.sum, axis=0)
     elif mode == "mean":
@@ -154,7 +155,8 @@ def _validate_mode(
         func = partial(np.median, axis=0)
     elif callable(mode):
         func = partial(np.apply_along_axis, mode, 0)
-    m = f"Using function {func.func.__name__} to aggregate observations"
+    name = getattr(getattr(func, "func", func), "__name__", str(func))
+    m = f"Using function {name} to aggregate observations"
     _log(m, level="info", verbose=verbose)
     return func
 
@@ -242,7 +244,7 @@ def _psbulk(
                 profile = profile.toarray()
             # Skip if few cells or not enough counts
             ncell = profile.shape[0]
-            count = np.sum(profile)
+            count: float = np.sum(profile)
             ncells[i] = ncell
             counts[i] = count
             m = f"sample={smp}\tcells={ncell}\tcounts={count}"
@@ -476,6 +478,7 @@ def filter_samples(
         adata._inplace_subset_obs(obs_names)
     else:
         return np.array(obs_names, dtype="U")
+    return None
 
 
 def _min_sample_size(
@@ -495,11 +498,11 @@ def _min_sample_size(
 
 
 def _cpm_cutoff(
-    lib_size: np.ndarray,
+    lib_size: float | np.ndarray,
     min_count: float,
 ) -> float:
     median_lib_size = np.median(lib_size)
-    cpm_cutoff = min_count / median_lib_size * 1e6
+    cpm_cutoff = float(min_count / median_lib_size * 1e6)
     return cpm_cutoff
 
 
@@ -516,20 +519,22 @@ def _cpm(
 
 def _ssize_tcount(
     X: np.ndarray,
-    lib_size: float | None = None,
+    lib_size: float | np.ndarray | None = None,
     min_count: int = 10,
 ) -> tuple[np.ndarray, np.ndarray]:
     if isinstance(X, sps.csr_matrix):
         X = X.toarray()
     # Compute lib_size if needed
     if lib_size is None:
-        lib_size = np.sum(X, axis=1)
+        lib_size_float = np.sum(X, axis=1)
+    else:
+        lib_size_float = lib_size
     # CPM cutoff
-    cpm_cutoff = _cpm_cutoff(lib_size=lib_size, min_count=min_count)
+    cpm_cutoff = _cpm_cutoff(lib_size=lib_size_float, min_count=min_count)
     # CPM mask
-    cpm = _cpm(X=X, lib_size=lib_size)
-    sample_size = np.round(np.sum(cpm >= cpm_cutoff.reshape(-1, 1), axis=0))
-    total_count = np.sum(X, axis=0)
+    cpm = _cpm(X=X, lib_size=lib_size_float)
+    sample_size: np.ndarray = np.round(np.sum(cpm >= cpm_cutoff, axis=0))
+    total_count: np.ndarray = np.sum(X, axis=0)
     return sample_size, total_count
 
 
@@ -616,6 +621,7 @@ def filter_by_expr(
         adata._inplace_subset_var(genes)
     else:
         return genes
+    return None
 
 
 @docs.dedent
@@ -676,6 +682,7 @@ def filter_by_prop(
         adata._inplace_subset_var(genes)
     else:
         return np.array(genes, dtype="U")
+    return None
 
 
 @docs.dedent

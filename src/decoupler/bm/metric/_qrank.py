@@ -2,9 +2,10 @@ import numpy as np
 import scipy.stats as sts
 
 from decoupler.bm._pp import _validate_bool
+from decoupler.bm.metric._Metric import Metric
 
 
-def qrank(
+def f_qrank(
     y_true: np.ndarray,
     y_score: np.ndarray,
 ) -> tuple[float, float]:
@@ -16,8 +17,9 @@ def qrank(
     score = y_rank[msk]
     rest = y_rank[~msk]
     _, pval = sts.ranksums(score, rest, alternative="greater")
-    score = np.nanmean(score)
-    return score, -np.log10(pval)
+    score = float(np.nanmean(score))
+    pval = float(-np.log10(pval))
+    return score, pval
 
 
-qrank.scores = ["1-qrank", "-log10(pval)"]
+qrank = Metric(func=f_qrank, scores=["1-qrank", "-log10(pval)"])

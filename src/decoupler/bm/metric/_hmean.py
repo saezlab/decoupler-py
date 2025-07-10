@@ -6,8 +6,8 @@ from decoupler.bm.pl._format import _format
 
 
 def _hmean(
-    x: float | int,
-    y: float | int,
+    x: np.ndarray,
+    y: np.ndarray,
     beta: float | int = 1,
 ) -> float:
     assert isinstance(beta, int | float) and 0 < beta, "beta must be numeric and > 0"
@@ -65,7 +65,7 @@ def hmean(
     h_cols = []
     for i, metric in enumerate(metrics):
         # Format
-        cols = d_metrics[metric]["cols"]
+        cols = list(d_metrics[metric]["cols"])
         tmp = _format(df=df, cols=cols)
         # Compute harmonic mean
         name = d_metrics[metric]["name"]

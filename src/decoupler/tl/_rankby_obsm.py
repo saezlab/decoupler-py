@@ -96,5 +96,6 @@ def rankby_obsm(
     # Save or return
     if uns_key:
         adata.uns[uns_key] = res
+        return None
     else:
         return res

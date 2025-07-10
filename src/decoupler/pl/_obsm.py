@@ -15,8 +15,8 @@ def _input(
     adata: AnnData,
     uns_key: str,
     names: str | list | None = None,
-    nvar: int | float | list | None = 10,
-) -> tuple[pd.DataFrame, pd.DataFrame]:
+    nvar: int | str | list | None = 10,
+) -> tuple[pd.DataFrame, pd.DataFrame, list]:
     assert isinstance(adata, AnnData), "adata must be adata.AnnData"
     assert isinstance(uns_key, str) and uns_key in adata.uns, "uns_key must be str and in adata.uns"
     assert isinstance(names, str | list) or names is None, "names must be str, list or None"
@@ -27,11 +27,15 @@ def _input(
     obsm_key = stats.key
     stats = stats.sort_values("obsm")
     if isinstance(names, str):
-        names = [names]
+        names_lst = [names]
+    elif names is None:
+        names_lst = []
+    else:
+        names_lst = names
     if isinstance(nvar, str):
         nvar = [nvar]
-    if names:
-        stats = stats[stats["obs"].isin(names)]
+    if names_lst:
+        stats = stats[stats["obs"].isin(names_lst)]
     # Filter stats by obsm nvar
     obsm = adata.obsm[obsm_key]
     if isinstance(obsm, pd.DataFrame):
@@ -62,8 +66,8 @@ def _input(
     stats.index.name = None
     stats.columns.name = None
     if names is None:
-        names = stats.index
-    return obsm, stats, names
+        names_lst = list(stats.index)
+    return obsm, stats, names_lst
 
 
 @docs.dedent
@@ -71,7 +75,7 @@ def obsm(
     adata: AnnData,
     key: str = "rank_obsm",
     names: str | list | None = None,
-    nvar: int | float | str | list | None = 10,
+    nvar: int | str | list | None = 10,
     dendrogram: bool = True,
     thr_sign: float = 0.05,
     titles: list | None = None,
