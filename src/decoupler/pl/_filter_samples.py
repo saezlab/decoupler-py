@@ -12,7 +12,7 @@ from decoupler._Plotter import Plotter
 @docs.dedent
 def filter_samples(
     adata: AnnData,
-    groupby: str | list,
+    groupby: str | list | None = None,
     log: bool = True,
     min_cells: int | float = 10,
     min_counts: int | float = 1000,
@@ -51,10 +51,11 @@ def filter_samples(
     assert all(col in adata.obs.columns for col in ["psbulk_cells", "psbulk_counts"]), (
         "psbulk_* columns not present in adata.obs, this function should be used after running decoupler.pp.pseudobulk"
     )
-    assert isinstance(groupby, str | list), "groupby must be str or list"
+    assert isinstance(groupby, str | list) or groupby is None, "groupby must be str, list or None"
     if isinstance(groupby, str):
         groupby = [groupby]
-    assert all(col in adata.obs for col in groupby), "columns in groupby must be in adata.obs"
+    if groupby:
+        assert all(col in adata.obs for col in groupby), "columns in groupby must be in adata.obs"
     # Extract obs
     df = adata.obs.copy()
     # Transform to log10
@@ -65,7 +66,7 @@ def filter_samples(
         label_x, label_y = r"$\log_{10}$ " + label_x, r"$\log_{10}$ " + label_y
         min_cells, min_counts = np.log10(min_cells), np.log10(min_counts)
     # Plot
-    if len(groupby) > 1:
+    if groupby is not None and (len(groupby) > 1):
         # Instance
         assert kwargs.get("ax") is None, "when groupby is list, ax must be None"
         kwargs["ax"] = None
@@ -85,12 +86,14 @@ def filter_samples(
             ax.axhline(y=min_counts, linestyle="--", color="black")
     else:
         # Instance
-        groupby = groupby[0]
+        if isinstance(groupby, list):
+            groupby = groupby[0]
         bp = Plotter(**kwargs)
         bp.ax.grid(zorder=0)
         bp.ax.set_axisbelow(True)
         sns.scatterplot(x="psbulk_cells", y="psbulk_counts", hue=groupby, ax=bp.ax, data=df, zorder=1)
-        bp.ax.legend(loc="center left", bbox_to_anchor=(1, 0.5), frameon=False, title=groupby)
+        if groupby:
+            bp.ax.legend(loc="center left", bbox_to_anchor=(1, 0.5), frameon=False, title=groupby)
         bp.ax.set_xlabel(label_x)
         bp.ax.set_ylabel(label_y)
         bp.ax.axvline(x=min_cells, linestyle="--", color="black")
