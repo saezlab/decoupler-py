@@ -311,6 +311,7 @@ def pseudobulk(
     empty: bool = False,
     mode: str | Callable | dict = "sum",
     skip_checks: bool = False,
+    bsize: int = 250_000,
     verbose: bool = False,
 ) -> AnnData:
     """
@@ -365,7 +366,10 @@ def pseudobulk(
     assert isinstance(groups_col, str | list) or groups_col is None, "groups_col must be str or None"
     assert isinstance(mode, str | dict) or callable(mode), "mode must be str, dict or callable"
     # Extract data
-    X, obs, var = extract(adata, layer=layer, raw=raw, empty=empty, verbose=verbose)
+    X, obs, var = extract(adata, layer=layer, raw=raw, empty=empty, bsize=bsize, verbose=verbose)
+    assert len(set(obs)) == len(obs), (
+        "Repeated elements in adata.obs_names, to make them unique run adata.obs_names_make_unique()"
+    )
     obs = adata.obs.loc[obs].copy()
     var = adata.var.loc[var]
     # Validate X

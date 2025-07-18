@@ -110,8 +110,8 @@ def _nesrank(
         neg_null_mean = null[neg_null_msk].mean()
         nes = -es / neg_null_mean
     else:
-        nes = np.inf
-        pval = np.inf
+        nes = 0.0
+        pval = 1.0
     return nes, pval
 
 
