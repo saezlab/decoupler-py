@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning][].
 [keep a changelog]: https://keepachangelog.com/en/1.0.0/
 [semantic versioning]: https://semver.org/spec/v2.0.0.html
 
+## Unreleased
+
+### Bugfixes
+- Fixed the permutation p-values of `mt.waggr`. The permutation counts already compared absolute scores, so they were two-sided, but were then folded as one-sided counts. As a result, scores smaller in magnitude than most permuted scores, including scores of exactly 0, received the smallest possible p-value (`2 / times`). P-values are now computed as `(1 + #{|ES_rand| >= |ES|}) / (1 + times)`
+
 ## 2.2.1
 
 ### Changes

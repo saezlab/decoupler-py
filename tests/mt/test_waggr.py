@@ -33,3 +33,22 @@ def test_func_waggr(
     es, pv = dc.mt._waggr._func_waggr(mat=X, adj=adjmat, fun=fun, times=times, seed=seed)
     assert np.isfinite(es).all()
     assert ((0 <= pv) & (pv <= 1)).all()
+
+
+def test_waggr_pvalues():
+    rng = np.random.default_rng(0)
+    nvar, times = 200, 1000
+    mat = rng.normal(size=(1, nvar))
+    adj = np.zeros((nvar, 2))
+    # Score of exactly 0: no evidence of enrichment
+    mat[0, :2] = 5.0
+    adj[:2, 0] = [1.0, -1.0]
+    # Strongly enriched set
+    mat[0, 50:70] += 3.0
+    adj[50:70, 1] = 1.0
+    es, pv = dc.mt._waggr._func_waggr(mat=mat, adj=adj, fun="wmean", times=times, seed=42)
+    assert pv[0, 0] > 0.5
+    assert pv[0, 1] == 1 / (times + 1)
+    # A constant score is never more extreme than its permutations
+    es, pv = dc.mt._waggr._func_waggr(mat=mat, adj=adj, fun=lambda x, w: 0, times=times, seed=42)
+    assert (pv == 1).all()
