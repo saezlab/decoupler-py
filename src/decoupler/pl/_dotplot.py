@@ -110,9 +110,13 @@ def dotplot(
     bp.ax.set_axisbelow(True)
     bp.ax.set_xlabel(x)
     # Add legend
-    handles, labels = scatter.legend_elements(
-        prop="sizes", num=3, fmt="{x:.2f}", func=lambda s: np.sqrt(s) / plt.rcParams["lines.markersize"] / scale
-    )
+    def size_func(s):
+        return np.sqrt(s) / plt.rcParams["lines.markersize"] / scale
+
+    handles, labels = scatter.legend_elements(prop="sizes", num=3, fmt="{x:.2f}", func=size_func)
+    if not handles:
+        # All sizes are equal, show unique values instead
+        handles, labels = scatter.legend_elements(prop="sizes", num=None, fmt="{x:.2f}", func=size_func)
     bp.ax.legend(
         handles,
         labels,

@@ -37,3 +37,13 @@ def test_dotplot(
     )
     assert isinstance(fig, Figure)
     plt.close(fig)
+
+
+def test_dotplot_equal_sizes(
+    df,
+):
+    df["s"] = 15.65
+    fig = dc.pl.dotplot(df=df, x="x", y="y", c="c", s="s", return_fig=True)
+    labels = [t.get_text() for t in fig.axes[0].get_legend().get_texts()]
+    assert labels == ["15.65"]
+    plt.close(fig)
