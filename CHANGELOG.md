@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning][].
 - `mt.query_set` now raises an informative error when `n_bg` is smaller than the number of features to test, instead of failing inside `scipy.stats.fisher_exact`
 - Fixed `mt.gsea` not shuffling the permutation indices when `seed=0`, which produced identical permutations and invalid p-values (#355)
 - Fixed `mt.waggr` folding its already two-sided permutation p-values as one-sided, which gave scores near 0 the smallest p-value (#373)
+- Fixed `pl.dotplot` showing an empty size legend when all dots have the same size (#370)
 
 ## 2.2.0
 
