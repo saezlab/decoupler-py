@@ -8,11 +8,6 @@ and this project adheres to [Semantic Versioning][].
 [keep a changelog]: https://keepachangelog.com/en/1.0.0/
 [semantic versioning]: https://semver.org/spec/v2.0.0.html
 
-## Unreleased
-
-### Bugfixes
-- Fixed the permutation p-values of `mt.waggr`. The permutation counts already compared absolute scores, so they were two-sided, but were then folded as one-sided counts. As a result, scores smaller in magnitude than most permuted scores, including scores of exactly 0, received the smallest possible p-value (`2 / times`). P-values are now computed as `(1 + #{|ES_rand| >= |ES|}) / (1 + times)`
-
 ## 2.2.1
 
 ### Changes
@@ -25,6 +20,7 @@ and this project adheres to [Semantic Versioning][].
 - `mt.ora` now validates that `n_up` and `n_bm` do not overlap and that `n_bg` is large enough for the number of selected features, instead of failing inside the Fisher exact test
 - `mt.query_set` now raises an informative error when `n_bg` is smaller than the number of features to test, instead of failing inside `scipy.stats.fisher_exact`
 - Fixed `mt.gsea` not shuffling the permutation indices when `seed=0`, which produced identical permutations and invalid p-values (#355)
+- Fixed `mt.waggr` folding its already two-sided permutation p-values as one-sided, which gave scores near 0 the smallest p-value (#373)
 
 ## 2.2.0
 
