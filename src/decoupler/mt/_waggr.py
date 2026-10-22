@@ -113,7 +113,7 @@ def _perm(
     # Permute
     for i in nb.prange(times):
         null_dst[:, :, i] = fun(mat[:, idx[i]], adj)
-        pvals += np.abs(null_dst[:, :, i]) > np.abs(es)
+        pvals += np.abs(null_dst[:, :, i]) >= np.abs(es)
     # Compute z-score
     nes = np.zeros(es.shape)
     for i in nb.prange(nobs):
@@ -129,11 +129,8 @@ def _perm(
                     n = 0.0
             nes[i, j] = n
     # Compute empirical p-value
-    pvals = np.where(pvals == 0.0, 1.0, pvals)
-    pvals = np.where(pvals == times, times - 1, pvals)
-    pvals = pvals / times
-    pvals = np.where(pvals >= 0.5, 1 - (pvals), pvals)
-    pvals = pvals * 2
+    # Two-sided empirical p-value, counting the observed score as one of the permutations
+    pvals = (pvals + 1.0) / (times + 1.0)
     return nes, pvals
 
 
@@ -177,12 +174,14 @@ def _func_waggr(
 
     .. math::
 
-        p_{value}=\frac{ES_{rand} \geq ES}{P}
+        p_{value}=\frac{1 + \#\{|ES_{rand}| \geq |ES|\}}{1 + P}
 
     Where:
 
     - :math:`ES_{rand}` are the enrichment scores of the random permutations
     - :math:`P` is the total number of permutations
+
+    The observed score is counted as one of the permutations, so that :math:`p_{value}` is never 0 :cite:`phipson2010`.
 
     Additionaly, :math:`ES` is updated to a normalized enrichment score :math:`NES`.
 
