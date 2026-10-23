@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning][].
 ### Changes
 - `pp.filter_by_prop` now defaults to `min_prop=0.1` (was `0.2`) to match the value used in the vignettes
 - `ds.msvisium` now returns log-normalized data (`sc.pp.normalize_total` + `sc.pp.log1p`), with the log-normalized matrix also stored in `adata.layers["norm"]`, instead of raw counts
+- Dropped support for Python 3.11; decoupler now requires Python 3.12 or newer
+- Updated to the scverse cookiecutter template v0.8.0 (hash-pinned GitHub Actions checked by zizmor, `prek` instead of `pre-commit`, `sphinx-design` instead of `sphinx-tabs`, shared Sphinx extensions from `scverse-misc`)
 
 ### Bugfixes
 - Fixed `mt.ora` selecting the bottom `nvar - n_up` features instead of the top `n_up` ones. Ranks are ascending, so the threshold is now `nvar - n_up`, restoring the behaviour of `decoupler<2`. With the default `n_up` (top 5%) this selected 95% of the features as observed, which also made `mt.ora` fail with `invalid contingency table` whenever `nvar - n_up` exceeded `n_bg` (#346)
