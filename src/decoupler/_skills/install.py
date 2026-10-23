@@ -59,16 +59,10 @@ def _claude_science_skills_dir() -> Path:
         active_org = json.loads(active_org_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
         raise ValueError(
-            "cannot resolve the Claude Science active organization from "
-            f"{active_org_path}; pass --dest instead"
+            f"cannot resolve the Claude Science active organization from {active_org_path}; pass --dest instead"
         ) from error
     org_uuid = active_org.get("org_uuid") if isinstance(active_org, dict) else None
-    if (
-        not isinstance(org_uuid, str)
-        or not org_uuid
-        or Path(org_uuid).name != org_uuid
-        or org_uuid in {".", ".."}
-    ):
+    if not isinstance(org_uuid, str) or not org_uuid or Path(org_uuid).name != org_uuid or org_uuid in {".", ".."}:
         raise ValueError(f"invalid Claude Science org_uuid in {active_org_path}; pass --dest instead")
     return root / "orgs" / org_uuid / "skills"
 
@@ -96,11 +90,7 @@ def resolve_dest(agent: str | None, dest: Path | None) -> Path:
 
 def _snapshot(root: Path) -> dict[str, bytes]:
     """Map each file under ``root`` to its bytes, for exact tree comparison."""
-    return {
-        str(item.relative_to(root)): item.read_bytes()
-        for item in root.rglob("*")
-        if item.is_file()
-    }
+    return {str(item.relative_to(root)): item.read_bytes() for item in root.rglob("*") if item.is_file()}
 
 
 def _matches(source: Path, target: Path) -> bool:
