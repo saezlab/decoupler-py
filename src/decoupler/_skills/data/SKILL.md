@@ -1,85 +1,144 @@
 ---
 name: decoupler
-description: Use for any task involving the decoupler library — inferring biological activity/enrichment scores from omics data (bulk, single-cell, spatial). Triggers on estimating transcription factor (TF) activity, pathway activity, or gene-set enrichment from an AnnData/DataFrame; running ulm, mlm, ora, gsea, gsva, aucell, viper, zscore, waggr, mdt, udt; multi-method consensus; fetching prior knowledge (CollecTRI, DoRothEA, PROGENy, MSigDB hallmarks, OmniPath); pseudobulk and expression filtering; using bundled example datasets (pbmc3k, covid5k, erygast1k, hsctgfb, msvisium, knocktf, toy) and whether they are raw counts or normalized; ranking/plotting activity scores; or benchmarking methods against ground truth. This is a router skill — read the relevant file under references/ before writing decoupler code, because outputs land in different places and several defaults are non-obvious.
+description: Read before any task that mentions decoupler, one of its bundled example datasets, or asks which transcription factors (TFs), pathways, or gene sets are most active, enriched, up or down in expression data - bulk RNA-seq treated vs control, single-cell cell types or clusters, condition contrasts across donors (pseudobulk), spatial transcriptomics regions or niches, and pseudotime or differentiation trajectories - with the exact 2.x workflow (dc.op networks, dc.pp preprocessing, dc.mt scoring, dc.tl ranking) that reproduces the documented results. Also covers decoupler's networks (CollecTRI, PROGENy, DoRothEA, MSigDB), supported organisms/species and ortholog translation, resource licenses, and the conventions for plotting or visualizing its results. Also read for conceptual, best-practice or multiple-choice questions about how an agent should work with decoupler.
 ---
 
-# decoupler
+# decoupler 2.x
 
-`decoupler` estimates biological activities (transcription factors, pathways, gene
-sets) from omics data. You give it a **data matrix** (observations × features, e.g.
-cells × genes) and a **prior-knowledge network** (which features belong to which
-biological program), and it returns an **enrichment score per observation per
-program** — all methods sharing one unified interface. Part of scverse; works
-directly on `AnnData`, `pandas.DataFrame`, or raw matrices.
+decoupler scores "sources" (TFs, pathways, gene sets) from a long-format `net` DataFrame with
+columns `source`, `target`, and optionally `weight`. The 2.x API is `dc.pp` (preprocess),
+`dc.op` (download networks from OmniPath), `dc.mt` (scoring methods), `dc.tl` (ranking),
+`dc.pl` (plots), `dc.ds` (example datasets). The 1.x functions (`run_ulm`, `get_progeny`,
+`get_acts`) no longer exist.
 
-This skill is a **router**. Each topic below has a detailed reference file with exact
-signatures and footguns. **Read the relevant reference before writing code** — do not
-rely on memory of the API, because results are written to different places depending
-on the input type and several methods have non-obvious defaults.
+## Core mechanics (not guessable)
 
-## Two cross-cutting concepts (read these first if unsure)
+- **Scoring on AnnData writes in place, returns None.** `dc.mt.ulm(data=adata, net=net)` stores
+  `adata.obsm["score_ulm"]` and `adata.obsm["padj_ulm"]`. Every method uses `score_<method>` and
+  `padj_<method>`, so a second `ulm` call with another network **overwrites** the first.
+  Extract before re-running: `score = dc.pp.get_obsm(adata, key="score_ulm")` returns a new
+  AnnData whose `.X` is the score matrix (obs = cells, var = sources) and keeps `.obs` and `.obsm`.
+- **Scoring on a DataFrame (obs × genes) returns a tuple** `(scores, padj)` of DataFrames.
+- **Default method is `ulm`.** Use it unless the user names another. `mt.decouple` runs many
+  methods and `mt.consensus` averages them; do not use them as a substitute for `ulm`.
+- **Input scale matters.** Methods assume roughly normal values: use log-normalized expression
+  (`sc.pp.normalize_total` + `sc.pp.log1p`) or a contrast-level test statistic (the PyDESeq2 Wald
+  `stat` column or a t-value). Never score `log2FoldChange` (LFC): it lacks the confidence
+  weighting and changes the ranking. Never run on raw integer counts. Do not normalize twice: an `adata.X.max()` far above
+  50 means raw counts; a max around 5–12 with non-integer values means already log-normalized.
+- **Bundled datasets (`dc.ds.*`) come ready to use.** When a task names a decoupler example
+  dataset, load it with `dc.ds.<name>()`; do not substitute another package's copy. The
+  single-cell and spatial ones are **already log-normalized and annotated** (obs `celltype`
+  and similar): do not run `sc.pp.normalize_total` or `sc.pp.log1p` again, and use the existing
+  annotation column instead of re-clustering or hand-annotating. The bulk and pseudobulk ones
+  hold raw counts for the contrast recipe. List in `references/resources.md`.
+- **Load networks with defaults.** `dc.op.collectri(organism=...)` for TFs,
+  `dc.op.progeny(organism=...)` for pathways, `dc.op.hallmark(organism=...)` for MSigDB hallmarks.
+  In 2.x `progeny` already defaults to all significant targets (`top=inf`); do **not** pass
+  `top=500` (a 1.x habit) unless the user asks. CollecTRI is the documented TF network; use
+  DoRothEA only when the user names it.
+- **Ranking helpers return sorted DataFrames.**
+  `dc.tl.rankby_group(adata=score, groupby=col, reference="rest", method="t-test_overestim_var")`
+  gives columns `group, reference, name, stat, meanchange, pval, padj`, sorted by `stat`
+  descending within each group. "Most active in group G" = `df[df.group == G]` top rows by `stat`
+  (positive = higher in G). `dc.tl.rankby_order(adata=score, order=col)` ranks sources by
+  association with a continuous ordering (default `stat="dcor"`, distance correlation, sorted
+  descending). Keep the defaults unless asked otherwise.
+- **Pass the score AnnData (not the expression AnnData) to the ranking helpers.**
 
-- **[The unified method call](references/calling-convention.md)** — every method is
-  called the same way: `dc.mt.<method>(data, net, tmin=5, ...)`. Covers the accepted
-  input types (AnnData / DataFrame / `[matrix, obs, var]` **list**), the shared
-  arguments (`tmin`, `raw`, `layer`, `empty`, `bsize`), and the big footguns: input
-  must be **normalized (e.g. log1p), not raw counts**, and `net` must be a
-  **long-format** `source`/`target`/`weight` table.
+## Pick the recipe from the goal
 
-- **[Where the results go](references/io-and-outputs.md)** — the return type depends
-  on the input type. **AnnData → written in place** into `.obsm["score_<method>"]`
-  (and `.obsm["padj_<method>"]` if the method tests), returns `None`. **DataFrame /
-  list → returns an `(es, pv)` tuple** (`pv` is `None` for non-testing methods). Read
-  scores back out of an AnnData with `dc.pp.get_obsm`. **This is the #1 thing agents
-  get wrong.**
-
-## Task → reference file
-
-| If the task is… | Read |
+| Goal | Recipe |
 |---|---|
-| **starting from scratch** — set up an end-to-end run (load data → get a net → score → rank → plot) | [references/getting-started.md](references/getting-started.md) |
-| how to **call a method**, what data/net formats are accepted, `tmin`/`raw`/`layer` semantics | [references/calling-convention.md](references/calling-convention.md) |
-| **where scores land** and how to read them back (`.obsm` vs `(es, pv)` tuple, `get_obsm`) | [references/io-and-outputs.md](references/io-and-outputs.md) |
-| **choosing and configuring a method** — ulm/mlm/ora/gsea/gsva/aucell/viper/zscore/waggr/mdt/udt + their kwargs | [references/methods.md](references/methods.md) |
-| getting **prior knowledge** — TF regulons (CollecTRI, DoRothEA), pathways (PROGENy), gene sets (MSigDB hallmarks), OmniPath, `.gmt`, organism translation | [references/priors.md](references/priors.md) |
-| **preprocessing** — pseudobulk from single cell, expression/sample filtering, layers, spatial kNN | [references/preprocessing.md](references/preprocessing.md) |
-| running **many methods at once** and combining them into a **consensus** | [references/multi-method.md](references/multi-method.md) |
-| **ranking** activity scores by group/ordering and **plotting** them (barplot, dotplot, volcano, network) or overlaying them on a **UMAP / spatial H&E** via scanpy | [references/ranking-and-plotting.md](references/ranking-and-plotting.md) |
-| **benchmarking** methods/nets against a perturbation ground truth | [references/benchmarking.md](references/benchmarking.md) |
-| using a **bundled example dataset** (`dc.ds.*`) — and whether its `.X` is raw counts or already normalized | [references/datasets.md](references/datasets.md) |
+| Activity per cell, cluster or cell type, then "which sources mark group X" | **Per-observation** below |
+| Activity per spatial spot, region vs rest | **Spatial** below (smooth first) |
+| Sources that change along a trajectory or pseudotime | **Trajectory** below |
+| Condition A vs B in bulk RNA-seq (samples) | **Contrast** in `references/contrast.md` |
+| Condition A vs B in single-cell with several donors or samples | **Pseudobulk contrast** in `references/contrast.md` |
+| Networks, organisms, orthologs, licenses, what resources exist | `references/resources.md` |
+| Plotting results | Use `dc.pl.*` or scanpy plotting on the `get_obsm` AnnData, see `references/resources.md` |
 
-## Quick orientation (submodule map)
+"Most active TFs in condition X vs Y" with replicate samples or donors means the contrast recipe
+(differential expression statistic → `ulm`), **not** per-cell scores averaged by condition and
+**not** `rankby_group` on the condition column. Per-observation scoring + `rankby_group` is for
+comparing groups of cells within one dataset (cell types, clusters, niches). The contrast recipe,
+complete (details and plots in `references/contrast.md`):
 
-decoupler exposes everything through namespaced submodules — canonical import is
-`import decoupler as dc`:
+```python
+from pydeseq2.dds import DeseqDataSet, DefaultInference
+from pydeseq2.ds import DeseqStats
+# single-cell with donors only: aggregate raw counts to pseudobulk, QC, pick the cell type
+pdata = dc.pp.pseudobulk(adata=adata, sample_col="<donor col>", groups_col="<celltype col>", mode="sum")
+dc.pp.filter_samples(pdata, min_cells=10, min_counts=1000)
+sub = pdata[pdata.obs["<celltype col>"] == "<cell type>"].copy()
+# bulk and pseudobulk: gene filtering (defaults shown) -> PyDESeq2 Wald test -> ulm on `stat`
+dc.pp.filter_by_expr(adata=sub, group="<condition col>", min_count=10, min_total_count=15)
+dc.pp.filter_by_prop(adata=sub, min_prop=0.1, min_smpls=2)        # pseudobulk only
+inference = DefaultInference(n_cpus=8)
+# bulk two-group design: "~<condition>". Pseudobulk: print(sub.obs.columns) and add every
+# sample-level covariate it holds (e.g. "~<condition> + sex"); writing "~<condition>" alone
+# when such a covariate exists gives a different ranking.
+dds = DeseqDataSet(adata=sub, design="~<condition> + <covariate>", refit_cooks=True, inference=inference)
+dds.deseq2()
+stat_res = DeseqStats(dds, contrast=["<condition col>", "<test level>", "<reference level>"], inference=inference)
+stat_res.summary()                                # required: fills stat_res.results_df
+results_df = stat_res.results_df                  # columns incl. log2FoldChange, stat, padj
+# score the Wald `stat` column only, never log2FoldChange and never stat_res.LFC
+acts, padj = dc.mt.ulm(data=results_df[["stat"]].T, net=dc.op.collectri(organism="human"))
+ranked = acts.T.iloc[:, 0].sort_values(ascending=False)   # most active in <test level> first
+```
 
-- `dc.mt` — **methods**: the enrichment/activity algorithms (`ulm`, `mlm`, `ora`,
-  `gsea`, `gsva`, `aucell`, `viper`, `zscore`, `waggr`, `mdt`, `udt`) plus
-  `dc.mt.decouple` (run several) and `dc.mt.consensus`. `dc.mt.show()` lists them.
-- `dc.op` — **prior knowledge** (OmniPath): `collectri`, `dorothea`, `progeny`,
-  `hallmark`, `resource`, `translate`.
-- `dc.pp` — **preprocessing**: `pseudobulk`, `filter_by_expr`, `filter_by_prop`,
-  `filter_samples`, `get_obsm`, `extract`, `swap_layer`, `knn`, `read_gmt`.
-- `dc.ds` — **datasets**: `toy` (used in every example: `adata, net = dc.ds.toy()`),
-  `pbmc3k`, `covid5k`, and other real examples. **They differ in normalization state**
-  (some raw counts, some already log-normalized) — see
-  [datasets.md](references/datasets.md) before scoring one.
-- `dc.tl` — **tools**: `rankby_group`, `rankby_obsm`, `rankby_order`.
-- `dc.pl` — **plotting**: `barplot`, `dotplot`, `volcano`, `network`, `obsm`, etc.
-- `dc.bm` — **benchmarking**: `benchmark`, `metric`, `pl`.
+### Per-observation (single-cell, clusters, cell types)
 
-## Conventions used throughout
+```python
+import scanpy as sc, decoupler as dc
+adata = ...                      # log-normalized expression, genes as symbols
+net = dc.op.progeny(organism="human")        # or dc.op.collectri(...)
+dc.mt.ulm(data=adata, net=net)
+score = dc.pp.get_obsm(adata, key="score_ulm")
+df = dc.tl.rankby_group(adata=score, groupby="celltype", reference="rest",
+                        method="t-test_overestim_var")
+top = df[df["group"] == "<group>"].sort_values("stat", ascending=False).head(n)
+```
 
-- **Data** = observations × features (cells/samples × genes), **normalized** (log1p),
-  not raw counts. **Net** = long-format DataFrame: `source` (program), `target`
-  (feature), optional signed `weight`.
-- Output score matrices are observations × sources. AnnData results live in `.obsm`
-  under `score_<method>` / `padj_<method>`.
-- `tmin` (default 5) silently drops sources with fewer than `tmin` targets present in
-  the data — lower it for small/toy nets (examples use `tmin=3`).
-- `verbose=True` on any method prints the pruning/run log — use it to see how many
-  sources survived `tmin`.
-- **Plotting**: use `dc.pl.*` for summary plots and scanpy `sc.pl.umap` / `sc.pl.spatial`
-  (on a `dc.pp.get_obsm` score AnnData) for embedding/tissue overlays. Never reimplement
-  a plot from matplotlib primitives — see
-  [ranking-and-plotting.md](references/ranking-and-plotting.md).
+### Spatial (Visium-like)
+
+The documented workflow smooths expression over spatial neighbours **before** scoring; skipping
+it changes the ranking. Requires coordinates in `adata.obsm["spatial"]` and log-normalized `X`.
+
+```python
+dc.pp.knn(adata, key="spatial", bw=100, cutoff=0.1)        # these are the defaults
+adata.X = adata.obsp["spatial_connectivities"].dot(adata.X)  # weighted neighbour average
+dc.mt.ulm(data=adata, net=dc.op.collectri(organism="human"))
+score = dc.pp.get_obsm(adata, key="score_ulm")
+df = dc.tl.rankby_group(adata=score, groupby="<region_col>", reference="rest",
+                        method="t-test_overestim_var")
+```
+
+### Trajectory or pseudotime
+
+"Associated with the trajectory or differentiation" means: compute scanpy DPT pseudotime, score
+sources per cell, then `rankby_order` on the pseudotime with its default statistic. Root the
+diffusion pseudotime in the **biologically earliest** population: the stem or progenitor label,
+and when several progenitor labels are numbered, the lowest-numbered one (print the label list
+and choose deliberately; do not take the first label that happens to match a substring). Use the
+first cell of that label as `iroot`.
+
+```python
+import numpy as np
+sc.pp.neighbors(adata, use_rep="X_pca")
+sc.tl.diffmap(adata)
+sc.pp.neighbors(adata, use_rep="X_diffmap")
+adata.uns["iroot"] = np.flatnonzero(adata.obs["celltype"] == "<earliest celltype>")[0]
+sc.tl.dpt(adata)                                   # -> adata.obs["dpt_pseudotime"]
+dc.mt.ulm(data=adata, net=dc.op.collectri(organism="mouse"))
+score = dc.pp.get_obsm(adata, key="score_ulm")
+df = dc.tl.rankby_order(adata=score, order="dpt_pseudotime")   # default stat="dcor"
+```
+
+## Checks before reporting
+
+- Organism of the network matches the gene symbols (mouse symbols are capitalized, e.g. `Foxa2`).
+- Filter by name family with a regex on `df["name"]` (e.g. `str.match(r"^FOX")`) after ranking,
+  not by subsetting the network.
+- Report `name` values in the ranked order; the `stat` column is the activity ranking.
