@@ -4,12 +4,12 @@ requires = [ "hatchling" ]
 
 [project]
 name = "decoupler"
-version = "0.0.1"
+version = "2.2.1"
 description = "Python package to perform enrichment analysis from omics data."
 readme = "README.md"
 license = { file = "LICENSE" }
 maintainers = [
-  { name = "Pau Badia i Mompel", email = "pau.badia@uni-heidelberg.de" },
+  { name = "Pau Badia i Mompel", email = "paubim@stanford.edu" },
 ]
 authors = [
   { name = "Pau Badia i Mompel" },
@@ -20,16 +20,25 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3.15",
 ]
 dependencies = [
+  "adjusttext",
   "anndata",
+  "docrep",
+  "marsilea",
+  "numba",
+  "requests",
+  "scipy",
   # for debug logging (referenced from the issue template)
   "session-info2",
+  "tqdm",
 ]
 # https://docs.pypi.org/project_metadata/#project-urls
-urls.Documentation = "https://decoupler.readthedocs.io/"
-urls.Homepage = "https://github.com/PauBadiaM/decoupler"
-urls.Source = "https://github.com/PauBadiaM/decoupler"
+urls.Documentation = "https://decoupler.scverse.org/"
+urls.Homepage = "https://github.com/scverse/decoupler"
+urls.Source = "https://github.com/scverse/decoupler"
+scripts.decoupler-install-skills = "decoupler._skills.install:main"
 
 [dependency-groups]
 dev = [
@@ -38,8 +47,17 @@ dev = [
 ]
 test = [
   "coverage>=7.10",
+  "dcor",
+  "gseapy",
+  "igraph",
+  "ipywidgets",
+  "memory-profiler",
+  "pydeseq2",
   "pytest",
-  "pytest-cov",     # For VS Code’s coverage functionality
+  "pytest-cov",      # For VS Code’s coverage functionality
+  "scanpy",
+  "statsmodels",
+  "xgboost",
 ]
 doc = [
   "ipykernel",
@@ -55,6 +73,14 @@ doc = [
   "sphinxcontrib-bibtex>=1",
   "sphinxcontrib-katex",
   "sphinxext-opengraph",
+]
+full = [
+  "dcor",
+  "igraph",
+  "ipywidgets",
+  "pydeseq2",
+  "scanpy",
+  "xgboost",
 ]
 
 [tool.hatch]
@@ -123,11 +149,11 @@ strict = true
 testpaths = [ "tests" ]
 
 [tool.coverage]
+run.source = [ "decoupler" ]
 run.omit = [
   "**/test_*.py",
 ]
 run.patch = [ "subprocess" ]
-run.source = [ "decoupler" ]
 
 [tool.cruft]
 skip = [

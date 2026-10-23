@@ -25,6 +25,7 @@ jobs:
     runs-on: ubuntu-slim
     outputs:
       envs: ${{ steps.get-envs.outputs.envs }}
+      allowed-failures: ${{ steps.get-envs.outputs.allowed-failures }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -46,6 +47,8 @@ jobs:
                   }
               )')
           echo "envs=${ENVS_JSON}" | tee $GITHUB_OUTPUT
+          ALLOWED=$(echo "${ENVS_JSON}" | jq -c 'map(select(.name | contains("pre")) | .name)')
+          echo "allowed-failures=${ALLOWED}" | tee -a $GITHUB_OUTPUT
 
   # Run tests through hatch. Spawns a separate runner for each environment defined in the hatch matrix obtained above.
   test:
@@ -108,4 +111,5 @@ jobs:
     steps:
         - uses: re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe # v1.2.2
           with:
+            allowed-failures: ${{ needs.get-environments.outputs.allowed-failures }}
             jobs: ${{ toJSON(needs) }}
