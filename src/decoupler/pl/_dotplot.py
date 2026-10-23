@@ -109,6 +109,7 @@ def dotplot(
     scatter = bp.ax.scatter(x=x_vals, y=y_vals, c=c_vals, s=ns, cmap=cmap, norm=norm, **kw_scatter)
     bp.ax.set_axisbelow(True)
     bp.ax.set_xlabel(x)
+
     # Add legend
     def size_func(s):
         return np.sqrt(s) / plt.rcParams["lines.markersize"] / scale
