@@ -95,7 +95,7 @@ def msvisium(
         inplace=True,
     )
     # Add metadata
-    url_meta = "https://cells-test.gi.ucsc.edu/ms-subcortical-lesions/visium-ms377T/meta.tsv"
+    url_meta = "https://cells.ucsc.edu/ms-subcortical-lesions/visium-ms377T/meta.tsv"
     meta = pd.read_csv(url_meta, sep="\t", usecols=[0, 4], index_col=0)
     adata = adata[meta.index, :].copy()
     adata.obs = adata.obs.join(meta, how="right")

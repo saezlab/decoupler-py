@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning][].
 - Fixed `mt.gsea` not shuffling the permutation indices when `seed=0`, which produced identical permutations and invalid p-values (#355)
 - Fixed `mt.waggr` folding its already two-sided permutation p-values as one-sided, which gave scores near 0 the smallest p-value (#373)
 - Fixed `pl.dotplot` showing an empty size legend when all dots have the same size (#370)
+- Fixed `ds.msvisium` failing with HTTP 403 by fetching the spot metadata from `cells.ucsc.edu` instead of the `cells-test.gi.ucsc.edu` mirror
 
 ## 2.2.0
 
