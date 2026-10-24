@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning][].
 [keep a changelog]: https://keepachangelog.com/en/1.0.0/
 [semantic versioning]: https://semver.org/spec/v2.0.0.html
 
+## Unreleased
+
+### Bugfixes
+- Fixed `mt.zscore` swapping its two flavors: `flavor="KSEA"` did not subtract the mean of all features and `flavor="RoKAI"` (the default) did, the opposite of the documentation and of `decoupler<2`. Scores from the default flavor change with this fix
+
 ## 2.3.0
 
 ### Changes
