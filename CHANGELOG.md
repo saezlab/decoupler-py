@@ -8,9 +8,10 @@ and this project adheres to [Semantic Versioning][].
 [keep a changelog]: https://keepachangelog.com/en/1.0.0/
 [semantic versioning]: https://semver.org/spec/v2.0.0.html
 
-## 2.2.1
+## 2.3.0
 
 ### Changes
+- Updated the bundled decoupler Agent Skill, and `decoupler-install-skills` now supports multiple agent frameworks
 - `pp.filter_by_prop` now defaults to `min_prop=0.1` (was `0.2`) to match the value used in the vignettes
 - `ds.msvisium` now returns log-normalized data (`sc.pp.normalize_total` + `sc.pp.log1p`), with the log-normalized matrix also stored in `adata.layers["norm"]`, instead of raw counts
 - Dropped support for Python 3.11; decoupler now requires Python 3.12 or newer
